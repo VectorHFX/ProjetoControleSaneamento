@@ -79,3 +79,16 @@ dialog[open]{animation:cptArrive .18s ease-out both}.dialog-body{animation:none}
 .delivery-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.delivery-photos label{display:grid;gap:6px;font-size:12px}.delivery-photos label:has(input[type=checkbox]){display:flex;align-items:center}.delivery-text{white-space:pre-wrap;margin:22px 0}.delivery-photo-output{display:grid;grid-template-columns:1fr 1fr;gap:14px}.delivery-photo-output figure{margin:0;break-inside:avoid}.delivery-photo-output img{width:100%;max-height:310px;object-fit:contain}.delivery-photo-output figcaption{font-size:12px;margin-top:8px}#deliveryPreview{margin-top:24px;border-top:1px solid var(--line);padding-top:24px}#deliveryForm textarea{font:inherit;line-height:1.65;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
 @media(max-width:600px){.delivery-photos,.delivery-photo-output{grid-template-columns:1fr}}
 </style>
+<style>
+/* 2.1 — Obras e Fechamento do mês */
+.obra-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.obra-bairros{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;max-height:220px;overflow:auto}
+.text-warning{color:#9c5a12;font-weight:600}
+.fechamento-lista{display:grid;gap:12px}
+.fechamento-item{display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.fechamento-item:first-child{border-top:0}.fechamento-item p{margin:4px 0 0;font-size:14px}
+.simple-table{width:100%;border-collapse:collapse;font-size:14px}.simple-table th,.simple-table td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+.obra-card .card-bottom>span:last-child{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.gerar-form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0}.gerar-form .field{max-width:220px}
+@media (max-width:640px){.fechamento-item{grid-template-columns:1fr}.obra-lista{grid-template-columns:1fr}}
+</style>

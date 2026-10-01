@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.0.0';
+const VERSAO_CPT = '2.1.0';
 
 class AplicacaoCPT {
   static get baseId() { return '1vmFipKi9UKvnhuD4Jpfu10rJiBrmI-FnmqMs-yr4jA0'; }
@@ -61,13 +61,13 @@ function instalarAplicacaoCPT() {
 
 /** A página abre primeiro; dados chegam depois, por chamadas autenticadas. */
 function doGet() {
-  if (typeof DadosDaAplicacao === 'undefined' || typeof PerfisCPT === 'undefined' || typeof DesempenhoCPT === 'undefined' || typeof ObservacoesCPT === 'undefined')
+  if (typeof DadosDaAplicacao === 'undefined' || typeof PerfisCPT === 'undefined' || typeof DesempenhoCPT === 'undefined' || typeof ObservacoesCPT === 'undefined' || typeof ObrasCPT === 'undefined' || typeof RelatorioMensalCPT === 'undefined')
     throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.');
   return HtmlService.createTemplateFromFile('Aplicacao').evaluate().setTitle('CPT | Campo e gestão')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 

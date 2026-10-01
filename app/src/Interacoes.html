@@ -85,10 +85,11 @@
     if (window.CPT_PREVIA) return window.CPT_PREVIA.chamar(nome, arg);
     return new Promise((resolve, reject) => {
       let done = false;
+      const limite = nome === 'gerarBaseRelatorioCPT' ? 360000 : 45000;
       const timer = setTimeout(() => {
         done = true;
         reject(new Error('A conexão demorou mais que o esperado. Tente atualizar novamente.'));
-      }, 45000);
+      }, limite);
       const ok = x => {
           if (done) return;
           done = true;
@@ -329,7 +330,7 @@
     });
   }
   function navigate(route, filter) {
-    if (!['inicio', 'registros', 'atendimentos', 'ajuda', 'cronograma', 'equipe'].includes(route)) return;
+    if (!['inicio', 'registros', 'atendimentos', 'ajuda', 'cronograma', 'equipe', 'obras', 'fechamento'].includes(route)) return;
     clearTimeout(debounce);
     state.route = route;
     ++state.listRequest;
@@ -348,7 +349,9 @@
       atendimentos: 'Atendimentos',
       ajuda: 'Como usar',
       cronograma: 'Cronograma',
-      equipe: 'Equipe e acessos'
+      equipe: 'Equipe e acessos',
+      obras: 'Obras',
+      fechamento: 'Fechamento do mês'
     }[route];
     ({
       inicio: renderHome,
@@ -356,7 +359,9 @@
       atendimentos: renderCases,
       ajuda: renderHelp,
       cronograma: window.CPTAgenda.render,
-      equipe: window.CPTAgenda.team
+      equipe: window.CPTAgenda.team,
+      obras: window.CPTObras.render,
+      fechamento: window.CPTFechamento.render
     })[route]();
     window.scrollTo({
       top: 0,
@@ -376,7 +381,7 @@
       var _window$CPT_BOOT;
       const d = await call('carregarInicioCPT', requested);
       if (ticket !== state.homeRequest) return;
-      if (!d || !d.indicadores || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 2.0.0.');
+      if (!d || !d.indicadores || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 2.1.0.');
       state.home = d;
       if (!state.perfil) configureProfile(d.perfil);
       $('updated').textContent = 'Atualizado às ' + new Date(d.atualizadoEm).toLocaleTimeString('pt-BR', {
@@ -604,6 +609,7 @@
     if (state.route === 'cronograma') {
       window.CPTAgenda.render();
     }
+    if (state.route === 'fechamento') window.CPTFechamento.render();
     if (state.route === 'registros') $('view').innerHTML = skeleton();
     loadHome();
   });
@@ -614,6 +620,10 @@
       window.CPTAgenda.team();
     } else if (state.route === 'atendimentos') {
       loadCases();
+    } else if (state.route === 'obras') {
+      window.CPTObras.render();
+    } else if (state.route === 'fechamento') {
+      window.CPTFechamento.render();
     } else {
       loadHome();
     }
@@ -635,6 +645,7 @@
     select.value = list.includes(previous) ? previous : list.includes(saved) ? saved : list[0];
     select.disabled = list.length < 2;
     document.querySelector('[data-route="equipe"]').hidden = !p.papeis.includes('administrador');
+    document.querySelector('.nav-item[data-route="fechamento"]').hidden = !p.papeis.some(x => ['administrador', 'administrativo', 'gestao', 'socioambiental', 'comunicacao'].includes(x));
     $('accountLabel').textContent = p.nome + ' · ' + p.email;
     $('accountLabel').title = p.email;
   }
@@ -726,9 +737,9 @@
     $('view').innerHTML = '<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Verificando seu acesso…</div>';
     try {
       const d = await call('carregarPerfilCPT');
-      if (!d || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('Resposta de acesso inesperada. Confira se todos os arquivos da versão 2.0.0 foram publicados.');
+      if (!d || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('Resposta de acesso inesperada. Confira se todos os arquivos da versão 2.1.0 foram publicados.');
       document.querySelectorAll('.nav-item').forEach(b => {
-        if (b.dataset.route !== 'equipe') b.hidden = false;
+        if (!['equipe', 'fechamento'].includes(b.dataset.route)) b.hidden = false;
       });
       configureProfile(d.perfil);
       navigate('inicio');
@@ -744,7 +755,7 @@
     navigate('inicio');
     toast('Visão de ' + window.CPTAgenda.names[$('roleView').value] + '. Sua conta permanece a mesma.');
   });
-  if (!window.CPTAgenda || typeof window.CPTAgenda.init !== 'function') throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.0.0.');
+  if (!window.CPTAgenda || typeof window.CPTAgenda.init !== 'function') throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.1.0.');
   window.CPTAgenda.init({
     call,
     esc,
@@ -759,6 +770,34 @@
   });
   window.CPTEntregas.init({
     call
+  });
+  const norm = v => String(v !== null && v !== void 0 ? v : '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if (!window.CPTObras || !window.CPTFechamento) throw new Error('Componentes Obras.html ou Fechamento.html ausentes. Confira os arquivos da versão 2.1.0.');
+  window.CPTObras.init({
+    call,
+    esc,
+    date,
+    num,
+    intro,
+    toast,
+    icon,
+    norm,
+    state,
+    navigate,
+    view: $('view')
+  });
+  window.CPTFechamento.init({
+    call,
+    esc,
+    date,
+    num,
+    intro,
+    toast,
+    icon,
+    norm,
+    state,
+    navigate,
+    view: $('view')
   });
   bootstrap();
 })();

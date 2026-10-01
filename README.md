@@ -11,9 +11,9 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 
 | Pasta | O que é | Instalar? |
 |---|---|---|
-| `app/` | **Aplicação CPT** (web app, versão 2.0.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
+| `app/` | **Aplicação CPT** (web app, versão 2.1.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
 | `campo40/` | **Procedimentos de Campo 4.0**: formulário → Base. `src/` é permanente; `migracao_executada/` já rodou e fica só para rastreio. | Sim, no projeto do Campo 4.0 |
-| `docs/` | Diagnóstico, plano e, em `referencia/`, os requisitos originais. | — |
+| `docs/` | Diagnóstico, plano, guia de implantação e, em `referencia/`, os requisitos originais e os modelos oficiais (Orientador, relato ilustrado, layout da ficha). | — |
 | `legado/` | Código de projetos anteriores, **só para consulta**. | **Não** |
 
 ## Regras de ouro
@@ -30,9 +30,10 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 ```bash
 node app/testes/cronograma.cjs        # acesso, perfis, agenda, observações (serviços Google simulados)
 node app/testes/entregas.cjs          # preparação de relatos
+node app/testes/obras_relatorio.cjs    # obras, fechamento do mês e base do relatório
 node campo40/testes/processamento.cjs # vigência de obras/bairros e retomada de envios
 # Interface (precisa de Playwright e Chromium):
-python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs
+python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs
 ```
 Ao editar `app/fontes/*.html`, recompile para `app/src/` com `node app/testes/compilar.cjs` (requer Babel; veja o cabeçalho do arquivo).
 Teste local não substitui a validação com uma colaboradora real no Google.

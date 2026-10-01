@@ -45,12 +45,13 @@
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8Zm0 0v6h5M8 13h8M8 17h5"/></symbol>
 </defs></svg>
 <aside class="sidebar" aria-label="Navegação principal">
-  <div class="identity"><span class="identity-name">CPT<span class="version">2.0</span></span><span>Campo e gestão</span></div>
+  <div class="identity"><span class="identity-name">CPT<span class="version">2.1</span></span><span>Campo e gestão</span></div>
   <label class="role-label">Minha visão<select id="roleView" aria-label="Foco da minha tela" disabled><option value="">Verificando acesso…</option></select></label><div class="nav-caption">SEU ESPAÇO DE TRABALHO</div>
   <nav id="navigation">
     <button class="nav-item active" data-route="inicio" aria-current="page"><svg class="icon"><use href="#i-home"/></svg><span>Visão do mês</span></button>
     <button class="nav-item" data-route="cronograma"><svg class="icon"><use href="#i-calendar"/></svg><span>Cronograma</span></button><button class="nav-item" data-route="registros"><svg class="icon"><use href="#i-records"/></svg><span>Registros</span></button>
     <button class="nav-item" data-route="atendimentos"><svg class="icon"><use href="#i-case"/></svg><span>Atendimentos</span></button>
+    <button class="nav-item" data-route="obras"><svg class="icon"><use href="#i-pin"/></svg><span>Obras</span></button><button class="nav-item" data-route="fechamento" hidden><svg class="icon"><use href="#i-check"/></svg><span>Fechamento do mês</span></button>
     <button class="nav-item" data-route="equipe" hidden><svg class="icon"><use href="#i-people"/></svg><span>Equipe e acessos</span></button><button class="nav-item" data-route="ajuda"><svg class="icon"><use href="#i-help"/></svg><span>Como usar</span></button>
   </nav>
   <div class="sidebar-art"><svg class="sidebar-water" viewBox="0 0 240 310" preserveAspectRatio="none" aria-hidden="true"><path class="water-one" d="M0 155C70 131 65 230 112 185S150 125 183 145 188 80 240 32V330H0Z"/><path class="water-two" d="M0 213C69 157 75 291 127 240S187 249 207 209 210 158 240 138V330H0Z"/><path class="water-three" d="M0 245C61 227 74 278 125 273S186 220 240 270V330H0Z"/></svg></div><div class="sidebar-foot"><div class="wave-mark"><span></span><span></span><span></span></div><strong>Mais perto do território.</strong><p>Informação que acompanha<br>o cuidado com as pessoas.</p><div class="account"><span class="account-dot"></span><span id="accountLabel">Verificando acesso…</span></div></div>
@@ -64,5 +65,7 @@
 <div id="toast" class="toast" role="status" hidden></div>
 <?!= incluirCPT_('Agenda'); ?>
 <?!= incluirCPT_('Entregas'); ?>
+<?!= incluirCPT_('Obras'); ?>
+<?!= incluirCPT_('Fechamento'); ?>
 <?!= incluirCPT_('Interacoes'); ?>
 </body></html>

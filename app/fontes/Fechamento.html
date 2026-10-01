@@ -1,0 +1,67 @@
+<script>
+/* Fechamento do mês 2.1.0 — conferência da competência e geração da base do relatório mensal. */
+window.CPTFechamento = (() => {
+  'use strict';
+  let ui = null, ticket = 0, operacao = null, gerando = false;
+  const $ = id => document.getElementById(id);
+  const rotulo = {ok: 'OK', atencao: 'Atenção', pendente: 'Pendente'};
+  const cor = {ok: 'green', atencao: 'orange', pendente: 'orange'};
+
+  async function render() {
+    const mine = ++ticket, mes = ui.state.mes;
+    ui.view.innerHTML = ui.intro('Fechamento do mês', 'Confira o que falta e gere a base do Relatório Mensal de Comunicação Social e Socioambiental.') + '<div class="loading-label"><span class="spinner"></span>Conferindo a competência…</div>';
+    try { const d = await ui.call('conferirFechamentoCPT', mes); if (mine !== ticket || ui.state.route !== 'fechamento') return; draw(d); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Fechamento do mês', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function numero(rot, valor, nota) { return `<div class="kpi" style="--accent:#12678f;--tint:#e6f1f7"><div class="kpi-top"><span>${rot}</span></div><div class="kpi-value">${ui.num(valor)}</div><div class="kpi-note">${nota}</div></div>`; }
+  function draw(d) {
+    const n = d.numeros, s = d.satisfacao;
+    ui.view.innerHTML = ui.intro('Fechamento do mês', 'Confira o que falta e gere a base do Relatório Mensal de Comunicação Social e Socioambiental.') +
+      `<section class="kpis" aria-label="Números do mês">
+        ${numero('Atividades', n.atividades, ui.num(n.participantes) + ' participações · ' + ui.num(n.frentes) + ' frentes')}
+        ${numero('Relatos prontos', n.relatosProntos, 'de ' + ui.num(n.relatos) + ' relatos de atividade')}
+        ${numero('Pesquisas de satisfação', n.satisfacao, 'meta de ' + s.meta + ' no mês')}
+        ${numero('Manifestações', n.casosAbertos, 'em andamento · ' + ui.num(n.casosConcluidos) + ' concluídas no mês')}
+      </section>
+      <section class="panel"><div class="panel-head"><div><h2>O que conferir antes de gerar</h2><p>Itens “Pendente” afetam números do relatório; “Atenção” pede revisão.</p></div></div>
+        <div class="fechamento-lista">${d.verificacoes.map(v => `<div class="fechamento-item"><span class="badge ${cor[v.situacao]}">${rotulo[v.situacao]}</span><div><strong>${ui.esc(v.nome)}</strong><p>${ui.esc(v.detalhe)}</p></div>${v.acao ? `<button class="button ghost" data-fechamento-ir='${ui.esc(JSON.stringify(v.acao))}'>Abrir ${ui.icon('arrow')}</button>` : '<span></span>'}</div>`).join('')}</div>
+      </section>
+      <section class="panel"><div class="panel-head"><div><h2>Pesquisa de satisfação por semana</h2><p>Meta de 15 por semana e 60 no mês, contadas separadamente. Semanas parciais estão marcadas.</p></div></div>
+        <table class="simple-table"><thead><tr><th>Semana</th><th>Realizadas</th><th>Meta semanal</th></tr></thead><tbody>${s.semanas.map(w => `<tr><td>${ui.date(w.de)} a ${ui.date(w.ate)}${w.parcial ? ' (parcial)' : ''}</td><td>${w.total}</td><td>${w.total >= w.meta ? 'Atingida' : 'Faltam ' + (w.meta - w.total)}</td></tr>`).join('')}</tbody><tfoot><tr><th>Mês</th><th>${s.total}</th><th>${s.total >= s.meta ? 'Meta mensal atingida' : 'Faltam ' + (s.meta - s.total) + ' para 60'}</th></tr></tfoot></table>
+      </section>
+      <section class="panel"><div class="panel-head"><div><h2>Gerar base do relatório</h2><p>Cria um Google Docs novo, no formato do Orientador (itens 1 a 13), e a planilha de manifestações. Nada é sobrescrito: cada geração é uma nova versão.</p></div></div>
+        <form id="gerarForm" class="gerar-form"><label class="field">Número do relatório<input name="numero" type="number" min="1" max="999" placeholder="Ex.: 15"></label>
+        <button class="button" type="submit">Gerar base de ${ui.esc(monthName(d.mes))}</button></form>
+        <p class="small muted">Leva de 1 a 4 minutos, conforme a quantidade de fotos. Textos que dependem de análise ficam marcados com [COMPLETAR] no documento.</p>
+        <div id="gerarResultado" aria-live="polite"></div>
+        ${d.historico.length ? `<h3 class="answers-head">Gerações deste mês</h3>${d.historico.map(h => `<p>Versão ${ui.esc(h.versao)} · ${new Date(h.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'})} · ${ui.esc(h.autor)} · <a href="${ui.esc(h.documento)}" target="_blank" rel="noopener noreferrer">Documento</a> · <a href="${ui.esc(h.planilha)}" target="_blank" rel="noopener noreferrer">Manifestações</a></p>`).join('')}` : ''}
+      </section>`;
+    $('gerarForm').onsubmit = ev => { ev.preventDefault(); gerar(d.mes, ev.target); };
+  }
+  function monthName(m) { return new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'}); }
+  async function gerar(mes, form) {
+    if (gerando) return; gerando = true;
+    const b = form.querySelector('button'), box = $('gerarResultado'), numeroRel = form.elements.numero.value;
+    if (!operacao || operacao.mes !== mes || operacao.numero !== numeroRel) operacao = {id: 'OP-' + crypto.randomUUID(), mes, numero: numeroRel};
+    b.disabled = true; b.textContent = 'Gerando… não feche esta página';
+    box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Montando o documento e inserindo as fotos dos relatos preparados…</div>';
+    try {
+      const r = await ui.call('gerarBaseRelatorioCPT', {mes, numero: numeroRel, operacaoId: operacao.id});
+      operacao = null;
+      box.innerHTML = `<div class="notice" role="status">${ui.esc(r.resultado)}</div><div class="dialog-actions"><a class="button" href="${ui.esc(r.documento)}" target="_blank" rel="noopener noreferrer">${ui.icon('file')}Abrir documento</a><a class="button secondary" href="${ui.esc(r.planilha)}" target="_blank" rel="noopener noreferrer">Abrir planilha de manifestações</a></div>${r.avisos && r.avisos.length ? `<details><summary>${r.avisos.length} avisos</summary><p>${r.avisos.map(ui.esc).join('<br>')}</p></details>` : ''}`;
+    } catch (e) {
+      box.innerHTML = `<div class="notice">${ui.esc(e.message)} Se o tempo esgotou, aguarde 2 minutos e reabra o fechamento: a geração pode ter sido concluída e aparecerá em “Gerações deste mês”.</div>`;
+    } finally { gerando = false; b.disabled = false; b.textContent = 'Gerar base de ' + monthName(mes); }
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', ev => {
+      const ir = ev.target.closest('[data-fechamento-ir]'); if (!ir) return;
+      const a = JSON.parse(ir.dataset.fechamentoIr);
+      if (a.route === 'registros') ui.state.filters = {busca: '', procedimento: a.procedimento || '', bairro: '', obra: '', pendencia: a.pendencia || ''};
+      ui.navigate(a.route);
+    });
+  }
+  return {init, render};
+})();
+</script>

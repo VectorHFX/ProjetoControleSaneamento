@@ -1,0 +1,106 @@
+<script>
+/* Obras 2.1.0 — consulta para todos; cadastro e revisão diária para Administrativo e Gestão. */
+window.CPTObras = (() => {
+  'use strict';
+  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'};
+  const $ = id => document.getElementById(id);
+  const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
+  const dias = iso => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 864e5) : null;
+  const corSituacao = s => ({'Em andamento': 'green', 'Paralisada': 'orange', 'Finalizada': '', 'A confirmar': 'orange'}[s] ?? 'orange');
+
+  function revisao(o) {
+    const d = dias(o.atualizadoEm);
+    if (d == null) return 'Sem revisão registrada';
+    return d === 0 ? 'Revisada hoje' : d === 1 ? 'Revisada ontem' : 'Revisada há ' + d + ' dias';
+  }
+  function visiveis() {
+    const b = ui.norm(filtro.busca);
+    return dados.obras.filter(o => (filtro.situacao === 'todas' || (filtro.situacao === 'ativas' ? ['Em andamento', 'Paralisada', 'A confirmar', ''].includes(o.situacao) : o.situacao === filtro.situacao)) &&
+      (!b || ui.norm([o.id, o.nome, o.bairros.join(' '), o.endereco, o.logradouroPAC16].join(' ')).includes(b)));
+  }
+  function statusFormulario(f) {
+    if (!f || f.situacao === 'desconhecida') return '';
+    const texto = {pendente: 'Há alterações aguardando o formulário. As listas são atualizadas em até 1 hora.', erro: 'A última atualização do formulário falhou: ' + f.texto, ok: 'Formulário em dia. ' + f.texto}[f.situacao];
+    return `<div class="notice" role="status">${ui.esc(texto)}</div>`;
+  }
+  async function render() {
+    const mine = ++ticket;
+    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') + '<div class="loading-label"><span class="spinner"></span>Carregando obras…</div>';
+    try { dados = await ui.call('listarObrasCPT'); if (mine !== ticket || ui.state.route !== 'obras') return; draw(); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Obras e frentes de serviço', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function draw() {
+    const lista = visiveis(), ativas = dados.obras.filter(o => ['Em andamento', 'Paralisada'].includes(o.situacao));
+    const atrasadas = ativas.filter(o => (dias(o.atualizadoEm) ?? 99) > 7).length;
+    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') +
+      statusFormulario(dados.formulario) +
+      `<section class="panel filter-panel"><form id="obraFiltros" class="filters cases">
+        <label class="field">Localizar obra<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Nome, bairro, endereço ou ID" maxlength="120"></span></label>
+        <label class="field">Mostrar<select name="situacao">${[['ativas', 'Ativas e a confirmar'], ['Em andamento', 'Em andamento'], ['Paralisada', 'Paralisadas'], ['Finalizada', 'Finalizadas'], ['todas', 'Todas']].map(([v, t]) => `<option value="${v}" ${filtro.situacao === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        ${dados.podeEditar ? `<button type="button" class="button" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra</button>` : ''}
+      </form></section>
+      <div class="results-head"><span>${ui.num(lista.length)} obras exibidas · ${ui.num(ativas.length)} ativas</span>${dados.podeEditar && atrasadas ? `<span>${ui.num(atrasadas)} ativas sem revisão há mais de 7 dias</span>` : ''}</div>
+      <div class="obra-lista" role="list">${lista.map(linha).join('') || '<p class="muted">Nenhuma obra com estes filtros.</p>'}</div>`;
+    const f = $('obraFiltros');
+    f.addEventListener('change', () => { filtro = Object.fromEntries(new FormData(f)); draw(); });
+    f.elements.busca.addEventListener('input', e => { filtro.busca = e.target.value; clearTimeout(f._t); f._t = setTimeout(() => { const pos = e.target.selectionStart; draw(); const i = $('obraFiltros').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }, 250); });
+  }
+  function linha(o) {
+    const atraso = ['Em andamento', 'Paralisada'].includes(o.situacao) && (dias(o.atualizadoEm) ?? 99) > 7;
+    return `<article class="entry-card obra-card" role="listitem"><div class="card-top"><span class="badge ${corSituacao(o.situacao)}">${ui.esc(o.situacao || 'Sem situação')}</span><span class="date">${ui.esc(o.id)}</span></div>
+      <h3>${ui.esc(o.nome)}</h3><p>${ui.esc(o.bairros.join(' · ') || 'Bairros não informados')}<br>${ui.esc(o.endereco || o.logradouroPAC16 || 'Endereço não informado')}</p>
+      <p class="small muted">${o.inicioObra ? 'Início ' + ui.date(o.inicioObra) : 'Início não informado'}${o.publico ? ' · Público ' + ui.esc(o.publico) : ''}${o.impacto ? ' · Impacto ' + ui.esc(o.impacto) : ''} · ${o.noFormularioAgora ? 'No formulário' : 'Fora do formulário'}</p>
+      <div class="card-bottom"><span class="${atraso ? 'text-warning' : ''}">${revisao(o)}</span><span>
+      ${dados.podeEditar && ['Em andamento', 'Paralisada'].includes(o.situacao) ? `<button class="button ghost" data-obra-confirmar="${ui.esc(o.id)}" title="Confirma que a situação continua a mesma hoje">Continua igual</button>` : ''}
+      <button class="button ghost" data-obra="${ui.esc(o.id)}">${dados.podeEditar ? 'Abrir e editar' : 'Ver detalhes'} ${ui.icon('arrow')}</button></span></div></article>`;
+  }
+  function campo(rotulo, html, largo) { return `<label class="${largo ? 'wide' : ''}">${rotulo}${html}</label>`; }
+  function editor(o) {
+    const novo = !o, e = o || {id: '', nome: '', bairros: [], noFormulario: true, situacao: 'Em andamento', inicioObra: hoje(), inicioComunicacao: '', termino: '', publico: '', impacto: '', observacao: '', tipo: '', endereco: '', atualizadoEm: ''};
+    const so = !dados.podeEditar, dis = so ? 'disabled' : '';
+    const mapa = e.latitude != null ? `<a href="https://www.google.com/maps?q=${e.latitude},${e.longitude}" target="_blank" rel="noopener noreferrer">Abrir no mapa ↗</a>` : '';
+    $('detailType').textContent = novo ? 'NOVA OBRA' : 'OBRA ' + e.id; $('detailTitle').textContent = novo ? 'Cadastrar obra' : e.nome;
+    $('detailContent').innerHTML = `<form id="obraForm"><div id="obraErro" class="notice" hidden></div><div class="editor-grid">
+      ${campo('Nome da obra / frente', `<input name="nome" required maxlength="200" value="${ui.esc(e.nome)}" ${dis}>`, true)}
+      ${campo('Situação atual', `<select name="situacao" ${dis}>${dados.situacoes.map(s => `<option ${s === e.situacao ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
+      <label class="check-inline"><input type="checkbox" name="noFormulario" ${e.noFormulario ? 'checked' : ''} ${dis}> Mostrar no formulário (quando em andamento ou paralisada)</label>
+      ${campo('Tipo de obra', `<input name="tipo" maxlength="120" placeholder="Ex.: Coletor tronco, rede coletora, MND" value="${ui.esc(e.tipo)}" ${dis}>`)}
+      ${campo('Endereço da frente', `<input name="endereco" maxlength="300" placeholder="${ui.esc(e.logradouroPAC16 || 'Rua, trecho ou intervalo de numeração')}" value="${ui.esc(e.endereco)}" ${dis}>`)}
+      ${campo('Início da obra', `<input type="date" name="inicioObra" value="${ui.esc(e.inicioObra)}" ${dis}>`)}
+      ${campo('Término da obra', `<input type="date" name="termino" value="${ui.esc(e.termino)}" ${dis}>`)}
+      ${campo('Início da comunicação', `<input type="date" name="inicioComunicacao" value="${ui.esc(e.inicioComunicacao)}" ${dis}>`)}
+      ${campo('Tipo de público (A, B, C…)', `<input name="publico" maxlength="20" placeholder="A, B" value="${ui.esc(e.publico)}" ${dis}>`)}
+      ${campo('Impacto', `<select name="impacto" ${dis}><option value="">Não informado</option>${dados.impactos.map(s => `<option ${s === e.impacto ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
+      <fieldset class="wide"><legend>Bairros</legend><div class="check-options obra-bairros">${dados.bairros.map(b => `<label><input type="checkbox" name="bairros" value="${ui.esc(b)}" ${e.bairros.includes(b) ? 'checked' : ''} ${dis}> ${ui.esc(b)}</label>`).join('')}</div></fieldset>
+      ${campo('Observação', `<textarea name="observacao" rows="3" maxlength="1000" ${dis}>${ui.esc(e.observacao)}</textarea>`, true)}
+      </div>
+      ${novo ? '' : `<p class="small muted">PAC16: ${ui.esc(e.logradouroPAC16 || '—')} · ${ui.esc(e.metodoPAC16 || '—')} ${mapa}<br>${ui.esc(revisao(e))}${e.atualizadoPor ? ' por ' + ui.esc(e.atualizadoPor) : ''}.</p>`}
+      ${so ? '' : `<div class="dialog-actions"><button class="button" type="submit">${novo ? 'Cadastrar obra' : 'Salvar alterações'}</button></div>`}</form>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+    if (so) return;
+    $('obraForm').onsubmit = async ev => {
+      ev.preventDefault(); const f = new FormData(ev.target), b = ev.target.querySelector('button[type=submit]'), erro = $('obraErro');
+      const p = {id: e.id, atualizadoEm: e.atualizadoEm, nome: f.get('nome'), situacao: f.get('situacao'), noFormulario: f.has('noFormulario'), tipo: f.get('tipo'), endereco: f.get('endereco'),
+        inicioObra: f.get('inicioObra'), termino: f.get('termino'), inicioComunicacao: f.get('inicioComunicacao'), publico: f.get('publico'), impacto: f.get('impacto'), bairros: f.getAll('bairros'), observacao: f.get('observacao')};
+      b.disabled = true; b.textContent = 'Salvando…'; erro.hidden = true;
+      try { const r = await ui.call('salvarObraCPT', p); ui.toast(r.resultado); $('detailDialog').close(); render(); }
+      catch (err) { erro.textContent = err.message + ' Seus dados continuam no formulário.'; erro.hidden = false; erro.scrollIntoView({block: 'nearest'}); b.disabled = false; b.textContent = novo ? 'Cadastrar obra' : 'Salvar alterações'; }
+    };
+  }
+  async function confirmar(id, botao) {
+    const o = dados.obras.find(x => x.id === id); if (!o) return;
+    botao.disabled = true; botao.textContent = 'Confirmando…';
+    try { const r = await ui.call('confirmarObraCPT', {id, atualizadoEm: o.atualizadoEm}); Object.assign(o, r.obra); ui.toast(r.resultado); draw(); }
+    catch (e) { ui.toast(e.message); botao.disabled = false; botao.textContent = 'Continua igual'; }
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', ev => {
+      const abrir = ev.target.closest('[data-obra]'); if (abrir) { editor(dados.obras.find(o => o.id === abrir.dataset.obra)); return; }
+      const ok = ev.target.closest('[data-obra-confirmar]'); if (ok) { confirmar(ok.dataset.obraConfirmar, ok); return; }
+      if (ev.target.closest('[data-obra-acao="nova"]')) editor(null);
+    });
+  }
+  return {init, render};
+})();
+</script>

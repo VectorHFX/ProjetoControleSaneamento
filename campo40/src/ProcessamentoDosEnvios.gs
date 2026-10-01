@@ -329,12 +329,30 @@ function instalarRetomadaAutomaticaCampo40() {
 }
 /** AUTOMÁTICA (gatilho de hora em hora). Se outra execução estiver em andamento, tenta na próxima hora. */
 function retomarEnviosAutomaticamenteCampo40() {
+  sincronizarObrasAlteradasNaAplicacaoCampo40_();
   try { return ProcessamentoDosEnvios.retomar(); }
   catch (erro) {
     if (/Outra execução está em andamento/.test(String(erro.message))) { console.log('Retomada adiada: outra execução em andamento.'); return null; }
     throw erro;
   }
 }
+/**
+ * A Aplicação CPT edita a aba Obras e escreve "PENDENTE — alterado pela aplicação" em AB6.
+ * Aqui as listas do formulário são atualizadas pelo mesmo caminho do botão da planilha (com revisão registrada).
+ */
+function sincronizarObrasAlteradasNaAplicacaoCampo40_() {
+  try {
+    const e = ConfiguracaoDaBase.lerEstado(); if (!e.pronto || !e.controlesCatalogos) return;
+    const aba = SpreadsheetApp.openById(e.baseId).getSheetByName('Obras');
+    if (!aba || aba.getMaxColumns() < 30 || !String(aba.getRange(6, 28).getValue()).startsWith('PENDENTE — alterado pela aplicação')) return;
+    CatalogosDeObrasEBairros.atualizar(null, 'Aplicação CPT');
+  } catch (erro) {
+    // O erro fica visível na aba Obras (AB5) e na tela Obras da aplicação; a retomada de envios continua.
+    console.error('Listas do formulário não atualizadas: ' + String(erro.message || erro));
+  }
+}
+/** EXECUTE se quiser levar agora ao formulário as obras alteradas na aplicação (sem esperar a próxima hora). */
+function atualizarFormularioComObrasDaAplicacaoCampo40() { return CatalogosDeObrasEBairros.atualizar(null, 'Aplicação CPT (manual)'); }
 /** EXECUTE depois de revisar as respostas editadas listadas em conferirProcessamentoCampo40. */
 function marcarRespostasEditadasComoRevisadasCampo40() {
   const props = PropertiesService.getScriptProperties(), chaves = Object.keys(props.getProperties()).filter(k => k.indexOf('CAMPO40_REVISAO_') === 0);

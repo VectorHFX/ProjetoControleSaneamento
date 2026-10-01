@@ -1,4 +1,4 @@
-# Guia de implantação — CPT 2.0 (meta: segunda, 05/10/2026)
+# Guia de implantação — CPT 2.1 (meta: segunda, 05/10/2026)
 
 Tempo total estimado: **cerca de 1h30**, em três blocos. Faça tudo com a conta **victor-henrique.xavier@veolia.com**.
 Quando um passo pedir "Executar", escolha a função no topo do editor do Apps Script, clique em **Executar** e confira o **Registro de execução**. Se algo sair diferente do esperado, pare e me mande o print do registro.
@@ -7,7 +7,11 @@ Quando um passo pedir "Executar", escolha a função no topo do editor do Apps S
 
 ## Bloco 1 — Aplicação (≈ 40 min)
 
-**O que muda:** a aplicação passa a rodar com a sua conta, e a equipe entra **só pelo link**, sem precisar de acesso às planilhas. Também passa a ter os perfis Administrativo e Comercialização, a consulta de atendimentos para todos e as observações por caso.
+**O que muda:** a aplicação passa a rodar com a sua conta, e a equipe entra **só pelo link**, sem precisar de acesso às planilhas. Também chegam:
+- os perfis Administrativo e Comercialização;
+- a consulta de atendimentos para todos, com observações por caso;
+- a tela **Obras**, onde Administrativo e Gestão atualizam as obras;
+- a tela **Fechamento do mês**, que confere as pendências e gera a base do relatório mensal.
 
 ### 1.1 Conferir o dono
 Abra o projeto: https://script.google.com/home/projects/1B2gVRbnDP9E4tdecW7lknY5Wq8QlRbmjXXenx-8cOPQX0wBmePmWUhML/edit
@@ -26,13 +30,18 @@ Os arquivos ficam em `app/src/` no GitHub. Para cada um: abra o arquivo no edito
 | `Aplicacao.html` | substituir |
 | `Interacoes.html` | substituir |
 | `Agenda.html` | substituir |
+| `Estilos.html` | substituir |
 | `PerfisCPT.gs` | **criar** (＋ → Script → nome `PerfisCPT`) |
 | `ObservacoesCPT.gs` | **criar** (＋ → Script → nome `ObservacoesCPT`) |
+| `ObrasCPT.gs` | **criar** (＋ → Script → nome `ObrasCPT`) |
+| `RelatorioMensalCPT.gs` | **criar** (＋ → Script → nome `RelatorioMensalCPT`) |
+| `Obras.html` | **criar** (＋ → HTML → nome `Obras`) |
+| `Fechamento.html` | **criar** (＋ → HTML → nome `Fechamento`) |
 
-`Estilos.html` e `Entregas.html` não mudam. Clique em **Salvar** (💾).
+Só `Entregas.html` não muda. Ao criar um arquivo, digite o nome **sem** a extensão (o editor acrescenta `.gs` ou `.html`). Clique em **Salvar** (💾).
 
 ### 1.3 Configurar
-1. Execute **`instalarAplicacaoCPT`** e autorize, se o Google pedir. No registro deve aparecer `APLICAÇÃO CONFIGURADA`, `administrador: victor-henrique.xavier@veolia.com` e `dominio: veolia.com`.
+1. Execute **`instalarAplicacaoCPT`** e autorize. O Google vai pedir permissões novas (Documentos e Drive), porque a aplicação agora cria o relatório. Se você pular essa autorização, a tela de Fechamento dá erro de permissão. No registro deve aparecer `APLICAÇÃO CONFIGURADA`, `administrador: victor-henrique.xavier@veolia.com` e `dominio: veolia.com`.
 2. Execute **`prepararDadosDaAplicacaoCPT`**. Deve aparecer `DADOS DA APLICAÇÃO PRONTOS`. A agenda atual é mantida e ganha a aba **Observações**.
 
 ### 1.4 Publicar mantendo o mesmo link
@@ -89,6 +98,9 @@ Sem essa pergunta, os envios de atendimento não se ligam à ficha. Faça num ho
 
 Se chegar algum envio entre o passo 1 e o 2, ele fica pendente e é processado sozinho na hora seguinte.
 
+### 2.4 Obras editadas na aplicação
+Não há passo extra: o mesmo `ProcessamentoDosEnvios.gs` passa a levar ao formulário, de hora em hora, as obras alteradas na tela Obras. A revisão fica registrada, como no botão da planilha. Para aplicar na hora, execute **`atualizarFormularioComObrasDaAplicacaoCampo40`**. Se a atualização falhar, a mensagem aparece no topo da tela Obras.
+
 ---
 
 ## Bloco 3 — Segunda-feira (≈ 20 min)
@@ -97,7 +109,9 @@ Se chegar algum envio entre o passo 1 e o 2, ele fica pendente e é processado s
 Abra a aplicação e confira:
 - a **Visão do mês** de outubro;
 - a abertura de **uma ficha**;
-- o registro de **uma observação** de teste num caso real (é um registro legítimo; escreva algo útil).
+- o registro de **uma observação** de teste num caso real (é um registro legítimo; escreva algo útil);
+- a tela **Obras**: clique em **Continua igual** numa obra ativa e veja a mensagem do formulário no topo;
+- a tela **Fechamento do mês** de setembro. Clique em **Gerar base** e abra o documento, que fica na pasta **CPT • Entregas mensais / 2026-09** do seu Drive. Mova a pasta para onde preferir: o vínculo continua.
 
 ### 3.2 Mensagem para a equipe (pronta para colar)
 
@@ -126,4 +140,7 @@ Abra a aplicação e confira:
 | Foto não abre | Compartilhe a pasta de uploads do formulário como Leitor (passo 1.7). |
 
 ## Voltar atrás
-Em **Gerenciar implantações**, edite a implantação, escolha a **versão anterior** e volte "Executar como" para **Usuário que acessa o app da Web** (a versão antiga depende disso). Nenhum dado é apagado por esta atualização: as funções só criam a aba Observações e um gatilho de hora em hora no Campo 4.0.
+Em **Gerenciar implantações**, edite a implantação, escolha a **versão anterior** e volte "Executar como" para **Usuário que acessa o app da Web** (a versão antiga depende disso). Nenhum dado é apagado por esta atualização. O que ela cria:
+- as abas Observações, Histórico de acessos, Histórico de obras e Entregas mensais na planilha de dados da aplicação;
+- as colunas AF:AI na aba Obras (tipo, término, endereço e autor);
+- um gatilho de hora em hora no Campo 4.0.

@@ -92,7 +92,7 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | **2. Campo 4.0 firme** ✅ código pronto (4.1.0); pergunta de protocolo é passo manual | Regra de obras desde 01/10/2026. Retomada que não trava em resposta editada. Retomada automática diária. Pergunta de protocolo no formulário. | Envios de outubro com obra ID. Zero falhas pendentes. |
 | **3. Atendimentos na app** | Consulta e observações para todos. Edição, mesclagem e conclusão na app. Mensagem diária. **Corte do Controle de Atendimentos.** Gatilhos de 1 minuto desligados. | Uma fonte só de casos. |
 | **4. RDAS e satisfação** | RDAS alimentado pela Base (incremental). Painel de metas 15/60. | RDAS de outubro sem cópia manual. |
-| **5. Entregas mensais** | Fichas em PDF, Anexos, Programa Parceiros e relatos preparados, por competência. | Pacote de outubro gerado pela app. |
+| **5. Entregas mensais** 🟡 base do relatório e manifestações prontas (2.1); fichas em PDF, Anexos e Parceiros a seguir | Fichas em PDF, Anexos, Programa Parceiros e relatos preparados, por competência. | Pacote de outubro gerado pela app. |
 | **6. Comum a todos** | Contatos, recados, links e materiais, galeria. | — |
 | **7. Pessoal** | Caderno, checklist e mascote. | — |
 | **8. Cliente** | Planilha publicada com recorte. | — |
@@ -105,3 +105,21 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 2. **Quando o Controle de Atendimentos deixa de ser oficial**: data de corte para a app virar a fonte única.
 3. Quem mais, além do Victor, terá **administração técnica**, para o projeto não depender de uma pessoa só.
 4. Se a pasta `07_Administrador_Cleber` e o `90_Arquivo_historico` precisam entrar no repositório (não vieram no zip).
+
+## 6. Situação por ferramenta (atualizado em 01/10/2026)
+
+| Ferramenta | Situação |
+|---|---|
+| Acesso por domínio, perfis (incl. Administrativo e Comercialização) | ✅ 2.0 |
+| Consulta de atendimentos e observações para todos | ✅ 2.0 |
+| Obras: cadastro, revisão diária, envio ao formulário | ✅ 2.1 |
+| Fechamento do mês + base do relatório (Orientador, itens 1–13) + planilha de manifestações | ✅ 2.1 |
+| Relato ilustrado (modelo `{{TITULO}}`…`{{FOTOS}}`) gerado a partir do relato preparado | Próximo |
+| Ficha oficial em PDF no layout Sabesp + pacote mensal (ANEXO 4) | Próximo; depende da data de corte do Controle de Atendimentos |
+| Edição oficial, mesclagem e conclusão de casos na aplicação | Próximo; mesma dependência |
+| RDAS alimentado pelo Campo 4.0 | A fazer |
+| Matriz de contatos (ANEXO 1), recados, links e materiais | A fazer |
+| Diagnósticos de área (item 2) e Slides | A fazer |
+| Programa Parceiros e Anexos oficiais | A fazer |
+| Galeria, caderno, checklist e mascote | A fazer |
+| Planilha da cliente | A fazer |
