@@ -1,0 +1,235 @@
+<script>
+window.CPTEntregas = (() => {
+  let ui,
+    loaded = null,
+    dirty = false,
+    busy = false,
+    requestId = '',
+    lastPayload = '',
+    session = 0;
+  const $ = id => document.getElementById(id),
+    esc = v => String(v !== null && v !== void 0 ? v : '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[c]);
+  function flatten(v) {
+    if (Array.isArray(v)) return v.map(flatten).join('\n');
+    if (v && typeof v === 'object') return Object.entries(v).map(([k, v]) => k + ': ' + flatten(v)).join('\n');
+    return String(v !== null && v !== void 0 ? v : '');
+  }
+  function note(text) {
+    $('deliveryNotice').textContent = text;
+  }
+  function close() {
+    if (busy) {
+      note('Aguarde a confirmação do salvamento.');
+      return;
+    }
+    if (dirty && !confirm('Há alterações não salvas. Deseja fechar sem salvar?')) return;
+    ++session;
+    loaded = null;
+    dirty = false;
+    $('deliveryDialog').close();
+    $('deliveryBody').innerHTML = '';
+  }
+  async function open(id) {
+    if (busy) return;
+    const ticket = ++session;
+    loaded = null;
+    dirty = false;
+    $('deliveryDialog').showModal();
+    $('deliveryBody').innerHTML = '<p>Carregando o registro e suas revisões…</p>';
+    try {
+      const r = await ui.call('carregarEntregaRelatoCPT', id);
+      if (ticket !== session) return;
+      loaded = r;
+      draw();
+    } catch (e) {
+      if (ticket === session) $('deliveryBody').textContent = e.message;
+    }
+  }
+  function draw() {
+    const r = loaded.fonte.registro,
+      e = loaded.entrega || {
+        titulo: r.atividade || r.procedimento,
+        texto: '',
+        situacao: 'rascunho',
+        fotos: [],
+        versao: 0
+      };
+    $('deliveryBody').innerHTML = "<p class=\"muted\">Prepare o texto da entrega. O preenchimento original permanece preservado.</p><p class=\"document-id\">".concat(esc(r.id), " \xB7 ").concat(esc(r.data), " \xB7 ").concat(esc(r.bairro), " \xB7 ").concat(esc(r.obra), "</p><p id=\"deliveryNotice\" class=\"notice\" role=\"status\">").concat(loaded.fonteAlterada ? 'O registro original mudou desde a última revisão. Confira as respostas antes de salvar.' : e.versao ? 'Revisão ' + e.versao + ' · ' + esc(e.alteradoPor) : 'Nenhuma revisão salva ainda.', "</p><form id=\"deliveryForm\"><div class=\"editor-grid\"><label class=\"wide\">T\xEDtulo da entrega<input name=\"titulo\" maxlength=\"180\" required value=\"").concat(esc(e.titulo), "\"></label><label class=\"wide\">Texto para o relat\xF3rio<textarea name=\"texto\" required maxlength=\"12000\" rows=\"10\" placeholder=\"Descreva a execu\xE7\xE3o, o p\xFAblico, os resultados e as ocorr\xEAncias a partir do registro.\">").concat(esc(e.texto), "</textarea></label><div class=\"reading-tools wide\"><button type=\"button\" class=\"button secondary\" data-delivery=\"base\">Trazer texto do registro</button></div><label>Situa\xE7\xE3o<select name=\"situacao\"><option value=\"rascunho\" ").concat(e.situacao === 'rascunho' ? 'selected' : '', ">Rascunho</option><option value=\"pronto\" ").concat(e.situacao === 'pronto' ? 'selected' : '', ">Pronto para entrega</option></select></label></div><h3 class=\"answers-head\">Fotos da entrega \xB7 at\xE9 duas</h3><p class=\"muted small\">Confira o arquivo antes de marcar. Os anexos podem incluir documentos que n\xE3o s\xE3o fotos.</p><div class=\"delivery-photos\">").concat(loaded.fonte.anexos.map(a => {
+      const f = e.fotos.find(f => f.id === a.id);
+      return "<section class=\"attachment\"><label><input type=\"checkbox\" name=\"foto\" value=\"".concat(esc(a.id), "\" ").concat(f ? 'checked' : '', "> ").concat(esc(a.titulo || 'Foto'), "</label><a href=\"https://drive.google.com/file/d/").concat(esc(a.id), "/view\" target=\"_blank\" rel=\"noopener noreferrer\">Conferir original \u2197</a><label>Legenda<input data-caption=\"").concat(esc(a.id), "\" maxlength=\"300\" value=\"").concat(esc((f === null || f === void 0 ? void 0 : f.legenda) || ''), "\"></label></section>");
+    }).join('') || '<p>Nenhum anexo disponível neste registro.</p>', "</div><div class=\"dialog-actions\"><button class=\"button\" type=\"submit\" id=\"saveDelivery\">Salvar revis\xE3o</button><button class=\"button secondary\" type=\"button\" data-delivery=\"preview\">Ver entrega</button><button class=\"button secondary\" type=\"button\" data-delivery=\"copy\">Copiar texto</button></div></form><details class=\"report-section\"><summary>Consultar respostas originais</summary>").concat(loaded.fonte.campos.map(c => "<section class=\"answer\"><h3>".concat(esc(c.titulo), "</h3><p>").concat(esc(flatten(c.valor)), "</p></section>")).join(''), "</details><details class=\"report-section\"><summary>\xDAltimas revis\xF5es salvas</summary>").concat(loaded.historico.map(h => "<p>Vers\xE3o ".concat(h.versao, " \xB7 ").concat(esc(h.situacao), " \xB7 ").concat(esc(h.autor), " \xB7 ").concat(esc(h.data), "</p>")).join('') || '<p>Nenhuma revisão salva.</p>', "</details><section id=\"deliveryPreview\" hidden></section>");
+    $('deliveryForm').addEventListener('input', () => {
+      dirty = true;
+      if ($('deliveryPreview')) $('deliveryPreview').hidden = true;
+    });
+    $('deliveryForm').addEventListener('change', ev => {
+      dirty = true;
+      if ($('deliveryPreview')) $('deliveryPreview').hidden = true;
+      if (ev.target.name === 'foto' && $('deliveryForm').querySelectorAll('[name=foto]:checked').length > 2) {
+        ev.target.checked = false;
+        note('Escolha até duas fotos.');
+      }
+    });
+    $('deliveryForm').onsubmit = save;
+  }
+  function payload() {
+    var _loaded$entrega;
+    const form = $('deliveryForm');
+    return {
+      id: loaded.fonte.registro.id,
+      versao: ((_loaded$entrega = loaded.entrega) === null || _loaded$entrega === void 0 ? void 0 : _loaded$entrega.versao) || 0,
+      fonteHash: loaded.hash,
+      titulo: form.elements.titulo.value,
+      texto: form.elements.texto.value,
+      situacao: form.elements.situacao.value,
+      fotos: [...form.querySelectorAll('[name=foto]:checked')].map(c => ({
+        id: c.value,
+        legenda: [...form.querySelectorAll('[data-caption]')].find(x => x.dataset.caption === c.value).value
+      }))
+    };
+  }
+  async function save(ev) {
+    ev.preventDefault();
+    if (busy) return;
+    const p = payload(),
+      signature = JSON.stringify(p);
+    if (signature !== lastPayload) {
+      requestId = 'OP-' + crypto.randomUUID();
+      lastPayload = signature;
+    }
+    p.operacaoId = requestId;
+    busy = true;
+    [...$('deliveryForm').elements].forEach(e => e.disabled = true);
+    note('Salvando revisão…');
+    try {
+      const res = await ui.call('salvarEntregaRelatoCPT', p);
+      loaded.entrega = res.entrega;
+      loaded.historico.unshift({
+        versao: res.entrega.versao,
+        autor: res.entrega.alteradoPor,
+        data: res.entrega.alteradoEm,
+        situacao: res.entrega.situacao
+      });
+      dirty = false;
+      loaded.fonteAlterada = false;
+      lastPayload = '';
+      draw();
+      note(res.resultado);
+    } catch (e) {
+      note(e.message);
+    } finally {
+      busy = false;
+      if ($('deliveryForm')) [...$('deliveryForm').elements].forEach(e => e.disabled = false);
+    }
+  }
+  function preview() {
+    var _loaded$entrega2;
+    const p = payload(),
+      r = loaded.fonte.registro;
+    const el = $('deliveryPreview');
+    el.hidden = false;
+    el.innerHTML = "<div class=\"reading-tools\"><button class=\"button secondary\" data-delivery=\"print\">Imprimir / salvar PDF</button></div><article id=\"deliveryPaper\"><p class=\"small\">".concat(p.situacao === 'pronto' ? 'Texto marcado como pronto' : 'Rascunho').concat(dirty ? ' · alterações ainda não salvas' : '', "</p><h1>").concat(esc(p.titulo), "</h1><p>").concat(esc(r.data), " \xB7 ").concat(esc(r.bairro), " \xB7 ").concat(esc(r.obra), "</p><p>Equipe: ").concat(esc(r.responsavel || 'Não informada'), "</p><p class=\"delivery-text\">").concat(esc(p.texto), "</p><div class=\"delivery-photo-output\">").concat(p.fotos.map(f => "<figure><img src=\"https://drive.google.com/thumbnail?id=".concat(encodeURIComponent(f.id), "&sz=w1000\" alt=\"").concat(esc(f.legenda || 'Foto selecionada'), "\" referrerpolicy=\"no-referrer\"><figcaption>").concat(esc(f.legenda), "</figcaption></figure>")).join(''), "</div><p class=\"document-id\">Registro ").concat(esc(r.id), " \xB7 revis\xE3o salva ").concat(((_loaded$entrega2 = loaded.entrega) === null || _loaded$entrega2 === void 0 ? void 0 : _loaded$entrega2.versao) || 0, "</p></article>");
+    el.scrollIntoView({
+      behavior: 'auto',
+      block: 'start'
+    });
+  }
+  async function print() {
+    const imgs = [...$('deliveryPaper').querySelectorAll('img')];
+    if (imgs.some(i => !i.complete || !i.naturalWidth)) {
+      note('Uma foto ainda não carregou ou não está acessível. Aguarde, confira o original ou desmarque a foto antes de imprimir.');
+      return;
+    }
+    const article = $('deliveryPaper').cloneNode(true);
+    article.id = 'printDetail';
+    document.body.append(article);
+    document.body.classList.add('printing-detail');
+    const parent = $('detailDialog'),
+      wasOpen = parent.open;
+    $('deliveryDialog').close();
+    if (wasOpen) parent.close();
+    try {
+      window.print();
+    } finally {
+      article.remove();
+      document.body.classList.remove('printing-detail');
+      if (wasOpen) parent.showModal();
+      $('deliveryDialog').showModal();
+    }
+  }
+  function init(api) {
+    ui = api;
+    const dialog = document.createElement('dialog');
+    dialog.id = 'deliveryDialog';
+    dialog.setAttribute('aria-labelledby', 'deliveryTitle');
+    dialog.innerHTML = '<div class="dialog-head"><h2 id="deliveryTitle">Preparar relato para entrega</h2><button class="icon-button" id="closeDelivery" aria-label="Fechar preparação">×</button></div><div class="dialog-body" id="deliveryBody"></div>';
+    document.body.append(dialog);
+    $('closeDelivery').onclick = close;
+    dialog.addEventListener('cancel', ev => {
+      ev.preventDefault();
+      close();
+    });
+    window.addEventListener('beforeunload', ev => {
+      if (dirty) {
+        ev.preventDefault();
+        ev.returnValue = '';
+      }
+    });
+    document.addEventListener('click', async ev => {
+      const start = ev.target.closest('[data-prepare-relato]');
+      if (start) {
+        open(start.dataset.prepareRelato);
+        return;
+      }
+      const button = ev.target.closest('[data-delivery]');
+      if (!button || !loaded || busy) return;
+      switch (button.dataset.delivery) {
+        case 'base':
+          {
+            if ($('deliveryForm').elements.texto.value && !confirm('Substituir o texto em edição pelos trechos originais?')) return;
+            const fields = loaded.fonte.campos.filter(c => /relato|descri|desenvolvimento|objetivo|resultado|ocorr[eê]ncia/i.test(c.titulo) && !/(foto|imagem|arquivo)/i.test(c.titulo));
+            const text = fields.map(c => c.titulo + '\n' + flatten(c.valor)).join('\n\n');
+            if (!text) {
+              note('Não identifiquei um campo textual de relato. Consulte as respostas originais abaixo e componha o texto.');
+              return;
+            }
+            if (text.length > 12000) {
+              note('Os trechos excedem 12.000 caracteres. Selecione os trechos relevantes nas respostas originais.');
+              return;
+            }
+            $('deliveryForm').elements.texto.value = text;
+            dirty = true;
+            note('Trechos originais copiados. Revise e amarre o texto antes de marcar como pronto.');
+            break;
+          }
+        case 'preview':
+          preview();
+          break;
+        case 'copy':
+          {
+            const p = payload();
+            try {
+              await navigator.clipboard.writeText(p.titulo + '\n\n' + p.texto);
+              note('Texto copiado. Fotos não são incluídas na cópia.');
+            } catch (e) {
+              note('Cópia bloqueada pelo navegador. Selecione o texto no campo para copiar.');
+            }
+            break;
+          }
+        case 'print':
+          await print();
+          break;
+      }
+    });
+  }
+  return {
+    init
+  };
+})();
+</script>

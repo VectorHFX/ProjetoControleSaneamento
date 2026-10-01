@@ -1,0 +1,661 @@
+<script>
+(() => {
+  'use strict';
+
+  const $ = id => document.getElementById(id),
+    esc = v => String(v !== null && v !== void 0 ? v : '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[c]);
+  const icon = n => "<svg class=\"icon\" aria-hidden=\"true\"><use href=\"#i-".concat(n, "\"/></svg>");
+  const num = n => new Intl.NumberFormat('pt-BR').format(n || 0);
+  const date = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : d || 'Não informado';
+  const monthLabel = m => /^\d{4}-\d{2}$/.test(m) ? new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric'
+  }) : '';
+  const nowParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit'
+  }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  const state = {
+    route: 'inicio',
+    mes: window.CPT_PREVIA ? '2026-09' : nowParts.year + '-' + nowParts.month,
+    home: null,
+    homeRequest: 0,
+    listRequest: 0,
+    detailRequest: 0,
+    cursor: null,
+    casePage: null,
+    filters: {
+      busca: '',
+      procedimento: '',
+      bairro: '',
+      obra: '',
+      pendencia: ''
+    },
+    caseFilters: {
+      busca: '',
+      estado: 'abertos'
+    },
+    records: [],
+    cases: [],
+    busy: false
+  };
+  let debounce, toastTimer;
+  let activeDocument = null,
+    historyCursor = null,
+    historyBusy = false;
+  const store = {
+    get: k => {
+      try {
+        return localStorage.getItem(k);
+      } catch (_) {
+        return null;
+      }
+    },
+    set: (k, v) => {
+      try {
+        localStorage.setItem(k, v);
+      } catch (_) {}
+    }
+  };
+  const savedTheme = store.get('cpt.theme');
+  document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
+  if (store.get('cpt.motion') === 'reduce') document.documentElement.dataset.motion = 'reduce';
+  $('theme').value = document.documentElement.dataset.theme;
+  $('month').value = state.mes;
+  const pendingReads = new Map();
+  function call(nome, arg) {
+    const read = /^(carregar|buscar|abrir|historico|listar)/.test(nome),
+      key = nome + JSON.stringify(arg !== null && arg !== void 0 ? arg : null);
+    if (read && pendingReads.has(key)) return pendingReads.get(key);
+    const promise = request(nome, arg);
+    if (read) {
+      pendingReads.set(key, promise);
+      promise.then(() => pendingReads.delete(key), () => pendingReads.delete(key));
+    }
+    return promise;
+  }
+  function request(nome, arg) {
+    if (window.CPT_PREVIA) return window.CPT_PREVIA.chamar(nome, arg);
+    return new Promise((resolve, reject) => {
+      let done = false;
+      const timer = setTimeout(() => {
+        done = true;
+        reject(new Error('A conexão demorou mais que o esperado. Tente atualizar novamente.'));
+      }, 45000);
+      const ok = x => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(x);
+        },
+        bad = e => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          reject(new Error(e && e.message || 'Não foi possível consultar os dados.'));
+        };
+      if (!window.google || !google.script || !google.script.run) {
+        bad(new Error('Abra esta aplicação pelo endereço publicado no Apps Script.'));
+        return;
+      }
+      try {
+        const runner = google.script.run.withSuccessHandler(ok).withFailureHandler(bad);
+        if (typeof runner[nome] !== 'function') throw new Error('Função ' + nome + ' indisponível na versão publicada. Atualize a implantação.');
+        if (arg === undefined) runner[nome]();else runner[nome](arg);
+      } catch (e) {
+        bad(e);
+      }
+    });
+  }
+  function toast(text) {
+    $('toast').textContent = text;
+    $('toast').hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $('toast').hidden = true, 4300);
+  }
+  function notice(text) {
+    $('globalNotice').textContent = text;
+    $('globalNotice').hidden = !text;
+  }
+  function empty(title, text, action = '') {
+    return "<div class=\"empty\">".concat(icon('records'), "<h3>").concat(esc(title), "</h3><p>").concat(esc(text), "</p>").concat(action, "</div>");
+  }
+  function skeleton() {
+    return "<div class=\"loading-label\"><span class=\"spinner\" aria-hidden=\"true\"></span>Buscando as informa\xE7\xF5es do m\xEAs\u2026</div><div class=\"skeleton hero-loading\"></div><div class=\"kpis\">".concat('<div class="skeleton"></div>'.repeat(4), "</div>");
+  }
+  function intro(title, description) {
+    return "<div class=\"page-intro\"><div><div class=\"eyebrow muted\">CAMPO E GEST\xC3O</div><h1>".concat(esc(title), "</h1><p>").concat(esc(description), "</p></div><span class=\"date-tag\">").concat(esc(monthLabel(state.mes)), "</span></div>");
+  }
+  function safeURL(value) {
+    try {
+      const u = new URL(value);
+      return u.protocol === 'https:' && ['drive.google.com', 'docs.google.com'].includes(u.hostname) ? u.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
+  function formLink() {
+    var _state$home;
+    const url = safeURL((_state$home = state.home) === null || _state$home === void 0 || (_state$home = _state$home.links) === null || _state$home === void 0 ? void 0 : _state$home.formulario);
+    return url ? "<a class=\"button white\" href=\"".concat(esc(url), "\" target=\"_blank\" rel=\"noopener noreferrer\">").concat(icon('plus'), "Registrar procedimento</a>") : "<button class=\"button white\" data-action=\"noform\">".concat(icon('plus'), "Registrar procedimento</button>");
+  }
+  function kpi(label, value, note, color, tint, symbol, route, filter = '') {
+    return "<button class=\"kpi\" style=\"--accent:".concat(color, ";--tint:").concat(tint, "\" data-route=\"").concat(route, "\" ").concat(filter ? "data-filter=\"".concat(filter, "\"") : '', "><div class=\"kpi-top\"><span>").concat(label, "</span><span class=\"kpi-icon\">").concat(icon(symbol), "</span></div><div class=\"kpi-value\">").concat(num(value), "</div><div class=\"kpi-note\">").concat(note, "</div></button>");
+  }
+  const colors = ['#1985e7', '#03a895', '#8b80d8', '#efa44c', '#f18472', '#5aadc5'];
+  function bars(items) {
+    const max = Math.max(1, ...items.map(x => x.quantidade));
+    return items.length ? "<div class=\"bars\">".concat(items.slice(0, 6).map((x, i) => "<div><div class=\"bar-label\"><span>".concat(esc(x.nome), "</span><b>").concat(num(x.quantidade), "</b></div><div class=\"bar-track\"><div class=\"bar-fill\" style=\"--accent:").concat(colors[i % colors.length], ";width:").concat(Math.max(1, x.quantidade / max * 100), "%\"></div></div></div>")).join(''), "</div>") : empty('Ainda sem registros', 'As atividades deste mês aparecerão aqui.');
+  }
+  function chart(dias) {
+    const last = new Date(Number(state.mes.slice(0, 4)), Number(state.mes.slice(5, 7)), 0).getDate();
+    const porDia = new Map(dias.map(x => [Number(x.data.slice(-2)), x.quantidade]));
+    const values = Array.from({
+        length: last
+      }, (_, i) => porDia.get(i + 1) || 0),
+      max = Math.max(1, ...values),
+      p = values.map((v, i) => "".concat(12 + i / (last - 1) * 396, ",").concat(112 - v / max * 85));
+    return "<svg class=\"chart\" viewBox=\"0 0 420 132\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Registros por dia do m\xEAs. ".concat(esc(dias.map(x => date(x.data) + ': ' + x.quantidade).join('; ') || 'Nenhum registro'), "\"><defs><linearGradient id=\"chartFill\" x1=\"0\" x2=\"0\" y2=\"1\"><stop stop-color=\"#1688e9\" stop-opacity=\".22\"/><stop offset=\"1\" stop-color=\"#1688e9\" stop-opacity=\".01\"/></linearGradient></defs><path d=\"M12 27H408M12 69H408M12 112H408\" stroke=\"var(--line)\" fill=\"none\" stroke-dasharray=\"3 5\"/><path d=\"M12,112L").concat(p.join('L'), "L408,112Z\" fill=\"url(#chartFill)\"/><path d=\"M").concat(p.join('L'), "\" stroke=\"#1985e7\" stroke-width=\"2.7\" fill=\"none\" stroke-linejoin=\"round\"/></svg><div class=\"chart-axis\"><span>01 ").concat(esc(monthLabel(state.mes).split(' ')[0].slice(0, 3)), "</span><span>15</span><span>").concat(last, "</span></div>");
+  }
+  function recent(r) {
+    return "<button class=\"record\" data-record=\"".concat(esc(r.id), "\"><span class=\"record-symbol\">").concat(icon('records'), "</span><span><span class=\"record-title\">").concat(esc(r.atividade || r.procedimento), "</span><span class=\"record-meta\"><span>").concat(esc(r.bairro || 'Bairro não informado'), "</span><span>\xB7</span><span>").concat(esc(r.responsavel || 'Responsável não informado'), "</span></span></span><span class=\"record-date\"><time>").concat(date(r.data), "</time>").concat(icon('arrow'), "</span></button>");
+  }
+  function renderHome() {
+    var _d$perfil;
+    if (!state.home) {
+      $('view').innerHTML = skeleton();
+      return;
+    }
+    const d = state.home,
+      k = d.indicadores,
+      canAtd = !['comunicacao', 'socioambiental'].includes($('roleView').value) && ((_d$perfil = d.perfil) === null || _d$perfil === void 0 ? void 0 : _d$perfil.papeis.some(x => ['administrador', 'gestao', 'atendimento'].includes(x)));
+    $('view').innerHTML = window.CPTAgenda.homeMarkup(d) + "<section class=\"kpis\" aria-label=\"Indicadores\">".concat(kpi('Registros do mês', k.registros, 'Registros disponíveis neste mês.', '#1685df', '#eaf4ff', 'records', 'registros')).concat(kpi('Participações', k.participacoes, 'Público informado nos relatos.', '#039a87', '#e6f7f1', 'people', 'registros', 'relatos')).concat(canAtd ? kpi('Casos em aberto', k.abertos, 'Carteira atual de atendimentos.', '#d58c31', '#fff3e4', 'case', 'atendimentos', 'abertos') + kpi('Casos concluídos', k.concluidos, 'Acumulado da carteira atual.', '#8a70cf', '#f1edfc', 'check', 'atendimentos', 'concluidos') : kpi('Bairros com registros', k.bairros || 0, 'Bairros informados neste mês.', '#d58c31', '#fff3e4', 'pin', 'registros') + kpi('Obras identificadas', k.obras || 0, 'Referências informadas no mês.', '#8a70cf', '#f1edfc', 'check', 'registros'), "</section>") + "<div class=\"two-col\"><section class=\"panel\"><div class=\"panel-head\"><div><h2>O trabalho em campo</h2><p>Registros por tipo de procedimento</p></div><span class=\"badge\">".concat(num(k.registros), " registros</span></div>").concat(bars(d.procedimentos), "</section><section class=\"panel\"><div class=\"panel-head\"><div><h2>O m\xEAs em movimento</h2><p>Distribui\xE7\xE3o dos registros pela data de realiza\xE7\xE3o</p></div></div><div class=\"chart-summary\"><strong>").concat(num(d.dias.length), "</strong><span>dias com registros no m\xEAs</span></div>").concat(chart(d.dias), "<div class=\"legend\"><i></i>Registros de campo por dia</div></section></div>") + "<section class=\"panel\"><div class=\"panel-head\"><div><h2>\xDAltimos registros do m\xEAs</h2><p>Abra um registro para consultar o relato completo e os anexos.</p></div><button class=\"button ghost\" data-route=\"registros\">Ver todos ".concat(icon('arrow'), "</button></div><div class=\"records-list\">").concat(d.recentes.length ? d.recentes.map(recent).join('') : empty('O mês está começando', 'Os novos registros aparecerão nesta visão após o processamento.'), "</div></section>");
+    $('overviewMetrics').append($('view').querySelector(':scope > .kpis'));
+    $('overviewCharts').append($('view').querySelector(':scope > .two-col'));
+    window.CPTAgenda.homeLoad();
+  }
+  function options(values, chosen, first) {
+    return "<option value=\"\">".concat(first, "</option>") + values.map(x => "<option value=\"".concat(esc(x), "\" ").concat(x === chosen ? 'selected' : '', ">").concat(esc(x), "</option>")).join('');
+  }
+  function renderRecords() {
+    var _state$home2;
+    const f = state.filters,
+      op = ((_state$home2 = state.home) === null || _state$home2 === void 0 ? void 0 : _state$home2.filtros) || {
+        procedimentos: [],
+        bairros: [],
+        obras: []
+      };
+    $('view').innerHTML = intro('Registros de campo', 'Encontre o relato, o território e as evidências de cada procedimento.') + "<section class=\"panel filter-panel\"><form id=\"recordFilters\" class=\"filters\"><label class=\"field\">Buscar nos registros<span class=\"search-input\">".concat(icon('search'), "<input name=\"busca\" value=\"").concat(esc(f.busca), "\" placeholder=\"Atividade, respons\xE1vel, obra ou protocolo\" maxlength=\"200\"></span></label><label class=\"field\">Procedimento<select name=\"procedimento\">").concat(options(op.procedimentos, f.procedimento, 'Todos os procedimentos'), "</select></label><label class=\"field\">Bairro<select name=\"bairro\">").concat(options(op.bairros, f.bairro, 'Todos os bairros'), "</select></label><label class=\"field\">Obra<select name=\"obra\">").concat(options(op.obras || [], f.obra, 'Todas as obras'), "</select></label><input type=\"hidden\" name=\"pendencia\" value=\"").concat(esc(f.pendencia || ''), "\"><button type=\"submit\" class=\"button\">").concat(icon('search'), "Buscar</button></form>").concat(f.pendencia ? '<p class="small muted">Filtro ativo: relatos sem público válido informado.</p>' : '', "</section><div class=\"results-head\"><span id=\"recordCount\">Consultando registros\u2026</span><button class=\"button ghost\" data-action=\"clear\">Limpar filtros</button></div><div id=\"recordResults\" class=\"cards\"></div><div id=\"moreRecords\" class=\"load-more\"></div>");
+    const form = $('recordFilters');
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      readFilters();
+      loadRecords();
+    });
+    form.addEventListener('change', () => {
+      readFilters();
+      loadRecords();
+    });
+    form.elements.busca.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (state.route === 'registros') {
+          readFilters();
+          loadRecords();
+        }
+      }, 400);
+    });
+    loadRecords();
+  }
+  function readFilters() {
+    const f = $('recordFilters');
+    if (f) state.filters = Object.fromEntries(new FormData(f));
+  }
+  function entry(r) {
+    return "<article class=\"entry-card\"><div class=\"card-top\"><span class=\"badge\">".concat(esc(r.procedimento), "</span><time class=\"date\">").concat(date(r.data), "</time></div><h3>").concat(esc(r.atividade || r.procedimento), "</h3><p>").concat(esc(r.bairro || 'Bairro não informado')).concat(r.obra ? '<br>' + esc(r.obra) : '', "</p><div class=\"card-bottom\"><span>").concat(esc(r.responsavel || 'Responsável não informado'), "</span><button class=\"button ghost\" data-record=\"").concat(esc(r.id), "\">Abrir registro ").concat(icon('arrow'), "</button></div></article>");
+  }
+  async function loadRecords(more = false) {
+    const ticket = ++state.listRequest;
+    if (!more) state.records = [];
+    const cursor = more ? state.cursor : null;
+    $('recordResults').setAttribute('aria-busy', 'true');
+    $('moreRecords').innerHTML = '<span class="loading-label"><span class="spinner"></span>Buscando registros…</span>';
+    if (!more) $('recordResults').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+    try {
+      const d = await call('buscarRegistrosCPT', {
+        ...state.filters,
+        mes: state.mes,
+        cursor
+      });
+      if (ticket !== state.listRequest || state.route !== 'registros') return;
+      state.records.push(...d.itens);
+      state.cursor = d.proximoCursor;
+      $('recordResults').innerHTML = state.records.length ? state.records.map(entry).join('') : empty('Nenhum registro encontrado', d.proximoCursor ? 'A busca pode continuar nos registros anteriores.' : 'Experimente outro bairro, procedimento ou mês.');
+      $('recordCount').textContent = num(state.records.length) + ' registros exibidos · ' + monthLabel(state.mes);
+      $('moreRecords').innerHTML = d.proximoCursor ? '<button class="button secondary" data-action="more-records">Continuar carregando ' + icon('plus') + '</button>' : '';
+    } catch (e) {
+      if (ticket !== state.listRequest || state.route !== 'registros') return;
+      $('recordResults').innerHTML = empty('Não foi possível buscar', e.message, '<button class="button" data-action="retry-records">Tentar novamente</button>');
+      $('recordCount').textContent = 'Consulta não concluída';
+      $('moreRecords').innerHTML = '';
+    } finally {
+      if (ticket === state.listRequest && $('recordResults')) $('recordResults').removeAttribute('aria-busy');
+    }
+  }
+  function renderCases() {
+    const f = state.caseFilters;
+    $('view').innerHTML = intro('Atendimentos', 'Acompanhe a carteira e encontre a ficha de cada caso.') + "<div class=\"notice\">Esta vis\xE3o mostra o estado atual das fichas importadas, incluindo os casos conclu\xEDdos. A compet\xEAncia no topo filtra os registros de campo. Atualiza\xE7\xF5es operacionais continuam no controle de atendimento em uso.</div><section class=\"panel filter-panel\"><form id=\"caseFilters\" class=\"filters cases\"><label class=\"field\">Localizar atendimento<span class=\"search-input\">".concat(icon('search'), "<input name=\"busca\" value=\"").concat(esc(f.busca), "\" placeholder=\"Protocolo, pessoa, assunto ou endere\xE7o\" maxlength=\"200\"></span></label><label class=\"field\">Situa\xE7\xE3o<select name=\"estado\"><option value=\"\" ").concat(!f.estado ? 'selected' : '', ">Todos os casos</option value=\"abertos\" ").concat(f.estado === 'abertos' ? 'selected' : '', ">Em aberto</option><option value=\"concluidos\" ").concat(f.estado === 'concluidos' ? 'selected' : '', ">Conclu\xEDdos</option></select></label><button type=\"submit\" class=\"button\">").concat(icon('search'), "Buscar</button></form></section><div class=\"results-head\"><span id=\"caseCount\">Consultando atendimentos\u2026</span><span>Carteira atual</span></div><div id=\"caseResults\" class=\"cards\"></div><div id=\"moreCases\" class=\"load-more\"></div>");
+    const form = $('caseFilters'),
+      read = () => state.caseFilters = Object.fromEntries(new FormData(form));
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      read();
+      loadCases();
+    });
+    form.addEventListener('change', () => {
+      read();
+      loadCases();
+    });
+    form.elements.busca.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (state.route === 'atendimentos') {
+          read();
+          loadCases();
+        }
+      }, 400);
+    });
+    loadCases();
+  }
+  function caseCard(r) {
+    return "<article class=\"entry-card\"><div class=\"card-top\"><span class=\"badge ".concat(r.concluido ? 'green' : 'orange', "\">").concat(esc(r.concluido ? 'Atendimento concluído' : r.status || 'Em aberto'), "</span><span class=\"date\">").concat(esc(r.protocolo), "</span></div><h3>").concat(esc(r.nome || 'Nome não informado'), "</h3><p><strong>").concat(esc(r.assunto || 'Assunto não informado'), "</strong><br>").concat(esc(r.endereco || 'Endereço não informado'), "</p><div class=\"card-bottom\"><span>").concat(esc(r.area || 'Área não informada'), "</span><button class=\"button ghost\" data-case=\"").concat(esc(r.protocolo), "\">Consultar ficha ").concat(icon('arrow'), "</button></div></article>");
+  }
+  async function loadCases(more = false) {
+    const ticket = ++state.listRequest;
+    if (!more) state.cases = [];
+    $('moreCases').innerHTML = '<span class="loading-label"><span class="spinner"></span>Buscando fichas…</span>';
+    if (!more) $('caseResults').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+    try {
+      const d = await call('buscarAtendimentosCPT', {
+        ...state.caseFilters,
+        pagina: more ? state.casePage : 0
+      });
+      if (ticket !== state.listRequest || state.route !== 'atendimentos') return;
+      state.cases.push(...d.itens);
+      state.casePage = d.proximaPagina;
+      $('caseCount').textContent = num(d.total) + ' casos encontrados';
+      $('caseResults').innerHTML = state.cases.length ? state.cases.map(caseCard).join('') : empty('Nenhum atendimento encontrado', 'Altere a situação ou o termo da busca.');
+      $('moreCases').innerHTML = d.proximaPagina !== null ? '<button class="button secondary" data-action="more-cases">Carregar mais ' + icon('plus') + '</button>' : '';
+    } catch (e) {
+      if (ticket !== state.listRequest || state.route !== 'atendimentos') return;
+      $('caseResults').innerHTML = empty('Não foi possível buscar', e.message, '<button class="button" data-action="retry-cases">Tentar novamente</button>');
+      $('moreCases').innerHTML = '';
+      $('caseCount').textContent = 'Consulta não concluída';
+    }
+  }
+  document.addEventListener('click', async e => {
+    if (!e.target.closest('#healthCheck')) return;
+    const b = e.target.closest('#healthCheck');
+    b.disabled = true;
+    try {
+      const r = await call('conferirSaudeCPT');
+      $('detailTitle').textContent = 'Funcionamento da aplicação';
+      $('detailType').textContent = 'ADMINISTRAÇÃO';
+      $('detailContent').innerHTML = '<p class="muted">Conferência sob demanda. Não altera os dados.</p><div class="health-list">' + r.itens.map(x => '<section class="answer"><h3>' + esc(x.nome) + '</h3><p>' + esc(num(x.quantidade) + ' ' + x.unidade) + '</p><p>' + esc(x.orientacao) + '</p></section>').join('') + '</div><p class="small muted">Consulta: ' + num(r.tempoServidorMs) + ' ms no servidor. A velocidade até seu aparelho também depende da rede.</p>';
+      $('detailDialog').showModal();
+    } catch (err) {
+      toast(err.message);
+    } finally {
+      b.disabled = false;
+    }
+  });
+  function renderHelp() {
+    var _state$home3, _state$home4;
+    $('view').innerHTML = ((_state$home3 = state.home) !== null && _state$home3 !== void 0 && (_state$home3 = _state$home3.perfil) !== null && _state$home3 !== void 0 && _state$home3.papeis.includes('administrador') ? '<div class="admin-access"><button class="button secondary" id="healthCheck">Conferir funcionamento</button><button class="button" data-route="equipe">Equipe e acessos →</button></div>' : '') + intro('Um lugar para se encontrar', 'Comece pelo que você precisa fazer agora.') + "<div class=\"help-grid\"><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#0879df;--tint:#eaf4ff\">".concat(icon('home'), "</span><h2>Entender o m\xEAs</h2><p>A vis\xE3o do m\xEAs re\xFAne os procedimentos pela data em que foram realizados. Participa\xE7\xF5es somam o p\xFAblico informado nos relatos; uma pessoa pode participar de mais de uma atividade.</p><button class=\"button ghost\" data-route=\"inicio\">Abrir vis\xE3o do m\xEAs ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#008978;--tint:#e6f7f1\">").concat(icon('records'), "</span><h2>Encontrar um relato</h2><p>Escolha o m\xEAs e use os filtros. Abra um registro para consultar o texto original e seus anexos. Os arquivos carregam quando voc\xEA pede para visualizar.</p><button class=\"button ghost\" data-route=\"registros\">Consultar registros ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#d58c31;--tint:#fff3e4\">").concat(icon('case'), "</span><h2>Acompanhar um atendimento</h2><p>Busque por protocolo, pessoa ou endere\xE7o. Os conclu\xEDdos ficam dispon\xEDveis no filtro de situa\xE7\xE3o. Quando um protocolo foi incorporado, a consulta leva \xE0 ficha principal.</p><button class=\"button ghost\" data-route=\"atendimentos\">Abrir atendimentos ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#8a70cf;--tint:#f1edfc\">").concat(icon('plus'), "</span><h2>Registrar o trabalho</h2><p>O bot\xE3o \u201CRegistrar procedimento\u201D abre o formul\xE1rio oficial. Use a data real da atividade e selecione a obra de refer\xEAncia. Ap\xF3s o envio, a automa\xE7\xE3o inclui o registro na base.</p><div class=\"dialog-actions\">").concat(formLink().replace('button white', 'button secondary'), "</div></section></div><section class=\"panel help-note\"><h2>Seu conforto de leitura</h2><label class=\"mobile-role\">Minha vis\xE3o<select id=\"mobileRole\">").concat((((_state$home4 = state.home) === null || _state$home4 === void 0 || (_state$home4 = _state$home4.perfil) === null || _state$home4 === void 0 ? void 0 : _state$home4.papeis) || []).map(x => "<option value=\"".concat(x, "\" ").concat($('roleView').value === x ? 'selected' : '', ">").concat(window.CPTAgenda.names[x], "</option>")).join(''), "</select></label><p>Os temas Claro e Escuro ficam no topo. No celular, a navega\xE7\xE3o principal fica na barra inferior.</p><label class=\"reduced\"><input id=\"reduceMotion\" type=\"checkbox\" ").concat(document.documentElement.dataset.motion === 'reduce' ? 'checked' : '', ">Reduzir movimentos e anima\xE7\xF5es</label><details><summary>O que est\xE1 dispon\xEDvel nesta vers\xE3o?</summary><p>Consulta do m\xEAs, dos registros e das fichas, com abertura dos documentos existentes. Cronograma compartilhado, exporta\xE7\xE3o, cadastro de perfis j\xE1 est\xE3o dispon\xEDveis. Edi\xE7\xE3o de fichas, conclus\xE3o de casos, checklist, Cleber e publica\xE7\xE3o do relat\xF3rio seguem nas pr\xF3ximas etapas. Continue as atualiza\xE7\xF5es operacionais nos controles atuais.</p></details><details><summary>N\xE3o consigo abrir uma foto ou documento</summary><p>Confira se est\xE1 usando a conta Google autorizada. A aplica\xE7\xE3o respeita o acesso de cada arquivo do Drive. O administrador pode conferir o compartilhamento do arquivo espec\xEDfico.</p></details></section>");
+    $('mobileRole').addEventListener('change', e => {
+      $('roleView').value = e.target.value;
+      $('roleView').dispatchEvent(new Event('change'));
+    });
+    $('reduceMotion').addEventListener('change', e => {
+      document.documentElement.dataset.motion = e.target.checked ? 'reduce' : 'normal';
+      store.set('cpt.motion', e.target.checked ? 'reduce' : 'normal');
+      toast('Preferência de movimento salva.');
+    });
+  }
+  function navigate(route, filter) {
+    if (!['inicio', 'registros', 'atendimentos', 'ajuda', 'cronograma', 'equipe'].includes(route)) return;
+    clearTimeout(debounce);
+    state.route = route;
+    ++state.listRequest;
+    state.cursor = null;
+    state.casePage = null;
+    if (filter === 'relatos') state.filters.procedimento = 'Relato de atividade';
+    if (route === 'atendimentos' && filter) state.caseFilters.estado = filter;
+    document.querySelectorAll('.nav-item').forEach(b => {
+      const active = b.dataset.route === route;
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current', 'page');else b.removeAttribute('aria-current');
+    });
+    $('pageLabel').textContent = {
+      inicio: 'Visão do mês',
+      registros: 'Registros',
+      atendimentos: 'Atendimentos',
+      ajuda: 'Como usar',
+      cronograma: 'Cronograma',
+      equipe: 'Equipe e acessos'
+    }[route];
+    ({
+      inicio: renderHome,
+      registros: renderRecords,
+      atendimentos: renderCases,
+      ajuda: renderHelp,
+      cronograma: window.CPTAgenda.render,
+      equipe: window.CPTAgenda.team
+    })[route]();
+    window.scrollTo({
+      top: 0,
+      behavior: 'auto'
+    });
+  }
+  async function loadHome() {
+    const ticket = ++state.homeRequest;
+    const requested = state.mes;
+    notice('');
+    if (window.CPT_BOOT) {
+      window.CPT_BOOT.stage = 'consultando base';
+    }
+    $('accountLabel').textContent = 'Consultando a base…';
+    $('refresh').disabled = true;
+    if (state.route === 'inicio') $('view').innerHTML = skeleton();
+    try {
+      var _window$CPT_BOOT;
+      const d = await call('carregarInicioCPT', requested);
+      if (ticket !== state.homeRequest) return;
+      if (!d || !d.indicadores || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 1.5.0.');
+      state.home = d;
+      configureProfile(d.perfil);
+      $('accountLabel').textContent = d.perfil.email || d.conta || 'Conta Google conectada';
+      $('accountLabel').title = d.perfil.email || d.conta || '';
+      $('updated').textContent = 'Atualizado às ' + new Date(d.atualizadoEm).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      });
+      if (state.route === 'inicio') renderHome();else if (state.route === 'registros') renderRecords();else if (state.route === 'ajuda') renderHelp();
+      (_window$CPT_BOOT = window.CPT_BOOT) === null || _window$CPT_BOOT === void 0 || _window$CPT_BOOT.finish();
+      if (window.CPT_PREVIA) notice('Prévia visual com dados fictícios. Nenhuma informação desta tela foi lida ou gravada na sua planilha.');
+    } catch (e) {
+      var _window$CPT_BOOT2;
+      if (ticket !== state.homeRequest) return;
+      notice(e.message);
+      if (state.route === 'inicio') $('view').innerHTML = empty('Vamos restabelecer a conexão', e.message, '<button class="button" data-action="retry-home">Tentar novamente</button><button class="button secondary" data-check-access>Conferir meu acesso</button><p id="accessResult" style="white-space:pre-line"></p>');
+      $('accountLabel').textContent = 'Conexão não concluída';
+      (_window$CPT_BOOT2 = window.CPT_BOOT) === null || _window$CPT_BOOT2 === void 0 || _window$CPT_BOOT2.finish();
+    } finally {
+      if (ticket === state.homeRequest) $('refresh').disabled = false;
+    }
+  }
+  function summary(pairs) {
+    return '<dl class="detail-summary">' + pairs.map(([k, v]) => "<div><dt>".concat(esc(k), "</dt><dd>").concat(esc(v || 'Não informado'), "</dd></div>")).join('') + '</dl>';
+  }
+  function value(v) {
+    if (Array.isArray(v)) return v.map(value).join('\n');
+    if (v && typeof v === 'object') return Object.entries(v).map(([k, x]) => k + ': ' + value(x)).join('\n');
+    return String(v !== null && v !== void 0 ? v : '');
+  }
+  async function openDetail(kind, id) {
+    const ticket = ++state.detailRequest;
+    activeDocument = null;
+    historyCursor = null;
+    $('detailType').textContent = kind === 'record' ? 'REGISTRO DE CAMPO' : 'ATENDIMENTO';
+    $('detailTitle').textContent = 'Carregando detalhes';
+    $('detailContent').innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo as informações…</div>';
+    $('detailDialog').showModal();
+    try {
+      const d = await call(kind === 'record' ? 'abrirRegistroCPT' : 'abrirAtendimentoCPT', id);
+      if (ticket !== state.detailRequest || !$('detailDialog').open) return;
+      if (kind === 'record') {
+        var _state$home5;
+        const r = d.registro;
+        $('detailTitle').textContent = r.atividade || r.procedimento;
+        $('detailContent').innerHTML = readingTools() + (/relato de atividade/i.test(r.procedimento) && (_state$home5 = state.home) !== null && _state$home5 !== void 0 && (_state$home5 = _state$home5.perfil) !== null && _state$home5 !== void 0 && _state$home5.papeis.some(p => ['administrador', 'gestao', 'socioambiental', 'comunicacao'].includes(p)) ? "<div class=\"reading-tools\"><button class=\"button\" data-prepare-relato=\"".concat(esc(r.id), "\">Preparar para o relat\xF3rio</button></div>") : '') + summary([['Procedimento', r.procedimento], ['Data de realização', date(r.data)], ['Bairro', r.bairro], ['Responsável', r.responsavel], ['Obra de referência', r.obra], ['Origem', r.origem], ['Público informado', r.publico == null ? 'Não informado' : String(r.publico)]]) + "<p class=\"document-id\">Registro: ".concat(esc(r.id), "</p>") + (r.conferencia ? "<details class=\"help-note\"><summary>Confer\xEAncia do registro</summary><p>".concat(esc(r.conferencia), "</p><p>ID: ").concat(esc(r.id), "</p></details>") : '') + (d.anexos.length ? "<h3 class=\"answers-head\">Arquivos e evid\xEAncias</h3><div class=\"attachments\">".concat(d.anexos.map((a, i) => "<div class=\"attachment\"><p>".concat(esc(a.titulo || 'Anexo ' + (i + 1)), "</p><button class=\"button secondary\" data-preview=\"").concat(esc(a.id), "\">Visualizar</button> <a href=\"").concat(esc(safeURL(a.url)), "\" target=\"_blank\" rel=\"noopener noreferrer\">Abrir no Drive</a></div>")).join(''), "</div><div id=\"mediaPreview\"></div>") : '') + sections(d.campos);
+      } else {
+        const f = d.ficha;
+        $('detailTitle').textContent = f.protocolo + ' · ' + (f.nome || 'Atendimento');
+        const docs = [['Abrir ficha', f.documento], ['Abrir PDF', f.pdf]].filter(([, u]) => safeURL(u));
+        $('detailContent').innerHTML = readingTools() + "<span class=\"badge ".concat(f.concluido ? 'green' : 'orange', "\">").concat(esc(f.concluido ? 'Atendimento concluído' : f.status), "</span><div class=\"dialog-actions\">").concat(docs.map(([l, u]) => "<a class=\"button secondary\" href=\"".concat(esc(safeURL(u)), "\" target=\"_blank\" rel=\"noopener noreferrer\">").concat(icon('file')).concat(l, " ").concat(icon('link'), "</a>")).join(''), "</div>") + (d.protocoloConsultado !== f.protocolo ? "<div class=\"notice\">O protocolo ".concat(esc(d.protocoloConsultado), " est\xE1 incorporado \xE0 ficha principal ").concat(esc(f.protocolo), ".</div>") : '') + summary([['Assunto', f.assunto], ['Endereço', f.endereco], ['Abertura', date(f.abertura)], ['Conclusão', date(f.conclusao)], ['Área responsável', f.area], ['Responsável', f.responsavel], ['Frente de obra', f.obra], ['Origem', f.origem]]) + "<section class=\"answer\"><h3>Pr\xF3xima a\xE7\xE3o registrada</h3><p>".concat(esc(f.proximaAcao || 'Não informada'), "</p></section><section class=\"answer\"><h3>Atualiza\xE7\xE3o operacional</h3><p>").concat(esc(value(f.atualizacao) || 'Não informada'), "</p></section><p class=\"small muted\">Consulta da ficha importada. Continue as altera\xE7\xF5es no controle operacional em uso.</p><div class=\"reading-tools\"><button class=\"button secondary\" data-reading=\"history\">Consultar hist\xF3rico importado</button></div><div id=\"caseHistory\"></div>");
+      }
+      activeDocument = {
+        kind,
+        id,
+        title: $('detailTitle').textContent
+      };
+    } catch (e) {
+      if (ticket === state.detailRequest) $('detailContent').innerHTML = empty('Não foi possível abrir', e.message);
+    }
+  }
+  function readingTools() {
+    return '<div class="reading-tools"><button class="button secondary" data-reading="copy">Copiar conteúdo</button><button class="button secondary" data-reading="print">Imprimir / salvar PDF</button></div>';
+  }
+  function sections(campos) {
+    const groups = new Map();
+    campos.forEach(x => {
+      const key = x.secao || 'Respostas do registro';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(x);
+    });
+    return '<h3 class="answers-head">O que foi registrado</h3>' + ([...groups].map(([name, items]) => '<details class="report-section" open><summary>' + esc(name) + ' · ' + items.length + ' respostas</summary>' + items.map(x => '<section class="answer"><h3>' + esc(x.titulo) + '</h3><p>' + esc(value(x.valor)) + '</p></section>').join('') + '</details>').join('') || '<p>Não há campos adicionais neste registro.</p>');
+  }
+  function documentClone() {
+    const clone = $('detailContent').cloneNode(true);
+    clone.querySelectorAll('.reading-tools,iframe,#mediaPreview').forEach(e => e.remove());
+    clone.querySelectorAll('button').forEach(e => e.remove());
+    clone.querySelectorAll('details').forEach(e => e.open = true);
+    return clone;
+  }
+  document.addEventListener('click', async ev => {
+    const button = ev.target.closest('[data-reading]');
+    if (!button || !activeDocument) return;
+    const doc = activeDocument;
+    if (button.dataset.reading === 'copy') {
+      const clone = documentClone();
+      clone.querySelectorAll('h3,p,dt,dd,summary').forEach(e => e.appendChild(document.createTextNode('\n')));
+      const text = doc.title + '\n\n' + clone.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('Conteúdo copiado.');
+      } catch (e) {
+        toast('O navegador bloqueou a cópia. Selecione o texto da ficha para copiar.');
+      }
+      return;
+    }
+    if (button.dataset.reading === 'print') {
+      const old = $('printDetail');
+      if (old) old.remove();
+      const paper = document.createElement('article');
+      paper.id = 'printDetail';
+      const title = document.createElement('h1');
+      title.textContent = doc.title;
+      paper.append(title, documentClone());
+      document.body.append(paper);
+      document.body.classList.add('printing-detail');
+      $('detailDialog').close();
+      try {
+        window.print();
+      } finally {
+        document.body.classList.remove('printing-detail');
+        paper.remove();
+        if (activeDocument === doc) $('detailDialog').showModal();
+      }
+      return;
+    }
+    if (button.dataset.reading === 'history' && !historyBusy) {
+      historyBusy = true;
+      button.disabled = true;
+      try {
+        const response = await call('consultarHistoricoFichaCPT', {
+          protocolo: doc.id,
+          cursor: historyCursor
+        });
+        if (activeDocument !== doc || !$('caseHistory')) return;
+        const box = $('caseHistory');
+        if (historyCursor == null) box.innerHTML = '';
+        box.insertAdjacentHTML('beforeend', response.itens.map(x => '<section class="history-item"><h3>' + esc(x.tipo || 'Movimentação') + '</h3><p>' + esc(x.data + ' · ' + x.status) + '</p><p>' + esc(x.resumo || 'Sem resumo informado') + '</p><p class="small muted">' + esc(x.protocolo + ' · ' + (x.autor || 'Autor não informado')) + '</p></section>').join(''));
+        if (!response.itens.length && !historyCursor) box.textContent = response.aviso || 'Nenhuma movimentação importada localizada.';
+        historyCursor = response.proximoCursor;
+        button.hidden = historyCursor == null;
+        button.textContent = 'Carregar mais histórico';
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        historyBusy = false;
+        button.disabled = false;
+      }
+    }
+  });
+  document.addEventListener('click', async ev => {
+    const button = ev.target.closest('[data-check-access]');
+    if (!button) return;
+    button.disabled = true;
+    try {
+      const r = await call('conferirMeuAcessoCPT');
+      const box = $('accessResult');
+      if (box) box.textContent = r.etapas.map(x => (x.ok ? 'OK' : 'VERIFICAR') + ' · ' + x.nome + ': ' + x.mensagem).join('\n');
+    } catch (e) {
+      const box = $('accessResult');
+      if (box) box.textContent = e.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+  function closeDetail() {
+    activeDocument = null;
+    ++state.detailRequest;
+    $('detailDialog').close();
+    $('detailContent').innerHTML = '';
+  }
+  document.addEventListener('click', e => {
+    var _e$target$closest;
+    const route = e.target.closest('[data-route]');
+    if (route) {
+      navigate(route.dataset.route, route.dataset.filter);
+      return;
+    }
+    const record = e.target.closest('[data-record]');
+    if (record) {
+      openDetail('record', record.dataset.record);
+      return;
+    }
+    const c = e.target.closest('[data-case]');
+    if (c) {
+      openDetail('case', c.dataset.case);
+      return;
+    }
+    const preview = e.target.closest('[data-preview]');
+    if (preview && /^[A-Za-z0-9_-]{10,}$/.test(preview.dataset.preview)) {
+      const frame = document.createElement('iframe');
+      frame.className = 'media-frame';
+      frame.src = 'https://drive.google.com/file/d/' + encodeURIComponent(preview.dataset.preview) + '/preview';
+      frame.title = 'Visualização do arquivo';
+      frame.allow = 'fullscreen';
+      $('mediaPreview').replaceChildren(frame);
+      return;
+    }
+    const a = (_e$target$closest = e.target.closest('[data-action]')) === null || _e$target$closest === void 0 ? void 0 : _e$target$closest.dataset.action;
+    if (a === 'more-records') loadRecords(true);
+    if (a === 'more-cases') loadCases(true);
+    if (a === 'retry-records') loadRecords();
+    if (a === 'retry-cases') loadCases();
+    if (a === 'retry-home') loadHome();
+    if (a === 'noform') toast('O link do formulário ainda não está disponível. Confira a aba Início da base.');
+    if (a === 'clear') {
+      state.filters = {
+        busca: '',
+        procedimento: '',
+        bairro: '',
+        obra: '',
+        pendencia: ''
+      };
+      renderRecords();
+    }
+  });
+  $('closeDialog').addEventListener('click', closeDetail);
+  $('detailDialog').addEventListener('cancel', e => {
+    e.preventDefault();
+    closeDetail();
+  });
+  $('theme').addEventListener('change', e => {
+    document.documentElement.dataset.theme = e.target.value;
+    store.set('cpt.theme', e.target.value);
+    toast('Aparência salva neste navegador.');
+  });
+  $('month').addEventListener('change', () => {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test($('month').value)) {
+      toast('Selecione um mês válido.');
+      return;
+    }
+    state.mes = $('month').value;
+    state.home = null;
+    ++state.listRequest;
+    if (state.route === 'cronograma') {
+      window.CPTAgenda.render();
+    }
+    if (state.route === 'registros') $('view').innerHTML = skeleton();
+    loadHome();
+  });
+  $('refresh').addEventListener('click', () => {
+    if (state.route === 'cronograma') {
+      window.CPTAgenda.render();
+    } else if (state.route === 'equipe') {
+      window.CPTAgenda.team();
+    } else if (state.route === 'atendimentos') {
+      loadCases();
+    } else {
+      loadHome();
+    }
+  });
+  window.addEventListener('offline', () => notice('Você está sem conexão. As consultas precisam de internet; os dados já exibidos continuam na tela.'));
+  window.addEventListener('online', () => {
+    notice('');
+    toast('Conexão restabelecida. Use Atualizar para consultar novamente.');
+  });
+  function configureProfile(p) {
+    if (!p) return;
+    const select = $('roleView'),
+      previous = select.value;
+    select.innerHTML = p.papeis.map(role => "<option value=\"".concat(esc(role), "\">").concat(esc(window.CPTAgenda.names[role]), "</option>")).join('');
+    select.value = p.papeis.includes(previous) ? previous : p.papeis[0];
+    document.querySelector('[data-route="equipe"]').hidden = !p.papeis.includes('administrador');
+    document.querySelector('.nav-item[data-route="atendimentos"]').hidden = !p.papeis.some(x => ['administrador', 'gestao', 'atendimento'].includes(x));
+  }
+  $('roleView').addEventListener('change', () => {
+    navigate('inicio');
+    toast('Visão de ' + window.CPTAgenda.names[$('roleView').value] + '. Sua conta permanece a mesma.');
+  });
+  if (!window.CPTAgenda || typeof window.CPTAgenda.init !== 'function') throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 1.5.0.');
+  window.CPTAgenda.init({
+    call,
+    esc,
+    date,
+    num,
+    intro,
+    toast,
+    formLink,
+    state,
+    navigate,
+    view: $('view')
+  });
+  window.CPTEntregas.init({
+    call
+  });
+  navigate('inicio');
+  loadHome();
+})();
+</script>

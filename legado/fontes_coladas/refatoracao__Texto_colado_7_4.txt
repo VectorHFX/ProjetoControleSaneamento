@@ -1,0 +1,1909 @@
+/**
+ * PROCEDIMENTOS DE CAMPO 3.0: PESQUISA DE SATISFAÇÃO
+ *
+ * Cria a base detalhada, a página do Programa Parceiros e o BI da pesquisa.
+ * Não utiliza fórmulas dependentes de vírgula ou ponto e vírgula.
+ * Fonte exclusiva: Base Consolidada, com os registros 1.0, 2.0 e 3.0.
+ * As pesquisas vinculadas às vistorias cautelares também são incorporadas.
+ * O BI usa um mês selecionado, compara com o mês anterior e preserva o histórico.
+ * Ao chegar um novo registro, o painel avança automaticamente para o mês mais recente.
+ */
+
+const CONFIG_PESQUISA_SATISFACAO = {
+  ABA_DESTINO: 'Pesquisa de Satisfação',
+  ABA_PARCEIROS: 'Programa Parceiros',
+  ABA_BI: 'BI Satisfação',
+  ABA_CONSOLIDADA: 'Base Consolidada',
+  CABECALHO_ORIGEM_REGISTRO: 'Origem do registro',
+  CABECALHO_ID_MIGRACAO: 'ID de migração',
+  PROCEDIMENTO: 'Pesquisa de Satisfação',
+  LINHA_CABECALHO: 10,
+  PRIMEIRA_LINHA_DADOS: 11,
+  TOTAL_COLUNAS: 27,
+  FUNCAO_GATILHO: 'aoEnviarFormularioPesquisaSatisfacao_',
+  FUNCAO_GATILHO_EDICAO: 'aoEditarPeriodoBISatisfacao_',
+  CELULA_PERIODO_BI: 'O2',
+  PROPRIEDADE_PERIODO: 'PESQUISA_SATISFACAO_PERIODO',
+  CORES: {
+    AZUL_ESCURO: '#123F61',
+    AZUL: '#2E75B6',
+    AZUL_CLARO: '#D9EAF3',
+    TURQUESA: '#14869B',
+    VERDE: '#2E8B57',
+    VERDE_CLARO: '#E2F0D9',
+    LARANJA: '#D8902F',
+    LARANJA_CLARO: '#FCE4D6',
+    ROXO: '#6A5ACD',
+    VERMELHO: '#C94F4F',
+    AMARELO_CLARO: '#FFF2CC',
+    VERMELHO_CLARO: '#F4CCCC',
+    CINZA: '#F3F6F8',
+    CINZA_BORDA: '#C9D4DC',
+    BRANCO: '#FFFFFF',
+    TEXTO: '#17324D'
+  }
+};
+
+function instalarSistemaPesquisaSatisfacao() {
+  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+  atualizarPesquisaSatisfacao(planilha);
+  instalarGatilhoPesquisaSatisfacao_(planilha);
+}
+
+function atualizarPesquisaSatisfacao(planilhaInformada, opcoes) {
+  if (planilhaInformada && typeof planilhaInformada.getSheetByName !== 'function') {
+    opcoes = planilhaInformada;
+    planilhaInformada = null;
+  }
+  opcoes = opcoes || {};
+  if (!opcoes.baseJaSincronizada && typeof sincronizarBaseConsolidada1e3 === 'function') {
+    sincronizarBaseConsolidada1e3({origem: 'pesquisa de satisfação'});
+  }
+
+  const bloqueio = LockService.getDocumentLock();
+  bloqueio.waitLock(30000);
+
+  try {
+    const planilha = planilhaInformada || SpreadsheetApp.getActiveSpreadsheet();
+    if (!planilha) {
+      throw new Error('Não foi possível identificar a planilha ativa.');
+    }
+
+    const registros = extrairRegistrosPesquisaUnificados_(planilha);
+    const indicadores = calcularIndicadoresPesquisa_(registros);
+    const fusoHorario = planilha.getSpreadsheetTimeZone();
+    const abaBi = obterOuCriarAbaAnalitica_(planilha, CONFIG_PESQUISA_SATISFACAO.ABA_BI);
+    const periodoNaAba = obterPeriodoGravadoNaAbaPesquisa_(abaBi);
+    const periodoSolicitado = opcoes.periodoSelecionado
+      || (opcoes.silencioso && opcoes.baseJaSincronizada ? '' : periodoNaAba);
+    const contextoMensal = construirContextoMensalPesquisa_(
+      registros,
+      fusoHorario,
+      periodoSolicitado
+    );
+
+    if (!opcoes.apenasAnaliticas) {
+      const aba = obterOuCriarAbaPesquisa_(planilha);
+      prepararAbaPesquisa_(aba);
+      escreverPainelPesquisa_(aba, indicadores, registros, fusoHorario);
+      escreverBasePesquisa_(aba, registros);
+      formatarAbaPesquisa_(aba, registros.length);
+    }
+
+    const abaParceiros = obterOuCriarAbaAnalitica_(planilha, CONFIG_PESQUISA_SATISFACAO.ABA_PARCEIROS);
+    prepararAbaAnalitica_(abaParceiros, 15);
+    escreverProgramaParceiros_(abaParceiros, registros, indicadores, fusoHorario, contextoMensal);
+
+    prepararAbaAnalitica_(abaBi, 16);
+    escreverBISatisfacao_(abaBi, registros, indicadores, contextoMensal, fusoHorario);
+    PropertiesService.getDocumentProperties().setProperty(
+      CONFIG_PESQUISA_SATISFACAO.PROPRIEDADE_PERIODO,
+      contextoMensal.atual.chave || ''
+    );
+  } finally {
+    bloqueio.releaseLock();
+  }
+}
+
+function aoEnviarFormularioPesquisaSatisfacao_(evento) {
+  const planilha = evento && evento.source
+    ? evento.source
+    : SpreadsheetApp.getActiveSpreadsheet();
+  if (typeof sincronizarBaseConsolidada1e3 === 'function') {
+    sincronizarBaseConsolidada1e3(evento || {origem: 'gatilho de satisfação'});
+    atualizarPesquisaSatisfacao(planilha, {baseJaSincronizada: true, silencioso: true});
+    return;
+  }
+  atualizarPesquisaSatisfacao(planilha, {silencioso: true});
+}
+
+function aoEditarPeriodoBISatisfacao_(evento) {
+  if (!evento || !evento.range || !evento.source) return;
+  const aba = evento.range.getSheet();
+  if (aba.getName() !== CONFIG_PESQUISA_SATISFACAO.ABA_BI) return;
+  if (evento.range.getA1Notation() !== CONFIG_PESQUISA_SATISFACAO.CELULA_PERIODO_BI) return;
+  atualizarPesquisaSatisfacao(evento.source, {
+    baseJaSincronizada: true,
+    apenasAnaliticas: true,
+    periodoSelecionado: evento.value || evento.range.getDisplayValue(),
+    silencioso: true
+  });
+}
+
+function atualizarPainelMensalSatisfacao() {
+  atualizarPesquisaSatisfacao(SpreadsheetApp.getActiveSpreadsheet(), {
+    baseJaSincronizada: true,
+    apenasAnaliticas: true
+  });
+}
+
+function instalarGatilhoPesquisaSatisfacao_(planilha) {
+  ScriptApp.getProjectTriggers().forEach(function(gatilho) {
+    const funcao = gatilho.getHandlerFunction();
+    if (funcao === CONFIG_PESQUISA_SATISFACAO.FUNCAO_GATILHO ||
+        funcao === CONFIG_PESQUISA_SATISFACAO.FUNCAO_GATILHO_EDICAO) {
+      ScriptApp.deleteTrigger(gatilho);
+    }
+  });
+
+  if (typeof aoEnviarFormularioIntegracaoProcedimentos !== 'function') {
+    ScriptApp.newTrigger(CONFIG_PESQUISA_SATISFACAO.FUNCAO_GATILHO)
+      .forSpreadsheet(planilha)
+      .onFormSubmit()
+      .create();
+  }
+  ScriptApp.newTrigger(CONFIG_PESQUISA_SATISFACAO.FUNCAO_GATILHO_EDICAO)
+    .forSpreadsheet(planilha)
+    .onEdit()
+    .create();
+}
+
+function localizarAbaOrigemPesquisa_(planilha) {
+  const consolidada = planilha.getSheetByName(CONFIG_PESQUISA_SATISFACAO.ABA_CONSOLIDADA);
+  if (!consolidada) {
+    throw new Error('A Base Consolidada não foi encontrada. Execute primeiro a integração.');
+  }
+  return consolidada;
+}
+
+function extrairRegistrosPesquisaUnificados_(planilha) {
+  const consolidada = localizarAbaOrigemPesquisa_(planilha);
+  const dados = consolidada.getDataRange().getValues();
+  if (dados.length < 2) return [];
+  const cabecalhos = dados[0].map(function(valor) {
+    return String(valor || '').trim();
+  });
+  const mapa = criarMapaCabecalhosPesquisa_(cabecalhos);
+  const registros = [];
+  const chavesVistas = {};
+  extrairRegistrosPesquisa_(dados, mapa).forEach(function(registro) {
+    const chave = construirChaveRegistroPesquisa_(registro);
+    if (chavesVistas[chave]) return;
+    chavesVistas[chave] = true;
+    registros.push(registro);
+  });
+
+  registros.sort(function(a, b) {
+    const dataA = a.data instanceof Date ? a.data.getTime() : 0;
+    const dataB = b.data instanceof Date ? b.data.getTime() : 0;
+    const envioA = a.registroEnvio instanceof Date ? a.registroEnvio.getTime() : 0;
+    const envioB = b.registroEnvio instanceof Date ? b.registroEnvio.getTime() : 0;
+    return dataB - dataA || envioB - envioA || b.id.localeCompare(a.id);
+  });
+  return registros;
+}
+
+function criarMapaCabecalhosPesquisa_(cabecalhos) {
+  const mapa = {};
+  cabecalhos.forEach(function(cabecalho, indice) {
+    const chave = normalizarPesquisa_(cabecalho);
+    if (chave && mapa[chave] === undefined) {
+      mapa[chave] = indice;
+    }
+  });
+  return mapa;
+}
+
+function extrairRegistrosPesquisa_(dados, mapa) {
+  const cabecalhoProcedimento = ['Selecione o procedimento a ser executado', 'Procedimento executado:'];
+  const registros = [];
+  const indiceOrigem = mapa[normalizarPesquisa_(CONFIG_PESQUISA_SATISFACAO.CABECALHO_ORIGEM_REGISTRO)];
+  const indiceIdMigracao = mapa[normalizarPesquisa_(CONFIG_PESQUISA_SATISFACAO.CABECALHO_ID_MIGRACAO)];
+
+  for (let indiceLinha = 1; indiceLinha < dados.length; indiceLinha++) {
+    const linha = dados[indiceLinha];
+    const procedimento = buscarValorPesquisa_(linha, mapa, cabecalhoProcedimento);
+
+    if (normalizarPesquisa_(procedimento).indexOf('pesquisa de satisfacao') === -1 &&
+        !temConteudoPesquisaSatisfacao_(linha, mapa)) {
+      continue;
+    }
+
+    const momento = buscarValorPesquisa_(linha, mapa, [
+      'Perguntas finais direcionadas ao momento, indique se:'
+    ]);
+
+    const notaEtapa = obterNotaEtapaPesquisa_(linha, mapa, momento);
+    const comentarios = consolidarComentariosPesquisa_(linha, mapa);
+    const dataRealizacao = converterDataPesquisa_(buscarValorPesquisa_(linha, mapa, [
+      'Data de realização do procedimento'
+    ]));
+    if (!dataRealizacao) {
+      Logger.log(
+        'Pesquisa ignorada por ausência de "Data de realização do procedimento". Linha: ' +
+        (indiceLinha + 1)
+      );
+      continue;
+    }
+    const idMigracao = indiceIdMigracao === undefined
+      ? ''
+      : textoPesquisa_(linha[indiceIdMigracao]);
+
+    const registro = {
+      id: idMigracao || 'PSQ-BASE-' + String(indiceLinha + 1).padStart(4, '0'),
+      procedimento: textoPesquisa_(procedimento),
+      data: dataRealizacao,
+      registroEnvio: converterDataPesquisa_(buscarValorPesquisa_(linha, mapa, ['Carimbo de data/hora'])),
+      origemRegistro: indiceOrigem === undefined ? '' : textoPesquisa_(linha[indiceOrigem]),
+      bairro: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['Bairro de realização do procedimento'])),
+      endereco: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['Endereço completo'])),
+      referencia: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['Ponto de referência'])),
+      nome: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['Nome - Pesquisa de Satisfação'])),
+      telefone: formatarTelefonePesquisa_(buscarValorPesquisa_(linha, mapa, ['Telefone - Pesquisa de Satisfação'])),
+      momento: textoPesquisa_(momento),
+      notaSaneamento: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De 0 a 10, quanto está satisfeito com os serviços de saneamento de forma geral?'
+      ])),
+      aspectos: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De forma geral, quais aspectos observa sobre os serviços de saneamento?'
+      ])),
+      mudancaQualidade: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Tem notado mudanças na qualidade de vida em relação ao saneamento de forma geral?'
+      ])),
+      notaMelhoria: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Se sim: De 0 a 10, quanto percebeu melhorias na qualidade de vida relacionadas ao saneamento?'
+      ])),
+      notaEtapa: numeroPesquisa_(notaEtapa),
+      relacionamento: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De 0 a 10, como avalia o relacionamento entre a equipe de obras e a população?'
+      ])),
+      execucao: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De 0 a 10, o quanto está satisfeito com a execução da obra?'
+      ])),
+      expectativas: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['As obras atenderam as expectativas?'])),
+      resultado: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De 0 a 10, o quanto está satisfeito com o resultado da obra?'
+      ])),
+      atendimentoSabesp: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De 0 a 10, como avalia o atendimento da Sabesp?'
+      ])),
+      clareza: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['As informações ficaram claras?'])),
+      notaAtendimento: numeroPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'De 0 a 10, qual nota o munícipe atribui ao atendimento recebido?'
+      ])),
+      interesseContato: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Tem interesse em contato posterior sobre as Obras?'
+      ])),
+      interesseGrupo: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Gostaria de fazer parte de um grupo de comunicação sobre as obras e ações do Consórcio?'
+      ])),
+      sugestaoSaneamento: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Quer adicionar algum comentário ou sugestão para melhoria dos serviços?'
+      ])),
+      impactoDiaADia: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Deseja relatar como as obras vem afetando seu dia a dia?'
+      ])),
+      sugestaoSabesp: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Deseja registrar alguma sugestão ou comentário sobre os serviços da Sabesp?'
+      ])),
+      comentarioFinal: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Algum último comentário ou sugestão?'
+      ])),
+      observacaoFinal: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Observação final do procedimento'
+      ])),
+      classificacao: textoPesquisa_(buscarValorPesquisa_(linha, mapa, [
+        'Classificação principal da manifestação'
+      ])),
+      comentarios: comentarios,
+      responsavel: textoPesquisa_(buscarValorPesquisa_(linha, mapa, ['Colaborador responsável pelo registro'])),
+      linhaOrigem: indiceLinha + 1
+    };
+    registro.temas = extrairTemasPesquisa_(registro).join(', ');
+    registros.push(registro);
+  }
+
+  return registros;
+}
+
+function construirChaveRegistroPesquisa_(registro) {
+  if (textoPesquisa_(registro.id)) {
+    return 'id|' + normalizarPesquisa_(registro.id);
+  }
+  return [
+    registro.registroEnvio instanceof Date ? registro.registroEnvio.getTime() : '',
+    registro.data instanceof Date ? registro.data.getTime() : '',
+    normalizarPesquisa_(registro.nome),
+    normalizarPesquisa_(registro.telefone),
+    normalizarPesquisa_(registro.endereco),
+    registro.notaSaneamento === null ? '' : registro.notaSaneamento,
+    normalizarPesquisa_(registro.aspectos),
+    normalizarPesquisa_(registro.comentarios)
+  ].join('|');
+}
+
+function temConteudoPesquisaSatisfacao_(linha, mapa) {
+  const camposAncora = [
+    'Nome - Pesquisa de Satisfação',
+    'De 0 a 10, quanto está satisfeito com os serviços de saneamento de forma geral?',
+    'De forma geral, quais aspectos observa sobre os serviços de saneamento?',
+    'Tem notado mudanças na qualidade de vida em relação ao saneamento de forma geral?'
+  ];
+  return camposAncora.some(function(cabecalho) {
+    const valor = buscarValorPesquisa_(linha, mapa, [cabecalho]);
+    return valor !== null && valor !== undefined && String(valor).trim() !== '';
+  });
+}
+
+function obterNotaEtapaPesquisa_(linha, mapa, momento) {
+  const momentoNormalizado = normalizarPesquisa_(momento);
+  if (momentoNormalizado.indexOf('pre obra') !== -1) {
+    return buscarValorPesquisa_(linha, mapa, ['De 0 a 10, o quanto está satisfeito com a chegada da obra?']);
+  }
+  if (momentoNormalizado.indexOf('durante') !== -1) {
+    return buscarValorPesquisa_(linha, mapa, ['De 0 a 10, o quanto está satisfeito com a execução da obra?']);
+  }
+  if (momentoNormalizado.indexOf('pos obra') !== -1) {
+    return buscarValorPesquisa_(linha, mapa, ['De 0 a 10, o quanto está satisfeito com o resultado da obra?']);
+  }
+
+  const alternativas = [
+    'De 0 a 10, o quanto está satisfeito com a chegada da obra?',
+    'De 0 a 10, o quanto está satisfeito com a execução da obra?',
+    'De 0 a 10, o quanto está satisfeito com o resultado da obra?'
+  ];
+
+  for (let i = 0; i < alternativas.length; i++) {
+    const valor = buscarValorPesquisa_(linha, mapa, [alternativas[i]]);
+    if (numeroPesquisa_(valor) !== null) {
+      return valor;
+    }
+  }
+  return null;
+}
+
+function consolidarComentariosPesquisa_(linha, mapa) {
+  const campos = [
+    ['Melhoria dos serviços', 'Quer adicionar algum comentário ou sugestão para melhoria dos serviços?'],
+    ['Redução de impactos', 'Tem algum comentário ou sugestão que ajude a causar menos impactos com chegada da obra?'],
+    ['Impacto no dia a dia', 'Deseja relatar como as obras vem afetando seu dia a dia?'],
+    ['Serviços da Sabesp', 'Deseja registrar alguma sugestão ou comentário sobre os serviços da Sabesp?'],
+    ['Comentário final', 'Algum último comentário ou sugestão?'],
+    ['Observação do registro', 'Observação final do procedimento']
+  ];
+  const partes = [];
+
+  campos.forEach(function(campo) {
+    const valor = buscarValorPesquisa_(linha, mapa, [campo[1]]);
+    if (possuiConteudoPesquisa_(valor)) {
+      partes.push(campo[0] + ': ' + String(valor).trim());
+    }
+  });
+
+  return partes.join('\n');
+}
+
+function extrairTemasPesquisa_(registro) {
+  const texto = normalizarPesquisa_([
+    registro.aspectos,
+    registro.sugestaoSaneamento,
+    registro.impactoDiaADia,
+    registro.sugestaoSabesp,
+    registro.comentarioFinal,
+    registro.observacaoFinal
+  ].join(' '));
+
+  const regras = obterRegrasTemasPesquisa_();
+
+  return regras.filter(function(regra) {
+    return regra[1].some(function(termo) {
+      return contemTermoPesquisa_(texto, termo);
+    });
+  }).map(function(regra) {
+    return regra[0];
+  });
+}
+
+function obterRegrasTemasPesquisa_() {
+  return [
+    ['Funcionamento positivo', ['bom funcionamento', 'boas condicoes', 'nao percebe problemas', 'nunca teve problemas']],
+    ['Abastecimento de água', ['agua', 'racionamento', 'religacao', 'abastecimento']],
+    ['Limpeza e rios', ['limpeza', 'rio', 'rios']],
+    ['Vetores', ['rato', 'ratos', 'escorpiao', 'escorpioes', 'vetor', 'vetores']],
+    ['Pavimentação', ['pavimentacao', 'pavimento']],
+    ['Atendimento e burocracia', ['burocracia', 'demora no atendimento']],
+    ['Espaço público', ['praca', 'espaco publico']]
+  ];
+}
+
+function contemTermoPesquisa_(texto, termo) {
+  return (' ' + texto + ' ').indexOf(' ' + normalizarPesquisa_(termo) + ' ') !== -1;
+}
+
+function possuiConteudoPesquisa_(valor) {
+  const normalizado = normalizarPesquisa_(valor);
+  if (!normalizado) {
+    return false;
+  }
+
+  const semConteudo = [
+    'n', 'nao', 'ni', 'nao informado', 'sem comentario', 'sem comentarios',
+    'sem observacao', 'sem observacoes', 'nao possui', 'nada a relatar'
+  ];
+  return semConteudo.indexOf(normalizado) === -1;
+}
+
+function calcularIndicadoresPesquisa_(registros) {
+  const notasSaneamento = numerosValidosPesquisa_(registros.map(function(item) {
+    return item.notaSaneamento;
+  }));
+  const notasMelhoria = numerosValidosPesquisa_(registros.map(function(item) {
+    return item.notaMelhoria;
+  }));
+  const notasAtendimento = numerosValidosPesquisa_(registros.map(function(item) {
+    return item.notaAtendimento;
+  }));
+  const respostasClareza = registros.filter(function(item) {
+    return normalizarPesquisa_(item.clareza) !== '';
+  });
+  const respostasClaras = respostasClareza.filter(function(item) {
+    return normalizarPesquisa_(item.clareza) === 'sim';
+  });
+  const notasAltas = notasAtendimento.filter(function(nota) { return nota >= 9; }).length;
+  const respostasMudanca = registros.filter(function(item) {
+    return normalizarPesquisa_(item.mudancaQualidade) !== '';
+  });
+  const mudancaSim = respostasMudanca.filter(function(item) {
+    return normalizarPesquisa_(item.mudancaQualidade) === 'sim';
+  });
+
+  return {
+    total: registros.length,
+    mediaSaneamento: mediaPesquisa_(notasSaneamento),
+    mediaMelhoria: mediaPesquisa_(notasMelhoria),
+    mediaAtendimento: mediaPesquisa_(notasAtendimento),
+    notasAltas: notasAtendimento.length
+      ? Math.round((notasAltas / notasAtendimento.length) * 100)
+      : null,
+    quantidadeNotasAltas: notasAltas,
+    clareza: respostasClareza.length
+      ? Math.round((respostasClaras.length / respostasClareza.length) * 100)
+      : null,
+    mudancaPercebida: respostasMudanca.length
+      ? Math.round((mudancaSim.length / respostasMudanca.length) * 100)
+      : null,
+    respostasSaneamento: notasSaneamento.length,
+    respostasMelhoria: notasMelhoria.length,
+    respostasAtendimento: notasAtendimento.length,
+    respostasClareza: respostasClareza.length,
+    respostasMudanca: respostasMudanca.length
+  };
+}
+
+function calcularTermometroPesquisa_(registros) {
+  const notasSaneamento = numerosValidosPesquisa_(registros.map(function(item) { return item.notaSaneamento; }));
+  const notasMelhoria = numerosValidosPesquisa_(registros.map(function(item) { return item.notaMelhoria; }));
+  const notasAtendimento = numerosValidosPesquisa_(registros.map(function(item) { return item.notaAtendimento; }));
+  const respostasMudanca = registros.filter(function(item) {
+    return normalizarPesquisa_(item.mudancaQualidade) !== '';
+  });
+  const respostasClareza = registros.filter(function(item) {
+    return normalizarPesquisa_(item.clareza) !== '';
+  });
+  const respostasAspectos = registros.filter(function(item) {
+    return normalizarPesquisa_(item.aspectos) !== '';
+  });
+  const respostasClassificacao = registros.filter(function(item) {
+    return normalizarPesquisa_(item.classificacao) !== '';
+  });
+  const aspectos = contarAspectosQuestionarioPesquisa_(registros);
+  const problemasAbertos = contarProblemasAbertosPesquisa_(registros);
+  const classificacoes = contarClassificacoesPesquisa_(registros);
+
+  const saneamentoAte6 = notasSaneamento.filter(function(nota) { return nota <= 6; }).length;
+  const saneamento9ou10 = notasSaneamento.filter(function(nota) { return nota >= 9; }).length;
+  const melhoriaAte6 = notasMelhoria.filter(function(nota) { return nota <= 6; }).length;
+  const semMudanca = respostasMudanca.filter(function(item) {
+    return normalizarPesquisa_(item.mudancaQualidade) === 'nao';
+  }).length;
+  const informacaoNaoPlena = respostasClareza.filter(function(item) {
+    return normalizarPesquisa_(item.clareza) !== 'sim';
+  }).length;
+  const inconsistenciasQualidade = registros.filter(function(item) {
+    return normalizarPesquisa_(item.mudancaQualidade) === 'nao'
+      && typeof item.notaMelhoria === 'number'
+      && Number.isFinite(item.notaMelhoria);
+  }).length;
+  const comAspectoNegativo = respostasAspectos.filter(function(item) {
+    return possuiAspectoNegativoPesquisa_(item.aspectos);
+  }).length;
+  const comAspectoPositivo = respostasAspectos.filter(function(item) {
+    return possuiAspectoPositivoPesquisa_(item.aspectos);
+  }).length;
+
+  return {
+    saneamentoAte6: saneamentoAte6,
+    baseSaneamento: notasSaneamento.length,
+    saneamento9ou10: saneamento9ou10,
+    melhoriaAte6: melhoriaAte6,
+    baseMelhoria: notasMelhoria.length,
+    semMudanca: semMudanca,
+    baseMudanca: respostasMudanca.length,
+    informacaoNaoPlena: informacaoNaoPlena,
+    baseClareza: respostasClareza.length,
+    aspectoNegativo: comAspectoNegativo,
+    aspectoPositivo: comAspectoPositivo,
+    baseAspectos: respostasAspectos.length,
+    reclamacoes: classificacoes.Reclamação || 0,
+    baseClassificacoes: respostasClassificacao.length,
+    inconsistenciasQualidade: inconsistenciasQualidade,
+    baseInconsistencia: registros.length,
+    notasAtendimento: notasAtendimento.length,
+    aspectos: aspectos,
+    problemasAbertos: problemasAbertos,
+    classificacoes: classificacoes
+  };
+}
+
+function contarAspectosQuestionarioPesquisa_(registros) {
+  const regras = obterRegrasAspectosQuestionarioPesquisa_();
+  const resultado = {};
+  regras.forEach(function(regra) { resultado[regra.chave] = 0; });
+  registros.forEach(function(registro) {
+    const texto = normalizarPesquisa_(registro.aspectos);
+    regras.forEach(function(regra) {
+      if (regra.termos.some(function(termo) { return contemTermoPesquisa_(texto, termo); })) {
+        resultado[regra.chave]++;
+      }
+    });
+  });
+  return resultado;
+}
+
+function obterRegrasAspectosQuestionarioPesquisa_() {
+  return [
+    { chave: 'cheiroNegativo', natureza: 'Negativo', rotulo: 'Cheiro', termos: ['cheiro negativo'] },
+    { chave: 'cheiroPositivo', natureza: 'Positivo', rotulo: 'Cheiro', termos: ['cheiro positivo'] },
+    { chave: 'vetoresNegativo', natureza: 'Negativo', rotulo: 'Vetores', termos: ['vetores negativo'] },
+    { chave: 'vetoresPositivo', natureza: 'Positivo', rotulo: 'Vetores', termos: ['vetores positivo'] },
+    { chave: 'limpezaNegativo', natureza: 'Negativo', rotulo: 'Limpeza', termos: ['limpeza negativo'] },
+    { chave: 'limpezaPositivo', natureza: 'Positivo', rotulo: 'Limpeza', termos: ['limpeza positivo'] },
+    { chave: 'esgotoNegativo', natureza: 'Negativo', rotulo: 'Esgoto aparente', termos: ['esgoto aparente'] },
+    { chave: 'bomFuncionamento', natureza: 'Positivo', rotulo: 'Bom funcionamento', termos: ['bom funcionamento dos servicos'] },
+    { chave: 'semProblemas', natureza: 'Positivo', rotulo: 'Não percebe problemas', termos: ['nao percebe problemas relacionados ao saneamento'] }
+  ];
+}
+
+function possuiAspectoNegativoPesquisa_(aspectos) {
+  const texto = normalizarPesquisa_(aspectos);
+  return obterRegrasAspectosQuestionarioPesquisa_().some(function(regra) {
+    return regra.natureza === 'Negativo'
+      && regra.termos.some(function(termo) { return contemTermoPesquisa_(texto, termo); });
+  });
+}
+
+function possuiAspectoPositivoPesquisa_(aspectos) {
+  const texto = normalizarPesquisa_(aspectos);
+  return obterRegrasAspectosQuestionarioPesquisa_().some(function(regra) {
+    return regra.natureza === 'Positivo'
+      && regra.termos.some(function(termo) { return contemTermoPesquisa_(texto, termo); });
+  });
+}
+
+function contarProblemasAbertosPesquisa_(registros) {
+  const resultado = {};
+  const regras = obterRegrasProblemasAbertosPesquisa_();
+  regras.forEach(function(regra) { resultado[regra[0]] = 0; });
+  registros.forEach(function(registro) {
+    const texto = normalizarPesquisa_([
+      registro.aspectos, registro.sugestaoSaneamento, registro.impactoDiaADia,
+      registro.sugestaoSabesp, registro.comentarioFinal, registro.observacaoFinal
+    ].join(' '));
+    regras.forEach(function(regra) {
+      if (regra[1].some(function(termo) { return contemTermoPesquisa_(texto, termo); })) {
+        resultado[regra[0]]++;
+      }
+    });
+  });
+  return resultado;
+}
+
+function obterRegrasProblemasAbertosPesquisa_() {
+  return [
+    ['Abastecimento de água', ['agua e cortada', 'agua esta sendo cortada', 'agua sendo cortada', 'racionamento', 'religacao', 'falta de agua', 'sem agua']],
+    ['Esgoto ou vazamento', ['esgoto aparente', 'vazamento de esgoto', 'retorno de esgoto', 'extravasamento de esgoto', 'extravasamentos']],
+    ['Cheiro ou odor', ['cheiro negativo', 'mau cheiro', 'odor negativo']],
+    ['Limpeza de rios', ['limpeza dos rios', 'limpeza do rio']],
+    ['Vetores', ['vetores negativo', 'presenca de ratos', 'presenca de rato', 'escorpiao', 'escorpioes']],
+    ['Pavimentação', ['melhora de pavimentacao', 'melhoria de pavimentacao']],
+    ['Trânsito ou circulação', ['problemas no transito', 'afeta o transito', 'dificuldade no transito', 'passagem de pedestres', 'fluxo de veiculos', 'ruas ficam mais estreitas']],
+    ['Poeira', ['poeira']],
+    ['Prazo ou demora da obra', ['prazo longo', 'demora para realizacao da obra', 'tempo que levou a obra', 'demora na conclusao', 'demora da obra']],
+    ['Atendimento ou burocracia', ['burocracia', 'demora no atendimento']],
+    ['Espaço público', ['gostaria que fosse uma praca']]
+  ];
+}
+
+function construirTextosAnalisePesquisa_(registros, indicadores, termometro, contexto) {
+  contexto = contexto || {};
+  const textosProblemas = obterRegrasProblemasAbertosPesquisa_().map(function(regra) {
+    const quantidade = termometro.problemasAbertos[regra[0]] || 0;
+    return quantidade ? regra[0].toLowerCase() + ' (' + quantidade + ')' : '';
+  }).filter(function(texto) { return texto; });
+  const total = indicadores.total;
+  const rotulo = contexto.rotulo || 'Período analisado';
+  const anterior = contexto.anterior || null;
+  const indicadoresAnteriores = anterior ? calcularIndicadoresPesquisa_(anterior.registros) : null;
+  const comparacaoVolume = anterior
+    ? formatarVariacaoQuantidadePesquisa_(total, anterior.registros.length, anterior.rotulo)
+    : 'primeiro mês disponível para comparação';
+  const comparacaoSaneamento = indicadoresAnteriores
+    ? formatarVariacaoMediaPesquisa_(indicadores.mediaSaneamento, indicadoresAnteriores.mediaSaneamento, anterior.rotulo)
+    : 'sem mês anterior comparável';
+  const comparacaoAtendimento = indicadoresAnteriores
+    ? formatarVariacaoMediaPesquisa_(indicadores.mediaAtendimento, indicadoresAnteriores.mediaAtendimento, anterior.rotulo)
+    : 'sem mês anterior comparável';
+  const acumulado = contexto.acumulado || null;
+
+  const sintese = 'PERÍODO: ' + rotulo + '.\n'
+    + 'VOLUME: ' + total + ' pesquisas, ' + comparacaoVolume + '.\n'
+    + 'SANEAMENTO: média ' + formatarMediaPesquisa_(indicadores.mediaSaneamento) + ' em '
+    + indicadores.respostasSaneamento + ' respostas válidas, ' + comparacaoSaneamento + '.\n'
+    + 'ATENDIMENTO: média ' + formatarMediaPesquisa_(indicadores.mediaAtendimento) + ' em '
+    + indicadores.respostasAtendimento + ' respostas válidas, ' + comparacaoAtendimento + '.\n'
+    + 'QUALIDADE DE VIDA: média dos valores registrados ' + formatarMediaPesquisa_(indicadores.mediaMelhoria)
+    + ' em ' + indicadores.respostasMelhoria + ' respostas válidas.'
+    + (acumulado ? '\nHISTÓRICO: ' + acumulado.total + ' pesquisas consolidadas em ' + acumulado.meses + ' meses.' : '');
+
+  const atencao = 'SANEAMENTO: ' + formatarRazaoPesquisa_(termometro.saneamentoAte6, termometro.baseSaneamento)
+    + ' notas ficaram entre 0 e 6.\nQUALIDADE DE VIDA: '
+    + formatarRazaoPesquisa_(termometro.melhoriaAte6, termometro.baseMelhoria)
+    + ' valores ficaram entre 0 e 6.\nMUDANÇA PERCEBIDA: '
+    + formatarRazaoPesquisa_(termometro.semMudanca, termometro.baseMudanca)
+    + ' declararam não perceber mudança.\nCLAREZA: '
+    + formatarRazaoPesquisa_(termometro.informacaoNaoPlena, termometro.baseClareza)
+    + ' respostas foram parciais ou negativas.\nASPECTOS NEGATIVOS: '
+    + formatarRazaoPesquisa_(termometro.aspectoNegativo, termometro.baseAspectos)
+    + ' respostas válidas marcaram aspecto negativo.\nMANIFESTAÇÕES: '
+    + formatarRazaoPesquisa_(termometro.reclamacoes, termometro.baseClassificacoes)
+    + ' classificações foram reclamações.'
+    + (textosProblemas.length
+      ? '\nTEMAS NAS RESPOSTAS ABERTAS: ' + textosProblemas.join(', ') + '.'
+      : '\nTEMAS NAS RESPOSTAS ABERTAS: nenhuma menção identificada pelos critérios configurados.');
+
+  const evidencias = 'ATENDIMENTO: ' + formatarRazaoPesquisa_(indicadores.quantidadeNotasAltas, indicadores.respostasAtendimento)
+    + ' avaliações ficaram entre 9 e 10.\nCLAREZA: '
+    + formatarRazaoPesquisa_(indicadores.respostasClareza - termometro.informacaoNaoPlena, indicadores.respostasClareza)
+    + ' respostas indicaram informações claras.\nSANEAMENTO: '
+    + formatarRazaoPesquisa_(termometro.saneamento9ou10, termometro.baseSaneamento)
+    + ' notas ficaram entre 9 e 10.\nASPECTOS POSITIVOS: '
+    + formatarRazaoPesquisa_(termometro.aspectoPositivo, termometro.baseAspectos)
+    + ' respostas válidas marcaram algum aspecto positivo do saneamento.';
+
+  const consistencia = 'BASES VÁLIDAS: cada indicador usa somente as perguntas efetivamente respondidas, e a base aparece junto ao resultado.\n'
+    + 'QUALIDADE DE VIDA: ' + formatarQuantidadePesquisa_(termometro.inconsistenciasQualidade, 'participante', 'participantes')
+    + ' responderam que não perceberam mudança e também preencheram a pergunta numérica iniciada por “Se sim”. A média deve ser descrita como média dos valores registrados.\n'
+    + 'COMPARAÇÃO MENSAL: os meses reúnem pessoas diferentes e podem ter perguntas disponíveis em proporções distintas. Variações devem ser lidas com a quantidade de respostas válidas.\n'
+    + 'MOMENTOS DA OBRA: pré obra, durante a obra e pós obra representam grupos distintos, não acompanhamento das mesmas pessoas.';
+  return { sintese: sintese, atencao: atencao, evidencias: evidencias, consistencia: consistencia };
+}
+
+function formatarVariacaoQuantidadePesquisa_(atual, anterior, rotuloAnterior) {
+  const diferenca = atual - anterior;
+  if (diferenca === 0) return 'mesmo volume de ' + rotuloAnterior;
+  return Math.abs(diferenca) + (diferenca > 0 ? ' a mais' : ' a menos') + ' que ' + rotuloAnterior;
+}
+
+function formatarVariacaoMediaPesquisa_(atual, anterior, rotuloAnterior) {
+  if (atual === null || anterior === null || !Number.isFinite(atual) || !Number.isFinite(anterior)) {
+    return 'sem base comparável em ' + rotuloAnterior;
+  }
+  const diferenca = Math.round((atual - anterior) * 10) / 10;
+  if (diferenca === 0) return 'estável em relação a ' + rotuloAnterior;
+  return (diferenca > 0 ? 'aumento de ' : 'redução de ') + Math.abs(diferenca).toFixed(1).replace('.', ',')
+    + (Math.abs(diferenca) === 1 ? ' ponto' : ' pontos') + ' em relação a ' + rotuloAnterior;
+}
+
+function formatarQuantidadePesquisa_(quantidade, singular, plural) {
+  return quantidade + ' ' + (quantidade === 1 ? singular : plural);
+}
+
+function formatarRazaoPesquisa_(quantidade, base) {
+  if (!base) return 'Sem base';
+  return quantidade + ' de ' + base + ' | ' + Math.round((quantidade / base) * 100) + '%';
+}
+
+function corTermometroPesquisa_(quantidade, base) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  if (!base || quantidade === 0) return c.VERDE;
+  return quantidade / base >= 0.25 ? c.VERMELHO : c.LARANJA;
+}
+
+function obterOuCriarAbaPesquisa_(planilha) {
+  return planilha.getSheetByName(CONFIG_PESQUISA_SATISFACAO.ABA_DESTINO)
+    || planilha.insertSheet(CONFIG_PESQUISA_SATISFACAO.ABA_DESTINO);
+}
+
+function prepararAbaPesquisa_(aba) {
+  if (aba.getMaxColumns() < CONFIG_PESQUISA_SATISFACAO.TOTAL_COLUNAS) {
+    aba.insertColumnsAfter(
+      aba.getMaxColumns(),
+      CONFIG_PESQUISA_SATISFACAO.TOTAL_COLUNAS - aba.getMaxColumns()
+    );
+  }
+
+  aba.setFrozenRows(0);
+  aba.setFrozenColumns(0);
+
+  const filtro = aba.getFilter();
+  if (filtro) {
+    filtro.remove();
+  }
+
+  aba.getCharts().forEach(function(grafico) {
+    aba.removeChart(grafico);
+  });
+
+  aba.getRange(1, 1, aba.getMaxRows(), aba.getMaxColumns()).breakApart();
+  aba.clear();
+  aba.clearConditionalFormatRules();
+  aba.showSheet();
+  aba.setHiddenGridlines(true);
+  aba.setTabColor(CONFIG_PESQUISA_SATISFACAO.CORES.TURQUESA);
+}
+
+function escreverPainelPesquisa_(aba, indicadores, registros, fusoHorario) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const totalColunas = CONFIG_PESQUISA_SATISFACAO.TOTAL_COLUNAS;
+  const ultimaPesquisa = registros.length && registros[0].data instanceof Date
+    ? Utilities.formatDate(registros[0].data, fusoHorario || 'America/Sao_Paulo', 'dd/MM/yyyy')
+    : 'Sem registros';
+
+  aba.getRange(1, 1, 1, totalColunas).merge()
+    .setValue('PESQUISA DE SATISFAÇÃO')
+    .setBackground(c.AZUL_ESCURO)
+    .setFontColor(c.BRANCO)
+    .setFontWeight('bold')
+    .setFontSize(16)
+    .setHorizontalAlignment('left')
+    .setVerticalAlignment('middle');
+
+  aba.getRange(2, 1, 1, totalColunas).merge()
+    .setValue('Resultados consolidados dos Procedimentos de Campo 3.0 | Última pesquisa: ' + ultimaPesquisa)
+    .setBackground(c.TURQUESA)
+    .setFontColor(c.BRANCO)
+    .setFontSize(10)
+    .setHorizontalAlignment('left')
+    .setVerticalAlignment('middle');
+
+  const cartoes = [
+    {
+      intervalo: 'A4:E4', valor: 'A5:E6', titulo: 'PESQUISAS REALIZADAS',
+      numero: indicadores.total, apoio: 'registros', cor: c.TURQUESA
+    },
+    {
+      intervalo: 'F4:J4', valor: 'F5:J6', titulo: 'SATISFAÇÃO COM O SANEAMENTO',
+      numero: formatarMediaPesquisa_(indicadores.mediaSaneamento), apoio: indicadores.respostasSaneamento + ' respostas válidas', cor: c.AZUL
+    },
+    {
+      intervalo: 'K4:O4', valor: 'K5:O6', titulo: 'NOTA DO ATENDIMENTO',
+      numero: formatarMediaPesquisa_(indicadores.mediaAtendimento), apoio: indicadores.respostasAtendimento + ' respostas válidas', cor: c.VERDE
+    },
+    {
+      intervalo: 'P4:T4', valor: 'P5:T6', titulo: 'AVALIAÇÕES 9 OU 10',
+      numero: indicadores.notasAltas === null ? 'Sem dados' : indicadores.notasAltas + '%',
+      apoio: indicadores.quantidadeNotasAltas + ' de ' + indicadores.respostasAtendimento + ' avaliações', cor: c.ROXO
+    },
+    {
+      intervalo: 'U4:Y4', valor: 'U5:Y6', titulo: 'INFORMAÇÕES CLARAS',
+      numero: indicadores.clareza === null ? 'Sem dados' : indicadores.clareza + '%',
+      apoio: indicadores.respostasClareza + ' respostas válidas', cor: c.LARANJA
+    }
+  ];
+
+  cartoes.forEach(function(cartao) {
+    aba.getRange(cartao.intervalo).merge()
+      .setValue(cartao.titulo)
+      .setBackground(cartao.cor)
+      .setFontColor(c.BRANCO)
+      .setFontWeight('bold')
+      .setFontSize(9)
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+
+    aba.getRange(cartao.valor).merge()
+      .setValue(cartao.numero + '\n' + cartao.apoio)
+      .setBackground(c.BRANCO)
+      .setFontColor(cartao.cor)
+      .setFontWeight('bold')
+      .setFontSize(13)
+      .setWrap(true)
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle')
+      .setBorder(false, true, true, true, false, false, cartao.cor, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  });
+
+  aba.getRange(7, 1, 1, totalColunas).merge()
+    .setValue('Indicadores calculados somente com respostas válidas. A pesquisa atual não possui pergunta de recomendação, portanto não é calculado NPS.')
+    .setBackground(c.CINZA)
+    .setFontColor(c.TEXTO)
+    .setFontSize(9)
+    .setFontStyle('italic')
+    .setHorizontalAlignment('left')
+    .setVerticalAlignment('middle');
+}
+
+function escreverBasePesquisa_(aba, registros) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const cabecalhos = [
+    'ID', 'Data', 'Bairro', 'Endereço', 'Ponto de referência', 'Nome', 'Telefone',
+    'Momento da pesquisa', 'Nota geral do saneamento', 'Aspectos observados',
+    'Mudança na qualidade de vida', 'Nota de melhoria percebida', 'Nota da etapa',
+    'Relacionamento equipe e população', 'Satisfação com a execução',
+    'Obra atendeu expectativas', 'Satisfação com o resultado',
+    'Avaliação do atendimento Sabesp', 'Informações claras', 'Nota do atendimento recebido',
+    'Interesse em contato', 'Interesse no grupo de comunicação',
+    'Comentários e sugestões', 'Responsável pelo registro',
+    'Classificação registrada', 'Temas explícitos identificados', 'Linha de origem'
+  ];
+
+  aba.getRange('A9:G9').merge().setValue('IDENTIFICAÇÃO');
+  aba.getRange('H9:V9').merge().setValue('RESULTADOS DA PESQUISA');
+  aba.getRange('W9:Z9').merge().setValue('COMPLEMENTOS E ANÁLISE');
+  aba.getRange('AA9').setValue('CONTROLE');
+
+  aba.getRange('A9:G9').setBackground(c.AZUL_ESCURO);
+  aba.getRange('H9:V9').setBackground(c.TURQUESA);
+  aba.getRange('W9:Z9').setBackground(c.LARANJA);
+  aba.getRange('AA9').setBackground(c.AZUL_ESCURO);
+  aba.getRange('A9:AA9')
+    .setFontColor(c.BRANCO)
+    .setFontWeight('bold')
+    .setFontSize(9)
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
+
+  aba.getRange(CONFIG_PESQUISA_SATISFACAO.LINHA_CABECALHO, 1, 1, cabecalhos.length)
+    .setValues([cabecalhos])
+    .setBackground(c.AZUL_CLARO)
+    .setFontColor(c.TEXTO)
+    .setFontWeight('bold')
+    .setFontSize(9)
+    .setWrap(true)
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle')
+    .setBorder(true, true, true, true, true, true, c.CINZA_BORDA, SpreadsheetApp.BorderStyle.SOLID);
+
+  if (!registros.length) {
+    aba.getRange('A11:AA12').merge()
+      .setValue('Nenhuma pesquisa de satisfação foi localizada na base de respostas.')
+      .setBackground(c.CINZA)
+      .setFontColor(c.TEXTO)
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+    return;
+  }
+
+  const valores = registros.map(function(item) {
+    return [
+      item.id, item.data || '', item.bairro, item.endereco, item.referencia, item.nome, item.telefone,
+      item.momento, item.notaSaneamento, item.aspectos, item.mudancaQualidade, item.notaMelhoria,
+      item.notaEtapa, item.relacionamento, item.execucao, item.expectativas, item.resultado,
+      item.atendimentoSabesp, item.clareza, item.notaAtendimento, item.interesseContato,
+      item.interesseGrupo, item.comentarios, item.responsavel, item.classificacao,
+      item.temas, item.linhaOrigem
+    ];
+  });
+
+  const intervalo = aba.getRange(
+    CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS,
+    1,
+    valores.length,
+    cabecalhos.length
+  );
+  intervalo.setValues(valores);
+  intervalo
+    .setFontColor(c.TEXTO)
+    .setFontSize(9)
+    .setVerticalAlignment('top')
+    .setWrap(true)
+    .setBorder(false, false, true, false, false, true, c.CINZA_BORDA, SpreadsheetApp.BorderStyle.SOLID);
+
+  for (let i = 0; i < valores.length; i++) {
+    const linha = CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS + i;
+    if (i % 2 === 1) {
+      aba.getRange(linha, 1, 1, cabecalhos.length).setBackground(c.CINZA);
+    }
+  }
+
+  aba.getRange(CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS, 2, valores.length, 1)
+    .setNumberFormat('dd/MM/yyyy')
+    .setHorizontalAlignment('center');
+
+  const colunasNumericas = [9, 12, 13, 14, 15, 17, 18, 20];
+  colunasNumericas.forEach(function(coluna) {
+    aba.getRange(CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS, coluna, valores.length, 1)
+      .setNumberFormat('0')
+      .setHorizontalAlignment('center');
+  });
+
+  aba.getRange(CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS, 1, valores.length, 1)
+    .setHorizontalAlignment('center');
+  aba.getRange(CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS, 8, valores.length, 1)
+    .setHorizontalAlignment('center');
+  aba.getRange(CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS, 19, valores.length, 4)
+    .setHorizontalAlignment('center');
+
+  aba.getRange(
+    CONFIG_PESQUISA_SATISFACAO.LINHA_CABECALHO,
+    1,
+    valores.length + 1,
+    cabecalhos.length
+  ).createFilter();
+}
+
+function formatarAbaPesquisa_(aba, quantidadeRegistros) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const larguras = [
+    82, 88, 120, 210, 150, 170, 120, 120, 105, 250,
+    145, 110, 95, 120, 110, 120, 110, 120, 110, 115,
+    110, 145, 320, 180, 230, 210, 90
+  ];
+
+  larguras.forEach(function(largura, indice) {
+    aba.setColumnWidth(indice + 1, largura);
+  });
+
+  aba.setRowHeight(1, 34);
+  aba.setRowHeight(2, 24);
+  aba.setRowHeight(3, 10);
+  aba.setRowHeight(4, 24);
+  aba.setRowHeights(5, 2, 32);
+  aba.setRowHeight(7, 28);
+  aba.setRowHeight(8, 10);
+  aba.setRowHeight(9, 24);
+  aba.setRowHeight(10, 48);
+
+  if (quantidadeRegistros > 0) {
+    aba.setRowHeights(CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS, quantidadeRegistros, 58);
+  }
+
+  aba.setFrozenRows(CONFIG_PESQUISA_SATISFACAO.LINHA_CABECALHO);
+  aba.setFrozenColumns(0);
+  aba.hideColumns(27);
+
+  if (quantidadeRegistros < 1) {
+    return;
+  }
+
+  const inicio = CONFIG_PESQUISA_SATISFACAO.PRIMEIRA_LINHA_DADOS;
+  const fim = inicio + quantidadeRegistros - 1;
+  const faixasNotas = ['I' + inicio + ':I' + fim, 'L' + inicio + ':O' + fim, 'Q' + inicio + ':R' + fim, 'T' + inicio + ':T' + fim]
+    .map(function(a1) { return aba.getRange(a1); });
+  const faixaMomento = aba.getRange('H' + inicio + ':H' + fim);
+  const faixaClareza = aba.getRange('S' + inicio + ':S' + fim);
+
+  const regras = [
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThanOrEqualTo(9)
+      .setBackground(c.VERDE_CLARO)
+      .setFontColor('#1F5C3A')
+      .setRanges(faixasNotas)
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberBetween(7, 8)
+      .setBackground(c.AMARELO_CLARO)
+      .setFontColor('#7A5B00')
+      .setRanges(faixasNotas)
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberLessThanOrEqualTo(6)
+      .setBackground(c.VERMELHO_CLARO)
+      .setFontColor('#8B1E1E')
+      .setRanges(faixasNotas)
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextContains('Pré')
+      .setBackground(c.AZUL_CLARO)
+      .setRanges([faixaMomento])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextContains('Durante')
+      .setBackground(c.LARANJA_CLARO)
+      .setRanges([faixaMomento])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextContains('Pós')
+      .setBackground(c.VERDE_CLARO)
+      .setRanges([faixaMomento])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo('Sim')
+      .setBackground(c.VERDE_CLARO)
+      .setRanges([faixaClareza])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextContains('Parcial')
+      .setBackground(c.AMARELO_CLARO)
+      .setRanges([faixaClareza])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo('Não')
+      .setBackground(c.VERMELHO_CLARO)
+      .setRanges([faixaClareza])
+      .build()
+  ];
+
+  aba.setConditionalFormatRules(regras);
+}
+
+function obterOuCriarAbaAnalitica_(planilha, nome) {
+  return planilha.getSheetByName(nome) || planilha.insertSheet(nome);
+}
+
+function prepararAbaAnalitica_(aba, totalColunas) {
+  if (aba.getMaxColumns() < totalColunas) {
+    aba.insertColumnsAfter(aba.getMaxColumns(), totalColunas - aba.getMaxColumns());
+  }
+  aba.setFrozenRows(0);
+  aba.setFrozenColumns(0);
+  if (aba.getFilter()) aba.getFilter().remove();
+  aba.getCharts().forEach(function(grafico) { aba.removeChart(grafico); });
+  aba.getRange(1, 1, aba.getMaxRows(), aba.getMaxColumns()).breakApart();
+  aba.clear();
+  aba.clearConditionalFormatRules();
+  aba.setHiddenGridlines(true);
+}
+
+function escreverProgramaParceiros_(aba, registros, indicadoresGerais, fusoHorario, contextoMensal) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const periodos = contextoMensal && contextoMensal.periodos
+    ? contextoMensal.periodos
+    : agruparRegistrosPorMes_(registros, fusoHorario);
+  const periodoAtual = contextoMensal && contextoMensal.atual
+    ? contextoMensal.atual
+    : (periodos.length ? periodos[periodos.length - 1] : { chave: '', rotulo: 'Sem período', registros: [] });
+  const indicadores = calcularIndicadoresPesquisa_(periodoAtual.registros);
+  const classificacoes = contarClassificacoesPesquisa_(periodoAtual.registros);
+  const termometro = calcularTermometroPesquisa_(periodoAtual.registros);
+  const baseClassificacoes = periodoAtual.registros.filter(function(registro) {
+    return normalizarPesquisa_(registro.classificacao) !== '';
+  }).length;
+  const textosAnalise = construirTextosAnalisePesquisa_(periodoAtual.registros, indicadores, termometro, {
+    rotulo: periodoAtual.rotulo,
+    anterior: contextoMensal ? contextoMensal.anterior : null,
+    acumulado: { total: registros.length, meses: periodos.length }
+  });
+
+  aba.setTabColor(c.AZUL);
+  aba.getRange('A1:O1').merge().setValue('PROGRAMA PARCEIROS: INDICADORES RESPONDIDOS PELA PESQUISA')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(15)
+    .setHorizontalAlignment('left').setVerticalAlignment('middle');
+  aba.getRange('A2:O2').merge()
+    .setValue('Referência: Máscara de Lançamento 2026 | Período selecionado: ' + periodoAtual.rotulo)
+    .setBackground(c.AZUL).setFontColor(c.BRANCO).setFontSize(10)
+    .setHorizontalAlignment('left').setVerticalAlignment('middle');
+
+  escreverCartaoAnalitico_(aba, 'A4:C4', 'A5:C6', 'PESQUISAS', indicadores.total, 'respostas do período', c.TURQUESA);
+  escreverCartaoAnalitico_(aba, 'D4:F4', 'D5:F6', 'SATISFAÇÃO COM O SANEAMENTO', formatarMediaPesquisa_(indicadores.mediaSaneamento), indicadores.respostasSaneamento + ' respostas válidas', c.AZUL);
+  escreverCartaoAnalitico_(aba, 'G4:I4', 'G5:I6', 'MELHORIA NA QUALIDADE DE VIDA', formatarMediaPesquisa_(indicadores.mediaMelhoria), indicadores.respostasMelhoria + ' respostas válidas', c.VERDE);
+  escreverCartaoAnalitico_(aba, 'J4:L4', 'J5:L6', 'ELOGIOS REGISTRADOS', classificacoes.Elogio || 0, 'classificação explícita', c.ROXO);
+  escreverCartaoAnalitico_(aba, 'M4:O4', 'M5:O6', 'RECLAMAÇÕES REGISTRADAS', classificacoes.Reclamação || 0, 'classificação explícita', c.LARANJA);
+
+  aba.getRange('A8:O8').merge()
+    .setValue('Esta página contém somente requisitos da máscara respondidos diretamente pela pesquisa. Requisitos de reuniões, cursos, pontos viciados, conclusão de manifestações, procedência, sinistros e prazos não são preenchidos aqui.')
+    .setBackground(c.CINZA).setFontColor(c.TEXTO).setFontStyle('italic').setFontSize(9)
+    .setWrap(true).setVerticalAlignment('middle');
+
+  aba.getRange('A10:O10').merge().setValue('REQUISITOS DA MÁSCARA RESPONDIDOS DIRETAMENTE')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  const cabecalhoMapeamento = ['REQUISITO DA MÁSCARA', 'PERGUNTA OU CAMPO DE ORIGEM', 'RESULTADO', 'BASE', 'ESCOPO'];
+  escreverCabecalhoMapeamentoParceiros_(aba, 11, cabecalhoMapeamento);
+
+  const requisitos = [
+    [
+      'De 0 a 10, quanto as pessoas estão satisfeitas com os serviços de saneamento? Média de todas as respostas.',
+      'De 0 a 10, quanto está satisfeito com os serviços de saneamento de forma geral?',
+      formatarMediaPesquisa_(indicadores.mediaSaneamento),
+      indicadores.respostasSaneamento + ' respostas válidas',
+      'Respondido diretamente'
+    ],
+    [
+      'Transcreva os depoimentos dos participantes sobre os serviços de saneamento.',
+      'Aspectos observados sobre os serviços e sugestão para melhoria dos serviços',
+      periodoAtual.registros.length + ' respostas integrais listadas abaixo',
+      periodoAtual.registros.length + ' pesquisas',
+      'Transcrição sem síntese automática'
+    ],
+    [
+      'De 0 a 10, quanto as pessoas percebem melhorias em sua qualidade de vida? Média de todas as respostas.',
+      'Se sim: De 0 a 10, quanto percebeu melhorias na qualidade de vida relacionadas ao saneamento?',
+      formatarMediaPesquisa_(indicadores.mediaMelhoria),
+      indicadores.respostasMelhoria + ' respostas válidas',
+      'Respondido diretamente'
+    ],
+    [
+      'Transcreva os depoimentos dos participantes sobre a qualidade de vida.',
+      'Mudança percebida na qualidade de vida e relato de como a obra afeta o dia a dia',
+      periodoAtual.registros.length + ' respostas integrais listadas abaixo',
+      periodoAtual.registros.length + ' pesquisas',
+      'Transcrição sem síntese automática'
+    ],
+    [
+      'Número de entradas de manifestações do tipo elogio.',
+      'Classificação principal da manifestação',
+      classificacoes.Elogio || 0,
+      baseClassificacoes + ' classificações válidas',
+      'Somente entradas registradas nesta pesquisa'
+    ],
+    [
+      'Número de entradas de manifestações do tipo solicitação.',
+      'Classificação principal da manifestação',
+      classificacoes.Solicitação || 0,
+      baseClassificacoes + ' classificações válidas',
+      'Somente entradas registradas nesta pesquisa'
+    ],
+    [
+      'Número de entradas de manifestações do tipo reclamação.',
+      'Classificação principal da manifestação',
+      classificacoes.Reclamação || 0,
+      baseClassificacoes + ' classificações válidas',
+      'Somente entradas registradas nesta pesquisa'
+    ]
+  ];
+
+  requisitos.forEach(function(requisito, indice) {
+    escreverLinhaMapeamentoParceiros_(aba, 12 + indice, requisito, indice % 2 === 1 ? c.CINZA : c.BRANCO);
+  });
+
+  aba.getRange('A20:O20').merge().setValue('ANÁLISE TEXTUAL AUTOMÁTICA PARA O RELATÓRIO')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  escreverBlocoAnalisePesquisa_(aba, 'A21:H21', 'A22:H25', 'SÍNTESE DOS INDICADORES', textosAnalise.sintese, c.AZUL);
+  escreverBlocoAnalisePesquisa_(aba, 'I21:O21', 'I22:O25', 'PONTOS DE ATENÇÃO', textosAnalise.atencao, c.VERMELHO);
+  escreverBlocoAnalisePesquisa_(aba, 'A27:H27', 'A28:H31', 'EVIDÊNCIAS POSITIVAS', textosAnalise.evidencias, c.VERDE);
+  escreverBlocoAnalisePesquisa_(aba, 'I27:O27', 'I28:O31', 'ALERTAS DE CONSISTÊNCIA', textosAnalise.consistencia, c.LARANJA);
+
+  const linhaHistoricoTitulo = 33;
+  aba.getRange(linhaHistoricoTitulo, 1, 1, 15).merge().setValue('HISTÓRICO MENSAL DOS INDICADORES RESPONDIDOS')
+    .setBackground(c.TURQUESA).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  const cabecalhoHistorico = [
+    'Mês', 'Pesquisas', 'Média saneamento', 'Base saneamento',
+    'Média qualidade de vida', 'Base qualidade de vida',
+    'Média atendimento', 'Base atendimento', 'Informações claras', 'Base clareza',
+    'Elogios', 'Solicitações', 'Reclamações'
+  ];
+  aba.getRange(34, 1, 1, cabecalhoHistorico.length).setValues([cabecalhoHistorico])
+    .setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold').setWrap(true)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+
+  const historico = periodos.map(function(periodo) {
+    const resumo = calcularIndicadoresPesquisa_(periodo.registros);
+    const classes = contarClassificacoesPesquisa_(periodo.registros);
+    return [
+      periodo.rotulo, resumo.total, resumo.mediaSaneamento, resumo.respostasSaneamento,
+      resumo.mediaMelhoria, resumo.respostasMelhoria, resumo.mediaAtendimento,
+      resumo.respostasAtendimento, resumo.clareza === null ? null : resumo.clareza / 100,
+      resumo.respostasClareza, classes.Elogio || 0, classes.Solicitação || 0,
+      classes.Reclamação || 0
+    ];
+  });
+  if (historico.length) {
+    aba.getRange(35, 1, historico.length, cabecalhoHistorico.length).setValues(historico)
+      .setFontSize(9).setVerticalAlignment('middle');
+    aba.getRange(35, 2, historico.length, 1).setNumberFormat('0');
+    aba.getRange(35, 3, historico.length, 1).setNumberFormat('0.0');
+    aba.getRange(35, 4, historico.length, 1).setNumberFormat('0');
+    aba.getRange(35, 5, historico.length, 1).setNumberFormat('0.0');
+    aba.getRange(35, 6, historico.length, 1).setNumberFormat('0');
+    aba.getRange(35, 7, historico.length, 1).setNumberFormat('0.0');
+    aba.getRange(35, 8, historico.length, 1).setNumberFormat('0');
+    aba.getRange(35, 9, historico.length, 1).setNumberFormat('0%');
+    aba.getRange(35, 10, historico.length, 4).setNumberFormat('0');
+  }
+
+  const linhaDepoimentosTitulo = 36 + Math.max(historico.length, 1);
+  aba.getRange(linhaDepoimentosTitulo, 1, 1, 15).merge().setValue('RESPOSTAS INTEGRAIS PARA TRANSCRIÇÃO NO PROGRAMA PARCEIROS')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  const linhaCabecalhoDepoimentos = linhaDepoimentosTitulo + 1;
+  escreverCabecalhoDepoimentosParceiros_(aba, linhaCabecalhoDepoimentos);
+
+  periodoAtual.registros.forEach(function(registro, indice) {
+    const linha = linhaCabecalhoDepoimentos + 1 + indice;
+    escreverLinhaDepoimentoParceiros_(aba, linha, registro, indice % 2 === 1 ? c.CINZA : c.BRANCO);
+  });
+
+  formatarProgramaParceiros_(aba, linhaCabecalhoDepoimentos, periodoAtual.registros.length);
+}
+
+function escreverBlocoAnalisePesquisa_(aba, intervaloTitulo, intervaloTexto, titulo, texto, cor) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  aba.getRange(intervaloTitulo).merge().setValue(titulo)
+    .setBackground(cor).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(9)
+    .setHorizontalAlignment('left').setVerticalAlignment('middle');
+  const faixaTexto = aba.getRange(intervaloTexto).merge().setValue(texto)
+    .setBackground(c.BRANCO).setFontColor(c.TEXTO).setFontSize(9).setWrap(true)
+    .setHorizontalAlignment('left').setVerticalAlignment('top')
+    .setBorder(false, true, true, true, false, false, cor, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  aplicarRotulosEmNegritoPesquisa_(faixaTexto.getCell(1, 1), texto, c.TEXTO);
+}
+
+function aplicarRotulosEmNegritoPesquisa_(celula, texto, corTexto) {
+  const construtor = SpreadsheetApp.newRichTextValue().setText(texto);
+  const estiloNormal = SpreadsheetApp.newTextStyle().setForegroundColor(corTexto).build();
+  const estiloNegrito = SpreadsheetApp.newTextStyle().setForegroundColor(corTexto).setBold(true).build();
+  construtor.setTextStyle(0, texto.length, estiloNormal);
+  const expressao = /(^|\n)([^\n:]{2,45}:)/g;
+  let resultado;
+  while ((resultado = expressao.exec(texto)) !== null) {
+    const inicio = resultado.index + (resultado[1] ? resultado[1].length : 0);
+    construtor.setTextStyle(inicio, inicio + resultado[2].length, estiloNegrito);
+  }
+  celula.setRichTextValue(construtor.build());
+}
+
+function escreverBISatisfacao_(aba, registros, indicadoresGerais, contextoMensal, fusoHorario) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const periodos = contextoMensal && contextoMensal.periodos
+    ? contextoMensal.periodos
+    : agruparRegistrosPorMes_(registros, fusoHorario);
+  const periodoAtual = contextoMensal && contextoMensal.atual
+    ? contextoMensal.atual
+    : (periodos.length ? periodos[periodos.length - 1] : { chave: '', rotulo: 'Sem período', registros: [] });
+  const periodoAnterior = contextoMensal ? contextoMensal.anterior : null;
+  const registrosMes = periodoAtual.registros;
+  const indicadores = calcularIndicadoresPesquisa_(registrosMes);
+  const indicadoresAnteriores = periodoAnterior ? calcularIndicadoresPesquisa_(periodoAnterior.registros) : null;
+  const termometro = calcularTermometroPesquisa_(registrosMes);
+  const textos = construirTextosAnalisePesquisa_(registrosMes, indicadores, termometro, {
+    rotulo: periodoAtual.rotulo,
+    anterior: periodoAnterior,
+    acumulado: { total: registros.length, meses: periodos.length }
+  });
+
+  aba.setTabColor(c.ROXO);
+  aba.getRange('A1:P1').merge().setValue('BI DA PESQUISA DE SATISFAÇÃO')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(14)
+    .setHorizontalAlignment('left').setVerticalAlignment('middle');
+  aba.getRange('A2:L2').merge()
+    .setValue('Visão mensal com comparação ao mês anterior e contexto histórico acumulado')
+    .setBackground(c.TURQUESA).setFontColor(c.BRANCO).setFontSize(9)
+    .setHorizontalAlignment('left').setVerticalAlignment('middle');
+  aba.getRange('M2:N2').merge().setValue('MÊS DO PAINEL')
+    .setBackground(c.AZUL).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(8)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  aba.getRange('O2:P2').setBackground(c.BRANCO).setFontColor(c.AZUL)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle')
+    .setBorder(true, true, true, true, false, false, c.AZUL, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  aba.getRange('O2').setValue(periodoAtual.rotulo).setFontWeight('bold').setFontSize(9);
+  aba.getRange('P2').setValue('selecionar').setFontStyle('italic').setFontSize(7).setFontColor(c.TEXTO);
+  if (periodos.length) {
+    const validacaoPeriodo = SpreadsheetApp.newDataValidation()
+      .requireValueInList(periodos.map(function(periodo) { return periodo.rotulo; }), true)
+      .setAllowInvalid(false)
+      .setHelpText('Selecione o mês que deseja analisar no painel.')
+      .build();
+    aba.getRange(CONFIG_PESQUISA_SATISFACAO.CELULA_PERIODO_BI).setDataValidation(validacaoPeriodo);
+  }
+
+  const apoioVolume = periodoAnterior
+    ? formatarVariacaoQuantidadePesquisa_(indicadores.total, periodoAnterior.registros.length, periodoAnterior.rotulo)
+    : 'primeiro mês disponível';
+  const apoioSaneamento = indicadores.respostasSaneamento + ' válidas | '
+    + formatarComparacaoCurtaPesquisa_(indicadores.mediaSaneamento, indicadoresAnteriores && indicadoresAnteriores.mediaSaneamento);
+  const apoioAtendimento = indicadores.respostasAtendimento + ' válidas | '
+    + formatarComparacaoCurtaPesquisa_(indicadores.mediaAtendimento, indicadoresAnteriores && indicadoresAnteriores.mediaAtendimento);
+  const apoioClareza = indicadores.respostasClareza + ' válidas | '
+    + formatarComparacaoCurtaPesquisa_(indicadores.clareza, indicadoresAnteriores && indicadoresAnteriores.clareza, true);
+
+  escreverCartaoCompactoPesquisa_(aba, 'A4:D4', 'A5:D5', 'PESQUISAS NO MÊS', indicadores.total, apoioVolume, c.TURQUESA);
+  escreverCartaoCompactoPesquisa_(aba, 'E4:H4', 'E5:H5', 'SANEAMENTO', formatarMediaPesquisa_(indicadores.mediaSaneamento), apoioSaneamento, c.AZUL);
+  escreverCartaoCompactoPesquisa_(aba, 'I4:L4', 'I5:L5', 'ATENDIMENTO', formatarMediaPesquisa_(indicadores.mediaAtendimento), apoioAtendimento, c.VERDE);
+  escreverCartaoCompactoPesquisa_(aba, 'M4:P4', 'M5:P5', 'INFORMAÇÕES CLARAS', formatarPercentualPesquisa_(indicadores.clareza), apoioClareza, c.ROXO);
+
+  aba.getRange('A7:P7').merge().setValue('TERMÔMETRO DE ATENÇÃO DO MÊS')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(9);
+  escreverCartaoCompactoPesquisa_(aba, 'A8:C8', 'A9:C9', 'SANEAMENTO DE 0 A 6', formatarRazaoPesquisa_(termometro.saneamentoAte6, termometro.baseSaneamento), '', corTermometroPesquisa_(termometro.saneamentoAte6, termometro.baseSaneamento));
+  escreverCartaoCompactoPesquisa_(aba, 'D8:F8', 'D9:F9', 'QUALIDADE DE VIDA DE 0 A 6', formatarRazaoPesquisa_(termometro.melhoriaAte6, termometro.baseMelhoria), '', corTermometroPesquisa_(termometro.melhoriaAte6, termometro.baseMelhoria));
+  escreverCartaoCompactoPesquisa_(aba, 'G8:I8', 'G9:I9', 'NÃO PERCEBEU MUDANÇA', formatarRazaoPesquisa_(termometro.semMudanca, termometro.baseMudanca), '', corTermometroPesquisa_(termometro.semMudanca, termometro.baseMudanca));
+  escreverCartaoCompactoPesquisa_(aba, 'J8:L8', 'J9:L9', 'INFORMAÇÃO NÃO PLENA', formatarRazaoPesquisa_(termometro.informacaoNaoPlena, termometro.baseClareza), '', corTermometroPesquisa_(termometro.informacaoNaoPlena, termometro.baseClareza));
+  escreverCartaoCompactoPesquisa_(aba, 'M8:P8', 'M9:P9', 'ASPECTO NEGATIVO', formatarRazaoPesquisa_(termometro.aspectoNegativo, termometro.baseAspectos), '', corTermometroPesquisa_(termometro.aspectoNegativo, termometro.baseAspectos));
+
+  aba.getRange('A11:P11').merge().setValue('LEITURA AUTOMÁTICA DO MÊS')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  escreverBlocoAnalisePesquisa_(aba, 'A12:H12', 'A13:H16', 'SÍNTESE E COMPARAÇÃO', textos.sintese, c.AZUL);
+  escreverBlocoAnalisePesquisa_(aba, 'I12:P12', 'I13:P16', 'PONTOS DE ATENÇÃO', textos.atencao, c.VERMELHO);
+  escreverBlocoAnalisePesquisa_(aba, 'A18:H18', 'A19:H22', 'EVIDÊNCIAS POSITIVAS', textos.evidencias, c.VERDE);
+  escreverBlocoAnalisePesquisa_(aba, 'I18:P18', 'I19:P22', 'QUALIDADE E LEITURA DOS DADOS', textos.consistencia, c.LARANJA);
+
+  aba.getRange('A24:P24').merge().setValue('EVOLUÇÃO MENSAL E CONTEXTO HISTÓRICO')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  const periodosHistorico = periodos.slice(Math.max(0, periodos.length - 12));
+  const linhasHistorico = periodosHistorico.map(function(periodo) {
+    const resumo = calcularIndicadoresPesquisa_(periodo.registros);
+    const temperatura = calcularTermometroPesquisa_(periodo.registros);
+    return [
+      periodo.rotulo, resumo.total, resumo.mediaSaneamento, resumo.mediaAtendimento,
+      temperatura.baseSaneamento ? temperatura.saneamentoAte6 / temperatura.baseSaneamento : null,
+      temperatura.baseSaneamento,
+      resumo.clareza === null ? null : resumo.clareza / 100,
+      resumo.respostasClareza
+    ];
+  });
+  aba.getRange('A25:H25').setValues([[
+    'Mês', 'Pesquisas', 'Saneamento', 'Atendimento',
+    'Notas de 0 a 6', 'Base saneamento', 'Informações claras', 'Base clareza'
+  ]]).setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold')
+    .setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+  if (linhasHistorico.length) {
+    aba.getRange(26, 1, linhasHistorico.length, 8).setValues(linhasHistorico)
+      .setFontSize(9).setVerticalAlignment('middle');
+    aba.getRange(26, 2, linhasHistorico.length, 1).setNumberFormat('0');
+    aba.getRange(26, 3, linhasHistorico.length, 2).setNumberFormat('0.0');
+    aba.getRange(26, 5, linhasHistorico.length, 1).setNumberFormat('0%');
+    aba.getRange(26, 6, linhasHistorico.length, 1).setNumberFormat('0');
+    aba.getRange(26, 7, linhasHistorico.length, 1).setNumberFormat('0%');
+    aba.getRange(26, 8, linhasHistorico.length, 1).setNumberFormat('0');
+    const graficoHistorico = aba.newChart().asLineChart()
+      .addRange(aba.getRange(25, 1, linhasHistorico.length + 1, 1))
+      .addRange(aba.getRange(25, 3, linhasHistorico.length + 1, 2))
+      .setPosition(25, 9, 0, 0)
+      .setOption('title', 'Evolução mensal das notas médias')
+      .setOption('legend', { position: 'bottom' })
+      .setOption('vAxis', { minValue: 0, maxValue: 10, title: 'Nota média' })
+      .setOption('pointSize', 6)
+      .setOption('colors', [c.AZUL, c.VERDE])
+      .setOption('width', 760).setOption('height', 280)
+      .build();
+    aba.insertChart(graficoHistorico);
+  }
+  aba.getRange('A38:H39').merge()
+    .setValue('O histórico preserva todos os meses. O topo do painel usa somente o mês selecionado. Bases vazias indicam que a pergunta não estava disponível ou não foi respondida naquele período.')
+    .setBackground(c.CINZA).setFontColor(c.TEXTO).setFontStyle('italic').setFontSize(9).setWrap(true);
+
+  aba.getRange('A41:H41').merge().setValue('CONTINUIDADE DOS MOMENTOS DA OBRA')
+    .setBackground(c.TURQUESA).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  const momentos = ['Pré-obra', 'Durante a obra', 'Pós-obra', 'Durante ou pós obra'];
+  const resumoMomentos = momentos.map(function(momento) {
+    const grupo = registrosMes.filter(function(registro) {
+      return normalizarMomentoPesquisa_(registro.momento) === normalizarPesquisa_(momento);
+    });
+    const notasEtapa = numerosValidosPesquisa_(grupo.map(function(registro) { return registro.notaEtapa; }));
+    const relacionamento = numerosValidosPesquisa_(grupo.map(function(registro) { return registro.relacionamento; }));
+    return [momento, mediaPesquisa_(notasEtapa), mediaPesquisa_(relacionamento), grupo.length, notasEtapa.length];
+  });
+  aba.getRange('A42:E42').setValues([['Momento', 'Satisfação da etapa', 'Relacionamento', 'Pesquisas', 'Base da etapa']])
+    .setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold').setWrap(true)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  aba.getRange('A43:E46').setValues(resumoMomentos).setFontSize(9).setVerticalAlignment('middle');
+  aba.getRange('B43:C46').setNumberFormat('0.0').setHorizontalAlignment('center');
+  aba.getRange('D43:E46').setNumberFormat('0').setHorizontalAlignment('center');
+  aba.getRange('F42:H46').merge().setValue('Comparação entre grupos distintos no mês selecionado. Não representa acompanhamento das mesmas pessoas ao longo da obra.')
+    .setBackground(c.CINZA).setFontColor(c.TEXTO).setFontStyle('italic').setFontSize(9).setWrap(true)
+    .setVerticalAlignment('middle');
+
+  escreverComposicaoMensalPesquisa_(aba, registrosMes, periodoAtual.rotulo);
+
+  const a = termometro.aspectos;
+  const linhasAspectos = [
+    ['Cheiro', a.cheiroPositivo || 0, a.cheiroNegativo || 0],
+    ['Vetores', a.vetoresPositivo || 0, a.vetoresNegativo || 0],
+    ['Limpeza', a.limpezaPositivo || 0, a.limpezaNegativo || 0],
+    ['Esgoto aparente', null, a.esgotoNegativo || 0],
+    ['Bom funcionamento', a.bomFuncionamento || 0, null],
+    ['Não percebe problemas', a.semProblemas || 0, null]
+  ];
+  aba.getRange('A48:P48').merge().setValue('ASPECTOS DO SANEAMENTO MARCADOS NO MÊS')
+    .setBackground(c.TURQUESA).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  aba.getRange('A49:C49').setValues([['Aspecto', 'Positivo', 'Negativo']])
+    .setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold');
+  aba.getRange('A50:C55').setValues(linhasAspectos).setFontSize(9);
+  if (termometro.baseAspectos) {
+    const graficoAspectos = aba.newChart().asBarChart()
+      .addRange(aba.getRange('A49:C55'))
+      .setPosition(49, 5, 0, 0)
+      .setOption('title', 'Aspectos selecionados em ' + periodoAtual.rotulo)
+      .setOption('legend', { position: 'bottom' })
+      .setOption('hAxis', { minValue: 0, title: 'Quantidade de respostas' })
+      .setOption('colors', [c.VERDE, c.VERMELHO])
+      .setOption('width', 900).setOption('height', 280)
+      .build();
+    aba.insertChart(graficoAspectos);
+  }
+
+  const regrasProblemas = obterRegrasProblemasAbertosPesquisa_();
+  const linhasProblemas = regrasProblemas.map(function(regra) {
+    return [regra[0], termometro.problemasAbertos[regra[0]] || 0];
+  });
+  aba.getRange('A64:P64').merge().setValue('POSSÍVEIS PROBLEMAS OU PEDIDOS DE MELHORIA NO MÊS')
+    .setBackground(c.VERMELHO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  aba.getRange('A65:B65').setValues([['Problema mencionado', 'Respostas com menção']])
+    .setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold');
+  aba.getRange(66, 1, linhasProblemas.length, 2).setValues(linhasProblemas).setFontSize(9);
+  if (registrosMes.length) {
+    const graficoProblemas = aba.newChart().asBarChart()
+      .addRange(aba.getRange(65, 1, linhasProblemas.length + 1, 2))
+      .setPosition(65, 5, 0, 0)
+      .setOption('title', 'Problemas ou pedidos mencionados em ' + periodoAtual.rotulo)
+      .setOption('legend', { position: 'none' })
+      .setOption('hAxis', { minValue: 0, title: 'Respostas com menção' })
+      .setOption('colors', [c.VERMELHO])
+      .setOption('width', 900).setOption('height', 280)
+      .build();
+    aba.insertChart(graficoProblemas);
+  }
+
+  escreverEvidenciasTextuaisPesquisa_(aba, registrosMes);
+
+  aba.getRange('A90:P90').merge().setValue('COMO LER O TERMÔMETRO')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  aba.getRange('A91:P93').merge()
+    .setValue('As faixas de notas de 0 a 6 são sinalizações operacionais para facilitar a leitura e não correspondem a uma classificação contratual. O verde indica ausência do sinal, o laranja indica incidência inferior a 25% e o vermelho indica incidência igual ou superior a 25%. Cada percentual usa somente respostas válidas para a pergunta. Nas respostas abertas, cada pesquisa é contada no máximo uma vez por problema e somente quando os termos configurados aparecem no texto.')
+    .setBackground(c.CINZA).setFontColor(c.TEXTO).setFontStyle('italic').setFontSize(9).setWrap(true);
+  aba.getRange('A95:P95').merge().setValue('CRITÉRIOS DE BUSCA NAS RESPOSTAS ABERTAS')
+    .setBackground(c.TURQUESA).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  regrasProblemas.forEach(function(regra, indice) {
+    const linha = 96 + indice;
+    aba.getRange(linha, 1, 1, 4).merge().setValue(regra[0]).setFontWeight('bold');
+    aba.getRange(linha, 5, 1, 12).merge().setValue(regra[1].join(', '));
+    aba.getRange(linha, 1, 1, 16).setBackground(indice % 2 ? c.CINZA : c.BRANCO)
+      .setFontColor(c.TEXTO).setFontSize(9).setVerticalAlignment('middle');
+  });
+
+  formatarBISatisfacao_(aba, regrasProblemas.length, linhasHistorico.length);
+}
+
+function formatarComparacaoCurtaPesquisa_(atual, anterior, percentual) {
+  if (atual === null || atual === undefined || !Number.isFinite(atual)) return 'sem resultado atual';
+  if (anterior === null || anterior === undefined || !Number.isFinite(anterior)) return 'sem base anterior';
+  const diferenca = Math.round((atual - anterior) * 10) / 10;
+  if (diferenca === 0) return 'estável';
+  const sinal = diferenca > 0 ? '+' : '';
+  const unidade = percentual
+    ? ' p.p.'
+    : (Math.abs(diferenca) === 1 ? ' ponto' : ' pontos');
+  return sinal + diferenca.toFixed(1).replace('.', ',') + unidade;
+}
+
+function formatarPercentualPesquisa_(valor) {
+  return valor === null || valor === undefined || !Number.isFinite(valor)
+    ? 'Sem base'
+    : Math.round(valor) + '%';
+}
+
+function normalizarMomentoPesquisa_(valor) {
+  const texto = normalizarPesquisa_(valor);
+  if (texto.indexOf('pre obra') !== -1) return 'pre obra';
+  if (texto.indexOf('durante') !== -1 && texto.indexOf('pos obra') !== -1) return 'durante ou pos obra';
+  if (texto.indexOf('pos obra') !== -1) return 'pos obra';
+  if (texto.indexOf('durante') !== -1) return 'durante a obra';
+  return texto;
+}
+
+function escreverComposicaoMensalPesquisa_(aba, registros, rotuloPeriodo) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const origens = { 'Histórico 1.0': 0, 'Histórico 2.0': 0, 'Atual 3.0': 0 };
+  const modalidades = { 'Pesquisa direta': 0, 'Vinculada a vistoria cautelar': 0 };
+  registros.forEach(function(registro) {
+    origens[classificarOrigemPesquisa_(registro)]++;
+    modalidades[classificarModalidadePesquisa_(registro)]++;
+  });
+
+  aba.getRange('I41:P41').merge().setValue('COMPOSIÇÃO DO MÊS')
+    .setBackground(c.ROXO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  aba.getRange('I42:L42').merge().setValue('Origem da base')
+    .setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold').setHorizontalAlignment('center');
+  aba.getRange('M42:P42').merge().setValue('Modalidade da pesquisa')
+    .setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO).setFontWeight('bold').setHorizontalAlignment('center');
+  const linhasOrigem = Object.keys(origens).map(function(chave) { return [chave, origens[chave]]; });
+  const linhasModalidade = Object.keys(modalidades).map(function(chave) { return [chave, modalidades[chave]]; });
+  linhasOrigem.forEach(function(item, indice) {
+    const linha = 43 + indice;
+    aba.getRange('I' + linha + ':K' + linha).merge().setValue(item[0]);
+    aba.getRange('L' + linha).setValue(item[1]).setNumberFormat('0').setHorizontalAlignment('center').setFontWeight('bold');
+  });
+  linhasModalidade.forEach(function(item, indice) {
+    const linha = 43 + indice;
+    aba.getRange('M' + linha + ':O' + linha).merge().setValue(item[0]);
+    aba.getRange('P' + linha).setValue(item[1]).setNumberFormat('0').setHorizontalAlignment('center').setFontWeight('bold');
+  });
+  aba.getRange('M45:P45').merge().setValue('Período: ' + rotuloPeriodo)
+    .setFontStyle('italic').setFontSize(8).setHorizontalAlignment('center');
+  aba.getRange('I43:P45').setFontColor(c.TEXTO).setFontSize(9).setVerticalAlignment('middle');
+}
+
+function classificarOrigemPesquisa_(registro) {
+  const id = normalizarPesquisa_(registro.id);
+  const origem = normalizarPesquisa_(registro.origemRegistro);
+  if (id.indexOf('hist 1 0') === 0 || origem.indexOf('1 0') !== -1) return 'Histórico 1.0';
+  if (id.indexOf('hist 2 0') === 0 || origem.indexOf('2 0') !== -1) return 'Histórico 2.0';
+  return 'Atual 3.0';
+}
+
+function classificarModalidadePesquisa_(registro) {
+  return normalizarPesquisa_(registro.procedimento).indexOf('cautelar') !== -1
+    ? 'Vinculada a vistoria cautelar'
+    : 'Pesquisa direta';
+}
+
+function escreverEvidenciasTextuaisPesquisa_(aba, registros) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const evidencias = registros.filter(function(registro) {
+    return possuiConteudoPesquisa_(registro.comentarios) || possuiConteudoPesquisa_(registro.aspectos);
+  }).slice(0, 5);
+  aba.getRange('A80:P80').merge().setValue('EVIDÊNCIAS TEXTUAIS DO MÊS')
+    .setBackground(c.AZUL_ESCURO).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(10);
+  aba.getRange('A81:B81').merge().setValue('ID');
+  aba.getRange('C81:D81').merge().setValue('Bairro');
+  aba.getRange('E81:F81').merge().setValue('Classificação');
+  aba.getRange('G81:P81').merge().setValue('Observação registrada pela equipe');
+  aba.getRange('A81:P81').setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO)
+    .setFontWeight('bold').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  if (!evidencias.length) {
+    aba.getRange('A82:P86').merge().setValue('Não há respostas textuais válidas no mês selecionado.')
+      .setBackground(c.CINZA).setFontColor(c.TEXTO).setFontStyle('italic')
+      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    return;
+  }
+  evidencias.forEach(function(registro, indice) {
+    const linha = 82 + indice;
+    aba.getRange('A' + linha + ':B' + linha).merge().setValue(registro.id);
+    aba.getRange('C' + linha + ':D' + linha).merge().setValue(registro.bairro);
+    aba.getRange('E' + linha + ':F' + linha).merge().setValue(resumirClassificacaoPesquisa_(registro.classificacao));
+    aba.getRange('G' + linha + ':P' + linha).merge().setValue(registro.comentarios || registro.aspectos);
+    aba.getRange('A' + linha + ':P' + linha).setBackground(indice % 2 ? c.CINZA : c.BRANCO)
+      .setFontColor(c.TEXTO).setFontSize(8).setWrap(true).setVerticalAlignment('top')
+      .setBorder(false, false, true, false, false, false, c.CINZA_BORDA, SpreadsheetApp.BorderStyle.SOLID);
+  });
+}
+
+function escreverCartaoCompactoPesquisa_(aba, intervaloTitulo, intervaloValor, titulo, valor, apoio, cor) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  aba.getRange(intervaloTitulo).merge().setValue(titulo)
+    .setBackground(cor).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(8)
+    .setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+  aba.getRange(intervaloValor).merge().setValue(valor + (apoio ? ' | ' + apoio : ''))
+    .setBackground(c.BRANCO).setFontColor(cor).setFontWeight('bold').setFontSize(11)
+    .setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle')
+    .setBorder(false, true, true, true, false, false, cor, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+}
+
+function escreverCartaoAnalitico_(aba, intervaloTitulo, intervaloValor, titulo, valor, apoio, cor) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  aba.getRange(intervaloTitulo).merge().setValue(titulo)
+    .setBackground(cor).setFontColor(c.BRANCO).setFontWeight('bold').setFontSize(9)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  aba.getRange(intervaloValor).merge().setValue(valor + '\n' + apoio)
+    .setBackground(c.BRANCO).setFontColor(cor).setFontWeight('bold').setFontSize(12)
+    .setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle')
+    .setBorder(false, true, true, true, false, false, cor, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+}
+
+function escreverCabecalhoMapeamentoParceiros_(aba, linha, cabecalhos) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const intervalos = ['A' + linha + ':E' + linha, 'F' + linha + ':J' + linha, 'K' + linha + ':L' + linha, 'M' + linha, 'N' + linha + ':O' + linha];
+  intervalos.forEach(function(intervalo, indice) {
+    aba.getRange(intervalo).merge().setValue(cabecalhos[indice]);
+  });
+  aba.getRange('A' + linha + ':O' + linha).setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO)
+    .setFontWeight('bold').setFontSize(9).setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+}
+
+function escreverLinhaMapeamentoParceiros_(aba, linha, valores, fundo) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const intervalos = ['A' + linha + ':E' + linha, 'F' + linha + ':J' + linha, 'K' + linha + ':L' + linha, 'M' + linha, 'N' + linha + ':O' + linha];
+  intervalos.forEach(function(intervalo, indice) {
+    aba.getRange(intervalo).merge().setValue(valores[indice]);
+  });
+  aba.getRange('A' + linha + ':O' + linha).setBackground(fundo).setFontColor(c.TEXTO)
+    .setFontSize(9).setWrap(true).setVerticalAlignment('middle')
+    .setBorder(false, false, true, false, false, false, c.CINZA_BORDA, SpreadsheetApp.BorderStyle.SOLID);
+  aba.getRange('K' + linha + ':M' + linha).setHorizontalAlignment('center').setFontWeight('bold');
+}
+
+function escreverCabecalhoDepoimentosParceiros_(aba, linha) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  const estruturas = [
+    ['A' + linha, 'ID'], ['B' + linha, 'Data'], ['C' + linha, 'Bairro'], ['D' + linha, 'Momento'],
+    ['E' + linha, 'Nome'], ['F' + linha, 'Nota saneamento'], ['G' + linha + ':H' + linha, 'Depoimento sobre saneamento'],
+    ['I' + linha + ':J' + linha, 'Sugestão sobre saneamento'], ['K' + linha, 'Mudança percebida'],
+    ['L' + linha, 'Nota qualidade de vida'], ['M' + linha + ':N' + linha, 'Depoimento sobre qualidade de vida'],
+    ['O' + linha, 'Classificação registrada']
+  ];
+  estruturas.forEach(function(item) {
+    aba.getRange(item[0]).merge().setValue(item[1]);
+  });
+  aba.getRange('A' + linha + ':O' + linha).setBackground(c.AZUL_CLARO).setFontColor(c.TEXTO)
+    .setFontWeight('bold').setFontSize(8).setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+}
+
+function escreverLinhaDepoimentoParceiros_(aba, linha, registro, fundo) {
+  const c = CONFIG_PESQUISA_SATISFACAO.CORES;
+  aba.getRange('G' + linha + ':H' + linha).merge();
+  aba.getRange('I' + linha + ':J' + linha).merge();
+  aba.getRange('M' + linha + ':N' + linha).merge();
+  aba.getRange('A' + linha).setValue(registro.id);
+  aba.getRange('B' + linha).setValue(registro.data || '').setNumberFormat('dd/MM/yyyy');
+  aba.getRange('C' + linha).setValue(registro.bairro);
+  aba.getRange('D' + linha).setValue(registro.momento);
+  aba.getRange('E' + linha).setValue(registro.nome);
+  aba.getRange('F' + linha).setValue(registro.notaSaneamento);
+  aba.getRange('G' + linha).setValue(registro.aspectos);
+  aba.getRange('I' + linha).setValue(montarSugestoesSaneamentoParceiros_(registro));
+  aba.getRange('K' + linha).setValue(registro.mudancaQualidade);
+  aba.getRange('L' + linha).setValue(registro.notaMelhoria);
+  aba.getRange('M' + linha).setValue(montarDepoimentoQualidadePesquisa_(registro));
+  aba.getRange('O' + linha).setValue(resumirClassificacaoPesquisa_(registro.classificacao));
+  aba.getRange('A' + linha + ':O' + linha).setBackground(fundo).setFontColor(c.TEXTO)
+    .setFontSize(8).setWrap(true).setVerticalAlignment('top')
+    .setBorder(false, false, true, false, false, false, c.CINZA_BORDA, SpreadsheetApp.BorderStyle.SOLID);
+  aba.getRange('A' + linha + ':F' + linha).setHorizontalAlignment('center');
+  aba.getRange('K' + linha + ':L' + linha).setHorizontalAlignment('center');
+}
+
+function montarDepoimentoQualidadePesquisa_(registro) {
+  const partes = [];
+  if (registro.mudancaQualidade) partes.push('Mudança percebida: ' + registro.mudancaQualidade);
+  if (possuiConteudoPesquisa_(registro.impactoDiaADia)) partes.push('Impacto no dia a dia: ' + registro.impactoDiaADia);
+  return partes.join('\n');
+}
+
+function montarSugestoesSaneamentoParceiros_(registro) {
+  const partes = [];
+  if (registro.sugestaoSaneamento) partes.push('Melhoria dos serviços: ' + registro.sugestaoSaneamento);
+  if (registro.sugestaoSabesp) partes.push('Serviços da Sabesp: ' + registro.sugestaoSabesp);
+  return partes.join('\n');
+}
+
+function formatarProgramaParceiros_(aba, linhaCabecalhoDepoimentos, quantidadeRegistros) {
+  const totalLinhas = linhaCabecalhoDepoimentos + Math.max(quantidadeRegistros, 1);
+  aba.setRowHeights(1, totalLinhas, 20);
+  const larguras = [85, 88, 115, 110, 155, 95, 170, 170, 160, 160, 110, 105, 175, 175, 170];
+  larguras.forEach(function(largura, indice) { aba.setColumnWidth(indice + 1, largura); });
+  aba.setRowHeight(1, 34);
+  aba.setRowHeight(2, 24);
+  aba.setRowHeight(8, 38);
+  aba.setRowHeight(10, 24);
+  aba.setRowHeight(11, 42);
+  aba.setRowHeights(12, 7, 62);
+  aba.setRowHeight(20, 24);
+  aba.setRowHeight(21, 24);
+  aba.setRowHeights(22, 4, 24);
+  aba.setRowHeight(27, 24);
+  aba.setRowHeights(28, 4, 24);
+  aba.setRowHeight(33, 24);
+  aba.setRowHeight(34, 38);
+  aba.setRowHeights(35, Math.max(linhaCabecalhoDepoimentos - 37, 1), 28);
+  aba.setRowHeight(linhaCabecalhoDepoimentos, 48);
+  if (quantidadeRegistros) aba.setRowHeights(linhaCabecalhoDepoimentos + 1, quantidadeRegistros, 92);
+  aba.setFrozenRows(2);
+  aba.setFrozenColumns(0);
+}
+
+function formatarBISatisfacao_(aba, quantidadeProblemas, quantidadeHistorico) {
+  aba.setRowHeights(1, 96 + Math.max(quantidadeProblemas, 1), 20);
+  const larguras = [155, 110, 105, 105, 105, 100, 95, 95, 95, 95, 95, 95, 95, 95, 135, 70];
+  larguras.forEach(function(largura, indice) { aba.setColumnWidth(indice + 1, largura); });
+  aba.setRowHeight(1, 30);
+  aba.setRowHeight(2, 26);
+  aba.setRowHeights(4, 2, 32);
+  aba.setRowHeight(7, 22);
+  aba.setRowHeights(8, 2, 30);
+  aba.setRowHeight(11, 22);
+  aba.setRowHeight(12, 22);
+  aba.setRowHeights(13, 4, 31);
+  aba.setRowHeight(18, 22);
+  aba.setRowHeights(19, 4, 31);
+  aba.setRowHeight(24, 22);
+  aba.setRowHeight(25, 42);
+  if (quantidadeHistorico) aba.setRowHeights(26, quantidadeHistorico, 26);
+  aba.setRowHeights(38, 2, 28);
+  aba.setRowHeight(41, 24);
+  aba.setRowHeight(42, 38);
+  aba.setRowHeights(43, 4, 28);
+  aba.setRowHeight(48, 24);
+  aba.setRowHeight(49, 38);
+  aba.setRowHeights(50, 6, 28);
+  aba.setRowHeight(64, 24);
+  aba.setRowHeight(65, 38);
+  if (quantidadeProblemas) aba.setRowHeights(66, quantidadeProblemas, 28);
+  aba.setRowHeight(80, 24);
+  aba.setRowHeight(81, 38);
+  aba.setRowHeights(82, 5, 62);
+  aba.setRowHeight(90, 24);
+  aba.setRowHeights(91, 3, 26);
+  aba.setRowHeight(95, 24);
+  if (quantidadeProblemas) aba.setRowHeights(96, quantidadeProblemas, 28);
+  aba.setFrozenRows(2);
+  aba.setFrozenColumns(0);
+}
+
+function agruparRegistrosPorMes_(registros, fusoHorario) {
+  const mapa = {};
+  registros.forEach(function(registro) {
+    if (!(registro.data instanceof Date) || isNaN(registro.data.getTime())) return;
+    const chave = Utilities.formatDate(registro.data, fusoHorario || 'America/Sao_Paulo', 'yyyy-MM');
+    if (!mapa[chave]) mapa[chave] = [];
+    mapa[chave].push(registro);
+  });
+  return Object.keys(mapa).sort().map(function(chave) {
+    const partes = chave.split('-');
+    const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    return {
+      chave: chave,
+      rotulo: meses[Number(partes[1]) - 1] + ' de ' + partes[0],
+      registros: mapa[chave]
+    };
+  });
+}
+
+function obterPeriodoGravadoNaAbaPesquisa_(aba) {
+  let valor = '';
+  try {
+    valor = textoPesquisa_(aba.getRange(CONFIG_PESQUISA_SATISFACAO.CELULA_PERIODO_BI).getDisplayValue());
+  } catch (erro) {
+    valor = '';
+  }
+  if (valor && normalizarPesquisa_(valor).indexOf('termometro dos procedimentos') === -1) {
+    return valor;
+  }
+  return textoPesquisa_(PropertiesService.getDocumentProperties().getProperty(
+    CONFIG_PESQUISA_SATISFACAO.PROPRIEDADE_PERIODO
+  ));
+}
+
+function construirContextoMensalPesquisa_(registros, fusoHorario, periodoSolicitado) {
+  const periodos = agruparRegistrosPorMes_(registros, fusoHorario);
+  if (!periodos.length) {
+    return {
+      periodos: [],
+      atual: { chave: '', rotulo: 'Sem período', registros: [] },
+      anterior: null
+    };
+  }
+  const solicitadoNormalizado = normalizarPesquisa_(periodoSolicitado);
+  let indiceAtual = periodos.length - 1;
+  if (solicitadoNormalizado) {
+    const encontrado = periodos.findIndex(function(periodo) {
+      return normalizarPesquisa_(periodo.chave) === solicitadoNormalizado
+        || normalizarPesquisa_(periodo.rotulo) === solicitadoNormalizado;
+    });
+    if (encontrado !== -1) indiceAtual = encontrado;
+  }
+  return {
+    periodos: periodos,
+    atual: periodos[indiceAtual],
+    anterior: indiceAtual > 0 ? periodos[indiceAtual - 1] : null
+  };
+}
+
+function contarClassificacoesPesquisa_(registros) {
+  const resultado = { Elogio: 0, Sugestão: 0, Solicitação: 0, Reclamação: 0, Neutra: 0 };
+  registros.forEach(function(registro) {
+    const classe = resumirClassificacaoPesquisa_(registro.classificacao);
+    if (resultado[classe] !== undefined) resultado[classe]++;
+  });
+  return resultado;
+}
+
+function resumirClassificacaoPesquisa_(classificacao) {
+  const texto = normalizarPesquisa_(classificacao);
+  if (texto.indexOf('elogio') === 0) return 'Elogio';
+  if (texto.indexOf('sugestao') === 0) return 'Sugestão';
+  if (texto.indexOf('solicitacao') === 0) return 'Solicitação';
+  if (texto.indexOf('reclamacao') === 0) return 'Reclamação';
+  if (texto.indexOf('neutra') === 0) return 'Neutra';
+  return classificacao ? 'Outra classificação' : '';
+}
+
+function contarTemasPesquisa_(registros) {
+  const resultado = {};
+  obterRegrasTemasPesquisa_().forEach(function(regra) { resultado[regra[0]] = 0; });
+  registros.forEach(function(registro) {
+    const temas = registro.temas ? registro.temas.split(', ') : [];
+    temas.forEach(function(tema) {
+      if (resultado[tema] !== undefined) resultado[tema]++;
+    });
+  });
+  return resultado;
+}
+
+function buscarValorPesquisa_(linha, mapa, titulos) {
+  for (let i = 0; i < titulos.length; i++) {
+    const indice = mapa[normalizarPesquisa_(titulos[i])];
+    if (indice !== undefined) {
+      const valor = linha[indice];
+      if (valor !== '' && valor !== null && valor !== undefined) {
+        return valor;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizarPesquisa_(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function textoPesquisa_(valor) {
+  if (valor === null || valor === undefined || String(valor).trim() === '') {
+    return '';
+  }
+  return String(valor).trim();
+}
+
+function formatarTelefonePesquisa_(valor) {
+  if (valor === null || valor === undefined || String(valor).trim() === '') {
+    return '';
+  }
+  if (typeof valor === 'number') {
+    return String(Math.trunc(valor));
+  }
+  return String(valor).trim();
+}
+
+function numeroPesquisa_(valor) {
+  if (valor === null || valor === undefined || valor === '') {
+    return null;
+  }
+  const numero = typeof valor === 'number'
+    ? valor
+    : Number(String(valor).replace(',', '.'));
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function converterDataPesquisa_(valor) {
+  if (valor instanceof Date && !isNaN(valor.getTime())) {
+    return valor;
+  }
+  if (typeof valor === 'number' && Number.isFinite(valor)) {
+    return new Date(Math.round((valor - 25569) * 86400 * 1000));
+  }
+  if (typeof valor === 'string' && valor.trim()) {
+    const partes = valor.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (partes) {
+      return new Date(Number(partes[3]), Number(partes[2]) - 1, Number(partes[1]));
+    }
+    const tentativa = new Date(valor);
+    if (!isNaN(tentativa.getTime())) {
+      return tentativa;
+    }
+  }
+  return null;
+}
+
+function numerosValidosPesquisa_(valores) {
+  return valores.filter(function(valor) {
+    return typeof valor === 'number' && Number.isFinite(valor);
+  });
+}
+
+function mediaPesquisa_(valores) {
+  if (!valores.length) {
+    return null;
+  }
+  return valores.reduce(function(total, valor) {
+    return total + valor;
+  }, 0) / valores.length;
+}
+
+function formatarMediaPesquisa_(valor) {
+  if (valor === null) {
+    return 'Sem dados';
+  }
+  return valor.toFixed(1).replace('.', ',') + ' / 10';
+}
