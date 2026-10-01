@@ -1,4 +1,4 @@
-# Guia de implantação — CPT 2.1 (meta: segunda, 05/10/2026)
+# Guia de implantação — CPT 2.2 (meta: segunda, 05/10/2026)
 
 Tempo total estimado: **cerca de 1h30**, em três blocos. Faça tudo com a conta **victor-henrique.xavier@veolia.com**.
 Quando um passo pedir "Executar", escolha a função no topo do editor do Apps Script, clique em **Executar** e confira o **Registro de execução**. Se algo sair diferente do esperado, pare e me mande o print do registro.
@@ -11,7 +11,8 @@ Quando um passo pedir "Executar", escolha a função no topo do editor do Apps S
 - os perfis Administrativo e Comercialização;
 - a consulta de atendimentos para todos, com observações por caso;
 - a tela **Obras**, onde Administrativo e Gestão atualizam as obras;
-- a tela **Fechamento do mês**, que confere as pendências e gera a base do relatório mensal.
+- a tela **Fechamento do mês**, que confere as pendências e gera a base do relatório mensal (o nº 15 vem sugerido para outubro) e uma planilha de apoio aos Anexos;
+- a nova **Visão geral**, que abre mais rápido: o perfil vem embutido na página, os dados do mês e a agenda chegam juntos, e um cache é compartilhado pela equipe.
 
 ### 1.1 Conferir o dono
 Abra o projeto: https://script.google.com/home/projects/1B2gVRbnDP9E4tdecW7lknY5Wq8QlRbmjXXenx-8cOPQX0wBmePmWUhML/edit
@@ -30,6 +31,7 @@ Os arquivos ficam em `app/src/` no GitHub. Para cada um: abra o arquivo no edito
 | `Aplicacao.html` | substituir |
 | `Interacoes.html` | substituir |
 | `Agenda.html` | substituir |
+| `Entregas.html` | substituir |
 | `Estilos.html` | substituir |
 | `PerfisCPT.gs` | **criar** (＋ → Script → nome `PerfisCPT`) |
 | `ObservacoesCPT.gs` | **criar** (＋ → Script → nome `ObservacoesCPT`) |
@@ -37,8 +39,10 @@ Os arquivos ficam em `app/src/` no GitHub. Para cada um: abra o arquivo no edito
 | `RelatorioMensalCPT.gs` | **criar** (＋ → Script → nome `RelatorioMensalCPT`) |
 | `Obras.html` | **criar** (＋ → HTML → nome `Obras`) |
 | `Fechamento.html` | **criar** (＋ → HTML → nome `Fechamento`) |
+| `CacheCPT.gs` | **criar** (＋ → Script → nome `CacheCPT`) |
+| `Inicio.html` | **criar** (＋ → HTML → nome `Inicio`) |
 
-Só `Entregas.html` não muda. Ao criar um arquivo, digite o nome **sem** a extensão (o editor acrescenta `.gs` ou `.html`). Clique em **Salvar** (💾).
+Todos os arquivos mudaram nesta versão. Ao criar um arquivo, digite o nome **sem** a extensão (o editor acrescenta `.gs` ou `.html`). Clique em **Salvar** (💾).
 
 ### 1.3 Configurar
 1. Execute **`instalarAplicacaoCPT`** e autorize. O Google vai pedir permissões novas (Documentos e Drive), porque a aplicação agora cria o relatório. Se você pular essa autorização, a tela de Fechamento dá erro de permissão. No registro deve aparecer `APLICAÇÃO CONFIGURADA`, `administrador: victor-henrique.xavier@veolia.com` e `dominio: veolia.com`.

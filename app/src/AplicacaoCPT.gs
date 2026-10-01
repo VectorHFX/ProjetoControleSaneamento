@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.1.0';
+const VERSAO_CPT = '2.2.0';
 
 class AplicacaoCPT {
   static get baseId() { return '1vmFipKi9UKvnhuD4Jpfu10rJiBrmI-FnmqMs-yr4jA0'; }
@@ -59,15 +59,31 @@ function instalarAplicacaoCPT() {
   console.log(JSON.stringify(r, null, 2)); return r;
 }
 
-/** A página abre primeiro; dados chegam depois, por chamadas autenticadas. */
+/**
+ * A página já sai com o perfil (sem chamada extra) e, se houver no cache, com a última Visão do mês e a agenda.
+ * A tela mostra isso na hora e atualiza em segundo plano. Nenhuma planilha é aberta aqui.
+ */
 function doGet() {
-  if (typeof DadosDaAplicacao === 'undefined' || typeof PerfisCPT === 'undefined' || typeof DesempenhoCPT === 'undefined' || typeof ObservacoesCPT === 'undefined' || typeof ObrasCPT === 'undefined' || typeof RelatorioMensalCPT === 'undefined')
-    throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.');
-  return HtmlService.createTemplateFromFile('Aplicacao').evaluate().setTitle('CPT | Campo e gestão')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
+  // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT]; }
+  catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
+  const t = HtmlService.createTemplateFromFile('Aplicacao');
+  t.inicial = dadosIniciaisCPT_();
+  return t.evaluate().setTitle('CPT | Campo e gestão').addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
+}
+function dadosIniciaisCPT_() {
+  const inicial = {versao: VERSAO_CPT};
+  try {
+    const ctx = AplicacaoCPT.identidade(), mes = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM');
+    inicial.conta = ctx.email; inicial.perfil = ctx.perfil; inicial.mes = mes;
+    inicial.inicio = CacheCPT.ler('inicio:ultimo:' + mes);
+    inicial.agenda = CacheCPT.ler('agenda:mes:' + mes);
+  } catch (e) { inicial.erro = e.message; }
+  // Serializado com < escapado: o JSON vai dentro de uma tag <script>.
+  return JSON.stringify(inicial).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 
@@ -78,10 +94,12 @@ function carregarPerfilCPT() {
     return {conta: ctx.email, perfil: ctx.perfil, versao: VERSAO_CPT};
   });
 }
-function carregarInicioCPT(mes) {
+/** Aceita 'AAAA-MM' ou {mes, atualizar}. atualizar=true ignora o cache (botão Atualizar). */
+function carregarInicioCPT(p) {
+  const pedido = typeof p === 'object' && p ? p : {mes: p};
   return AplicacaoCPT.executar((d, ctx) => {
-    const competencia = d.mes(mes || Utilities.formatDate(new Date(), d.fuso, 'yyyy-MM'));
-    return {...d.inicio(competencia), conta: ctx.email, perfil: ctx.perfil, versao: VERSAO_CPT};
+    const competencia = d.mes(pedido.mes || Utilities.formatDate(new Date(), d.fuso, 'yyyy-MM'));
+    return {...d.inicio(competencia, pedido.atualizar === true), conta: ctx.email, perfil: ctx.perfil, versao: VERSAO_CPT};
   }, 'inicio.carregar');
 }
 function buscarRegistrosCPT(filtros) { return AplicacaoCPT.executar(d => d.buscar(filtros), 'registros.buscar'); }

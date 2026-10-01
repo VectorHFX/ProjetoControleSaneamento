@@ -1,4 +1,4 @@
-/** DadosDaAplicacao 2.0.0. Somente leitura; compatível com a base Campo 4.0 importada. */
+/** DadosDaAplicacao 2.2.0. Somente leitura; compatível com a base Campo 4.0 importada. */
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -35,11 +35,17 @@ class DadosDaAplicacao {
     if(f.mes)this.mes(f.mes);
     return f;
   }
-  inicio(mes) {
+  /** Visão do mês. Cache compartilhado por 10 min, invalidado por linha nova; atualizar=true recalcula. */
+  inicio(mes, atualizar) {
     const reg = this.registros(), atd = this.atendimentos();
-    const chave = 'cpt:inicio:20:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow();
-    let cache=null,salvo=null;try{cache=CacheService.getUserCache();salvo=cache.get(chave);}catch(_){}
-    if(salvo) {try{return {...JSON.parse(salvo),cache:true};}catch(_){try{cache.remove(chave);}catch(__){}}}
+    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow();
+    const salvo = atualizar ? null : CacheCPT.ler(chave);
+    if (salvo) return {...salvo, cache: true};
+    const r = this.calcularInicio(mes, reg, atd);
+    CacheCPT.gravar(chave, r, 600); CacheCPT.gravar('inicio:ultimo:'+mes, r, 21600);
+    return r;
+  }
+  calcularInicio(mes, reg, atd) {
     const linhas=this.ler(reg,19).filter(r=>this.permitido(r)), fichas=this.ler(atd,18).filter(r=>this.principal(r));
     const periodo=linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mes), tipos=new Map(), dias=new Map();
     let participacoes=0, semPublico=0;
@@ -56,8 +62,16 @@ class DadosDaAplicacao {
       recentes:periodo.slice(-5).reverse().map(r=>this.registro(r)),
       filtros:{procedimentos:[...new Set(linhas.map(r=>String(r[1])).filter(Boolean))].sort(),bairros:[...new Set(linhas.map(r=>String(r[7])).filter(Boolean))].sort(),obras:[...new Set(linhas.map(r=>String(r[9])).filter(Boolean))].sort()},
       links:{formulario},notaCarteira:'Estado atual das fichas importadas. O mês filtra os registros de campo.'};
-    const texto=JSON.stringify(resultado);try{if(cache&&Utilities.newBlob(texto).getBytes().length<90000)cache.put(chave,texto,30);}catch(_){}
+    resultado.satisfacao=this.satisfacao(periodo,mes);
     return resultado;
+  }
+  /** Pesquisas de satisfação: total do mês (meta 60) e semana atual de segunda a domingo (meta 15), só quando o mês é o corrente. */
+  satisfacao(periodo,mes){
+    const datas=periodo.filter(r=>/satisfac/.test(DadosDaAplicacao.norm(r[1]))).map(r=>this.data(r[2])).filter(d=>d.startsWith(mes));
+    const hoje=Utilities.formatDate(new Date(),this.fuso,'yyyy-MM-dd');let semana=null;
+    if(hoje.startsWith(mes)){const d=new Date(hoje+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));const de=d.toISOString().slice(0,10);d.setUTCDate(d.getUTCDate()+6);const ate=d.toISOString().slice(0,10);
+      semana={de,ate,total:datas.filter(x=>x>=de&&x<=ate).length,meta:15};}
+    return {mes:datas.length,meta:60,semana};
   }
   buscar(p) {
     p=p||{};const f=this.filtros(p), a=this.registros(), limite=24;

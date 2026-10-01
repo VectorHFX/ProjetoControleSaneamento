@@ -1,5 +1,5 @@
 /**
- * RelatorioMensalCPT 2.1.0. Fechamento do mês e base do Relatório Mensal de Comunicação Social e Socioambiental.
+ * RelatorioMensalCPT 2.2.0. Fechamento do mês e base do Relatório Mensal de Comunicação Social e Socioambiental.
  * Estrutura conforme o Orientador Sabesp (itens 1 a 13). Gera um Google Docs NOVO a cada pedido (v1, v2…):
  * nada é sobrescrito. Números vêm dos registros; textos que dependem de análise ficam marcados com [COMPLETAR].
  * Classificações automáticas (itens 4.x) são sugestões por palavras-chave e vêm sinalizadas para conferência.
@@ -25,6 +25,19 @@ class RelatorioMensalCPT {
   static norm(v) { return DadosDaAplicacao.norm(v); }
   static br(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : (d || ''); }
   static mesExtenso(m) { const n = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']; return n[Number(m.slice(5, 7)) - 1] + ' de ' + m.slice(0, 4); }
+  /** Último relatório conhecido: nº 14 = setembro/2026. Os seguintes sobem um por mês. */
+  static get referenciaNumero() { return {numero: 14, mes: '2026-09'}; }
+  static mesesEntre(a, b) { return (Number(b.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + Number(b.slice(5, 7)) - Number(a.slice(5, 7)); }
+  numeroSugerido(mes) {
+    let base = RelatorioMensalCPT.referenciaNumero;
+    try {
+      const a = SpreadsheetApp.openById(this.ctx.config.agendaId).getSheetByName('Entregas mensais');
+      if (a && a.getLastRow() > 1 && a.getLastColumn() >= 9) a.getRange(2, 1, a.getLastRow() - 1, 9).getValues()
+        .filter(r => Number(r[8]) > 0 && String(r[1]) <= mes).forEach(r => { if (String(r[1]) >= base.mes) base = {numero: Number(r[8]), mes: String(r[1])}; });
+    } catch (_) {}
+    const n = base.numero + RelatorioMensalCPT.mesesEntre(base.mes, mes);
+    return n > 0 ? n : '';
+  }
   static proximoMes(m) { const d = new Date(m + '-15T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() + 1); return d.toISOString().slice(0, 7); }
 
   /** Campos do formulário guardados no registro (sem abrir arquivos do Drive). */
@@ -35,6 +48,22 @@ class RelatorioMensalCPT {
     if (Array.isArray(d.campos)) d.campos.forEach(c => out.push([c.titulo, c.valor]));
     if (d.consolidado && d.consolidado.campos) Object.entries(d.consolidado.campos).forEach(e => out.push(e));
     return out;
+  }
+  /** Procura no JSON preservado da ficha um campo cujo título combine (ex.: "Tipo de manifestação"). Vazio se não houver. */
+  static buscarNoJson(json, re) {
+    let d; try { d = JSON.parse(json || '{}'); } catch (_) { return ''; }
+    const fila = [d];
+    for (let passos = 0; fila.length && passos < 2000; passos++) {
+      const x = fila.shift();
+      if (Array.isArray(x)) { fila.push(...x); continue; }
+      if (!x || typeof x !== 'object') continue;
+      if (typeof x.titulo === 'string' && re.test(RelatorioMensalCPT.norm(x.titulo)) && x.valor != null && x.valor !== '') return String(Array.isArray(x.valor) ? x.valor.join(', ') : x.valor);
+      for (const [k, v] of Object.entries(x)) {
+        if ((typeof v === 'string' || typeof v === 'number') && v !== '' && re.test(RelatorioMensalCPT.norm(k))) return String(v);
+        if (v && typeof v === 'object') fila.push(v);
+      }
+    }
+    return '';
   }
   static valor(campos, re) {
     if (!campos) return '';
@@ -69,7 +98,8 @@ class RelatorioMensalCPT {
     } catch (_) {}
     // Atendimentos que tocam o período: abertos até o fim do mês e não concluídos antes do início.
     const inicio = mes + '-01', fim = mes + '-31';
-    const casos = this.dados.ler(this.dados.atendimentos(), 18).filter(r => this.dados.principal(r)).map(r => this.dados.atendimento(r))
+    const casos = this.dados.ler(this.dados.atendimentos(), 20).filter(r => this.dados.principal(r))
+      .map(r => ({...this.dados.atendimento(r), tipo: RelatorioMensalCPT.buscarNoJson(r[19], /tipo de manifesta/), canal: RelatorioMensalCPT.buscarNoJson(r[19], /^canal|canal de (entrada|atendimento)|meio de contato|forma de contato/)}))
       .filter(c => (!c.abertura || c.abertura <= fim) && (!c.concluido || !c.conclusao || c.conclusao >= inicio));
     let agenda = [];
     try { agenda = new CronogramaCPT(this.ctx).listar({mes: RelatorioMensalCPT.proximoMes(mes)}).itens.filter(e => e.status !== 'cancelada'); } catch (_) {}
@@ -116,7 +146,7 @@ class RelatorioMensalCPT {
         check('Situação das obras revisada na última semana', !desatualizadas.length, desatualizadas.length ? desatualizadas.length + ' obras ativas sem revisão há mais de 7 dias.' : 'Obras revisadas.', {route: 'obras'}, true),
         check('Cronograma do mês seguinte', c.agenda.length > 0, c.agenda.length + ' atividades previstas para ' + RelatorioMensalCPT.mesExtenso(RelatorioMensalCPT.proximoMes(mes)) + ' (item 12 do relatório).', {route: 'cronograma'}, true)
       ],
-      historico: this.historicoGeracoes(mes)};
+      historico: this.historicoGeracoes(mes), numeroSugerido: this.numeroSugerido(mes)};
   }
 
   historicoGeracoes(mes) {
@@ -138,10 +168,10 @@ class RelatorioMensalCPT {
     if (!p || typeof p.operacaoId !== 'string' || !/^OP-[a-zA-Z0-9-]{12,70}$/.test(p.operacaoId)) throw new Error('Identificação do pedido inválida. Reabra o fechamento.');
     const mes = this.dados.mes(String(p.mes || '')), numero = p.numero === '' || p.numero == null ? '' : Number(p.numero);
     if (numero !== '' && (!Number.isInteger(numero) || numero < 1 || numero > 999)) throw new Error('Número do relatório inválido.');
-    const ss = SpreadsheetApp.openById(this.ctx.config.agendaId), cab = ['Gerado em', 'Competência', 'Versão', 'Operação ID', 'Autor', 'Documento', 'Planilha de manifestações', 'Avisos'];
+    const ss = SpreadsheetApp.openById(this.ctx.config.agendaId), cab = ['Gerado em', 'Competência', 'Versão', 'Operação ID', 'Autor', 'Documento', 'Planilha de apoio aos anexos', 'Avisos', 'Número'];
     let log = ss.getSheetByName('Entregas mensais');
     if (!log) { log = ss.insertSheet('Entregas mensais'); log.getRange(1, 1, 1, cab.length).setValues([cab]); log.setFrozenRows(1); }
-    const anteriores = log.getLastRow() > 1 ? log.getRange(2, 1, log.getLastRow() - 1, 8).getValues() : [];
+    const anteriores = log.getLastRow() > 1 ? log.getRange(2, 1, log.getLastRow() - 1, 9).getValues() : [];
     const repetido = anteriores.find(r => String(r[3]) === p.operacaoId);
     if (repetido) return {resultado: 'Esta base já foi gerada.', documento: String(repetido[5]), planilha: String(repetido[6]), versao: repetido[2]};
     const cache = CacheService.getScriptCache(), chave = 'cpt:relatorio:' + mes;
@@ -150,27 +180,69 @@ class RelatorioMensalCPT {
     try {
       const inicio = Date.now(), c = this.coletar(mes), avisos = [];
       const versao = anteriores.filter(r => String(r[1]) === mes).length + 1, pasta = this.pasta(mes);
-      const planilha = this.planilhaManifestacoes(c, pasta, versao);
+      const planilha = this.planilhaAnexos(c, pasta, versao);
       const doc = new DocumentoRelatorioCPT(c, {numero, versao, autor: this.ctx.perfil.nome, inicio, equipe: PerfisCPT.lista(this.ctx.config).filter(x => x.ativo), sat: this.satisfacao(c)}).montar(pasta, avisos);
-      log.getRange(log.getLastRow() + 1, 1, 1, cab.length).setValues([[new Date(), mes, versao, p.operacaoId, this.ctx.email, doc, planilha, avisos.join(' | ')]]);
+      log.getRange(log.getLastRow() + 1, 1, 1, cab.length).setValues([[new Date(), mes, versao, p.operacaoId, this.ctx.email, doc, planilha, avisos.join(' | '), numero]]);
       return {resultado: 'Base do relatório de ' + RelatorioMensalCPT.mesExtenso(mes) + ' gerada (versão ' + versao + ').', documento: doc, planilha, versao, avisos};
     } finally { cache.remove(chave); }
   }
 
   static statusManifestacao(c) { return c.concluido ? 'Concluído' : /nao procede|improcedent/.test(RelatorioMensalCPT.norm(c.status)) ? 'Não procede' : 'Em andamento'; }
   static linhasManifestacoes(c) {
-    return c.casos.slice().sort((a, b) => a.abertura.localeCompare(b.abertura)).map(x => [RelatorioMensalCPT.br(x.abertura), x.nome, x.endereco, x.assunto, x.origem, x.obra,
+    return c.casos.slice().sort((a, b) => a.abertura.localeCompare(b.abertura)).map(x => [RelatorioMensalCPT.br(x.abertura), x.nome, x.endereco, x.canal || x.origem, x.tipo || x.assunto, x.obra,
       String(x.proximaAcao || ''), String(typeof x.atualizacao === 'string' ? x.atualizacao : JSON.stringify(x.atualizacao || '')).slice(0, 500), RelatorioMensalCPT.statusManifestacao(x), x.protocolo]);
   }
-  /** O Orientador pede a tabela de manifestações também em arquivo aberto (planilha). */
-  planilhaManifestacoes(c, pasta, versao) {
-    const cab = ['Data', 'Nome', 'Endereço', 'Tipo de manifestação / assunto', 'Canal', 'Frente de obra', 'Histórico (próxima ação)', 'Providência (atualização)', 'Status', 'Obs. (protocolo)'];
-    const ss = SpreadsheetApp.create(c.mes + '_Manifestacoes_v' + versao), a = ss.getSheets()[0], linhas = RelatorioMensalCPT.linhasManifestacoes(c);
-    a.setName('Manifestações ' + c.mes); a.getRange(1, 1, 1, cab.length).setValues([cab]).setFontWeight('bold').setBackground('#12678f').setFontColor('#ffffff');
-    if (linhas.length) a.getRange(2, 1, linhas.length, cab.length).setValues(linhas);
-    a.setFrozenRows(1); a.getRange(1, 1, Math.max(1, linhas.length + 1), cab.length).setWrap(true).setVerticalAlignment('top');
+  /**
+   * Planilha de apoio aos Anexos, no mesmo formato da planilha oficial "Anexos do relatório":
+   * - Controle de manifestações (mesmas 10 colunas), para copiar e colar;
+   * - Indicadores — prévia do mês: o que dá para calcular dos registros, com a regra de cada número.
+   * A planilha oficial (Indicadores 2026) NÃO é alterada: a conferência e a transcrição continuam humanas.
+   */
+  planilhaAnexos(c, pasta, versao) {
+    const ss = SpreadsheetApp.create(c.mes + '_Apoio_Anexos_v' + versao), m = ss.getSheets()[0];
+    const cabM = ['Data', 'Nome', 'Endereço', 'Canal', 'Tipo de Manifestação', 'Frente de obra', 'Histórico', 'Providência', 'Status', 'Obs.:'];
+    const linhas = RelatorioMensalCPT.linhasManifestacoes(c);
+    m.setName('Controle de manifestações'); m.getRange(1, 1, 1, cabM.length).setValues([cabM]).setFontWeight('bold').setBackground('#12678f').setFontColor('#ffffff');
+    if (linhas.length) m.getRange(2, 1, linhas.length, cabM.length).setValues(linhas);
+    m.setFrozenRows(1); m.getRange(1, 1, Math.max(1, linhas.length + 1), cabM.length).setWrap(true).setVerticalAlignment('top');
+    const ind = ss.insertSheet('Indicadores — prévia'), cabI = ['Grupo', 'Indicador (como na planilha oficial)', 'Valor calculado', 'Como foi calculado', 'Conferido / valor final'];
+    const lin = this.indicadores(c).map(x => [x.grupo, x.nome, x.valor === null ? 'Informar' : x.valor, x.regra, '']);
+    ind.getRange(1, 1, 1, cabI.length).setValues([cabI]).setFontWeight('bold').setBackground('#12678f').setFontColor('#ffffff');
+    ind.getRange(2, 1, lin.length, cabI.length).setValues(lin); ind.setFrozenRows(1); ind.getRange(1, 1, lin.length + 1, cabI.length).setWrap(true).setVerticalAlignment('top');
+    ind.getRange(lin.length + 3, 1).setValue('Prévia gerada pela Aplicação CPT. Confira cada valor antes de transcrever para "Indicadores 2026"; os itens "Informar" não existem nos registros.');
     DriveApp.getFileById(ss.getId()).moveTo(pasta);
     return ss.getUrl();
+  }
+  /** Indicadores da planilha oficial que podem ser estimados a partir dos registros do mês. null = informar manualmente. */
+  indicadores(c) {
+    const R = RelatorioMensalCPT, mes = c.mes, at = c.atividades, conta = re => at.filter(r => re.test(r.texto)).length;
+    const abertas = c.casos.filter(x => x.abertura.startsWith(mes)), tipo = re => abertas.filter(x => re.test(R.norm(x.tipo || x.assunto))).length;
+    const soma = lista => lista.reduce((n, r) => n + (r.publico || 0), 0), ums = at.filter(r => /\bums\b|unidade movel|tenda/.test(r.texto));
+    const manual = (grupo, nome) => ({grupo, nome, valor: null, regra: 'Não há registro na aplicação; informar.'});
+    return [
+      manual('Gerenciais', 'Total de comunidades mapeadas'), manual('Gerenciais', 'Total de economias cadastradas no mês'),
+      {grupo: 'Manifestações', nome: 'Manifestações abertas', valor: abertas.length, regra: 'Casos principais com data de abertura no mês.'},
+      {grupo: 'Manifestações', nome: 'Solicitação', valor: tipo(/solicita/), regra: 'Abertas no mês com tipo/assunto contendo "solicitação".'},
+      {grupo: 'Manifestações', nome: 'Reclamação', valor: tipo(/reclama|transtorno|dano/), regra: 'Abertas no mês com tipo/assunto de reclamação, transtorno ou dano.'},
+      {grupo: 'Manifestações', nome: 'Elogio', valor: tipo(/elogio/), regra: 'Abertas no mês com tipo/assunto "elogio".'},
+      {grupo: 'Manifestações', nome: 'Concluídas', valor: c.casos.filter(x => x.concluido && x.conclusao.startsWith(mes)).length, regra: 'Casos com conclusão no mês.'},
+      {grupo: 'Manifestações', nome: 'Não procedente', valor: c.casos.filter(x => R.statusManifestacao(x) === 'Não procede').length, regra: 'Casos com status "não procede" no período.'},
+      manual('Governança Colaborativa', 'Total de parceiros'), manual('Governança Colaborativa', 'Total de projetos de geração de renda'),
+      {grupo: 'Governança Colaborativa', nome: 'Total de grupos de Governança', valor: conta(/governanca|comite|conselho/), regra: 'Atividades do mês que citam governança, comitê ou conselho (conferir se são grupos novos).'},
+      manual('Governança Colaborativa', 'Total de pontos revitalizados'), manual('Governança Colaborativa', 'Qtd. lixo retirado de ponto viciado (kg)'),
+      manual('Social', 'Trabalhadores contratados na comunidade (total, mulheres, homens, não identificado)'),
+      manual('Atividade Socioambiental', 'Óleo de cozinha enviado para reciclagem (litros)'), manual('Atividade Socioambiental', 'Material enviado à reciclagem (kg)'),
+      manual('Atividade Socioambiental', 'Coletores de material reciclável instalados'), manual('Atividade Socioambiental', 'Plantio (mudas)'),
+      {grupo: 'Atividade Socioambiental', nome: 'Total de participantes em ações de Educação Socioambiental', valor: soma(at), regra: 'Soma do público informado nas atividades do mês (sem pesquisas e atendimentos). ' + at.filter(r => r.publico == null).length + ' atividades sem público informado.'},
+      {grupo: 'Atividade Socioambiental', nome: 'Total de ações socioambientais', valor: at.length, regra: 'Registros de atividade do mês (sem pesquisas de satisfação e atendimentos).'},
+      {grupo: 'Comunicação Social', nome: 'Total de comunicados entregues para vistoria cautelar', valor: c.registros.filter(r => /vistoria cautelar/.test(R.norm(r.procedimento))).length, regra: 'Quantidade de registros de Acompanhamento de Vistoria Cautelar (conferir se cada registro equivale a um comunicado).'},
+      manual('Comunicação Social', 'Publicações na mídia'), manual('Comunicação Social', 'Ferramentas de comunicação criadas'),
+      manual('Comunicação Social', 'Materiais impressos entregues'), manual('Comunicação Social', 'Vídeos produzidos'),
+      ...[['Norma de Conduta', /normas? de conduta/], ['Relacionamento com a comunidade', /relacionamento com a comunidade/], ['Violência de Gênero', /violencia de genero/],
+        ['Informe de canais de denúncia', /canais? de denuncia/], ['Abuso e exploração de menores', /abuso|exploracao de menores/], ['Fluxo de imprensa', /imprensa/], ['Diversidade e inclusão', /diversidade|inclusao/]]
+        .map(([nome, re]) => ({grupo: 'Treinamento com público interno', nome, valor: conta(re), regra: 'Atividades do mês que citam o tema.'})),
+      {grupo: 'Atendimento UMS / Tenda', nome: 'Total de atendimentos', valor: soma(ums), regra: 'Soma do público das atividades que citam UMS, unidade móvel ou tenda (' + ums.length + ' atividades).'}
+    ];
   }
 }
 
@@ -307,7 +379,7 @@ class DocumentoRelatorioCPT {
 
     this.titulo('10. Manifestações Locais e Sabesp');
     this.p('Manifestações em acompanhamento no período: ' + c.casos.length + ' (' + c.casos.filter(x => x.concluido).length + ' concluídas). A mesma tabela segue em planilha aberta para compilação. As fichas constam individualmente em PDF no ANEXO 4.');
-    this.quadro(['Data', 'Nome', 'Endereço', 'Tipo de Manifestação', 'Canal', 'Frente de obra', 'Histórico', 'Providência', 'Status', 'Obs.'],
+    this.quadro(['Data', 'Nome', 'Endereço', 'Canal', 'Tipo de Manifestação', 'Frente de obra', 'Histórico', 'Providência', 'Status', 'Obs.'],
       R.linhasManifestacoes(c).map(r => [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7].slice(0, 200), r[8], r[9]]), 'Nenhuma manifestação no período.');
 
     this.titulo('11. Equipe de Trabalho');
@@ -318,7 +390,7 @@ class DocumentoRelatorioCPT {
     this.quadro(['Data', 'Horário', 'Atividade', 'Frentes', 'Local'], c.agenda.map(e => [br(e.data), e.inicio ? e.inicio + '–' + e.fim : 'Dia todo', e.titulo, e.frentes.map(f => PerfisCPT.nomes[f] || f).join(', '), [e.obra, e.bairro].filter(Boolean).join(' — ')]), 'Cronograma do próximo mês ainda não cadastrado.');
 
     this.titulo('13. Anexos');
-    ['ANEXO 1_Matriz de contatos', 'ANEXO 2_Listas de presença', 'ANEXO 3_Planilha de Resultados/Indicadores', 'ANEXO 4_Fichas de Atendimentos (PDF, individualmente)', 'ANEXO 5_Manifestações (planilha aberta)'].forEach(a => this.p(a));
+    ['ANEXO 1_Matriz de contatos', 'ANEXO 2_Listas de presença', 'ANEXO 3_Planilha de Resultados/Indicadores', 'ANEXO 4_Fichas de Atendimentos (PDF, individualmente)', 'ANEXO 5_Controle de manifestações (planilha aberta)'].forEach(a => this.p(a));
     this.p('Inserir folha de rosto com o nome de cada anexo, na ordem acima.', {italico: true, tamanho: 10});
 
     doc.saveAndClose();

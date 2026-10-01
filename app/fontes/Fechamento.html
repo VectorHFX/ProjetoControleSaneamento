@@ -30,7 +30,7 @@ window.CPTFechamento = (() => {
         <table class="simple-table"><thead><tr><th>Semana</th><th>Realizadas</th><th>Meta semanal</th></tr></thead><tbody>${s.semanas.map(w => `<tr><td>${ui.date(w.de)} a ${ui.date(w.ate)}${w.parcial ? ' (parcial)' : ''}</td><td>${w.total}</td><td>${w.total >= w.meta ? 'Atingida' : 'Faltam ' + (w.meta - w.total)}</td></tr>`).join('')}</tbody><tfoot><tr><th>Mês</th><th>${s.total}</th><th>${s.total >= s.meta ? 'Meta mensal atingida' : 'Faltam ' + (s.meta - s.total) + ' para 60'}</th></tr></tfoot></table>
       </section>
       <section class="panel"><div class="panel-head"><div><h2>Gerar base do relatório</h2><p>Cria um Google Docs novo, no formato do Orientador (itens 1 a 13), e a planilha de manifestações. Nada é sobrescrito: cada geração é uma nova versão.</p></div></div>
-        <form id="gerarForm" class="gerar-form"><label class="field">Número do relatório<input name="numero" type="number" min="1" max="999" placeholder="Ex.: 15"></label>
+        <form id="gerarForm" class="gerar-form"><label class="field">Número do relatório<input name="numero" type="number" min="1" max="999" value="${ui.esc(d.numeroSugerido || '')}" placeholder="Ex.: 15"><span class="small muted">Sugerido pela sequência (nº 14 = setembro/2026).</span></label>
         <button class="button" type="submit">Gerar base de ${ui.esc(monthName(d.mes))}</button></form>
         <p class="small muted">Leva de 1 a 4 minutos, conforme a quantidade de fotos. Textos que dependem de análise ficam marcados com [COMPLETAR] no documento.</p>
         <div id="gerarResultado" aria-live="polite"></div>
