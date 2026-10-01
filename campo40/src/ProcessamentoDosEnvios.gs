@@ -159,7 +159,6 @@ class ProcessamentoDosEnvios {
     const protocolos = [...new Set(idsProtocolo.map(id => R.texto(mapa.get(id))).filter(Boolean))];
     const protocolo = protocolos.length === 1 ? protocolos[0] : '';
     if (protocolos.length > 1) avisos.push('Protocolos diferentes informados em perguntas distintas; conferir os campos originais antes de vincular');
-    if (!idsProtocolo.length && R.normalizar(tipo).includes('atendimento')) avisos.push('Pergunta de protocolo não localizada no formulário; respostas preservadas, sem vínculo automático');
     const id = 'REG-' + R.hash([c.baseId, snapshot.formularioId, snapshot.respostaId]).slice(0, 24);
     const anexos = [];
     snapshot.campos.filter(x => x.tipo === 'FILE_UPLOAD').forEach(x => {
@@ -207,6 +206,13 @@ class ProcessamentoDosEnvios {
     const preparado = existente ? null : this.preparar(snapshot, contexto);
     const r = existente ? {resultado: 'JÁ PROCESSADO', id: id, linha: existente.linha, inserido: false} :
       contexto.repositorio.gravar(preparado.linha, preparado.detalhes, contexto.config.pastaId);
+    // Ficha de Atendimento: abre o caso com protocolo sequencial. Uma falha aqui não perde o registro;
+    // a retomada de hora em hora (abrirPendentes) cria o caso depois.
+    if (r.inserido && AberturaDeAtendimentos.ehAbertura(preparado.linha[1])) {
+      try { const caso = AberturaDeAtendimentos.abrir(contexto.base, preparado.linha, preparado.detalhes); r.protocolo = caso.protocolo;
+        AberturaDeAtendimentos.marcarRegistro(contexto.base, id, caso.protocolo); }
+      catch (erro) { console.error('Caso não aberto agora para ' + id + ': ' + String(erro.message || erro)); }
+    }
     // O contador não substitui a tabela: uma interrupção depois da escrita é retomável pelo ID.
     const e = this.estado();
     e.ultimoProcessamento = {em: new Date().toISOString(), id: r.id, resultado: r.resultado, tempoMs: Date.now() - inicio};
@@ -330,11 +336,16 @@ function instalarRetomadaAutomaticaCampo40() {
 /** AUTOMÁTICA (gatilho de hora em hora). Se outra execução estiver em andamento, tenta na próxima hora. */
 function retomarEnviosAutomaticamenteCampo40() {
   sincronizarObrasAlteradasNaAplicacaoCampo40_();
-  try { return ProcessamentoDosEnvios.retomar(); }
+  let r = null;
+  try { r = ProcessamentoDosEnvios.retomar(); }
   catch (erro) {
     if (/Outra execução está em andamento/.test(String(erro.message))) { console.log('Retomada adiada: outra execução em andamento.'); return null; }
     throw erro;
   }
+  // Fichas de atendimento registradas que ainda não têm caso (falha pontual na abertura).
+  try { ConfiguracaoDaBase.comTrava(() => AberturaDeAtendimentos.abrirPendentes(SpreadsheetApp.openById(ConfiguracaoDaBase.exigirInstalacao().baseId))); }
+  catch (erro) { console.error('Abertura de casos pendentes adiada: ' + String(erro.message || erro)); }
+  return r;
 }
 /**
  * A Aplicação CPT edita a aba Obras e escreve "PENDENTE — alterado pela aplicação" em AB6.

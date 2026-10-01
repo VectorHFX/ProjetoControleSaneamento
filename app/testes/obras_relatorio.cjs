@@ -4,7 +4,7 @@ let email='victor@example.com',locked=false;
 const props=new Map([['CPT_APLICACAO_1',JSON.stringify({baseId:'base',administrador:email,agendaId:'agenda',versao:'2.0.0'})],
   ['CPT_PESSOA:social@example.com',JSON.stringify({email:'social@example.com',nome:'Social',papeis:['socioambiental'],ativo:true,versao:1})],
   ['CPT_PESSOA:adm@example.com',JSON.stringify({email:'adm@example.com',nome:'Adm',papeis:['administrativo'],ativo:true,versao:1})],
-  ['CPT_PESSOA:atd@example.com',JSON.stringify({email:'atd@example.com',nome:'Atd',papeis:['atendimento'],ativo:true,versao:1})]]);
+  ['CPT_PESSOA:exe@example.com',JSON.stringify({email:'exe@example.com',nome:'Exe',papeis:['execucao'],ativo:true,versao:1})],['CPT_PESSOA:atd@example.com',JSON.stringify({email:'atd@example.com',nome:'Atd',papeis:['atendimento'],ativo:true,versao:1})]]);
 const chain=()=>new Proxy(function(){},{get:(t,k)=>k==='then'?undefined:chain(),apply:()=>chain()});
 class Sheet{constructor(n,rows=[]){this.name=n;this.rows=rows;this.cols=40;}getName(){return this.name}setName(n){this.name=n;return this}getLastRow(){return this.rows.length}getMaxColumns(){return this.cols}insertColumnsAfter(_,n){this.cols+=n}setFrozenRows(){}
   getRange(r,c,n=1,m=1){const s=this;const vals=()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>s.rows[r+i-1]?.[c+j-1]??''));let px;const api={getValues:vals,getValue:()=>vals()[0][0],
@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','RelatorioMensalCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -81,3 +81,25 @@ const ini=JSON.parse(vm.runInContext('dadosIniciaisCPT_()',ctx));assert.equal(in
 email='alguem@example.com';const negado=JSON.parse(vm.runInContext('dadosIniciaisCPT_()',ctx));assert(negado.erro&&!negado.inicio&&!negado.perfil,'sem cadastro: nada de dados embutidos');
 assert(!vm.runInContext('dadosIniciaisCPT_()',ctx).includes('<'),'JSON seguro para <script>');
 console.log('PASS: cache compartilhado invalidado por linha nova e pelo botão Atualizar; página já sai com perfil, Visão do mês e agenda; conta sem cadastro não recebe dados.');
+
+{// Ciclo do atendimento na aplicação (fonte única: Atendimentos + Movimentações).
+const hojeT=ctx.Utilities.formatDate(new Date(),'America/Sao_Paulo','yyyy-MM-dd');const movs=new Sheet('Movimentações',[['ID','Protocolo','Data e hora','Tipo','Status','Autor','Resumo','Origem','Hash','Detalhes JSON']]);books.get('base').sheets.push(movs);
+atd.rows.push(['ATD20260028','ATD20260028','Principal','Recebida',new Date('2026-09-28T12:00:00Z'),'','Moradora','Vazamento','Rua Z','Coletor A','Atendimento','Kesy','Triagem do Atendimento',new Date('2026-10-02T13:00:00Z'),'','','Formulário 4.0 · REG-x','','',JSON.stringify({registroId:'REG-x',procedencia:'Em análise',tipo:'Reclamação',canal:'Atendimento itinerante',telefone:'(11) 0000-0000',solicitacao:'Lama na calçada'})]);
+email='social@example.com';let det;det=run("abrirAtendimentoCPT('ATD20260028')");assert.equal(det.pode.atualizar,false);assert.equal(det.pode.executar,false);assert.equal(det.abertura.telefone,'');assert.equal(det.abertura.contatoOculto,true);assert.equal(det.abertura.tipo,'Reclamação');
+ctx.a={protocolo:'ATD20260028',versao:det.versao,operacaoId:'OP-atualiza000000001',status:'Em andamento',procedencia:'Procedente',area:'Execução',proximaAcao:'Reparar calçada',responsavel:'Equipe obra'};assert.throws(()=>run('atualizarAtendimentoCPT(a)'),/não permite/);
+email='atd@example.com';det=run("abrirAtendimentoCPT('ATD20260028')");assert.equal(det.abertura.telefone,'(11) 0000-0000');r=run('atualizarAtendimentoCPT(a)');assert.match(r.resultado,/atualizado/);
+assert.equal(atd.rows[3][3],'Em andamento');assert.equal(atd.rows[3][10],'Execução');assert.equal(movs.rows.length,2);assert.match(movs.rows[1][6],/Procedência: Em análise → Procedente/);
+assert.equal(run('atualizarAtendimentoCPT(a)').repetida,true,'mesma operação não duplica');ctx.a.operacaoId='OP-atualiza000000002';assert.throws(()=>run('atualizarAtendimentoCPT(a)'),/outra pessoa/);
+email='exe@example.com';det=run("abrirAtendimentoCPT('ATD20260028')");assert.equal(det.pode.executar,true);assert.equal(det.pode.finalizar,false);
+ctx.f={protocolo:'ATD20260028',versao:det.versao,operacaoId:'OP-finaliza000000001',conclusao:'x',data:hojeT,procedencia:'Procedente'};assert.throws(()=>run('finalizarAtendimentoCPT(f)'),/não permite/);
+ctx.e={protocolo:'ATD20260028',versao:det.versao,operacaoId:'OP-execucao000000001',feito:'Troca de 3 m² de piso.',data:'2099-01-01',executadoPor:'Equipe obra',evidencias:'https://drive.google.com/file/d/abc'};assert.throws(()=>run('registrarExecucaoCPT(e)'),/futura/);
+ctx.e.data=hojeT;r=run('registrarExecucaoCPT(e)');assert.match(r.resultado,/Execução registrada/);assert.equal(atd.rows[3][12],'Conferir execução e finalizar ficha');assert.equal(movs.rows[2][3],'Execução');
+email='atd@example.com';det=run("abrirAtendimentoCPT('ATD20260028')");ctx.f={...ctx.f,versao:det.versao,data:'2026-09-01'};assert.throws(()=>run('finalizarAtendimentoCPT(f)'),/antes da abertura/);
+ctx.f.data=hojeT;ctx.f.procedencia='Em análise';assert.throws(()=>run('finalizarAtendimentoCPT(f)'),/Procedente ou Não procedente/);ctx.f.procedencia='Procedente';r=run('finalizarAtendimentoCPT(f)');
+assert.equal(atd.rows[3][3],'Concluída');assert.equal(JSON.parse(atd.rows[3][19]).procedencia,'Procedente');assert.equal(movs.rows[3][3],'Finalização');
+det=run("abrirAtendimentoCPT('ATD20260028')");assert.equal(det.ficha.concluido,true);ctx.e={...ctx.e,versao:det.versao,operacaoId:'OP-execucao000000002'};email='exe@example.com';assert.throws(()=>run('registrarExecucaoCPT(e)'),/concluído/);
+email='atd@example.com';ctx.ra={protocolo:'ATD20260028',versao:det.versao,operacaoId:'OP-reabre0000000001',motivo:'Vazamento voltou',proximaAcao:'Nova vistoria'};run('reabrirAtendimentoCPT(ra)');assert.equal(atd.rows[3][3],'Em andamento');assert.equal(atd.rows[3][5],'');
+assert.throws(()=>run("abrirAtendimentoCPT('ATD;DROP')"),/Protocolo inválido/);assert.equal(locked,false);
+assert(Number(props.get('CPT_ATD_VERSAO'))>=4,'cache da Visão do mês invalidado a cada ação');
+console.log('PASS: ciclo do caso — permissões por perfil (contato só para Atendimento/Execução), atualização com histórico, execução, finalização com regras, reabertura, idempotência e conflito.');
+}

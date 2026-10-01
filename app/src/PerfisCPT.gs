@@ -4,8 +4,8 @@
  * administrativo = todas as ferramentas de trabalho, sem conceder acessos.
  */
 class PerfisCPT {
-  static get papeis() { return ['administrador', 'administrativo', 'gestao', 'atendimento', 'socioambiental', 'comunicacao', 'comercializacao']; }
-  static get nomes() { return {administrador: 'Administração técnica', administrativo: 'Administrativo', gestao: 'Gestão', atendimento: 'Atendimento',
+  static get papeis() { return ['administrador', 'administrativo', 'gestao', 'atendimento', 'execucao', 'socioambiental', 'comunicacao', 'comercializacao']; }
+  static get nomes() { return {administrador: 'Administração técnica', administrativo: 'Administrativo', gestao: 'Gestão', atendimento: 'Atendimento', execucao: 'Execução',
     socioambiental: 'Socioambiental', comunicacao: 'Comunicação', comercializacao: 'Comercialização'}; }
   static todos() {
     const p = PropertiesService.getScriptProperties().getProperties();

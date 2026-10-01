@@ -1,7 +1,7 @@
 <script>
 window.CPTAgenda=(()=>{
   let ui,agenda=null,ticket=0,mode='mes',day='',filter={frente:'',natureza:'',responsavel:'',busca:'',cancelados:false},selected=new Set(),editing=null,saving=false;
-  const names={administrador:'Administração técnica',administrativo:'Administrativo',gestao:'Gestão',atendimento:'Atendimento',socioambiental:'Socioambiental',comunicacao:'Comunicação',comercializacao:'Comercialização'};
+  const names={administrador:'Administração técnica',administrativo:'Administrativo',gestao:'Gestão',atendimento:'Atendimento',execucao:'Execução',socioambiental:'Socioambiental',comunicacao:'Comunicação',comercializacao:'Comercialização'};
   const status={planejada:'Planejada',confirmada:'Confirmada',concluida:'Concluída',cancelada:'Cancelada'};
   const $=id=>document.getElementById(id),esc=v=>ui.esc(v),date=v=>ui.date(v),op=()=> 'OP-'+crypto.randomUUID();
   function pessoas(e){return e.responsavelNome||e.responsaveis.map(email=>agenda?.pessoas.find(p=>p.email===email)?.nome||email).join(', ');}

@@ -30,7 +30,7 @@ Revisão do código da aplicação e do Campo 4.0 depois das versões 2.0 a 2.2.
 | 5 | Observações e histórico de obras são lidos inteiros a cada abertura | Cresce com o tempo | Cache por protocolo ou por obra, invalidado na gravação |
 | 6 | Cadastros de pessoas em Script Properties | Limite de 500 KB, mas folgado para a equipe | Migrar para a planilha de dados quando houver Recados/Contatos |
 | 7 | Prévia de indicadores: regras por palavra-chave | Pode contar errado se o texto do relato for vago | Mantido como "prévia com regra explicada". Ganha precisão quando o formulário tiver campos de classificação (eixo, tema de treinamento) |
-| 8 | Pergunta de protocolo ainda não existe no formulário | Envios de atendimento sem vínculo | Passo manual 2.3 do guia |
+| 8 | Fichas abertas antes da 2.3 sem protocolo | Casos que não aparecem na carteira | `abrirFichasSemProtocoloCampo40` (guia, passo 2.2.4) e retomada de hora em hora |
 
 ## O que não foi alterado de propósito
 

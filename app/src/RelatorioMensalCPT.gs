@@ -99,7 +99,8 @@ class RelatorioMensalCPT {
     // Atendimentos que tocam o período: abertos até o fim do mês e não concluídos antes do início.
     const inicio = mes + '-01', fim = mes + '-31';
     const casos = this.dados.ler(this.dados.atendimentos(), 20).filter(r => this.dados.principal(r))
-      .map(r => ({...this.dados.atendimento(r), tipo: RelatorioMensalCPT.buscarNoJson(r[19], /tipo de manifesta/), canal: RelatorioMensalCPT.buscarNoJson(r[19], /^canal|canal de (entrada|atendimento)|meio de contato|forma de contato/)}))
+      .map(r => ({...this.dados.atendimento(r), tipo: RelatorioMensalCPT.buscarNoJson(r[19], /^tipo$|tipo de manifesta/), canal: RelatorioMensalCPT.buscarNoJson(r[19], /^canal|canal de (entrada|atendimento)|meio de contato|forma de contato/),
+        procedencia: RelatorioMensalCPT.buscarNoJson(r[19], /^procedencia$/)}))
       .filter(c => (!c.abertura || c.abertura <= fim) && (!c.concluido || !c.conclusao || c.conclusao >= inicio));
     let agenda = [];
     try { agenda = new CronogramaCPT(this.ctx).listar({mes: RelatorioMensalCPT.proximoMes(mes)}).itens.filter(e => e.status !== 'cancelada'); } catch (_) {}
@@ -187,7 +188,8 @@ class RelatorioMensalCPT {
     } finally { cache.remove(chave); }
   }
 
-  static statusManifestacao(c) { return c.concluido ? 'Concluído' : /nao procede|improcedent/.test(RelatorioMensalCPT.norm(c.status)) ? 'Não procede' : 'Em andamento'; }
+  /** Legenda do Orientador: Em andamento / Concluído / Não procede. */
+  static statusManifestacao(c) { return /nao procede|improcedent/.test(RelatorioMensalCPT.norm(c.procedencia + ' ' + c.status)) ? 'Não procede' : c.concluido ? 'Concluído' : 'Em andamento'; }
   static linhasManifestacoes(c) {
     return c.casos.slice().sort((a, b) => a.abertura.localeCompare(b.abertura)).map(x => [RelatorioMensalCPT.br(x.abertura), x.nome, x.endereco, x.canal || x.origem, x.tipo || x.assunto, x.obra,
       String(x.proximaAcao || ''), String(typeof x.atualizacao === 'string' ? x.atualizacao : JSON.stringify(x.atualizacao || '')).slice(0, 500), RelatorioMensalCPT.statusManifestacao(x), x.protocolo]);

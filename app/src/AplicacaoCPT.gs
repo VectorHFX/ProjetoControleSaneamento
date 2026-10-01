@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.2.0';
+const VERSAO_CPT = '2.3.0';
 
 class AplicacaoCPT {
   static get baseId() { return '1vmFipKi9UKvnhuD4Jpfu10rJiBrmI-FnmqMs-yr4jA0'; }
@@ -65,7 +65,7 @@ function instalarAplicacaoCPT() {
  */
 function doGet() {
   // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
-  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT]; }
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT]; }
   catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
   const t = HtmlService.createTemplateFromFile('Aplicacao');
   t.inicial = dadosIniciaisCPT_();
@@ -83,7 +83,7 @@ function dadosIniciaisCPT_() {
   return JSON.stringify(inicial).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 
@@ -106,7 +106,6 @@ function buscarRegistrosCPT(filtros) { return AplicacaoCPT.executar(d => d.busca
 function abrirRegistroCPT(id) { return AplicacaoCPT.executar(d => d.detalhe(id), 'registros.detalhe'); }
 // Consulta de atendimentos é comum a toda a equipe. Alterações oficiais continuam no controle de atendimento.
 function buscarAtendimentosCPT(filtros) { return AplicacaoCPT.executar(d => d.carteira(filtros), 'atendimentos.buscar'); }
-function abrirAtendimentoCPT(protocolo) { return AplicacaoCPT.executar(d => d.ficha(protocolo), 'atendimentos.detalhe'); }
 function consultarHistoricoFichaCPT(p) { return AplicacaoCPT.executar(d => d.historicoFicha(p), 'atendimentos.historico'); }
 
 /** Execute no editor se precisar conferir a conexão; não modifica a base. */

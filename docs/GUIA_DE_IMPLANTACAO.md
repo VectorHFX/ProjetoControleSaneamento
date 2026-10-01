@@ -1,4 +1,4 @@
-# Guia de implantação — CPT 2.2 (meta: segunda, 05/10/2026)
+# Guia de implantação — CPT 2.3 (meta: segunda, 05/10/2026)
 
 Tempo total estimado: **cerca de 1h30**, em três blocos. Faça tudo com a conta **victor-henrique.xavier@veolia.com**.
 Quando um passo pedir "Executar", escolha a função no topo do editor do Apps Script, clique em **Executar** e confira o **Registro de execução**. Se algo sair diferente do esperado, pare e me mande o print do registro.
@@ -41,6 +41,8 @@ Os arquivos ficam em `app/src/` no GitHub. Para cada um: abra o arquivo no edito
 | `Fechamento.html` | **criar** (＋ → HTML → nome `Fechamento`) |
 | `CacheCPT.gs` | **criar** (＋ → Script → nome `CacheCPT`) |
 | `Inicio.html` | **criar** (＋ → HTML → nome `Inicio`) |
+| `CicloAtendimentoCPT.gs` | **criar** (＋ → Script → nome `CicloAtendimentoCPT`) |
+| `Atendimentos.html` | **criar** (＋ → HTML → nome `Atendimentos`) |
 
 Todos os arquivos mudaram nesta versão. Ao criar um arquivo, digite o nome **sem** a extensão (o editor acrescenta `.gs` ou `.html`). Clique em **Salvar** (💾).
 
@@ -69,7 +71,9 @@ Em **Equipe e acessos**, cadastre cada pessoa com a conta @veolia.com.
 |---|---|
 | Administração técnica | Só quem vai cadastrar acessos (você e, idealmente, mais uma pessoa de confiança) |
 | Administrativo | Todas as ferramentas de trabalho |
-| Gestão, Atendimento, Socioambiental, Comunicação, Comercialização | Conforme a frente |
+| Atendimento | Conduz os casos: atualiza, finaliza e reabre fichas |
+| Execução | Registra o que foi feito em cada protocolo (vê endereço e telefone do morador) |
+| Gestão, Socioambiental, Comunicação, Comercialização | Conforme a frente (consultam casos e registram observações) |
 
 Uma pessoa pode ter mais de uma função.
 
@@ -84,25 +88,19 @@ Faça isso **depois** do teste 1.5. Remova da **Base Campo 4.0** e da planilha *
 **O que muda:**
 - Obras e bairros recebem ID **só para atividades realizadas a partir de 01/10/2026**. As anteriores mantêm o texto original.
 - Uma resposta editada **não trava mais** a fila.
+- Cada **Ficha de Atendimento** enviada vira, sozinha, um caso com protocolo sequencial (ATD + ano + número), continuando a numeração atual. O formulário não muda.
 - As falhas passam a ser **retomadas sozinhas de hora em hora**.
 
 ### 2.1 Substituir arquivos
-No projeto do **Procedimentos de Campo 4.0**, substitua `ConfiguracaoDaBase.gs` e `ProcessamentoDosEnvios.gs` pelos arquivos de `campo40/src/` e salve.
+No projeto do **Procedimentos de Campo 4.0**, substitua `ConfiguracaoDaBase.gs` e `ProcessamentoDosEnvios.gs` pelos arquivos de `campo40/src/` e **crie** o script `AberturaDeAtendimentos` (＋ → Script) com o conteúdo de `campo40/src/AberturaDeAtendimentos.gs`. Salve.
 
 ### 2.2 Ativar
 1. Execute **`conferirProcessamentoCampo40`**. O registro deve mostrar `CONFIGURAÇÃO CONFERIDA`.
 2. Execute **`instalarRetomadaAutomaticaCampo40`**. Deve aparecer `RETOMADA AUTOMÁTICA ATIVA`.
 3. Execute **`processarEnviosPendentesCampo40`** para colocar em dia o que estiver pendente.
+4. Execute **`abrirFichasSemProtocoloCampo40`**. Ele abre os casos das fichas de atendimento enviadas desde a migração que ainda não têm protocolo e mostra a lista (registro → protocolo). Pode repetir sem medo: não duplica.
 
-### 2.3 Pergunta de protocolo
-Sem essa pergunta, os envios de atendimento não se ligam à ficha. Faça num horário sem envios:
-1. No **Forms 4.0**, na seção de atendimento, adicione uma pergunta de **Resposta curta**, não obrigatória, com o título exatamente: **`Informe o ID do atendimento`**.
-2. **Logo em seguida**, execute **`instalarProcessamentoCampo40`**. Ele relê o formulário e passa a reconhecer a pergunta.
-3. Execute **`conferirProcessamentoCampo40`**. Em `mapeamentoProtocolo` deve aparecer `quantidade: 1`.
-
-Se chegar algum envio entre o passo 1 e o 2, ele fica pendente e é processado sozinho na hora seguinte.
-
-### 2.4 Obras editadas na aplicação
+### 2.3 Obras editadas na aplicação
 Não há passo extra: o mesmo `ProcessamentoDosEnvios.gs` passa a levar ao formulário, de hora em hora, as obras alteradas na tela Obras. A revisão fica registrada, como no botão da planilha. Para aplicar na hora, execute **`atualizarFormularioComObrasDaAplicacaoCampo40`**. Se a atualização falhar, a mensagem aparece no topo da tela Obras.
 
 ---
@@ -126,8 +124,11 @@ Abra a aplicação e confira:
 > • Os registros de campo continuam no formulário (botão "Registrar procedimento").
 > • Não conseguiu entrar? Clique em **Conferir meu acesso** e me mande o print.
 
-### 3.3 O que continua como está nesta semana
-- **Alterações oficiais de fichas, mesclagem e conclusão** continuam no Controle de Atendimentos. Ele vira consulta só quando a edição oficial chegar à aplicação (próxima etapa).
+### 3.3 Atendimentos passam a ser conduzidos na aplicação
+O ciclo fica todo aqui: **abertura automática pelo formulário → atualização pelo Atendimento → execução registrada → finalização pelo Atendimento**. O encerramento pela pesquisa de satisfação fica para depois.
+1. **Antes de finalizar o primeiro caso na aplicação**, o Atendimento confere a lista **Em aberto** com o Controle de Atendimentos antigo. Os casos importados refletem o estado do dia da migração. Para cada caso que mudou desde então, use **Atualizar caso** (ou **Finalizar ficha**) para deixar igual.
+2. Daí em diante, **não atualize mais casos no Controle de Atendimentos antigo**: ele vira só consulta do histórico. Duas fontes de verdade foi o problema que nos trouxe até aqui.
+3. A mesclagem de protocolos e o PDF da ficha oficial chegam na próxima etapa. Os PDFs já gerados continuam acessíveis pelo botão da ficha.
 - **Não desligue nem reinstale nada do legado** por enquanto. Na **Fase 3** eu preciso da lista de acionadores (⏰ no menu lateral) de cada projeto legado: mande prints quando puder.
 
 ---

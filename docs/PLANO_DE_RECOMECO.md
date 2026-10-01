@@ -116,7 +116,9 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | Fechamento do mês + base do relatório (Orientador, itens 1–13) + planilha de manifestações | ✅ 2.1 |
 | Relato ilustrado (modelo `{{TITULO}}`…`{{FOTOS}}`) gerado a partir do relato preparado | Próximo |
 | Ficha oficial em PDF no layout Sabesp + pacote mensal (ANEXO 4) | Próximo; depende da data de corte do Controle de Atendimentos |
-| Edição oficial, mesclagem e conclusão de casos na aplicação | Próximo; mesma dependência |
+| Ciclo do caso na aplicação: abertura automática com protocolo, atualização, execução, finalização e reabertura | ✅ 2.3 (o formulário não muda; protocolo nasce no sistema) |
+| Mesclagem de protocolos e PDF da ficha oficial | Próximo |
+| Encerramento por pesquisa de satisfação | Depois (decisão de 01/10) |
 | RDAS alimentado pelo Campo 4.0 | A fazer |
 | Matriz de contatos (ANEXO 1), recados, links e materiais | A fazer |
 | Diagnósticos de área (item 2) e Slides | A fazer |

@@ -38,7 +38,8 @@ class DadosDaAplicacao {
   /** Visão do mês. Cache compartilhado por 10 min, invalidado por linha nova; atualizar=true recalcula. */
   inicio(mes, atualizar) {
     const reg = this.registros(), atd = this.atendimentos();
-    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow();
+    // CPT_ATD_VERSAO sobe a cada ação em um caso (linhas editadas não mudam a última linha).
+    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0);
     const salvo = atualizar ? null : CacheCPT.ler(chave);
     if (salvo) return {...salvo, cache: true};
     const r = this.calcularInicio(mes, reg, atd);
