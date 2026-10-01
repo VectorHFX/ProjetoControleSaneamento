@@ -11,7 +11,7 @@
       var box=document.getElementById('bootError');if(!box){box=document.createElement('section');box.id='bootError';box.setAttribute('role','alert');box.style.cssText='margin:20px;padding:20px;border:1px solid #b54848;border-radius:12px;background:#fff;color:#242c38;font:15px/1.6 system-ui';
         var title=document.createElement('h2');title.textContent='Não foi possível iniciar a aplicação';box.appendChild(title);
         var msg=document.createElement('p');msg.id='bootMessage';box.appendChild(msg);
-        var help=document.createElement('p');help.textContent='Atualize a implantação com todos os arquivos do pacote 1.5.0. Se continuar, envie a mensagem abaixo para conferirmos.';box.appendChild(help);
+        var help=document.createElement('p');help.textContent='Se continuar, envie esta mensagem para a administração técnica.';box.appendChild(help);
         var button=document.createElement('button');button.textContent='Tentar novamente';button.style.cssText='padding:12px 18px;cursor:pointer';button.onclick=function(){location.reload();};box.appendChild(button);
         (document.getElementById('view')||document.body).prepend(box);
       }
@@ -45,15 +45,15 @@
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8Zm0 0v6h5M8 13h8M8 17h5"/></symbol>
 </defs></svg>
 <aside class="sidebar" aria-label="Navegação principal">
-  <div class="identity"><span class="identity-name">CPT<span class="version">4.0</span></span><span>Campo e gestão</span></div>
-  <label class="role-label">Minha visão<select id="roleView" aria-label="Foco da minha tela"><option value="administrador">Administrador</option></select></label><div class="nav-caption">SEU ESPAÇO DE TRABALHO</div>
+  <div class="identity"><span class="identity-name">CPT<span class="version">2.0</span></span><span>Campo e gestão</span></div>
+  <label class="role-label">Minha visão<select id="roleView" aria-label="Foco da minha tela" disabled><option value="">Verificando acesso…</option></select></label><div class="nav-caption">SEU ESPAÇO DE TRABALHO</div>
   <nav id="navigation">
     <button class="nav-item active" data-route="inicio" aria-current="page"><svg class="icon"><use href="#i-home"/></svg><span>Visão do mês</span></button>
     <button class="nav-item" data-route="cronograma"><svg class="icon"><use href="#i-calendar"/></svg><span>Cronograma</span></button><button class="nav-item" data-route="registros"><svg class="icon"><use href="#i-records"/></svg><span>Registros</span></button>
     <button class="nav-item" data-route="atendimentos"><svg class="icon"><use href="#i-case"/></svg><span>Atendimentos</span></button>
     <button class="nav-item" data-route="equipe" hidden><svg class="icon"><use href="#i-people"/></svg><span>Equipe e acessos</span></button><button class="nav-item" data-route="ajuda"><svg class="icon"><use href="#i-help"/></svg><span>Como usar</span></button>
   </nav>
-  <div class="sidebar-art"><svg class="sidebar-water" viewBox="0 0 240 310" preserveAspectRatio="none" aria-hidden="true"><path class="water-one" d="M0 155C70 131 65 230 112 185S150 125 183 145 188 80 240 32V330H0Z"/><path class="water-two" d="M0 213C69 157 75 291 127 240S187 249 207 209 210 158 240 138V330H0Z"/><path class="water-three" d="M0 245C61 227 74 278 125 273S186 220 240 270V330H0Z"/></svg></div><div class="sidebar-foot"><div class="wave-mark"><span></span><span></span><span></span></div><strong>Mais perto do território.</strong><p>Informação que acompanha<br>o cuidado com as pessoas.</p><div class="account"><span class="account-dot"></span><span id="accountLabel">Conectando à base</span></div></div>
+  <div class="sidebar-art"><svg class="sidebar-water" viewBox="0 0 240 310" preserveAspectRatio="none" aria-hidden="true"><path class="water-one" d="M0 155C70 131 65 230 112 185S150 125 183 145 188 80 240 32V330H0Z"/><path class="water-two" d="M0 213C69 157 75 291 127 240S187 249 207 209 210 158 240 138V330H0Z"/><path class="water-three" d="M0 245C61 227 74 278 125 273S186 220 240 270V330H0Z"/></svg></div><div class="sidebar-foot"><div class="wave-mark"><span></span><span></span><span></span></div><strong>Mais perto do território.</strong><p>Informação que acompanha<br>o cuidado com as pessoas.</p><div class="account"><span class="account-dot"></span><span id="accountLabel">Verificando acesso…</span></div></div>
 </aside>
 <div class="workspace">
   <header class="topbar"><div class="breadcrumb"><span>CPT</span><span class="crumb-line">/</span><strong id="pageLabel">Visão do mês</strong></div><div class="top-actions"><label class="month-label">Competência<input id="month" type="month" aria-label="Mês dos registros"></label><button class="icon-button" id="refresh" aria-label="Atualizar dados" title="Atualizar dados"><svg class="icon"><use href="#i-refresh"/></svg></button><label class="sr-only" for="theme">Aparência</label><select id="theme" aria-label="Aparência"><option value="light">Claro</option><option value="dark">Escuro</option></select></div></header>

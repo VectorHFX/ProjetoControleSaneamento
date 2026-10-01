@@ -168,14 +168,13 @@
     return "<button class=\"record\" data-record=\"".concat(esc(r.id), "\"><span class=\"record-symbol\">").concat(icon('records'), "</span><span><span class=\"record-title\">").concat(esc(r.atividade || r.procedimento), "</span><span class=\"record-meta\"><span>").concat(esc(r.bairro || 'Bairro não informado'), "</span><span>\xB7</span><span>").concat(esc(r.responsavel || 'Responsável não informado'), "</span></span></span><span class=\"record-date\"><time>").concat(date(r.data), "</time>").concat(icon('arrow'), "</span></button>");
   }
   function renderHome() {
-    var _d$perfil;
     if (!state.home) {
       $('view').innerHTML = skeleton();
       return;
     }
     const d = state.home,
       k = d.indicadores,
-      canAtd = !['comunicacao', 'socioambiental'].includes($('roleView').value) && ((_d$perfil = d.perfil) === null || _d$perfil === void 0 ? void 0 : _d$perfil.papeis.some(x => ['administrador', 'gestao', 'atendimento'].includes(x)));
+      canAtd = !['comunicacao', 'socioambiental', 'comercializacao'].includes($('roleView').value);
     $('view').innerHTML = window.CPTAgenda.homeMarkup(d) + "<section class=\"kpis\" aria-label=\"Indicadores\">".concat(kpi('Registros do mês', k.registros, 'Registros disponíveis neste mês.', '#1685df', '#eaf4ff', 'records', 'registros')).concat(kpi('Participações', k.participacoes, 'Público informado nos relatos.', '#039a87', '#e6f7f1', 'people', 'registros', 'relatos')).concat(canAtd ? kpi('Casos em aberto', k.abertos, 'Carteira atual de atendimentos.', '#d58c31', '#fff3e4', 'case', 'atendimentos', 'abertos') + kpi('Casos concluídos', k.concluidos, 'Acumulado da carteira atual.', '#8a70cf', '#f1edfc', 'check', 'atendimentos', 'concluidos') : kpi('Bairros com registros', k.bairros || 0, 'Bairros informados neste mês.', '#d58c31', '#fff3e4', 'pin', 'registros') + kpi('Obras identificadas', k.obras || 0, 'Referências informadas no mês.', '#8a70cf', '#f1edfc', 'check', 'registros'), "</section>") + "<div class=\"two-col\"><section class=\"panel\"><div class=\"panel-head\"><div><h2>O trabalho em campo</h2><p>Registros por tipo de procedimento</p></div><span class=\"badge\">".concat(num(k.registros), " registros</span></div>").concat(bars(d.procedimentos), "</section><section class=\"panel\"><div class=\"panel-head\"><div><h2>O m\xEAs em movimento</h2><p>Distribui\xE7\xE3o dos registros pela data de realiza\xE7\xE3o</p></div></div><div class=\"chart-summary\"><strong>").concat(num(d.dias.length), "</strong><span>dias com registros no m\xEAs</span></div>").concat(chart(d.dias), "<div class=\"legend\"><i></i>Registros de campo por dia</div></section></div>") + "<section class=\"panel\"><div class=\"panel-head\"><div><h2>\xDAltimos registros do m\xEAs</h2><p>Abra um registro para consultar o relato completo e os anexos.</p></div><button class=\"button ghost\" data-route=\"registros\">Ver todos ".concat(icon('arrow'), "</button></div><div class=\"records-list\">").concat(d.recentes.length ? d.recentes.map(recent).join('') : empty('O mês está começando', 'Os novos registros aparecerão nesta visão após o processamento.'), "</div></section>");
     $('overviewMetrics').append($('view').querySelector(':scope > .kpis'));
     $('overviewCharts').append($('view').querySelector(':scope > .two-col'));
@@ -251,7 +250,7 @@
   }
   function renderCases() {
     const f = state.caseFilters;
-    $('view').innerHTML = intro('Atendimentos', 'Acompanhe a carteira e encontre a ficha de cada caso.') + "<div class=\"notice\">Esta vis\xE3o mostra o estado atual das fichas importadas, incluindo os casos conclu\xEDdos. A compet\xEAncia no topo filtra os registros de campo. Atualiza\xE7\xF5es operacionais continuam no controle de atendimento em uso.</div><section class=\"panel filter-panel\"><form id=\"caseFilters\" class=\"filters cases\"><label class=\"field\">Localizar atendimento<span class=\"search-input\">".concat(icon('search'), "<input name=\"busca\" value=\"").concat(esc(f.busca), "\" placeholder=\"Protocolo, pessoa, assunto ou endere\xE7o\" maxlength=\"200\"></span></label><label class=\"field\">Situa\xE7\xE3o<select name=\"estado\"><option value=\"\" ").concat(!f.estado ? 'selected' : '', ">Todos os casos</option value=\"abertos\" ").concat(f.estado === 'abertos' ? 'selected' : '', ">Em aberto</option><option value=\"concluidos\" ").concat(f.estado === 'concluidos' ? 'selected' : '', ">Conclu\xEDdos</option></select></label><button type=\"submit\" class=\"button\">").concat(icon('search'), "Buscar</button></form></section><div class=\"results-head\"><span id=\"caseCount\">Consultando atendimentos\u2026</span><span>Carteira atual</span></div><div id=\"caseResults\" class=\"cards\"></div><div id=\"moreCases\" class=\"load-more\"></div>");
+    $('view').innerHTML = intro('Atendimentos', 'Acompanhe a carteira e encontre a ficha de cada caso.') + "<div class=\"notice\">Toda a equipe pode consultar os casos e registrar observa\xE7\xF5es (por exemplo, quando algu\xE9m procura voc\xEA em campo). Altera\xE7\xF5es oficiais da ficha continuam com o Atendimento.</div><section class=\"panel filter-panel\"><form id=\"caseFilters\" class=\"filters cases\"><label class=\"field\">Localizar atendimento<span class=\"search-input\">".concat(icon('search'), "<input name=\"busca\" value=\"").concat(esc(f.busca), "\" placeholder=\"Protocolo, pessoa, assunto ou endere\xE7o\" maxlength=\"200\"></span></label><label class=\"field\">Situa\xE7\xE3o<select name=\"estado\"><option value=\"\" ").concat(!f.estado ? 'selected' : '', ">Todos os casos</option><option value=\"abertos\" ").concat(f.estado === 'abertos' ? 'selected' : '', ">Em aberto</option><option value=\"concluidos\" ").concat(f.estado === 'concluidos' ? 'selected' : '', ">Conclu\xEDdos</option></select></label><button type=\"submit\" class=\"button\">").concat(icon('search'), "Buscar</button></form></section><div class=\"results-head\"><span id=\"caseCount\">Consultando atendimentos\u2026</span><span>Carteira atual</span></div><div id=\"caseResults\" class=\"cards\"></div><div id=\"moreCases\" class=\"load-more\"></div>");
     const form = $('caseFilters'),
       read = () => state.caseFilters = Object.fromEntries(new FormData(form));
     form.addEventListener('submit', e => {
@@ -317,8 +316,8 @@
     }
   });
   function renderHelp() {
-    var _state$home3, _state$home4;
-    $('view').innerHTML = ((_state$home3 = state.home) !== null && _state$home3 !== void 0 && (_state$home3 = _state$home3.perfil) !== null && _state$home3 !== void 0 && _state$home3.papeis.includes('administrador') ? '<div class="admin-access"><button class="button secondary" id="healthCheck">Conferir funcionamento</button><button class="button" data-route="equipe">Equipe e acessos →</button></div>' : '') + intro('Um lugar para se encontrar', 'Comece pelo que você precisa fazer agora.') + "<div class=\"help-grid\"><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#0879df;--tint:#eaf4ff\">".concat(icon('home'), "</span><h2>Entender o m\xEAs</h2><p>A vis\xE3o do m\xEAs re\xFAne os procedimentos pela data em que foram realizados. Participa\xE7\xF5es somam o p\xFAblico informado nos relatos; uma pessoa pode participar de mais de uma atividade.</p><button class=\"button ghost\" data-route=\"inicio\">Abrir vis\xE3o do m\xEAs ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#008978;--tint:#e6f7f1\">").concat(icon('records'), "</span><h2>Encontrar um relato</h2><p>Escolha o m\xEAs e use os filtros. Abra um registro para consultar o texto original e seus anexos. Os arquivos carregam quando voc\xEA pede para visualizar.</p><button class=\"button ghost\" data-route=\"registros\">Consultar registros ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#d58c31;--tint:#fff3e4\">").concat(icon('case'), "</span><h2>Acompanhar um atendimento</h2><p>Busque por protocolo, pessoa ou endere\xE7o. Os conclu\xEDdos ficam dispon\xEDveis no filtro de situa\xE7\xE3o. Quando um protocolo foi incorporado, a consulta leva \xE0 ficha principal.</p><button class=\"button ghost\" data-route=\"atendimentos\">Abrir atendimentos ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#8a70cf;--tint:#f1edfc\">").concat(icon('plus'), "</span><h2>Registrar o trabalho</h2><p>O bot\xE3o \u201CRegistrar procedimento\u201D abre o formul\xE1rio oficial. Use a data real da atividade e selecione a obra de refer\xEAncia. Ap\xF3s o envio, a automa\xE7\xE3o inclui o registro na base.</p><div class=\"dialog-actions\">").concat(formLink().replace('button white', 'button secondary'), "</div></section></div><section class=\"panel help-note\"><h2>Seu conforto de leitura</h2><label class=\"mobile-role\">Minha vis\xE3o<select id=\"mobileRole\">").concat((((_state$home4 = state.home) === null || _state$home4 === void 0 || (_state$home4 = _state$home4.perfil) === null || _state$home4 === void 0 ? void 0 : _state$home4.papeis) || []).map(x => "<option value=\"".concat(x, "\" ").concat($('roleView').value === x ? 'selected' : '', ">").concat(window.CPTAgenda.names[x], "</option>")).join(''), "</select></label><p>Os temas Claro e Escuro ficam no topo. No celular, a navega\xE7\xE3o principal fica na barra inferior.</p><label class=\"reduced\"><input id=\"reduceMotion\" type=\"checkbox\" ").concat(document.documentElement.dataset.motion === 'reduce' ? 'checked' : '', ">Reduzir movimentos e anima\xE7\xF5es</label><details><summary>O que est\xE1 dispon\xEDvel nesta vers\xE3o?</summary><p>Consulta do m\xEAs, dos registros e das fichas, com abertura dos documentos existentes. Cronograma compartilhado, exporta\xE7\xE3o, cadastro de perfis j\xE1 est\xE3o dispon\xEDveis. Edi\xE7\xE3o de fichas, conclus\xE3o de casos, checklist, Cleber e publica\xE7\xE3o do relat\xF3rio seguem nas pr\xF3ximas etapas. Continue as atualiza\xE7\xF5es operacionais nos controles atuais.</p></details><details><summary>N\xE3o consigo abrir uma foto ou documento</summary><p>Confira se est\xE1 usando a conta Google autorizada. A aplica\xE7\xE3o respeita o acesso de cada arquivo do Drive. O administrador pode conferir o compartilhamento do arquivo espec\xEDfico.</p></details></section>");
+    var _state$perfil, _state$perfil2;
+    $('view').innerHTML = ((_state$perfil = state.perfil) !== null && _state$perfil !== void 0 && _state$perfil.papeis.includes('administrador') ? '<div class="admin-access"><button class="button secondary" id="healthCheck">Conferir funcionamento</button><button class="button" data-route="equipe">Equipe e acessos →</button></div>' : '') + intro('Um lugar para se encontrar', 'Comece pelo que você precisa fazer agora.') + "<div class=\"help-grid\"><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#0879df;--tint:#eaf4ff\">".concat(icon('home'), "</span><h2>Entender o m\xEAs</h2><p>A vis\xE3o do m\xEAs re\xFAne os procedimentos pela data em que foram realizados. Participa\xE7\xF5es somam o p\xFAblico informado nos relatos; uma pessoa pode participar de mais de uma atividade.</p><button class=\"button ghost\" data-route=\"inicio\">Abrir vis\xE3o do m\xEAs ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#008978;--tint:#e6f7f1\">").concat(icon('records'), "</span><h2>Encontrar um relato</h2><p>Escolha o m\xEAs e use os filtros. Abra um registro para consultar o texto original e seus anexos. Os arquivos carregam quando voc\xEA pede para visualizar.</p><button class=\"button ghost\" data-route=\"registros\">Consultar registros ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#d58c31;--tint:#fff3e4\">").concat(icon('case'), "</span><h2>Acompanhar um atendimento</h2><p>Busque por protocolo, pessoa ou endere\xE7o. Os conclu\xEDdos ficam dispon\xEDveis no filtro de situa\xE7\xE3o. Quando um protocolo foi incorporado, a consulta leva \xE0 ficha principal.</p><button class=\"button ghost\" data-route=\"atendimentos\">Abrir atendimentos ").concat(icon('arrow'), "</button></section><section class=\"panel\"><span class=\"kpi-icon\" style=\"--accent:#8a70cf;--tint:#f1edfc\">").concat(icon('plus'), "</span><h2>Registrar o trabalho</h2><p>O bot\xE3o \u201CRegistrar procedimento\u201D abre o formul\xE1rio oficial. Use a data real da atividade e selecione a obra de refer\xEAncia. Ap\xF3s o envio, a automa\xE7\xE3o inclui o registro na base.</p><div class=\"dialog-actions\">").concat(formLink().replace('button white', 'button secondary'), "</div></section></div><section class=\"panel help-note\"><h2>Seu conforto de leitura</h2><label class=\"mobile-role\">Minha vis\xE3o<select id=\"mobileRole\">").concat((((_state$perfil2 = state.perfil) === null || _state$perfil2 === void 0 ? void 0 : _state$perfil2.papeis) || []).filter(x => x !== 'administrador').map(x => "<option value=\"".concat(x, "\" ").concat($('roleView').value === x ? 'selected' : '', ">").concat(window.CPTAgenda.names[x], "</option>")).join(''), "</select></label><p>Os temas Claro e Escuro ficam no topo. No celular, a navega\xE7\xE3o principal fica na barra inferior.</p><label class=\"reduced\"><input id=\"reduceMotion\" type=\"checkbox\" ").concat(document.documentElement.dataset.motion === 'reduce' ? 'checked' : '', ">Reduzir movimentos e anima\xE7\xF5es</label><details><summary>O que est\xE1 dispon\xEDvel nesta vers\xE3o?</summary><p>Vis\xE3o do m\xEAs, registros de campo com fotos, consulta de atendimentos com observa\xE7\xF5es da equipe, cronograma compartilhado e prepara\xE7\xE3o de relatos para o relat\xF3rio. Edi\xE7\xE3o oficial de fichas, recados, contatos e caderno chegam nas pr\xF3ximas etapas. At\xE9 l\xE1, altera\xE7\xF5es oficiais de fichas continuam no controle de atendimento.</p></details><details><summary>N\xE3o consigo abrir uma foto ou documento</summary><p>Fotos e fichas ficam no Google Drive e abrem com a sua conta @veolia.com. Se aparecer \u201CVoc\xEA precisa de acesso\u201D, avise a administra\xE7\xE3o t\xE9cnica informando o registro ou protocolo.</p></details></section>");
     $('mobileRole').addEventListener('change', e => {
       $('roleView').value = e.target.value;
       $('roleView').dispatchEvent(new Event('change'));
@@ -371,18 +370,15 @@
     if (window.CPT_BOOT) {
       window.CPT_BOOT.stage = 'consultando base';
     }
-    $('accountLabel').textContent = 'Consultando a base…';
     $('refresh').disabled = true;
     if (state.route === 'inicio') $('view').innerHTML = skeleton();
     try {
       var _window$CPT_BOOT;
       const d = await call('carregarInicioCPT', requested);
       if (ticket !== state.homeRequest) return;
-      if (!d || !d.indicadores || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 1.5.0.');
+      if (!d || !d.indicadores || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 2.0.0.');
       state.home = d;
-      configureProfile(d.perfil);
-      $('accountLabel').textContent = d.perfil.email || d.conta || 'Conta Google conectada';
-      $('accountLabel').title = d.perfil.email || d.conta || '';
+      if (!state.perfil) configureProfile(d.perfil);
       $('updated').textContent = 'Atualizado às ' + new Date(d.atualizadoEm).toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
@@ -396,7 +392,6 @@
       if (ticket !== state.homeRequest) return;
       notice(e.message);
       if (state.route === 'inicio') $('view').innerHTML = empty('Vamos restabelecer a conexão', e.message, '<button class="button" data-action="retry-home">Tentar novamente</button><button class="button secondary" data-check-access>Conferir meu acesso</button><p id="accessResult" style="white-space:pre-line"></p>');
-      $('accountLabel').textContent = 'Conexão não concluída';
       (_window$CPT_BOOT2 = window.CPT_BOOT) === null || _window$CPT_BOOT2 === void 0 || _window$CPT_BOOT2.finish();
     } finally {
       if (ticket === state.homeRequest) $('refresh').disabled = false;
@@ -422,15 +417,16 @@
       const d = await call(kind === 'record' ? 'abrirRegistroCPT' : 'abrirAtendimentoCPT', id);
       if (ticket !== state.detailRequest || !$('detailDialog').open) return;
       if (kind === 'record') {
-        var _state$home5;
+        var _state$perfil3;
         const r = d.registro;
         $('detailTitle').textContent = r.atividade || r.procedimento;
-        $('detailContent').innerHTML = readingTools() + (/relato de atividade/i.test(r.procedimento) && (_state$home5 = state.home) !== null && _state$home5 !== void 0 && (_state$home5 = _state$home5.perfil) !== null && _state$home5 !== void 0 && _state$home5.papeis.some(p => ['administrador', 'gestao', 'socioambiental', 'comunicacao'].includes(p)) ? "<div class=\"reading-tools\"><button class=\"button\" data-prepare-relato=\"".concat(esc(r.id), "\">Preparar para o relat\xF3rio</button></div>") : '') + summary([['Procedimento', r.procedimento], ['Data de realização', date(r.data)], ['Bairro', r.bairro], ['Responsável', r.responsavel], ['Obra de referência', r.obra], ['Origem', r.origem], ['Público informado', r.publico == null ? 'Não informado' : String(r.publico)]]) + "<p class=\"document-id\">Registro: ".concat(esc(r.id), "</p>") + (r.conferencia ? "<details class=\"help-note\"><summary>Confer\xEAncia do registro</summary><p>".concat(esc(r.conferencia), "</p><p>ID: ").concat(esc(r.id), "</p></details>") : '') + (d.anexos.length ? "<h3 class=\"answers-head\">Arquivos e evid\xEAncias</h3><div class=\"attachments\">".concat(d.anexos.map((a, i) => "<div class=\"attachment\"><p>".concat(esc(a.titulo || 'Anexo ' + (i + 1)), "</p><button class=\"button secondary\" data-preview=\"").concat(esc(a.id), "\">Visualizar</button> <a href=\"").concat(esc(safeURL(a.url)), "\" target=\"_blank\" rel=\"noopener noreferrer\">Abrir no Drive</a></div>")).join(''), "</div><div id=\"mediaPreview\"></div>") : '') + sections(d.campos);
+        $('detailContent').innerHTML = readingTools() + (/relato de atividade/i.test(r.procedimento) && (_state$perfil3 = state.perfil) !== null && _state$perfil3 !== void 0 && _state$perfil3.papeis.some(p => ['administrador', 'administrativo', 'gestao', 'socioambiental', 'comunicacao'].includes(p)) ? "<div class=\"reading-tools\"><button class=\"button\" data-prepare-relato=\"".concat(esc(r.id), "\">Preparar para o relat\xF3rio</button></div>") : '') + summary([['Procedimento', r.procedimento], ['Data de realização', date(r.data)], ['Bairro', r.bairro], ['Responsável', r.responsavel], ['Obra de referência', r.obra], ['Origem', r.origem], ['Público informado', r.publico == null ? 'Não informado' : String(r.publico)]]) + "<p class=\"document-id\">Registro: ".concat(esc(r.id), "</p>") + (r.conferencia ? "<details class=\"help-note\"><summary>Confer\xEAncia do registro</summary><p>".concat(esc(r.conferencia), "</p><p>ID: ").concat(esc(r.id), "</p></details>") : '') + (d.anexos.length ? "<h3 class=\"answers-head\">Arquivos e evid\xEAncias</h3><div class=\"attachments\">".concat(d.anexos.map((a, i) => "<div class=\"attachment\"><p>".concat(esc(a.titulo || 'Anexo ' + (i + 1)), "</p><button class=\"button secondary\" data-preview=\"").concat(esc(a.id), "\">Visualizar</button> <a href=\"").concat(esc(safeURL(a.url)), "\" target=\"_blank\" rel=\"noopener noreferrer\">Abrir no Drive</a></div>")).join(''), "</div><div id=\"mediaPreview\"></div>") : '') + sections(d.campos);
       } else {
         const f = d.ficha;
         $('detailTitle').textContent = f.protocolo + ' · ' + (f.nome || 'Atendimento');
         const docs = [['Abrir ficha', f.documento], ['Abrir PDF', f.pdf]].filter(([, u]) => safeURL(u));
-        $('detailContent').innerHTML = readingTools() + "<span class=\"badge ".concat(f.concluido ? 'green' : 'orange', "\">").concat(esc(f.concluido ? 'Atendimento concluído' : f.status), "</span><div class=\"dialog-actions\">").concat(docs.map(([l, u]) => "<a class=\"button secondary\" href=\"".concat(esc(safeURL(u)), "\" target=\"_blank\" rel=\"noopener noreferrer\">").concat(icon('file')).concat(l, " ").concat(icon('link'), "</a>")).join(''), "</div>") + (d.protocoloConsultado !== f.protocolo ? "<div class=\"notice\">O protocolo ".concat(esc(d.protocoloConsultado), " est\xE1 incorporado \xE0 ficha principal ").concat(esc(f.protocolo), ".</div>") : '') + summary([['Assunto', f.assunto], ['Endereço', f.endereco], ['Abertura', date(f.abertura)], ['Conclusão', date(f.conclusao)], ['Área responsável', f.area], ['Responsável', f.responsavel], ['Frente de obra', f.obra], ['Origem', f.origem]]) + "<section class=\"answer\"><h3>Pr\xF3xima a\xE7\xE3o registrada</h3><p>".concat(esc(f.proximaAcao || 'Não informada'), "</p></section><section class=\"answer\"><h3>Atualiza\xE7\xE3o operacional</h3><p>").concat(esc(value(f.atualizacao) || 'Não informada'), "</p></section><p class=\"small muted\">Consulta da ficha importada. Continue as altera\xE7\xF5es no controle operacional em uso.</p><div class=\"reading-tools\"><button class=\"button secondary\" data-reading=\"history\">Consultar hist\xF3rico importado</button></div><div id=\"caseHistory\"></div>");
+        $('detailContent').innerHTML = readingTools() + "<span class=\"badge ".concat(f.concluido ? 'green' : 'orange', "\">").concat(esc(f.concluido ? 'Atendimento concluído' : f.status), "</span><div class=\"dialog-actions\">").concat(docs.map(([l, u]) => "<a class=\"button secondary\" href=\"".concat(esc(safeURL(u)), "\" target=\"_blank\" rel=\"noopener noreferrer\">").concat(icon('file')).concat(l, " ").concat(icon('link'), "</a>")).join(''), "</div>") + (d.protocoloConsultado !== f.protocolo ? "<div class=\"notice\">O protocolo ".concat(esc(d.protocoloConsultado), " est\xE1 incorporado \xE0 ficha principal ").concat(esc(f.protocolo), ".</div>") : '') + summary([['Assunto', f.assunto], ['Endereço', f.endereco], ['Abertura', date(f.abertura)], ['Conclusão', date(f.conclusao)], ['Área responsável', f.area], ['Responsável', f.responsavel], ['Frente de obra', f.obra], ['Origem', f.origem]]) + "<section class=\"answer\"><h3>Pr\xF3xima a\xE7\xE3o registrada</h3><p>".concat(esc(f.proximaAcao || 'Não informada'), "</p></section><section class=\"answer\"><h3>Atualiza\xE7\xE3o operacional</h3><p>").concat(esc(value(f.atualizacao) || 'Não informada'), "</p></section><section class=\"case-notes\" aria-labelledby=\"notesTitle\"><h3 class=\"answers-head\" id=\"notesTitle\">Observa\xE7\xF5es da equipe</h3><p class=\"small muted\">Registre o que voc\xEA soube sobre este caso. A observa\xE7\xE3o fica com seu nome e n\xE3o altera a ficha oficial.</p><form id=\"noteForm\" data-protocol=\"").concat(esc(f.protocolo), "\"><div id=\"noteError\" class=\"notice\" hidden></div><label class=\"field\">Por onde a informa\xE7\xE3o chegou<select name=\"canal\" required><option value=\"\">Escolha</option>").concat(['Escritório', 'Campo / itinerante', 'Telefone ou WhatsApp', 'E-mail', 'Reunião', 'Outro'].map(x => "<option>".concat(x, "</option>")).join(''), "</select></label><label class=\"field\">Observa\xE7\xE3o<textarea name=\"texto\" rows=\"3\" maxlength=\"2000\" required placeholder=\"Ex.: Moradora procurou a equipe na rua e informou que o vazamento voltou.\"></textarea></label><button class=\"button\" type=\"submit\">Registrar observa\xE7\xE3o</button></form><div id=\"caseNotes\"><p class=\"muted\">Carregando observa\xE7\xF5es\u2026</p></div></section><p class=\"small muted\">Altera\xE7\xF5es oficiais da ficha continuam com o Atendimento.</p><div class=\"reading-tools\"><button class=\"button secondary\" data-reading=\"history\">Consultar hist\xF3rico importado</button></div><div id=\"caseHistory\"></div>");
+        loadNotes(f.protocolo, ticket);
       }
       activeDocument = {
         kind,
@@ -574,6 +570,7 @@
     if (a === 'retry-records') loadRecords();
     if (a === 'retry-cases') loadCases();
     if (a === 'retry-home') loadHome();
+    if (a === 'retry-boot') bootstrap();
     if (a === 'noform') toast('O link do formulário ainda não está disponível. Confira a aba Início da base.');
     if (a === 'clear') {
       state.filters = {
@@ -628,18 +625,126 @@
   });
   function configureProfile(p) {
     if (!p) return;
+    state.perfil = p;
     const select = $('roleView'),
+      saved = store.get('cpt.view'),
       previous = select.value;
-    select.innerHTML = p.papeis.map(role => "<option value=\"".concat(esc(role), "\">").concat(esc(window.CPTAgenda.names[role]), "</option>")).join('');
-    select.value = p.papeis.includes(previous) ? previous : p.papeis[0];
+    const views = p.papeis.filter(x => x !== 'administrador');
+    const list = views.length ? views : p.papeis;
+    select.innerHTML = list.map(role => "<option value=\"".concat(esc(role), "\">").concat(esc(window.CPTAgenda.names[role]), "</option>")).join('');
+    select.value = list.includes(previous) ? previous : list.includes(saved) ? saved : list[0];
+    select.disabled = list.length < 2;
     document.querySelector('[data-route="equipe"]').hidden = !p.papeis.includes('administrador');
-    document.querySelector('.nav-item[data-route="atendimentos"]').hidden = !p.papeis.some(x => ['administrador', 'gestao', 'atendimento'].includes(x));
+    $('accountLabel').textContent = p.nome + ' · ' + p.email;
+    $('accountLabel').title = p.email;
+  }
+  async function loadNotes(protocolo, ticket) {
+    const box = $('caseNotes');
+    if (!box) return;
+    try {
+      const r = await call('listarObservacoesCPT', {
+        protocolo
+      });
+      if (ticket !== state.detailRequest || !$('caseNotes')) return;
+      $('caseNotes').innerHTML = r.itens.length ? r.itens.map(noteItem).join('') : '<p class="muted">Nenhuma observação registrada ainda.</p>';
+    } catch (e) {
+      if ($('caseNotes')) $('caseNotes').innerHTML = '<p class="muted">' + esc(e.message) + '</p>';
+    }
+  }
+  function noteItem(x) {
+    const quando = x.em ? new Date(x.em).toLocaleString('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      timeZone: 'America/Sao_Paulo'
+    }) : '';
+    return "<section class=\"history-item\"><h3>".concat(esc(x.nome || x.autor), "</h3><p class=\"small muted\">").concat(esc(quando + ' · ' + x.canal + (x.consultado && x.consultado !== x.protocolo ? ' · protocolo ' + x.consultado : '')), "</p><p style=\"white-space:pre-line\">").concat(esc(x.texto), "</p></section>");
+  }
+  let noteOp = null,
+    noteSignature = '';
+  document.addEventListener('submit', async ev => {
+    const form = ev.target.closest('#noteForm');
+    if (!form) return;
+    ev.preventDefault();
+    const b = form.querySelector('button[type=submit]'),
+      err = $('noteError');
+    const f = new FormData(form),
+      payload = {
+        protocolo: form.dataset.protocol,
+        canal: f.get('canal'),
+        texto: String(f.get('texto') || '').trim()
+      };
+    if (!payload.canal || !payload.texto) {
+      err.textContent = 'Escolha o canal e escreva a observação.';
+      err.hidden = false;
+      return;
+    }
+    const sig = JSON.stringify(payload);
+    if (sig !== noteSignature) {
+      noteOp = 'OP-' + crypto.randomUUID();
+      noteSignature = sig;
+    }
+    b.disabled = true;
+    b.textContent = 'Registrando…';
+    err.hidden = true;
+    try {
+      const r = await call('adicionarObservacaoCPT', {
+        ...payload,
+        operacaoId: noteOp
+      });
+      toast(r.resultado);
+      form.reset();
+      noteSignature = '';
+      const box = $('caseNotes');
+      if (box) {
+        if (box.querySelector('.muted:only-child')) box.innerHTML = '';
+        box.insertAdjacentHTML('afterbegin', noteItem(r.observacao));
+      }
+    } catch (e) {
+      err.textContent = e.message + ' Seu texto continua no campo.';
+      err.hidden = false;
+    } finally {
+      b.disabled = false;
+      b.textContent = 'Registrar observação';
+    }
+  });
+  function accessError(message) {
+    const r = $('roleView');
+    r.innerHTML = '<option value="">Sem acesso</option>';
+    r.disabled = true;
+    $('accountLabel').textContent = 'Acesso não confirmado';
+    document.querySelectorAll('.nav-item').forEach(b => {
+      if (b.dataset.route !== 'ajuda') b.hidden = true;
+    });
+    $('view').innerHTML = "<div class=\"page-intro\"><div><div class=\"eyebrow muted\">ACESSO</div><h1>N\xE3o conseguimos liberar sua entrada</h1><p>".concat(esc(message), "</p></div></div><section class=\"panel\"><p>Nada foi alterado. Voc\xEA pode tentar de novo ou conferir em qual etapa o acesso parou e enviar o resultado para a administra\xE7\xE3o t\xE9cnica.</p><div class=\"dialog-actions\"><button class=\"button\" data-action=\"retry-boot\">Tentar novamente</button><button class=\"button secondary\" data-check-access>Conferir meu acesso</button></div><p id=\"accessResult\" style=\"white-space:pre-line\"></p></section>");
+  }
+  async function bootstrap() {
+    if (window.CPT_BOOT) window.CPT_BOOT.stage = 'verificando acesso';
+    const r = $('roleView');
+    r.innerHTML = '<option value="">Verificando acesso…</option>';
+    r.disabled = true;
+    $('accountLabel').textContent = 'Verificando acesso…';
+    $('view').innerHTML = '<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Verificando seu acesso…</div>';
+    try {
+      const d = await call('carregarPerfilCPT');
+      if (!d || !d.perfil || !Array.isArray(d.perfil.papeis)) throw new Error('Resposta de acesso inesperada. Confira se todos os arquivos da versão 2.0.0 foram publicados.');
+      document.querySelectorAll('.nav-item').forEach(b => {
+        if (b.dataset.route !== 'equipe') b.hidden = false;
+      });
+      configureProfile(d.perfil);
+      navigate('inicio');
+      loadHome();
+    } catch (e) {
+      var _window$CPT_BOOT3;
+      accessError(e.message);
+      (_window$CPT_BOOT3 = window.CPT_BOOT) === null || _window$CPT_BOOT3 === void 0 || _window$CPT_BOOT3.finish();
+    }
   }
   $('roleView').addEventListener('change', () => {
+    store.set('cpt.view', $('roleView').value);
     navigate('inicio');
     toast('Visão de ' + window.CPTAgenda.names[$('roleView').value] + '. Sua conta permanece a mesma.');
   });
-  if (!window.CPTAgenda || typeof window.CPTAgenda.init !== 'function') throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 1.5.0.');
+  if (!window.CPTAgenda || typeof window.CPTAgenda.init !== 'function') throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.0.0.');
   window.CPTAgenda.init({
     call,
     esc,
@@ -655,7 +760,6 @@
   window.CPTEntregas.init({
     call
   });
-  navigate('inicio');
-  loadHome();
+  bootstrap();
 })();
 </script>

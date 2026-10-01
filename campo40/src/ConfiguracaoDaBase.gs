@@ -6,7 +6,10 @@
 class ConfiguracaoDaBase {
   static get valores() {
     return Object.freeze({
-      VERSAO: '4.0.4',
+      VERSAO: '4.1.0',
+      // Obras e bairros padronizados (IDs) valem pela DATA DE REALIZAÇÃO a partir deste dia.
+      // Registros anteriores mantêm os textos originais, sem reenquadramento automático.
+      VIGENCIA_REFERENCIAS: '2026-10-01',
       NOME: 'Procedimentos de Campo 4.0',
       PERGUNTA_OBRA: 'Qual a obra de referência?',
       ESTADO: 'CAMPO40_INSTALACAO',

@@ -1,6 +1,7 @@
 /**
- * ProcessamentoDosEnvios — 1.0.1 — PERMANENTE.
- * Um gatilho do Forms; registros novos por ID, retomada manual e diagnóstico.
+ * ProcessamentoDosEnvios — 1.1.0 — PERMANENTE.
+ * Um gatilho do Forms; registros novos por ID, retomada (manual e de hora em hora) e diagnóstico.
+ * 1.1.0: vigência de obras/bairros desde 01/10/2026; resposta editada não trava a retomada; uma falha não bloqueia as demais.
  * Não publica/fecha o formulário, não gera respostas de teste e não apaga dados.
  * Depende de ConfiguracaoDaBase, CatalogosDeObrasEBairros e RepositorioDosRegistros.
  */
@@ -10,6 +11,12 @@ class ProcessamentoDosEnvios {
   static estado() { return JSON.parse(PropertiesService.getScriptProperties().getProperty(this.chave) || '{}'); }
   static salvar(e) { PropertiesService.getScriptProperties().setProperty(this.chave, JSON.stringify(e)); }
   static chaveFalha(id) { return 'CAMPO40_FALHA_' + RepositorioDosRegistros.hash(String(id)).slice(0, 24); }
+  static chaveRevisao(id) { return 'CAMPO40_REVISAO_' + RepositorioDosRegistros.hash(String(id)).slice(0, 24); }
+  static get gatilhoRetomada() { return 'retomarEnviosAutomaticamenteCampo40'; }
+  static revisoes() {
+    const p = PropertiesService.getScriptProperties().getProperties();
+    return Object.keys(p).filter(k => k.indexOf('CAMPO40_REVISAO_') === 0).map(k => JSON.parse(p[k])).sort((a, b) => a.em.localeCompare(b.em));
+  }
   static falhas() {
     const p = PropertiesService.getScriptProperties().getProperties();
     return Object.keys(p).filter(k => k.indexOf('CAMPO40_FALHA_') === 0)
@@ -130,12 +137,14 @@ class ProcessamentoDosEnvios {
     if (!tipo) throw new Error('Procedimento não informado na resposta ' + snapshot.respostaId);
     if (!data) avisos.push('Data do procedimento não reconhecida; conferir o original');
     const bairroTexto = texto('bairro'), obraTexto = texto('obra');
-    const bairro = contexto.catalogos.bairros.find(x => R.normalizar(x.nome) === R.normalizar(bairroTexto));
-    if (!bairro) avisos.push('Bairro sem ID confirmado; conferir cadastro');
+    // Antes da vigência, nomes e textos originais ficam como foram enviados: nenhum ID é atribuído.
+    const anterior = !!data && data < ConfiguracaoDaBase.valores.VIGENCIA_REFERENCIAS;
+    const bairro = anterior ? null : contexto.catalogos.bairros.find(x => R.normalizar(x.nome) === R.normalizar(bairroTexto));
+    if (!bairro && !anterior) avisos.push('Bairro sem ID confirmado; conferir cadastro');
     const idMatch = obraTexto.match(/\[(OBR-\d{4,})\]\s*$/);
-    const obra = idMatch ? contexto.catalogos.obras.find(x => x.id === idMatch[1]) : null;
+    const obra = idMatch && !anterior ? contexto.catalogos.obras.find(x => x.id === idMatch[1]) : null;
     const especial = [ConfiguracaoDaBase.valores.SEM_OBRA, ConfiguracaoDaBase.valores.OBRA_A_CADASTRAR].includes(obraTexto);
-    if (!obra && !especial) avisos.push('Obra sem ID confirmado; não foi aproximada por nome');
+    if (!obra && !especial && !anterior) avisos.push('Obra sem ID confirmado; não foi aproximada por nome');
     if (obra && bairro && obra.bairroIds.length && !obra.bairroIds.includes(bairro.id) && bairro.tipo !== 'Opção especial') {
       avisos.push('Bairro informado diferente dos bairros cadastrados para a obra');
     }
@@ -163,7 +172,8 @@ class ProcessamentoDosEnvios {
         if (!arquivoId) avisos.push('Anexo sem ID reconhecido; referência original preservada');
       });
     });
-    const vinculo = obra ? 'ID da obra informado no formulário' : obraTexto === ConfiguracaoDaBase.valores.SEM_OBRA ?
+    const vinculo = anterior ? 'Realizada antes de ' + ConfiguracaoDaBase.valores.VIGENCIA_REFERENCIAS.split('-').reverse().join('/') + ': texto original preservado' :
+      obra ? 'ID da obra informado no formulário' : obraTexto === ConfiguracaoDaBase.valores.SEM_OBRA ?
       'Atividade sem obra específica' : 'Obra a conferir';
     const detalhe = {...snapshot, versao: '1.0.0', fuso: fuso, anexos: anexos,
       vinculos: {bairroId: bairro ? bairro.id : '', obraId: obra ? obra.id : '', avisos: [...new Set(avisos)]},
@@ -184,8 +194,15 @@ class ProcessamentoDosEnvios {
       // Guarda a nova versão para revisão, sem apagar o registro já utilizado no relatório.
       const pasta = DriveApp.getFolderById(contexto.config.pastaId);
       const nome = 'Revisao_' + id + '_' + snapshot.hashResposta.slice(0, 12) + '.json';
-      if (!pasta.getFilesByName(nome).hasNext()) pasta.createFile(nome, JSON.stringify(snapshot), MimeType.PLAIN_TEXT);
-      throw new Error(id + ': resposta editada. Original preservado; nova versão arquivada para revisão.');
+      const arquivos = pasta.getFilesByName(nome);
+      const arquivoId = arquivos.hasNext() ? arquivos.next().getId() : pasta.createFile(nome, JSON.stringify(snapshot), MimeType.PLAIN_TEXT).getId();
+      // Fica listado em conferirProcessamentoCampo40 até alguém revisar. Não é falha: não bloqueia a fila.
+      const props = PropertiesService.getScriptProperties();
+      props.setProperty(this.chaveRevisao(snapshot.respostaId + ':' + snapshot.hashResposta), JSON.stringify({em: new Date().toISOString(),
+        respostaId: snapshot.respostaId, registro: id, linha: existente.linha, arquivo: 'https://drive.google.com/file/d/' + arquivoId + '/view'}));
+      props.deleteProperty(this.chaveFalha(snapshot.respostaId));
+      console.warn(JSON.stringify({resultado: 'RESPOSTA EDITADA', registro: id, arquivo: arquivoId}));
+      return {resultado: 'RESPOSTA EDITADA — ORIGINAL PRESERVADO, NOVA VERSÃO ARQUIVADA', id: id, linha: existente.linha, inserido: false, revisao: true};
     }
     const preparado = existente ? null : this.preparar(snapshot, contexto);
     const r = existente ? {resultado: 'JÁ PROCESSADO', id: id, linha: existente.linha, inserido: false} :
@@ -237,25 +254,32 @@ class ProcessamentoDosEnvios {
       // Falhas do gatilho anteriores ao cursor são retomadas pelo ID exato.
       const idsPosteriores = new Set(posteriores.map(x => x.id));
       const falhasAnteriores = this.falhas().filter(x => !idsPosteriores.has(x.respostaId));
-      let falhasRetomadas = 0;
+      // Cada resposta é independente: uma falha fica registrada pelo ID e a fila continua.
+      // Três falhas seguidas indicam problema geral (base, permissão): a retomada para e informa.
+      let falhasRetomadas = 0, comFalha = 0, seguidas = 0, revisoes = 0, interrompida = '';
+      const tentar = (resposta, respostaId) => {
+        try { const r = this.receber(resposta, ctx); r.revisao ? revisoes++ : r.inserido ? novos++ : repetidos++; seguidas = 0; return true; }
+        catch (erro) { this.falha(erro, respostaId); comFalha++; seguidas++; if (seguidas >= 3) interrompida = String(erro.message || erro); return false; }
+      };
       for (const falha of falhasAnteriores) {
-        if (feitos >= 40 || Date.now() - inicio > 90000) break;
-        const falhaId = falha.respostaId;
-        try { const r = this.receber(form.getResponse(falhaId), ctx); r.inserido ? novos++ : repetidos++; feitos++; falhasRetomadas++; }
-        catch (erro) { this.falha(erro, falhaId); throw erro; }
+        if (feitos >= 40 || Date.now() - inicio > 90000 || interrompida) break;
+        let resposta = null; try { resposta = form.getResponse(falha.respostaId); } catch (_) {}
+        feitos++; falhasRetomadas++;
+        if (!resposta) { this.falha(new Error('Resposta não encontrada no formulário (pode ter sido excluída).'), falha.respostaId); comFalha++; continue; }
+        tentar(resposta, falha.respostaId);
       }
       let posterioresFeitos = 0;
       for (const x of posteriores) {
-        if (feitos >= 40 || Date.now() - inicio > 90000) break;
-        try {
-          const r = this.receber(x.r, ctx); r.inserido ? novos++ : repetidos++; feitos++; posterioresFeitos++;
-          const atual = this.estado(); atual.cursor = {tempo: x.tempo, id: x.id}; this.salvar(atual);
-        } catch (erro) { this.falha(erro, x.id); throw erro; }
+        if (feitos >= 40 || Date.now() - inicio > 90000 || interrompida) break;
+        tentar(x.r, x.id); feitos++; posterioresFeitos++;
+        // A falha ficou registrada pelo ID e será tentada de novo; o cursor pode avançar.
+        const atual = this.estado(); atual.cursor = {tempo: x.tempo, id: x.id}; this.salvar(atual);
       }
       const restantes = posteriores.length - posterioresFeitos + falhasAnteriores.length - falhasRetomadas;
-      const r = {resultado: restantes ? 'RETOMADA PARCIAL — EXECUTE NOVAMENTE' : 'ENVIOS REAIS CONFERIDOS',
-        novos: novos, jaProcessados: repetidos, restantes: restantes, tempoMs: Date.now() - inicio,
-        testeCriado: false, historicoPreservado: true};
+      const r = {resultado: interrompida ? 'RETOMADA INTERROMPIDA — PROBLEMA GERAL: ' + interrompida :
+        restantes ? 'RETOMADA PARCIAL — EXECUTE NOVAMENTE' : comFalha ? 'ENVIOS CONFERIDOS, COM FALHAS REGISTRADAS' : 'ENVIOS REAIS CONFERIDOS',
+        novos: novos, jaProcessados: repetidos, respostasEditadas: revisoes, falhas: comFalha, restantes: restantes,
+        falhasPendentes: this.falhas().length, tempoMs: Date.now() - inicio, testeCriado: false, historicoPreservado: true};
       console.log(JSON.stringify(r, null, 2)); return r;
     });
   }
@@ -269,7 +293,9 @@ class ProcessamentoDosEnvios {
     const r = {resultado: correto ? 'CONFIGURAÇÃO CONFERIDA' : 'CONFIGURAÇÃO A REINSTALAR',
       registros: Math.max(0, aba.getLastRow() - 1), gatilhosDeEnvioDestaConta: gatilhos,
       ultimoProcessamento: e.ultimoProcessamento || 'Aguardando o primeiro envio real',
-      falhasPendentes: this.falhas(), tempoMs: Date.now() - inicio,
+      falhasPendentes: this.falhas(), respostasEditadasParaRevisar: this.revisoes(),
+      retomadaAutomatica: ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === this.gatilhoRetomada) ? 'Ativa (de hora em hora)' : 'Não instalada: execute instalarRetomadaAutomaticaCampo40',
+      tempoMs: Date.now() - inicio,
       validacaoOperacional: e.ultimoProcessamento ? 'Envio real processado; confira conteúdo e acesso aos anexos' : 'Pendente da primeira resposta real, sem criar linha fictícia'};
     console.log(JSON.stringify(r, null, 2)); return r;
   }
@@ -293,3 +319,26 @@ function processarEnviosPendentesCampo40() { return ProcessamentoDosEnvios.retom
 function conferirProcessamentoCampo40() { return ProcessamentoDosEnvios.conferir(); }
 /** Opcional: verifica de novo todos os envios reais; não recria nem apaga históricos. */
 function conferirTodosOsEnviosCampo40() { return ProcessamentoDosEnvios.conferirTodos(); }
+
+/** EXECUTE UMA VEZ. Cria um único gatilho de hora em hora que retoma envios que falharam. Repetir não duplica. */
+function instalarRetomadaAutomaticaCampo40() {
+  const nome = ProcessamentoDosEnvios.gatilhoRetomada, atuais = ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === nome);
+  if (!atuais.length) ScriptApp.newTrigger(nome).timeBased().everyHours(1).create(); else atuais.slice(1).forEach(t => ScriptApp.deleteTrigger(t));
+  const r = {resultado: 'RETOMADA AUTOMÁTICA ATIVA', frequencia: 'de hora em hora', gatilhos: 1};
+  console.log(JSON.stringify(r, null, 2)); return r;
+}
+/** AUTOMÁTICA (gatilho de hora em hora). Se outra execução estiver em andamento, tenta na próxima hora. */
+function retomarEnviosAutomaticamenteCampo40() {
+  try { return ProcessamentoDosEnvios.retomar(); }
+  catch (erro) {
+    if (/Outra execução está em andamento/.test(String(erro.message))) { console.log('Retomada adiada: outra execução em andamento.'); return null; }
+    throw erro;
+  }
+}
+/** EXECUTE depois de revisar as respostas editadas listadas em conferirProcessamentoCampo40. */
+function marcarRespostasEditadasComoRevisadasCampo40() {
+  const props = PropertiesService.getScriptProperties(), chaves = Object.keys(props.getProperties()).filter(k => k.indexOf('CAMPO40_REVISAO_') === 0);
+  chaves.forEach(k => props.deleteProperty(k));
+  const r = {resultado: 'REVISÕES MARCADAS COMO CONFERIDAS', quantidade: chaves.length, arquivosMantidos: true};
+  console.log(JSON.stringify(r, null, 2)); return r;
+}

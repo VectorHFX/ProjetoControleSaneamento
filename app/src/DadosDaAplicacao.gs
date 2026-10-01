@@ -1,4 +1,4 @@
-/** DadosDaAplicacao 1.5.0. Somente leitura; compatível com a base Campo 4.0 importada. */
+/** DadosDaAplicacao 2.0.0. Somente leitura; compatível com a base Campo 4.0 importada. */
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -15,7 +15,8 @@ class DadosDaAplicacao {
     if (!a || a.getRange(1,1,1,h.length).getValues()[0].some((x,i) => x !== h[i])) throw new Error('A estrutura da tabela ' + nome + ' precisa ser conferida pelo administrador.');
     return a;
   }
-  permitido(r){return !this.perfil||PerfisCPT.gerencia(this.perfil)||this.perfil.papeis.includes('atendimento')||!/atendimento|satisfacao.*atendimento/.test(DadosDaAplicacao.norm(r[1]));}
+  // Consulta comum a toda a equipe (requisito): nenhum tipo de registro é ocultado por perfil.
+  permitido(r){return true;}
   registros() { return this._reg || (this._reg = this.tabela('Registros', DadosDaAplicacao.colunas)); }
   atendimentos() { return this._atd || (this._atd = this.tabela('Atendimentos', DadosDaAplicacao.colunasAtd)); }
   mes(v) { const s = String(v || ''); if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) throw new Error('Escolha um mês válido.'); return s; }
@@ -36,7 +37,7 @@ class DadosDaAplicacao {
   }
   inicio(mes) {
     const reg = this.registros(), atd = this.atendimentos();
-    const chave = 'cpt:inicio:11:'+JSON.stringify(this.perfil?.papeis||[])+':'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow();
+    const chave = 'cpt:inicio:20:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow();
     let cache=null,salvo=null;try{cache=CacheService.getUserCache();salvo=cache.get(chave);}catch(_){}
     if(salvo) {try{return {...JSON.parse(salvo),cache:true};}catch(_){try{cache.remove(chave);}catch(__){}}}
     const linhas=this.ler(reg,19).filter(r=>this.permitido(r)), fichas=this.ler(atd,18).filter(r=>this.principal(r));

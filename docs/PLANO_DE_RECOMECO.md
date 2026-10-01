@@ -88,8 +88,8 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | Fase | Entrega | Critério de pronto |
 |---|---|---|
 | **0. Congelar** (esta semana) | Lista de gatilhos instalados por projeto. Legado em somente leitura. Pasta Drive nova. Decisão sobre a conta proprietária. | Nenhuma planilha nova fora da estrutura. Ninguém instala código antigo. |
-| **1. Acesso** | Perfil carregado antes dos dados, sem "Administrador" provisório. Pessoas na Base. Novos perfis. Implantação nova. | Uma colaboradora real entra com o próprio papel. |
-| **2. Campo 4.0 firme** | Regra de obras desde 01/10/2026. Retomada que não trava em resposta editada. Retomada automática diária. Pergunta de protocolo no formulário. | Envios de outubro com obra ID. Zero falhas pendentes. |
+| **1. Acesso** ✅ código pronto (2.0.0) | Perfil carregado antes dos dados, sem "Administrador" provisório. Pessoas na Base. Novos perfis. Implantação nova. | Uma colaboradora real entra com o próprio papel. |
+| **2. Campo 4.0 firme** ✅ código pronto (4.1.0); pergunta de protocolo é passo manual | Regra de obras desde 01/10/2026. Retomada que não trava em resposta editada. Retomada automática diária. Pergunta de protocolo no formulário. | Envios de outubro com obra ID. Zero falhas pendentes. |
 | **3. Atendimentos na app** | Consulta e observações para todos. Edição, mesclagem e conclusão na app. Mensagem diária. **Corte do Controle de Atendimentos.** Gatilhos de 1 minuto desligados. | Uma fonte só de casos. |
 | **4. RDAS e satisfação** | RDAS alimentado pela Base (incremental). Painel de metas 15/60. | RDAS de outubro sem cópia manual. |
 | **5. Entregas mensais** | Fichas em PDF, Anexos, Programa Parceiros e relatos preparados, por competência. | Pacote de outubro gerado pela app. |
@@ -101,7 +101,7 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 
 ## 5. Decisões que dependem do Victor
 
-1. **Qual conta será proprietária** da app, da Base e das pastas? E todos da equipe têm conta nesse mesmo domínio?
+1. ~~Conta proprietária~~ → victor-henrique.xavier@veolia.com; toda a equipe usa @veolia.com (decidido em 01/10).
 2. **Quando o Controle de Atendimentos deixa de ser oficial**: data de corte para a app virar a fonte única.
 3. Quem mais, além do Victor, terá **administração técnica**, para o projeto não depender de uma pessoa só.
 4. Se a pasta `07_Administrador_Cleber` e o `90_Arquivo_historico` precisam entrar no repositório (não vieram no zip).

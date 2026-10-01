@@ -1,4 +1,4 @@
-/** DesempenhoCPT 1.5.0: mede operações e confere volume, sem criar abas ou gatilhos. */
+/** DesempenhoCPT 2.0.0: mede operações e confere volume, sem criar abas ou gatilhos. */
 class DesempenhoCPT {
   static medir(operacao, executar) {
     const inicio = Date.now();
@@ -7,11 +7,11 @@ class DesempenhoCPT {
       const tempoServidorMs = Date.now() - inicio;
       // Caracteres serializados, não bytes. Nunca registra o conteúdo ou a identidade.
       const caracteres = JSON.stringify(resultado || {}).length;
-      console.log(JSON.stringify({tipo:'CPT_METRICA',versao:'1.5.0',operacao,
+      console.log(JSON.stringify({tipo:'CPT_METRICA',versao:VERSAO_CPT,operacao,
         tempoServidorMs,caracteres,resultado:'ok',revisar:tempoServidorMs>4000||caracteres>250000}));
       return JSON.parse(JSON.stringify({...resultado,tempoServidorMs}));
     } catch (erro) {
-      console.log(JSON.stringify({tipo:'CPT_METRICA',versao:'1.5.0',operacao,
+      console.log(JSON.stringify({tipo:'CPT_METRICA',versao:VERSAO_CPT,operacao,
         tempoServidorMs:Date.now()-inicio,resultado:'erro'}));
       throw erro;
     }

@@ -1,7 +1,7 @@
 class EntregasCPT {
   constructor(ctx){this.ctx=ctx;}
   fonte(id){
-    if(!this.ctx.perfil.papeis.some(p=>['administrador','gestao','socioambiental','comunicacao'].includes(p)))throw new Error('Preparação de relatos disponível à Gestão, Socioambiental e Comunicação.');
+    if(!this.ctx.perfil.papeis.some(p=>['administrador','administrativo','gestao','socioambiental','comunicacao'].includes(p)))throw new Error('Preparação de relatos disponível ao Administrativo, Gestão, Socioambiental e Comunicação.');
     const fonte=new DadosDaAplicacao(this.ctx.base,this.ctx.perfil).detalhe(id);
     if(!/relato de atividade/.test(DadosDaAplicacao.norm(fonte.registro.procedimento)))throw new Error('Esta ferramenta prepara relatos de atividade.');
     const hash=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(fonte)).map(b=>(b&255).toString(16).padStart(2,'0')).join('');
