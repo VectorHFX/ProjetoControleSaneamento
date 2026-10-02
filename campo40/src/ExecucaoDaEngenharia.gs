@@ -1,5 +1,5 @@
 /**
- * ExecucaoDaEngenharia — 1.0.0 — PERMANENTE.
+ * ExecucaoDaEngenharia — 1.0.1 — PERMANENTE.
  * Liga a Base 4.0 ao formulário "Execução de Atendimentos", que a engenharia (Concrejato) responde.
  * O formulário e a planilha de respostas continuam separados e compartilhados com a engenharia.
  * Nenhuma pergunta muda: só a lista da pergunta "Qual o número de protocolo?" passa a vir da Base.
@@ -159,7 +159,7 @@ class ExecucaoDaEngenharia {
       const regra = this.regra(e, proc.valor);
       r[3] = 'Em andamento'; r[10] = regra.area; r[12] = regra.proxima; r[13] = agora;
       if (proc.valor !== 'Em análise') d.procedencia = proc.valor;
-      d.execucoes = (d.execucoes || []).concat([{data: e.data instanceof Date ? Utilities.formatDate(e.data, 'America/Sao_Paulo', 'yyyy-MM-dd') : String(e.data || ''), por: e.por, feito: (e.titulo || e.relato || e.naoProcedente).slice(0, 500), registradoPor: this.ORIGEM}]).slice(-20);
+      d.execucoes = (d.execucoes || []).concat([{data: e.data instanceof Date ? Utilities.formatDate(e.data, 'America/Sao_Paulo', 'yyyy-MM-dd') : String(e.data || ''), por: e.por, feito: [e.titulo, e.relato || e.naoProcedente].filter(Boolean).join('. ').slice(0, 1500), evidencias: (e.evid.match(/https:\/\/[^\s,;]+/g) || []).join(' '), registradoPor: this.ORIGEM}]).slice(-20);
       r[19] = JSON.stringify(d).slice(0, 49000); alteradas.add(i);
       novas.push([id, r[0], e.quando, 'Execução', r[3], autor, this.relato(e, proc).slice(0, 1000), this.ORIGEM, '', JSON.stringify({procedencia: proc, area: regra.area, proxima: regra.proxima, evidencias: e.evid})]);
       res.execucoes.push(String(r[0]));

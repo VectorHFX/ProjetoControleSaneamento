@@ -1,4 +1,4 @@
-/** DadosDaAplicacao 2.2.1. Somente leitura; compatível com a base Campo 4.0 importada. */
+/** DadosDaAplicacao 2.4.0. Somente leitura; compatível com a base Campo 4.0 importada. */
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -27,11 +27,13 @@ class DadosDaAplicacao {
   registro(r) { return {id:this.texto(r[0]),procedimento:this.texto(r[1]),data:this.data(r[2]),mes:this.mesCelula(r[3]),origem:this.texto(r[5]),bairro:this.texto(r[7]),bairroId:this.texto(r[8]),obra:this.texto(r[9]),obraId:this.texto(r[10]),responsavel:this.texto(r[11]),area:this.texto(r[12]),atividade:this.texto(r[13]),publico:r[14] === '' ? null : /^\d+$/.test(String(r[14])) ? Number(r[14]) : null,protocolo:this.texto(r[15]),conferencia:this.texto(r[18])}; }
   encerrado(r) { return /conclu|encerrad|finaliz/.test(DadosDaAplicacao.norm(r[3])); }
   principal(r) { return !!r[0] && (!r[1] || r[1] === r[0]) && !/incorporad|mesclad/.test(DadosDaAplicacao.norm(r[2])); }
-  atendimento(r) { return {protocolo:this.texto(r[0]),principal:this.texto(r[1] || r[0]),status:this.texto(r[3]),abertura:this.data(r[4]),conclusao:this.data(r[5]),nome:this.texto(r[6]),assunto:this.texto(r[7]),endereco:this.texto(r[8]),obra:this.texto(r[9]),area:this.texto(r[10]),responsavel:this.texto(r[11]),proximaAcao:this.texto(r[12]),atualizacao:DadosDaAplicacao.json(r[13]),documento:this.url(r[14]),pdf:this.url(r[15]),origem:this.texto(r[16]),concluido:this.encerrado(r),incorporado:!this.principal(r)}; }
+  atendimento(r) { return {protocolo:this.texto(r[0]),principal:this.texto(r[1] || r[0]),status:this.texto(r[3]),abertura:this.data(r[4]),conclusao:this.data(r[5]),nome:this.texto(r[6]),assunto:this.texto(r[7]),endereco:this.texto(r[8]),obra:this.texto(r[9]),area:this.texto(r[10]),responsavel:this.texto(r[11]),proximaAcao:this.texto(r[12]),atualizacao:DadosDaAplicacao.json(r[13]),documento:this.url(r[14]),pdf:this.url(r[15]),origem:this.texto(r[16]),concluido:this.encerrado(r),incorporado:!this.principal(r),dias:this.dias(r)}; }
+  /** Dias corridos em aberto (até a conclusão, se concluído). */
+  dias(r) { const a=r[4] instanceof Date?r[4]:null; if(!a)return null; const fim=this.encerrado(r)&&r[5] instanceof Date?r[5]:new Date(); return Math.max(0,Math.floor((fim-a)/864e5)); }
   url(v) { const s = String(v || ''); return /^https:\/\/(?:docs|drive)\.google\.com\//i.test(s) ? s : ''; }
   filtros(p) {
     p = p || {}; if (typeof p !== 'object' || Array.isArray(p)) throw new Error('Filtros inválidos.');
-    const f={}; ['mes','busca','procedimento','bairro','estado','obra','pendencia'].forEach(k => { if(p[k] != null && (typeof p[k] !== 'string' || p[k].length > 200))throw new Error('Filtro inválido.'); f[k]=String(p[k] || '').trim(); });
+    const f={}; ['mes','busca','procedimento','bairro','estado','obra','pendencia','com'].forEach(k => { if(p[k] != null && (typeof p[k] !== 'string' || p[k].length > 200))throw new Error('Filtro inválido.'); f[k]=String(p[k] || '').trim(); });
     if(f.mes)this.mes(f.mes);
     return f;
   }
@@ -107,12 +109,13 @@ class DadosDaAplicacao {
     return {registro:this.registro(r),campos,anexos,fonte:d.consolidado?'Histórico consolidado':'Formulário 4.0'};
   }
   carteira(p) {
-    p=p||{};const f=this.filtros(p);if(f.estado&&!['abertos','concluidos'].includes(f.estado))throw new Error('Situação inválida.');
+    p=p||{};const f=this.filtros(p);if(f.estado&&!['abertos','concluidos'].includes(f.estado))throw new Error('Situação inválida.');if(f.com&&!['Execução','Atendimento'].includes(f.com))throw new Error('Filtro inválido.');
     const todos=this.ler(this.atendimentos(),18), associados=new Map(), porId=new Map(todos.map(r=>[String(r[0]),r]));
     todos.forEach(r=>{let atual=r, vistos=new Set();while(atual&&atual[1]&&atual[1]!==atual[0]){if(vistos.has(atual[0]))return;vistos.add(atual[0]);atual=porId.get(String(atual[1]));}if(atual)associados.set(String(atual[0]),(associados.get(String(atual[0]))||'')+' '+r[0]);});
-    const selecionados=todos.filter(r=>this.principal(r)&&(!f.estado||(f.estado==='concluidos')===this.encerrado(r))&&
+    const selecionados=todos.filter(r=>this.principal(r)&&(!f.estado||(f.estado==='concluidos')===this.encerrado(r))&&(!f.com||(!this.encerrado(r)&&String(r[10])===f.com))&&
       (!f.busca||DadosDaAplicacao.norm(r[17]+' '+r[0]+' '+r[6]+' '+r[7]+' '+r[8]+' '+(associados.get(String(r[0]))||'')).includes(DadosDaAplicacao.norm(f.busca))));
-    selecionados.sort((a,b)=>String(b[0]).localeCompare(String(a[0])));
+    // Com filtro de responsável, os mais antigos primeiro (fila de trabalho); sem filtro, os mais novos.
+    selecionados.sort((a,b)=>f.com?String(a[0]).localeCompare(String(b[0])):String(b[0]).localeCompare(String(a[0])));
     const pagina=p.pagina==null?0:Number(p.pagina);if(!Number.isInteger(pagina)||pagina<0)throw new Error('Página inválida.');
     return {itens:selecionados.slice(pagina*24,pagina*24+24).map(r=>this.atendimento(r)),total:selecionados.length,proximaPagina:(pagina+1)*24<selecionados.length?pagina+1:null};
   }

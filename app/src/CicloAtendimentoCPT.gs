@@ -1,7 +1,9 @@
 /**
- * CicloAtendimentoCPT 2.3.0. Fonte única dos casos: abas Atendimentos e Movimentações da Base Campo 4.0.
+ * CicloAtendimentoCPT 2.4.0. Fonte única dos casos: abas Atendimentos e Movimentações da Base Campo 4.0.
  * Ciclo: Abertura (formulário, automática no Campo 4.0) → Triagem/atualização (Atendimento) →
  *        Execução registrada (Execução ou Atendimento) → Finalização (Atendimento). Reabertura com motivo.
+ * 2.4: dados da ficha lidos igualmente de casos novos e migrados (campos()), correção dos dados com histórico
+ *      e incorporação de protocolo duplicado. Ficha oficial em PDF: FichaOficialCPT.
  * Encerramento por pesquisa de satisfação fica para uma etapa futura (não implementado).
  * Toda ação: autorização no servidor, trava, versão (Atualização operacional), operação idempotente e movimentação.
  */
@@ -13,6 +15,36 @@ class CicloAtendimentoCPT {
   static podeExecutar(p) { return this.podeConduzir(p) || p.papeis.includes('execucao'); }
   /** Telefone e e-mail do munícipe: só quem conduz ou executa o caso. */
   static veContato(p) { return this.podeExecutar(p); }
+
+  /** Campos que o Atendimento pode corrigir: [rótulo, tamanho máximo, aparece no histórico como "alterado" (dado de contato)]. */
+  static get corrigiveis() {
+    return {nome: ['Nome', 120], telefone: ['Telefone', 120, true], email: ['E-mail', 160, true], endereco: ['Endereço', 300], assunto: ['Assunto', 200],
+      tipo: ['Tipo de manifestação', 60], canal: ['Canal de recebimento', 80], local: ['Local do atendimento', 200], solicitacao: ['Solicitação', 3000, true]};
+  }
+  /**
+   * Dados da ficha num formato só, para casos abertos pelo formulário 4.0 (campos no topo do JSON)
+   * e para os migrados do Controle antigo (oficiais / manuais / aberturas). Correções feitas na aplicação vencem.
+   */
+  static campos(d, r) {
+    const N = DadosDaAplicacao.norm, txt = v => v instanceof Date ? v : String(v == null ? '' : v).trim();
+    const pega = (o, ...k) => { if (!o) return ''; const m = new Map(Object.keys(o).map(x => [N(x), o[x]])); for (const n of k) { const v = m.get(N(n)); if (v != null && String(v).trim() !== '') return v; } return ''; };
+    const o = ((d.oficiais || [])[0] || {}).campos, a = ((d.aberturas || [])[0] || {}).campos, m = ((d.manuais || []).slice(-1)[0] || {}).dados || {}, c = d.corrigido || {};
+    const v = (k, oficial, manual, abertura, linha) => Object.prototype.hasOwnProperty.call(c, k) ? txt(c[k])
+      : txt(d[k] || pega(o, ...oficial) || (manual ? m[manual] : '') || pega(a, ...abertura) || linha || '');
+    const fotosNovas = (d.campos || []).filter(x => /foto|imagem|arquivo|video/.test(N(x.titulo)) || /drive\.google\.com/.test(String(x.valor)))
+      .map(x => Array.isArray(x.valor) ? x.valor.join(' ') : String(x.valor || '')).join(' ');
+    r = r || [];
+    return {nome: v('nome', ['Nome'], 'nome', ['Nome do solicitante'], r[6]), telefone: v('telefone', ['Telefone'], 'telefone', ['Telefones']), email: v('email', ['E-mail'], 'email', ['E-mail']),
+      endereco: v('endereco', ['Endereço'], 'endereco', ['Endereço do solicitante'], r[8]), assunto: v('assunto', ['Assunto'], 'assunto', ['Assunto'], r[7]),
+      tipo: v('tipo', ['Tipo de manifestação'], 'tipo', ['Tipo de manifestação']), canal: v('canal', ['Canal de recebimento'], 'canalRecebimento', ['Canal de recebimento']),
+      urgencia: v('urgencia', ['Grau de urgência'], '', ['Grau de urgência']), solicitacao: v('solicitacao', ['Solicitação'], 'solicitacao', ['Solicitação']),
+      descricao: v('descricao', ['Descrição detalhada da reclamação'], '', ['Descrição detalhada da ocorrência']), tratativa: v('tratativa', [], 'tratativaInicial', ['Tratativa inicial']),
+      local: v('local', ['Local do atendimento'], 'localAtendimento', ['Local']), horario: v('horario', ['Horário'], '', ['Horário do recebimento']),
+      segmento: v('segmento', [], '', ['Segmento para encaminhamento']), responsavel: txt(r[11] || pega(o, 'Responsável pelo atendimento') || m.responsavel || pega(a, 'Responsável pelo registro')),
+      fotosAbertura: [fotosNovas, pega(o, 'Fotos da abertura'), m.fotosAbertura, pega(a, 'Imagens/arquivos')].filter(Boolean).join(' '),
+      solucaoAnterior: txt(pega(o, 'Solução') || m.solucao || ''), finalizacaoAnterior: txt(pega(o, 'Finalização') || m.finalizacao || ''),
+      fotosSolucaoAnterior: txt(pega(o, 'Fotos da solução') || m.fotosSolucao || '')};
+  }
 
   constructor(ctx) { this.ctx = ctx; this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil); this.fuso = this.dados.fuso; }
   aba(nome) { const a = this.ctx.base.getSheetByName(nome); if (!a) throw new Error('Aba ' + nome + ' não encontrada na base.'); return a; }
@@ -31,11 +63,14 @@ class CicloAtendimentoCPT {
   detalhe(protocolo) {
     if (!/^[A-Z0-9-]{3,30}$/i.test(protocolo)) throw new Error('Protocolo inválido.');
     const base = this.dados.ficha(protocolo), principal = base.ficha.protocolo, {r} = this.localizar(principal), d = CicloAtendimentoCPT.json(r[19]), p = this.ctx.perfil;
-    const contato = CicloAtendimentoCPT.veContato(p);
-    const abertura = {tipo: d.tipo || '', canal: d.canal || '', urgencia: d.urgencia || '', solicitacao: d.solicitacao || '', tratativa: d.tratativa || '',
-      local: d.local || '', segmento: d.segmento || '', registroId: d.registroId || '', telefone: contato ? (d.telefone || '') : '', email: contato ? (d.email || '') : '', contatoOculto: !contato && !!(d.telefone || d.email)};
-    return {...base, abertura, procedencia: d.procedencia || 'Em análise', versao: this.versao(r), opcoes: {status: CicloAtendimentoCPT.status, procedencias: CicloAtendimentoCPT.procedencias, areas: CicloAtendimentoCPT.areas},
-      pode: {atualizar: CicloAtendimentoCPT.podeConduzir(p), executar: CicloAtendimentoCPT.podeExecutar(p), finalizar: CicloAtendimentoCPT.podeConduzir(p), reabrir: CicloAtendimentoCPT.podeConduzir(p)}};
+    const contato = CicloAtendimentoCPT.veContato(p), c = CicloAtendimentoCPT.campos(d, r), conduz = CicloAtendimentoCPT.podeConduzir(p);
+    const abertura = {tipo: c.tipo, canal: c.canal, urgencia: c.urgencia, solicitacao: c.solicitacao, descricao: c.descricao !== c.solicitacao ? c.descricao : '', tratativa: c.tratativa,
+      local: c.local, segmento: c.segmento, registroId: d.registroId || '', telefone: contato ? c.telefone : '', email: contato ? c.email : '', contatoOculto: !contato && !!(c.telefone || c.email),
+      execucoesAntigas: c.solucaoAnterior, conclusaoAntiga: c.finalizacaoAnterior};
+    // Valores atuais para o formulário de correção (só para quem conduz o caso).
+    const correcao = conduz ? Object.fromEntries(Object.keys(CicloAtendimentoCPT.corrigiveis).map(k => [k, c[k] instanceof Date ? '' : c[k]])) : null;
+    return {...base, abertura, correcao, procedencia: d.procedencia || 'Em análise', versao: this.versao(r), fichaAtualizada: !!(d.fichaHash && r[15]), opcoes: {status: CicloAtendimentoCPT.status, procedencias: CicloAtendimentoCPT.procedencias, areas: CicloAtendimentoCPT.areas},
+      pode: {atualizar: conduz, executar: CicloAtendimentoCPT.podeExecutar(p), finalizar: conduz, reabrir: conduz, corrigir: conduz, incorporar: conduz, fichaOficial: conduz}};
   }
   static texto(v, max, campo, obrigatorio) {
     if (v == null) v = '';
@@ -87,7 +122,7 @@ class CicloAtendimentoCPT {
       const evid = T(p.evidencias, 1500, 'Evidências', false), links = (evid.match(/https:\/\/(?:drive|docs)\.google\.com\/[^\s]+/g) || []);
       if (dataExec > Utilities.formatDate(new Date(), this.fuso, 'yyyy-MM-dd')) throw new Error('A data da execução não pode ser futura.');
       r[3] = 'Em andamento'; r[10] = 'Atendimento'; r[12] = 'Conferir execução e finalizar ficha';
-      d.execucoes = (d.execucoes || []).concat([{data: dataExec, por, feito: feito.slice(0, 500), registradoPor: this.ctx.email}]).slice(-20);
+      d.execucoes = (d.execucoes || []).concat([{data: dataExec, por, feito: feito.slice(0, 1500), evidencias: links.join(' '), registradoPor: this.ctx.email}]).slice(-20);
       return {tipo: 'Execução', resumo: feito + '\nExecutado por ' + por + ' em ' + dataExec.split('-').reverse().join('/') + (links.length ? '\nEvidências: ' + links.join(' ') : ''),
         detalhes: {data: dataExec, executadoPor: por, evidencias: evid, links}, mensagem: 'Execução registrada. O Atendimento confere e finaliza a ficha.'};
     });
@@ -104,6 +139,41 @@ class CicloAtendimentoCPT {
       if (procedencia === 'Procedente' && !(d.execucoes || []).length && p.semExecucao !== true) throw new Error('Não há execução registrada. Registre a execução ou confirme que o caso foi resolvido sem execução.');
       r[3] = 'Concluída'; r[5] = new Date(dataFim + 'T12:00:00'); r[12] = ''; r[10] = 'Atendimento'; d.procedencia = procedencia; d.conclusao = conclusao;
       return {tipo: 'Finalização', resumo: procedencia + ' · ' + conclusao, detalhes: {data: dataFim, procedencia, conclusao, semExecucao: p.semExecucao === true}, mensagem: 'Ficha finalizada.'};
+    });
+  }
+  /** Corrige dados da abertura (nome, contato, endereço, assunto, solicitação…). O original continua no JSON e no histórico. */
+  corrigir(p) {
+    const T = CicloAtendimentoCPT.texto, C = CicloAtendimentoCPT.corrigiveis;
+    return this.agir(p, CicloAtendimentoCPT.podeConduzir(this.ctx.perfil), (r, d) => {
+      const motivo = T(p.motivo, 500, 'Motivo da correção', true), atual = CicloAtendimentoCPT.campos(d, r), novos = p.dados && typeof p.dados === 'object' ? p.dados : {}, mud = [], campos = [];
+      d.corrigido = d.corrigido || {};
+      Object.keys(C).forEach(k => {
+        if (!Object.prototype.hasOwnProperty.call(novos, k)) return;
+        const [rotulo, max, reservado] = C[k], valor = T(novos[k], max, rotulo, false);
+        if (valor === String(atual[k] instanceof Date ? '' : atual[k] || '')) return;
+        if (k === 'email' && valor && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) throw new Error('Confira o e-mail.');
+        d.corrigido[k] = valor; campos.push(k);
+        mud.push(rotulo + (reservado ? ': alterado' : ': ' + (atual[k] || '—') + ' → ' + (valor || '—')));
+      });
+      if (!mud.length) throw new Error('Nada foi alterado.');
+      if (campos.includes('nome')) r[6] = d.corrigido.nome; if (campos.includes('assunto')) r[7] = d.corrigido.assunto; if (campos.includes('endereco')) r[8] = d.corrigido.endereco;
+      d.fichaHash = '';
+      return {tipo: 'Correção de ficha', resumo: mud.join(' · ') + '\nMotivo: ' + motivo, detalhes: {campos, motivo}, mensagem: 'Dados corrigidos. Gere a ficha oficial de novo para o PDF trazer a correção.'};
+    });
+  }
+  /** Incorpora um protocolo duplicado a este caso (mesma demanda registrada duas vezes). */
+  incorporar(p) {
+    const T = CicloAtendimentoCPT.texto;
+    return this.agir(p, CicloAtendimentoCPT.podeConduzir(this.ctx.perfil), (r, d) => {
+      const outro = T(p.outro, 30, 'Protocolo a incorporar', true).toUpperCase(), motivo = T(p.motivo, 500, 'Motivo', true), principal = String(r[0]);
+      if (outro === principal) throw new Error('Escolha um protocolo diferente deste caso.');
+      const alvo = this.localizar(outro), filhos = alvo.a.getRange(2, 1, alvo.a.getLastRow() - 1, 2).getValues().filter(x => String(x[1]) === outro && String(x[0]) !== outro);
+      if (filhos.length) throw new Error('O ' + outro + ' já tem protocolos incorporados. Incorpore este caso a ele, no sentido contrário.');
+      const o = alvo.r.slice(), agora = new Date(); o[1] = principal; o[2] = 'Incorporado'; o[13] = agora;
+      alvo.a.getRange(alvo.linha, 1, 1, 20).setValues([o]);
+      this.aba('Movimentações').appendRow(['MOV-APP-' + p.operacaoId.slice(3) + '-I', outro, agora, 'Vínculo de protocolos', String(o[3]), this.ctx.perfil.nome + ' <' + this.ctx.email + '>', 'Incorporado ao ' + principal + '. Motivo: ' + motivo, 'Aplicação CPT', '', '{}']);
+      d.incorporados = (d.incorporados || []).concat([outro]);
+      return {tipo: 'Vínculo de protocolos', resumo: outro + ' incorporado a este caso. Motivo: ' + motivo, detalhes: {outro, motivo}, mensagem: outro + ' agora aponta para este caso.'};
     });
   }
   reabrir(p) {
@@ -126,3 +196,5 @@ function atualizarAtendimentoCPT(p) { return acaoAtendimentoCPT_('atendimentos.a
 function registrarExecucaoCPT(p) { return acaoAtendimentoCPT_('atendimentos.execucao', p, 'registrarExecucao'); }
 function finalizarAtendimentoCPT(p) { return acaoAtendimentoCPT_('atendimentos.finalizar', p, 'finalizar'); }
 function reabrirAtendimentoCPT(p) { return acaoAtendimentoCPT_('atendimentos.reabrir', p, 'reabrir'); }
+function corrigirAtendimentoCPT(p) { return acaoAtendimentoCPT_('atendimentos.corrigir', p, 'corrigir'); }
+function incorporarAtendimentoCPT(p) { return acaoAtendimentoCPT_('atendimentos.incorporar', p, 'incorporar'); }

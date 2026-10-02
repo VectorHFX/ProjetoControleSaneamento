@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -102,4 +102,47 @@ email='atd@example.com';ctx.ra={protocolo:'ATD20260028',versao:det.versao,operac
 assert.throws(()=>run("abrirAtendimentoCPT('ATD;DROP')"),/Protocolo inválido/);assert.equal(locked,false);
 assert(Number(props.get('CPT_ATD_VERSAO'))>=4,'cache da Visão do mês invalidado a cada ação');
 console.log('PASS: ciclo do caso — permissões por perfil (contato só para Atendimento/Execução), atualização com histórico, execução, finalização com regras, reabertura, idempotência e conflito.');
+}
+
+{// 2.4: casos migrados, correção, incorporação, filtro "com quem está" e ficha oficial.
+const movs=books.get('base').getSheetByName('Movimentações');Sheet.prototype.appendRow=function(r){this.rows.push(r);return this};
+const migrado={protocolo:'ATD20260007',aberturas:[{campos:{'Nome do solicitante':'Nome Antigo','Telefones':'(11) 1111-1111','Solicitação':'Texto da abertura'}}],
+  oficiais:[{campos:{'Nome':'Morador Migrado','Telefone':'(11) 2222-2222','E-mail':'m@example.com','Solicitação':'Buraco na rua','Tipo de manifestação':'Reclamação','Canal de recebimento':'Atendimento itinerante','Local do atendimento':'Rua A','Horário':'2026-03-05T13:30:00.000Z','Solução':'Equipe vistoriou o local.','Fotos da abertura':'https://drive.google.com/file/d/FOTOABERTURA000000000001/view'}}],manuais:[],historico:[],correcoes:[],vinculos:[]};
+atd.rows.push(['ATD20260007','ATD20260007','Principal','Recebida',new Date('2026-03-05T12:00:00Z'),'','Morador Migrado','Buraco','Rua A, 1','Coletor A','Execução','Kesy','Analisar','2026-09-01','https://docs.google.com/document/d/DOCANTIGO000000000000001/edit','https://drive.google.com/file/d/PDFANTIGO000000000000001/view','Base Fichas Oficiais','','',JSON.stringify(migrado)],
+  ['ATD20260008','ATD20260008','Principal','Recebida',new Date('2026-03-06T12:00:00Z'),'','Morador Migrado','Buraco','Rua A, 1','','Execução','','Analisar','','','','Base Fichas Oficiais','','','{}']);
+email='atd@example.com';let det=run("abrirAtendimentoCPT('ATD20260007')");
+assert.equal(det.abertura.telefone,'(11) 2222-2222','migrado: ficha oficial antiga vence a abertura');assert.equal(det.abertura.solicitacao,'Buraco na rua');assert.equal(det.abertura.tipo,'Reclamação');assert.equal(det.abertura.execucoesAntigas,'Equipe vistoriou o local.');
+assert.equal(det.correcao.nome,'Morador Migrado');assert.equal(det.pode.corrigir,true);
+email='social@example.com';assert.equal(run("abrirAtendimentoCPT('ATD20260007')").correcao,null,'quem não conduz não recebe dados para correção');
+email='atd@example.com';ctx.c={protocolo:'ATD20260007',versao:det.versao,operacaoId:'OP-corrige000000001',motivo:'Telefone novo',dados:{...det.correcao,telefone:'(11) 3333-3333',nome:'Morador Corrigido'}};
+let r=run('corrigirAtendimentoCPT(c)');assert.match(r.resultado,/corrigidos/);const l7=atd.rows.find(x=>x[0]==='ATD20260007');assert.equal(l7[6],'Morador Corrigido');
+const mc=movs.rows[movs.rows.length-1];assert.equal(mc[3],'Correção de ficha');assert.match(mc[6],/Telefone: alterado/);assert(!/3333/.test(mc[6]),'telefone não vai para o histórico aberto');
+det=run("abrirAtendimentoCPT('ATD20260007')");assert.equal(det.abertura.telefone,'(11) 3333-3333');
+ctx.c={...ctx.c,versao:det.versao,operacaoId:'OP-corrige000000002',dados:det.correcao};assert.throws(()=>run('corrigirAtendimentoCPT(c)'),/Nada foi alterado/);
+// Incorporação
+ctx.i={protocolo:'ATD20260007',versao:det.versao,operacaoId:'OP-incorpora00000001',outro:'ATD20260007',motivo:'dup'};assert.throws(()=>run('incorporarAtendimentoCPT(i)'),/diferente/);
+ctx.i.outro='atd20260008';r=run('incorporarAtendimentoCPT(i)');const l8=atd.rows.find(x=>x[0]==='ATD20260008');assert.equal(l8[1],'ATD20260007');assert.equal(l8[2],'Incorporado');
+assert.equal(run("abrirAtendimentoCPT('ATD20260008')").ficha.protocolo,'ATD20260007','protocolo incorporado abre o principal');
+assert.ok(movs.rows.filter(x=>x[3]==='Vínculo de protocolos').length===2,'movimentação nos dois protocolos');
+// Filtro "com quem está" e dias em aberto
+let lista=run("buscarAtendimentosCPT({estado:'abertos',com:'Execução'})");assert.ok(lista.itens.every(x=>x.area==='Execução'&&!x.concluido));assert.ok(lista.itens.some(x=>x.protocolo==='ATD20260007'));assert.ok(!lista.itens.some(x=>x.protocolo==='ATD20260008'));
+assert.ok(lista.itens.find(x=>x.protocolo==='ATD20260007').dias>100);assert.throws(()=>run("buscarAtendimentosCPT({com:'Outro'})"),/inválido/);
+// Ficha oficial: preenche o modelo, gera PDF, guarda links e só refaz quando muda.
+const textos=[];let copias=0,pdfs=0;const movidos=[];
+const cell=()=>{const c={clear:()=>c,setVerticalAlignment:()=>c,appendParagraph:t=>{const p={appendText:x=>{textos.push(x);const tx={setFontFamily:()=>tx,setFontSize:()=>tx,setBold:()=>tx,setForegroundColor:()=>tx,setUnderline:()=>tx,setLinkUrl:()=>tx};return tx},setSpacingAfter:()=>p,setLineSpacing:()=>p,setAlignment:()=>p,appendInlineImage:()=>({getWidth:()=>800,getHeight:()=>600,setWidth(){},setHeight(){}})};if(t)textos.push(t);return p},appendTable:()=>({setBorderWidth(){return this},setBorderColor(){return this},getCell:()=>cell()})};return c};
+const pasta=nome=>({getId:()=>'p'+nome,getUrl:()=>'https://drive.google.com/drive/folders/'+nome,getFoldersByName:()=>({hasNext:()=>false}),createFolder:n=>pasta(n),createFile:b=>{pdfs++;return {getId:()=>'PDFNOVO00000000000000000'+pdfs}},getFiles:()=>({hasNext:()=>false}),getFilesByName:()=>({hasNext:()=>false})});
+ctx.DriveApp={createFolder:n=>pasta(n),getFolderById:()=>pasta('x'),getFileById:id=>({makeCopy:()=>{copias++;return {getId:()=>'DOCNOVO00000000000000000'+copias,getAs:()=>({setName:()=>({})})}},moveTo:()=>movidos.push(id),getBlob:()=>({getContentType:()=>'image/jpeg'})})};
+ctx.DocumentApp={...ctx.DocumentApp,openById:()=>({getBody:()=>({getTables:()=>[{getCell:()=>cell()},{getCell:()=>cell()}],editAsText:()=>({getText:()=>'x',setForegroundColor(){}})}),saveAndClose(){}}),HorizontalAlignment:{CENTER:'c',JUSTIFY:'j'},VerticalAlignment:{CENTER:'c'}};
+ctx.MimeType={PDF:'application/pdf'};ctx.Utilities.computeDigest=(_,v)=>[...crypto.createHash('sha256').update(v).digest()].map(b=>b>127?b-256:b);ctx.Utilities.DigestAlgorithm={SHA_256:1};ctx.Utilities.Charset={UTF_8:1};
+email='social@example.com';assert.throws(()=>run("gerarFichaOficialCPT({protocolo:'ATD20260007'})"),/não gera/);
+email='atd@example.com';r=run("gerarFichaOficialCPT({protocolo:'ATD20260007'})");assert.equal(r.gerada,true);assert.match(l7[15],/PDFNOVO/);
+assert.ok(textos.includes('Morador Corrigido')&&textos.includes('(11) 3333-3333')&&textos.includes('Equipe vistoriou o local.')&&textos.includes('Atendimento em andamento.'),'modelo preenchido com os dados atuais');
+assert.ok(textos.includes('Consórcio Performance Tamanduateí'));assert.deepEqual(movidos.sort(),['DOCANTIGO000000000000001','PDFANTIGO000000000000001'],'versão anterior vai para Versões anteriores');
+assert.ok(movs.rows.some(x=>x[3]==='Ficha oficial gerada'));
+r=run("gerarFichaOficialCPT({protocolo:'ATD20260007'})");assert.equal(r.gerada,false,'sem mudança não refaz');assert.equal(copias,1);
+assert.equal(run("abrirAtendimentoCPT('ATD20260007')").fichaAtualizada,true);
+// Pacote do mês: abertos no fim do mês + concluídos no mês.
+email='atd@example.com';const mesP='2026-09';r=run(`gerarPacoteFichasCPT({mes:'${mesP}'})`);assert.ok(r.total>=1);assert.ok(r.erros.every(x=>/nome e solicitação|Protocolo inválido/.test(x.erro)),JSON.stringify(r.erros));assert.ok(r.prontas>=1);
+assert.equal(locked,false);
+console.log('PASS: casos migrados mostram os dados da ficha antiga; correção com histórico sem expor contato; incorporação de protocolo; filtro por responsável com dias em aberto; ficha oficial no modelo, sem refazer à toa, e pacote do mês.');
 }

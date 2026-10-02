@@ -24,7 +24,7 @@
   function request(nome,arg){
     if(window.CPT_PREVIA)return window.CPT_PREVIA.chamar(nome,arg);
     return new Promise((resolve,reject)=>{
-      let done=false;const limite=nome==='gerarBaseRelatorioCPT'?360000:45000;const timer=setTimeout(()=>{done=true;reject(new Error('A conexão demorou mais que o esperado. Tente atualizar novamente.'));},limite);
+      let done=false;const limite=/^(gerarBaseRelatorioCPT|gerarPacoteFichasCPT|gerarFichaOficialCPT)$/.test(nome)?360000:45000;const timer=setTimeout(()=>{done=true;reject(new Error('A conexão demorou mais que o esperado. Tente atualizar novamente.'));},limite);
       const ok=x=>{if(done)return;done=true;clearTimeout(timer);resolve(x);},bad=e=>{if(done)return;done=true;clearTimeout(timer);reject(new Error(e&&e.message||'Não foi possível consultar os dados.'));};
       if(!window.google||!google.script||!google.script.run){bad(new Error('Abra esta aplicação pelo endereço publicado no Apps Script.'));return;}
       try{const runner=google.script.run.withSuccessHandler(ok).withFailureHandler(bad);if(typeof runner[nome]!=='function')throw new Error('Função '+nome+' indisponível na versão publicada. Atualize a implantação.');if(arg===undefined)runner[nome]();else runner[nome](arg);}catch(e){bad(e);}

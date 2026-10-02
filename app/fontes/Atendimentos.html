@@ -1,12 +1,13 @@
 <script>
 /*
- * Atendimentos 2.3.0 — carteira e ficha do caso, com o ciclo completo na aplicação:
+ * Atendimentos 2.4.0 — carteira e ficha do caso, com o ciclo completo na aplicação:
  * consulta e observações (todos) · atualização e finalização (Atendimento/Gestão) · execução (Execução/Atendimento).
+ * 2.4: filtro "com quem está", dias em aberto, correção dos dados, incorporação de protocolo e ficha oficial em PDF.
  * Textos digitados ficam na tela em caso de erro ou conflito.
  */
 window.CPTAtendimentos = (() => {
   'use strict';
-  let ui = null, filtro = {busca: '', estado: 'abertos'}, pagina = null, casos = [], ticket = 0, debounce = null;
+  let ui = null, filtro = {busca: '', estado: 'abertos', com: ''}, pagina = null, casos = [], ticket = 0, debounce = null;
   let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false};
   const ops = new Map(); // operação idempotente por formulário enquanto o conteúdo não muda
   const $ = id => document.getElementById(id);
@@ -18,6 +19,7 @@ window.CPTAtendimentos = (() => {
     ui.view.innerHTML = ui.intro('Atendimentos', 'Cada ficha nasce do formulário com um protocolo. Acompanhe, registre a execução e finalize por aqui.') +
       `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
       <label class="field">Situação<select name="estado"><option value="" ${!filtro.estado ? 'selected' : ''}>Todos os casos</option><option value="abertos" ${filtro.estado === 'abertos' ? 'selected' : ''}>Em aberto</option><option value="concluidos" ${filtro.estado === 'concluidos' ? 'selected' : ''}>Concluídos</option></select></label>
+      <label class="field">Com quem está<select name="com"><option value="">Todos</option>${['Execução', 'Atendimento'].map(x => `<option ${filtro.com === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
       <button type="submit" class="button">${ui.icon('search')}Buscar</button></form></section><div class="results-head"><span id="caseCount">Consultando atendimentos…</span><span>Protocolos ATD + ano + número</span></div><div id="caseResults" class="cards"></div><div id="moreCases" class="load-more"></div>`;
     const f = $('caseFilters'), ler = () => { filtro = Object.fromEntries(new FormData(f)); };
     f.addEventListener('submit', e => { e.preventDefault(); ler(); carregar(); });
@@ -28,7 +30,7 @@ window.CPTAtendimentos = (() => {
   function cartao(r) {
     return `<article class="entry-card"><div class="card-top"><span class="badge ${corStatus(r)}">${ui.esc(r.concluido ? 'Concluído' : r.status || 'Em aberto')}</span><span class="date">${ui.esc(r.protocolo)}</span></div><h3>${ui.esc(r.nome || 'Nome não informado')}</h3>
       <p><strong>${ui.esc(r.assunto || 'Assunto não informado')}</strong><br>${ui.esc(r.endereco || 'Endereço não informado')}</p>${r.proximaAcao && !r.concluido ? `<p class="small muted">Próxima ação: ${ui.esc(r.proximaAcao)}</p>` : ''}
-      <div class="card-bottom"><span>${ui.esc(r.abertura ? 'Aberto em ' + ui.date(r.abertura) : r.area || '')}</span><button class="button ghost" data-case="${ui.esc(r.protocolo)}">Abrir ficha ${ui.icon('arrow')}</button></div></article>`;
+      <div class="card-bottom"><span>${ui.esc(r.concluido ? (r.abertura ? 'Aberto em ' + ui.date(r.abertura) : '') : [r.area ? 'Com ' + r.area : '', r.dias != null ? r.dias + (r.dias === 1 ? ' dia' : ' dias') + ' em aberto' : ''].filter(Boolean).join(' · '))}</span><button class="button ghost" data-case="${ui.esc(r.protocolo)}">Abrir ficha ${ui.icon('arrow')}</button></div></article>`;
   }
   async function carregar(mais = false) {
     const mine = ++ticket; if (!mais) casos = [];
@@ -61,8 +63,12 @@ window.CPTAtendimentos = (() => {
         ${d.pode.executar && !conc ? '<button class="button secondary" data-caso-form="execucao">Registrar execução</button>' : ''}
         ${d.pode.finalizar && !conc ? '<button class="button" data-caso-form="finalizar">Finalizar ficha</button>' : ''}
         ${d.pode.reabrir && conc ? '<button class="button secondary" data-caso-form="reabrir">Reabrir caso</button>' : ''}
-      </div><div id="casoForm"></div>
-      <h3 class="answers-head">Solicitação</h3><p class="case-text">${ui.esc(a.solicitacao || f.assunto || 'Não informada')}</p>
+        ${d.pode.corrigir ? '<button class="button ghost" data-caso-form="corrigir">Corrigir dados da ficha</button>' : ''}
+        ${d.pode.incorporar ? '<button class="button ghost" data-caso-form="incorporar">Incorporar protocolo duplicado</button>' : ''}
+        ${d.pode.fichaOficial ? `<button class="button ghost" data-ficha-oficial>${ui.icon('file')}${d.fichaAtualizada ? 'Ficha oficial em dia' : 'Gerar ficha oficial (PDF)'}</button>` : ''}
+      </div><div id="fichaResultado" aria-live="polite"></div><div id="casoForm"></div>
+      <h3 class="answers-head">Solicitação</h3><p class="case-text">${ui.esc(a.solicitacao || f.assunto || 'Não informada')}</p>${a.descricao ? `<p class="case-text">${ui.esc(a.descricao)}</p>` : ''}
+      ${a.execucoesAntigas ? `<h3 class="answers-head">Providências registradas no Controle antigo</h3><p class="case-text">${ui.esc(a.execucoesAntigas)}</p>` : ''}${a.conclusaoAntiga ? `<h3 class="answers-head">Conclusão registrada no Controle antigo</h3><p class="case-text">${ui.esc(a.conclusaoAntiga)}</p>` : ''}
       ${linhaResumo([['Assunto', f.assunto], ['Tipo de manifestação', a.tipo], ['Canal', a.canal], ['Urgência', a.urgencia], ['Endereço', f.endereco], ['Frente de obra', f.obra],
         ['Telefone', a.telefone || (a.contatoOculto ? 'Visível para Atendimento e Execução' : '')], ['E-mail', a.email || null], ['Abertura', ui.date(f.abertura)], ['Conclusão', f.conclusao ? ui.date(f.conclusao) : null], ['Responsável', f.responsavel], ['Tratativa inicial', a.tratativa || null]])}
       ${a.registroId ? `<p class="small muted">Aberto pelo formulário · registro <button class="link-button" data-record="${ui.esc(a.registroId)}">${ui.esc(a.registroId)}</button></p>` : ''}
@@ -86,9 +92,15 @@ window.CPTAtendimentos = (() => {
       finalizar: `<label class="field wide">Conclusão (como o caso foi resolvido)<textarea name="conclusao" rows="4" required maxlength="3000"></textarea></label>
         <label class="field">Data de conclusão<input type="date" name="data" required max="${hoje()}" value="${hoje()}"></label><label class="field">Procedência final${sel('procedencia', ['Procedente', 'Não procedente'], d.procedencia === 'Não procedente' ? 'Não procedente' : 'Procedente')}</label>
         <label class="check-inline wide"><input type="checkbox" name="semExecucao"> Resolvido sem execução de obra (ex.: orientação ou esclarecimento)</label>`,
+      corrigir: (() => { const c = d.correcao || {}, campo = (k, rot, max, tipo) => `<label class="field${k === 'solicitacao' || k === 'endereco' ? ' wide' : ''}">${rot}${k === 'solicitacao' ? `<textarea name="${k}" rows="4" maxlength="${max}">${ui.esc(c[k] || '')}</textarea>` : `<input name="${k}" type="${tipo || 'text'}" maxlength="${max}" value="${ui.esc(c[k] || '')}">`}</label>`;
+        return campo('nome', 'Nome', 120) + campo('telefone', 'Telefone', 120) + campo('email', 'E-mail', 160, 'email') + campo('endereco', 'Endereço', 300) + campo('assunto', 'Assunto', 200) + campo('tipo', 'Tipo de manifestação', 60) +
+          campo('canal', 'Canal de recebimento', 80) + campo('local', 'Local do atendimento', 200) + campo('solicitacao', 'Solicitação', 3000) +
+          '<label class="field wide">Motivo da correção<input name="motivo" required maxlength="500" placeholder="Ex.: nome digitado errado na abertura; morador informou novo telefone."></label>'; })(),
+      incorporar: `<p class="small muted wide">Use quando a mesma demanda foi registrada em dois protocolos. O outro protocolo passa a apontar para este caso e sai da lista da engenharia; o histórico dele continua visível aqui.</p>
+        <label class="field">Protocolo a incorporar<input name="outro" required maxlength="30" pattern="[A-Za-z0-9-]{3,30}" placeholder="ATD2026…"></label><label class="field wide">Motivo<input name="motivo" required maxlength="500" placeholder="Ex.: mesma moradora e mesmo vazamento, registrado duas vezes."></label>`,
       reabrir: `<label class="field wide">Motivo da reabertura<textarea name="motivo" rows="3" required maxlength="1000"></textarea></label><label class="field wide">Próxima ação<input name="proximaAcao" required maxlength="500"></label>`
     }[tipo];
-    const titulos = {atualizar: 'Atualizar caso', execucao: 'Registrar execução', finalizar: 'Finalizar ficha', reabrir: 'Reabrir caso'};
+    const titulos = {atualizar: 'Atualizar caso', execucao: 'Registrar execução', finalizar: 'Finalizar ficha', reabrir: 'Reabrir caso', corrigir: 'Corrigir dados da ficha', incorporar: 'Incorporar protocolo'};
     $('casoForm').innerHTML = `<form class="case-form" data-tipo="${tipo}"><h3>${titulos[tipo]}</h3><div id="casoErro" class="notice" hidden></div><div class="editor-grid">${html}</div>
       <div class="dialog-actions"><button class="button" type="submit">${titulos[tipo]}</button><button class="button ghost" type="button" data-caso-cancelar>Cancelar</button></div></form>`;
     $('casoForm').querySelector('textarea, input:not([type=hidden]), select').focus();
@@ -96,14 +108,24 @@ window.CPTAtendimentos = (() => {
   async function enviar(form) {
     const tipo = form.dataset.tipo, dados = Object.fromEntries(new FormData(form)), b = form.querySelector('button[type=submit]'), erro = $('casoErro');
     if (tipo === 'finalizar') dados.semExecucao = form.elements.semExecucao.checked;
-    const p = {...dados, protocolo: aberto.ficha.protocolo, versao: aberto.versao}; p.operacaoId = opId(tipo + aberto.ficha.protocolo, p);
-    const fn = {atualizar: 'atualizarAtendimentoCPT', execucao: 'registrarExecucaoCPT', finalizar: 'finalizarAtendimentoCPT', reabrir: 'reabrirAtendimentoCPT'}[tipo];
+    let p = {...dados, protocolo: aberto.ficha.protocolo, versao: aberto.versao};
+    if (tipo === 'corrigir') { const {motivo, ...campos} = dados; p = {motivo, dados: campos, protocolo: aberto.ficha.protocolo, versao: aberto.versao}; }
+    p.operacaoId = opId(tipo + aberto.ficha.protocolo, p);
+    const fn = {atualizar: 'atualizarAtendimentoCPT', execucao: 'registrarExecucaoCPT', finalizar: 'finalizarAtendimentoCPT', reabrir: 'reabrirAtendimentoCPT', corrigir: 'corrigirAtendimentoCPT', incorporar: 'incorporarAtendimentoCPT'}[tipo];
     b.disabled = true; const rotulo = b.textContent; b.textContent = 'Salvando…'; erro.hidden = true;
     try {
       const r = await ui.call(fn, p); ui.toast(r.resultado); ops.delete(tipo + aberto.ficha.protocolo);
       const protocolo = aberto.ficha.protocolo; await abrir(protocolo);
       const i = casos.findIndex(c => c.protocolo === protocolo); if (i >= 0 && aberto) { casos[i] = aberto.ficha; if ($('caseResults')) $('caseResults').innerHTML = casos.map(cartao).join(''); }
     } catch (e) { erro.textContent = e.message + ' Seu texto continua no formulário.'; erro.hidden = false; erro.scrollIntoView({block: 'nearest'}); b.disabled = false; b.textContent = rotulo; }
+  }
+  async function fichaOficial(b) {
+    const protocolo = aberto.ficha.protocolo, box = $('fichaResultado'), rotulo = b.innerHTML;
+    b.disabled = true; b.textContent = 'Gerando a ficha… (até 1 minuto)'; box.innerHTML = '';
+    try {
+      const r = await ui.call('gerarFichaOficialCPT', {protocolo}); ui.toast(r.resultado);
+      if (aberto && aberto.ficha.protocolo === protocolo) { aberto.ficha.documento = r.documento; aberto.ficha.pdf = r.pdf; aberto.fichaAtualizada = true; desenhar(); }
+    } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; b.disabled = false; b.innerHTML = rotulo; }
   }
   // ---------- Observações e histórico ----------
   function nota(x) { const q = x.em ? new Date(x.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'}) : ''; return `<section class="history-item"><h3>${ui.esc(x.nome || x.autor)}</h3><p class="small muted">${ui.esc(q + ' · ' + x.canal + (x.consultado && x.consultado !== x.protocolo ? ' · protocolo ' + x.consultado : ''))}</p><p class="case-text">${ui.esc(x.texto)}</p></section>`; }
@@ -135,6 +157,7 @@ window.CPTAtendimentos = (() => {
       if (ev.target.closest('[data-case-mais]')) { carregar(true); return; }
       const f = ev.target.closest('[data-caso-form]'); if (f && aberto) { formulario(f.dataset.casoForm); return; }
       if (ev.target.closest('[data-caso-cancelar]')) { $('casoForm').innerHTML = ''; return; }
+      const fo = ev.target.closest('[data-ficha-oficial]'); if (fo && aberto) { fichaOficial(fo); return; }
       if (ev.target.closest('#historyMore')) carregarHistorico(false);
     });
     document.addEventListener('submit', ev => {

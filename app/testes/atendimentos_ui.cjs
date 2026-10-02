@@ -10,9 +10,12 @@ await abrirCaso('&perfil=execucao');assert.deepEqual(await page.locator('[data-c
 await page.locator('[data-caso-form=execucao]').click();await page.locator('.case-form button[type=submit]').click();assert(await page.locator('.case-form textarea[name=feito]').evaluate(e=>!e.checkValidity()));
 await page.fill('.case-form textarea[name=feito]','Reparo da calçada concluído.');await page.locator('.case-form button[type=submit]').click();await page.locator('.timeline .tipo-execucao').waitFor();
 // Atendimento (perfil completo): atualizar, finalizar, reabrir.
-await abrirCaso('');assert.deepEqual(await page.locator('[data-caso-form]').evaluateAll(b=>b.map(x=>x.dataset.casoForm)),['atualizar','execucao','finalizar']);
+await abrirCaso('');assert.deepEqual(await page.locator('[data-caso-form]').evaluateAll(b=>b.map(x=>x.dataset.casoForm)),['atualizar','execucao','finalizar','corrigir','incorporar']);
+// Correção dos dados e ficha oficial.
+await page.locator('[data-caso-form=corrigir]').click();await page.fill('.case-form input[name=nome]','Nome Corrigido');await page.fill('.case-form input[name=motivo]','Nome digitado errado');await page.locator('.case-form button[type=submit]').click();await page.locator('.timeline .tipo-correcaodeficha').waitFor();assert.match(await page.locator('#detailTitle').textContent(),/Nome Corrigido/);
+await page.locator('[data-ficha-oficial]').click();await page.locator('[data-ficha-oficial]',{hasText:'em dia'}).waitFor();assert.equal(await page.locator('#detailContent a',{hasText:'Abrir PDF'}).count(),1);
 await page.locator('[data-caso-form=finalizar]').click();await page.fill('.case-form textarea[name=conclusao]','Calçada refeita; moradora ciente.');if(out)await page.screenshot({path:out+'/caso_finalizar.png'});
 await page.locator('.case-form button[type=submit]').click();await page.locator('[data-caso-form=reabrir]').waitFor();assert.match(await page.locator('.case-status').textContent(),/Concluído/);
 await page.locator('[data-caso-form=reabrir]').click();await page.fill('.case-form textarea[name=motivo]','Vazamento voltou');await page.fill('.case-form input[name=proximaAcao]','Nova vistoria');await page.locator('.case-form button[type=submit]').click();await page.locator('[data-caso-form=finalizar]').waitFor();
 assert.equal(await page.locator('.timeline .tipo-reabertura').count(),1);assert.deepEqual(erros,[]);await b.close();
-console.log('PASS: ficha por perfil — Comunicação consulta (sem contato), Execução registra execução, Atendimento finaliza e reabre; linha do tempo atualizada.');})().catch(e=>{console.error(e);process.exit(1);});
+console.log('PASS: ficha por perfil — Comunicação consulta (sem contato), Execução registra execução, Atendimento corrige dados, gera a ficha oficial, finaliza e reabre; linha do tempo atualizada.');})().catch(e=>{console.error(e);process.exit(1);});

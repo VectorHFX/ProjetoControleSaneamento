@@ -1,5 +1,5 @@
 <script>
-/* Fechamento do mês 2.1.0 — conferência da competência e geração da base do relatório mensal. */
+/* Fechamento do mês 2.4.0 — conferência da competência, base do relatório mensal e pacote de fichas oficiais (ANEXO 4). */
 window.CPTFechamento = (() => {
   'use strict';
   let ui = null, ticket = 0, operacao = null, gerando = false;
@@ -35,7 +35,11 @@ window.CPTFechamento = (() => {
         <p class="small muted">Leva de 1 a 4 minutos, conforme a quantidade de fotos. Textos que dependem de análise ficam marcados com [COMPLETAR] no documento.</p>
         <div id="gerarResultado" aria-live="polite"></div>
         ${d.historico.length ? `<h3 class="answers-head">Gerações deste mês</h3>${d.historico.map(h => `<p>Versão ${ui.esc(h.versao)} · ${new Date(h.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'})} · ${ui.esc(h.autor)} · <a href="${ui.esc(h.documento)}" target="_blank" rel="noopener noreferrer">Documento</a> · <a href="${ui.esc(h.planilha)}" target="_blank" rel="noopener noreferrer">Manifestações</a></p>`).join('')}` : ''}
+      </section>
+      <section class="panel"><div class="panel-head"><div><h2>Fichas oficiais do mês (ANEXO 4)</h2><p>Gera no modelo Sabesp a ficha de cada caso em aberto no fim do mês e de cada caso concluído no mês, e junta os PDFs na pasta do mês. Fichas sem mudança não são refeitas.</p></div></div>
+        <div class="dialog-actions"><button class="button secondary" id="pacoteFichas">${ui.icon('file')}Gerar fichas de ${ui.esc(monthName(d.mes))}</button></div><div id="pacoteResultado" aria-live="polite"></div>
       </section>`;
+    $('pacoteFichas').onclick = ev => pacote(d.mes, ev.currentTarget, false);
     $('gerarForm').onsubmit = ev => { ev.preventDefault(); gerar(d.mes, ev.target); };
   }
   function monthName(m) { return new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'}); }
@@ -52,6 +56,19 @@ window.CPTFechamento = (() => {
     } catch (e) {
       box.innerHTML = `<div class="notice">${ui.esc(e.message)} Se o tempo esgotou, aguarde 2 minutos e reabra o fechamento: a geração pode ter sido concluída e aparecerá em “Gerações deste mês”.</div>`;
     } finally { gerando = false; b.disabled = false; b.textContent = 'Gerar base de ' + monthName(mes); }
+  }
+  async function pacote(mes, b, continuar) {
+    if (gerando) return; gerando = true; const box = $('pacoteResultado'), rotulo = b.innerHTML;
+    b.disabled = true; b.textContent = 'Gerando fichas… não feche esta página';
+    box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Preenchendo o modelo oficial e convertendo em PDF…</div>';
+    try {
+      const r = await ui.call('gerarPacoteFichasCPT', {mes, continuar});
+      box.innerHTML = `<div class="notice" role="status">${ui.esc(r.resultado)} ${ui.num(r.prontas)} de ${ui.num(r.total)} prontas (${ui.num(r.novas)} geradas agora).</div>
+        <div class="dialog-actions"><a class="button" href="${ui.esc(r.pasta)}" target="_blank" rel="noopener noreferrer">${ui.icon('file')}Abrir pasta das fichas</a>${r.pendentes ? '<button class="button secondary" id="pacoteContinuar">Continuar</button>' : ''}</div>
+        ${r.erros.length ? `<details open><summary>${r.erros.length} ficha(s) a corrigir</summary><p>${r.erros.map(x => ui.esc(x.protocolo + ': ' + x.erro)).join('<br>')}</p></details>` : ''}`;
+      const c = $('pacoteContinuar'); if (c) c.onclick = () => { gerando = false; pacote(mes, c, true); };
+    } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)} Clique de novo: as fichas já geradas não são refeitas.</div>`; }
+    finally { gerando = false; b.disabled = false; b.innerHTML = rotulo; }
   }
   function init(api) {
     ui = api;

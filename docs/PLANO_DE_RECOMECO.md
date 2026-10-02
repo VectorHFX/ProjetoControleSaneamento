@@ -106,7 +106,7 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 3. Quem mais, além do Victor, terá **administração técnica**, para o projeto não depender de uma pessoa só.
 4. Se a pasta `07_Administrador_Cleber` e o `90_Arquivo_historico` precisam entrar no repositório (não vieram no zip).
 
-## 6. Situação por ferramenta (atualizado em 02/10/2026)
+## 6. Situação por ferramenta (atualizado em 02/10/2026, 2.4)
 
 | Ferramenta | Situação |
 |---|---|
@@ -119,7 +119,10 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | Ciclo do caso na aplicação: abertura automática com protocolo, atualização, execução, finalização e reabertura | ✅ 2.3 (o formulário não muda; protocolo nasce no sistema) |
 | Formulário de Execução (Concrejato) ligado à Base: retornos por protocolo, aberturas pela engenharia, lista de protocolos, aba de ordens em aberto e e-mail de encaminhamento | ✅ Campo 4.2 (formulário e planilha da engenharia seguem separados) |
 | Corte do Controle de Atendimentos: comparação, ajuste do estado e piso da numeração | ✅ Campo 4.2 (Bloco 3 do guia) |
-| Mesclagem de protocolos e PDF da ficha oficial | Próximo (antes do fechamento de outubro) |
+| Dados dos casos migrados visíveis na ficha (telefone, solicitação, providências antigas) | ✅ 2.4 |
+| Correção dos dados da ficha, incorporação de protocolo duplicado, filtro "com quem está" | ✅ 2.4 |
+| Ficha oficial em PDF no modelo Sabesp e pacote do mês (ANEXO 4) | ✅ 2.4 |
+| Inventário do Drive para limpeza (`inventariarDriveCPT`) | ✅ 2.4 — ver LIMPEZA_E_BACKUP.md |
 | Encerramento por pesquisa de satisfação | Depois (decisão de 01/10) |
 | RDAS alimentado pelo Campo 4.0 | A fazer |
 | Matriz de contatos (ANEXO 1), recados, links e materiais | A fazer |

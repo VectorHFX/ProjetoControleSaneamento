@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.3.1 e Campo 4.0 (4.2)
+# Guia de instalação: Aplicação CPT 2.4 e Campo 4.0 (4.2)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -18,6 +18,56 @@ Cada passo diz o que deve aparecer. Se aparecer outra coisa, pare e me mande o p
 4. Salve com 💾.
 
 Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.gs` ou `.html`.
+
+---
+
+## Atualização 2.4 — para quem já instalou a 2.3 (≈ 20 min)
+
+Os Blocos 1 a 4 abaixo já foram feitos. Faça só isto:
+
+**1. Aplicação** (projeto da Aplicação CPT, pasta `app/src/`)
+
+| Arquivo | Ação |
+|---|---|
+| `AplicacaoCPT.gs`, `CicloAtendimentoCPT.gs`, `DadosDaAplicacao.gs` | substituir |
+| `Atendimentos.html`, `Fechamento.html`, `Interacoes.html` | substituir |
+| `FichaOficialCPT`, `InventarioDriveCPT` | **criar** (＋ → Script) |
+
+Depois:
+1. Salve e execute **`instalarAplicacaoCPT`**. Deve mostrar `versao: 2.4.0`.
+2. Vá em **Implantar → Gerenciar implantações → ✏️ → Nova versão → Implantar**.
+
+**2. Campo 4.0** (projeto do Campo 4.0, pasta `campo40/src/`)
+1. Substitua `ExecucaoDaEngenharia.gs`. Agora o retorno da engenharia guarda o relato completo e as fotos, para a ficha oficial usar.
+2. Salve. Não precisa executar nada.
+
+**3. Testar na aplicação**
+1. Abra um caso **antigo**, por exemplo um de março. Telefone, solicitação, tipo e as providências do Controle antigo devem aparecer. Antes da 2.4, esses campos apareciam como "Não informado".
+2. No mesmo caso, clique em **Gerar ficha oficial (PDF)** e abra o PDF.
+   - Compare com o PDF antigo: o modelo e a diagramação são os mesmos.
+   - O PDF antigo vai para **CPT • Fichas oficiais / Versões anteriores**. Nada é apagado.
+3. Em Atendimentos, use o filtro **Com quem está → Execução**. Aparece a fila da engenharia, dos casos mais antigos para os mais novos, com os dias em aberto.
+
+**O que entrou na 2.4:**
+
+| Onde | O quê |
+|---|---|
+| Ficha do caso | **Corrigir dados da ficha** (nome, telefone, endereço, assunto, solicitação…). A correção fica com motivo no histórico. Telefone, e-mail e solicitação aparecem lá só como "alterado". |
+| Ficha do caso | **Incorporar protocolo duplicado**. O outro protocolo aponta para este caso e sai da lista da engenharia. |
+| Ficha do caso | **Gerar ficha oficial (PDF)** no modelo Sabesp. Só é refeita quando algo muda. |
+| Fechamento do mês | **Fichas oficiais do mês (ANEXO 4)**: gera e junta na pasta do mês os PDFs dos casos em aberto no fim do mês e dos concluídos no mês. Se demorar, aparece **Continuar**. |
+| Atendimentos | Filtro **Com quem está** e dias em aberto em cada cartão |
+| Editor | **`inventariarDriveCPT`**: lista seus arquivos do Drive e sugere o que arquivar. Veja [LIMPEZA_E_BACKUP.md](LIMPEZA_E_BACKUP.md). |
+
+**Acionadores do Controle antigo** (nos seus prints):
+
+| Projeto | Acionador | O que fazer |
+|---|---|---|
+| CAC Controle de Atendimentos | `painelProcessarFila` (horário) | **Excluir.** Ele processa pedidos do painel antigo no Controle. |
+| CAC Controle de Atendimentos | `atualizarAnexosAtendimentosAgendado` (horário) | **Excluir.** Ele reescreveria o Controle de manifestações dos Anexos com dados parados. Agora a planilha sai do Fechamento do mês. |
+| CAC Controle de Atendimentos | `aoEditarAvisosProtocolo` (ao editar) | **Excluir.** Só serve às abas antigas de avisos. |
+| CAC Controle de Atendimentos | `aoAbrirFichasOficiaisSabesp` (ao abrir) | **Pode manter.** Só cria o menu para consultar e baixar os PDFs antigos. |
+| Painel de atendimento | `atualizarPainelExecutivoExecucaoAgendado` (horário) | **Excluir.** O painel antigo deixa de ter dados novos. A fila da engenharia agora está na aplicação (filtro Com quem está) e na aba CPT • Ordens em aberto. |
 
 ---
 
@@ -54,10 +104,10 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 |---|---|
 | `AplicacaoCPT.gs`, `CronogramaCPT.gs`, `DadosDaAplicacao.gs`, `DesempenhoCPT.gs`, `EntregasCPT.gs` | substituir |
 | `Aplicacao.html`, `Interacoes.html`, `Agenda.html`, `Entregas.html`, `Estilos.html` | substituir |
-| `PerfisCPT`, `ObservacoesCPT`, `ObrasCPT`, `RelatorioMensalCPT`, `CacheCPT`, `CicloAtendimentoCPT` | **criar** (＋ → Script) |
+| `PerfisCPT`, `ObservacoesCPT`, `ObrasCPT`, `RelatorioMensalCPT`, `CacheCPT`, `CicloAtendimentoCPT`, `FichaOficialCPT`, `InventarioDriveCPT` | **criar** (＋ → Script) |
 | `Obras`, `Fechamento`, `Inicio`, `Atendimentos` | **criar** (＋ → HTML) |
 
-No fim, o projeto tem **20 arquivos** além do `appsscript.json`. Salve.
+No fim, o projeto tem **22 arquivos** além do `appsscript.json`. Salve.
 
 ### 1.3 Configurar
 1. Execute **`instalarAplicacaoCPT`** e autorize. O Google pede permissões novas (Documentos e Drive) para o relatório do mês.
@@ -215,10 +265,11 @@ A partir daí, quando o Atendimento encaminha um caso à Execução, os três co
 | Comunicação 4.0.2: lista de protocolos do formulário | `ExecucaoDaEngenharia` (a cada resposta e de hora em hora) |
 | Comunicação 4.0.2: e-mail com PDF para a Concrejato | E-mail com tabela, quando o caso é encaminhado à Execução, e a aba **CPT • Ordens em aberto** |
 | Comunicação entre Áreas (mensagens da Execução) | Entram na ficha como "Comunicação" |
-| Painel de Atendimento / Demandas do Atendimento | Aplicação → Atendimentos (Em aberto, com quem está, próxima ação) |
-| Fichas Oficiais 3.2.1 (PDF Sabesp) | Casos antigos: os PDFs continuam no Controle antigo e abrem pelo botão da ficha. Casos novos: **próxima etapa**, pronta antes do fechamento de outubro |
+| Painel de Atendimento / Demandas do Atendimento / Painel Executivo | Aplicação → Atendimentos (filtro Com quem está, dias em aberto, próxima ação) |
+| Correções da Ficha Final | **Corrigir dados da ficha**, com motivo e histórico (2.4) |
+| Fichas Oficiais 3.2.1 (PDF Sabesp) | Botão **Gerar ficha oficial** na ficha do caso, e o pacote do mês no Fechamento (2.4). Mesmo modelo. |
 | Controle de manifestações nos Anexos | Fechamento do mês gera a planilha no formato oficial |
-| Vínculos de protocolos (mesclagem) | Os antigos foram migrados. Mesclar casos novos: próxima etapa |
+| Vínculos de protocolos (mesclagem) | Os antigos foram migrados. Os novos: **Incorporar protocolo duplicado** na ficha (2.4) |
 | Pesquisa de satisfação encerrando a ficha | Depois (decisão de 01/10) |
 
 ---
