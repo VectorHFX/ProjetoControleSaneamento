@@ -37,7 +37,7 @@ O atualizador (`atualizarTudoCPT`) troca o código, mas **não cria nem apaga ga
 | **Sincronização dos Relatos (RDAS 3.0)** | **Só depois de 05/10**, quando o formulário 3.0 parar de receber relatos. Até lá, ele ainda alimenta os dias antigos. |
 | **Relato de Atividade / Relatos sociais ilustrados / Painel RDAS** | Não apague ainda: mande o print. Menus de "ao abrir" são inofensivos. |
 | **Painel de Gestão 3.2** | Tem um gatilho de **1 em 1 minuto** que, além de atualizar o painel a cada 15 min, **libera o acesso às fotos** para a equipe. Se ninguém mais usa essa planilha, pode apagar. Se usa, deixe por enquanto e me avise. |
-| **Indicadores 2026 (motor arquivado)** | Se houver gatilho, apague: o motor está arquivado e não deve escrever nos Indicadores. |
+| **Indicadores 2026 (motor arquivado)** | Só olhe e mande o print. Se o motor ainda escreve na planilha, alguém pode depender disso; decidimos juntos. |
 
 ---
 
