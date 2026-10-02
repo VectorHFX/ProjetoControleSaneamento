@@ -8,7 +8,8 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 3. [`docs/GUIA_DE_IMPLANTACAO.md`](docs/GUIA_DE_IMPLANTACAO.md): **passo a passo para colocar a versão no ar.**
 4. [`docs/AUDITORIA.md`](docs/AUDITORIA.md): velocidade, correções e pendências técnicas priorizadas.
 5. [`docs/ATUALIZACAO_AUTOMATICA.md`](docs/ATUALIZACAO_AUTOMATICA.md): **atualizar os projetos direto do GitHub, sem copiar e colar.**
-6. [`docs/LIMPEZA_E_BACKUP.md`](docs/LIMPEZA_E_BACKUP.md): o que arquivar, o que manter e como fazer backup antes de apagar.
+6. [`docs/ANATOMIA_DO_RELATORIO.md`](docs/ANATOMIA_DO_RELATORIO.md): estrutura do relatório mensal elogiado (base para o gerador).
+7. [`docs/LIMPEZA_E_BACKUP.md`](docs/LIMPEZA_E_BACKUP.md): o que arquivar, o que manter e como fazer backup antes de apagar.
 
 ## Estrutura
 

@@ -54,6 +54,7 @@ class AtualizadorCPT {
       headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}, payload: corpo ? JSON.stringify(corpo) : undefined});
     const code = r.getResponseCode(), texto = r.getContentText();
     if (code === 403 && /has not been used|disabled|User has not enabled/i.test(texto)) throw new Error('A API do Apps Script está desligada na sua conta. Ligue em https://script.google.com/home/usersettings e tente de novo.');
+    if (code === 403 && /ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient authentication scopes/i.test(texto)) throw new Error('Falta permissão para gerenciar projetos. No Atualizador: ⚙️ Configurações → marque "Mostrar o arquivo de manifesto appsscript.json"; substitua o appsscript.json pelo do GitHub (atualizador/src/appsscript.json), salve e execute configurarAtualizadorCPT de novo para autorizar.');
     if (code >= 300) throw new Error('Apps Script API respondeu ' + code + ': ' + texto.slice(0, 300));
     return texto ? JSON.parse(texto) : {};
   }
