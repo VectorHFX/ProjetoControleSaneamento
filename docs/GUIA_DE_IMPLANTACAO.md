@@ -23,6 +23,24 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Gatilhos: limpar os antigos e deixar só os que importam (≈ 20 min)
+
+O atualizador (`atualizarTudoCPT`) troca o código, mas **não cria nem apaga gatilhos**. Os gatilhos são de cada projeto: apagar num projeto não afeta os outros.
+
+**Antes de apagar qualquer coisa:** abra ⏰ **Acionadores** em cada projeto abaixo e tire um print.
+
+| Projeto | O que fazer |
+|---|---|
+| **Campo 4.0** | Pode apagar tudo. Depois execute **`reinstalarGatilhosCampo40`**: ele recria só os 4 necessários (formulário Campo 4.0, formulário de Execução, retomada de hora em hora e caixa de salvar Obras/Bairros). `conferirGatilhosCampo40` mostra a situação sem mudar nada. |
+| **Aplicação CPT** | Não usa gatilho. Se houver algum, mande o print. |
+| **Controle de Atendimentos antigo, Fichas Oficiais 3.2.1, Painel de Atendimento, Painel Executivo, Comunicação do Atendimento** | Pode apagar tudo. Já foram substituídos pela Base 4.0 e pela aplicação. |
+| **Sincronização dos Relatos (RDAS 3.0)** | **Só depois de 05/10**, quando o formulário 3.0 parar de receber relatos. Até lá, ele ainda alimenta os dias antigos. |
+| **Relato de Atividade / Relatos sociais ilustrados / Painel RDAS** | Não apague ainda: mande o print. Menus de "ao abrir" são inofensivos. |
+| **Painel de Gestão 3.2** | Tem um gatilho de **1 em 1 minuto** que, além de atualizar o painel a cada 15 min, **libera o acesso às fotos** para a equipe. Se ninguém mais usa essa planilha, pode apagar. Se usa, deixe por enquanto e me avise. |
+| **Indicadores 2026 (motor arquivado)** | Se houver gatilho, apague: o motor está arquivado e não deve escrever nos Indicadores. |
+
+---
+
 ## Campo 4.0 — 4.5: fichas oficiais em PDF na planilha da Execução (≈ 10 min)
 
 A Concrejato passa a ver e baixar o PDF de cada ficha oficial na própria planilha da Execução.
