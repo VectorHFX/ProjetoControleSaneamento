@@ -38,6 +38,7 @@ node app/testes/entregas.cjs          # preparação de relatos
 node app/testes/obras_relatorio.cjs    # obras, fechamento, relatório, cache, ciclo do caso e ficha oficial
 node app/testes/inventario.cjs        # inventário do Drive (não move nada)
 node atualizador/testes/atualizador.cjs # atualização a partir do GitHub (simulada)
+bash atualizador/testes/cloudshell.sh  # atualização pelo Cloud Shell (clasp simulado)
 node campo40/testes/processamento.cjs # vigência de obras/bairros e retomada de envios
 node campo40/testes/abertura.cjs      # ficha do formulário vira caso com protocolo
 node campo40/testes/execucao.cjs      # retorno da engenharia, lista de protocolos, avisos e corte do Controle antigo

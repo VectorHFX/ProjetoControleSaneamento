@@ -1,5 +1,38 @@
 # Atualização automática — sem copiar e colar
 
+> **Caminho em uso (02/10): Cloud Shell.** A conta Veolia não pode criar projetos no Google Cloud ("Nenhuma organização"), então o *CPT • Atualizador* (que depende de um projeto próprio) fica parado. O Cloud Shell faz o mesmo trabalho sem projeto: veja a seção **Pelo Cloud Shell** logo abaixo.
+
+## Pelo Cloud Shell (caminho em uso)
+O Cloud Shell é um terminal do próprio Google que abre no navegador, com a sua conta. Nada é instalado no seu computador.
+
+**Primeira vez (≈ 5 min):**
+1. Abra https://shell.cloud.google.com com a conta @veolia.com. Se pedir para "Autorizar" o Cloud Shell, aceite.
+2. Copie a linha abaixo inteira, cole no terminal (Ctrl+V ou botão direito → Colar) e tecle Enter:
+   ```
+   read -rsp "Token do GitHub: " T; echo; mkdir -p ~/.cpt && printf '%s' "$T" > ~/.cpt/token && chmod 600 ~/.cpt/token && curl -fsSL -H "Authorization: Bearer $T" -H "Accept: application/vnd.github.raw" "https://api.github.com/repos/VectorHFX/ProjetoControleSaneamento/contents/atualizador/cloudshell/atualizar.sh?ref=claude/keen-hamilton-pvmxi2" -o ~/atualizar.sh && bash ~/atualizar.sh conferir
+   ```
+3. Ele vai pedir, nesta ordem:
+   - **o token do GitHub:** cole e tecle Enter (não aparece nada enquanto cola; é normal);
+   - **o ID do script do Campo 4.0;**
+   - **o login do Google:**
+     - abra o link que aparecer, entre com a conta @veolia.com e clique em **Permitir**;
+     - no fim, o navegador mostra uma página que **não abre** (endereço começando com `http://localhost`). É assim mesmo;
+     - copie o endereço **inteiro** da barra do navegador, cole no terminal e tecle Enter.
+4. O terminal mostra as últimas mudanças e, para cada projeto, o que seria alterado. **Nada é alterado** nesse modo.
+
+**No dia a dia:**
+1. Abra https://shell.cloud.google.com.
+2. Para ver o que mudaria: `bash ~/atualizar.sh conferir`
+3. Para aplicar: `bash ~/atualizar.sh aplicar`. Ele:
+   - cria a versão de segurança;
+   - envia o código;
+   - publica a Aplicação no mesmo link. Aparece `Link /exec atualizado para a versão N`.
+
+**Se aparecer bloqueio no login** ("Este app está bloqueado" / "acesso negado pelo administrador"), a Veolia bloqueou a ferramenta oficial do Google (clasp). Aí o caminho é pedir ao TI a liberação do app "clasp" ou um projeto do Google Cloud. Até lá, seguimos com o copiar e colar.
+
+---
+
+
 **Como funciona daqui em diante:**
 1. Eu altero o código e envio para o GitHub.
 2. Você executa **uma função**, `atualizarTudoCPT`, num projeto pequeno chamado **CPT • Atualizador**.
