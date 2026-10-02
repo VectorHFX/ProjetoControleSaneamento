@@ -102,11 +102,11 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 ## 5. Decisões que dependem do Victor
 
 1. ~~Conta proprietária~~ → victor-henrique.xavier@veolia.com; toda a equipe usa @veolia.com (decidido em 01/10).
-2. **Quando o Controle de Atendimentos deixa de ser oficial**: data de corte para a app virar a fonte única.
+2. ~~Data de corte do Controle de Atendimentos~~ → na instalação (Bloco 3 do guia), antes de segunda 05/10.
 3. Quem mais, além do Victor, terá **administração técnica**, para o projeto não depender de uma pessoa só.
 4. Se a pasta `07_Administrador_Cleber` e o `90_Arquivo_historico` precisam entrar no repositório (não vieram no zip).
 
-## 6. Situação por ferramenta (atualizado em 01/10/2026)
+## 6. Situação por ferramenta (atualizado em 02/10/2026)
 
 | Ferramenta | Situação |
 |---|---|
@@ -117,7 +117,9 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | Relato ilustrado (modelo `{{TITULO}}`…`{{FOTOS}}`) gerado a partir do relato preparado | Próximo |
 | Ficha oficial em PDF no layout Sabesp + pacote mensal (ANEXO 4) | Próximo; depende da data de corte do Controle de Atendimentos |
 | Ciclo do caso na aplicação: abertura automática com protocolo, atualização, execução, finalização e reabertura | ✅ 2.3 (o formulário não muda; protocolo nasce no sistema) |
-| Mesclagem de protocolos e PDF da ficha oficial | Próximo |
+| Formulário de Execução (Concrejato) ligado à Base: retornos por protocolo, aberturas pela engenharia, lista de protocolos, aba de ordens em aberto e e-mail de encaminhamento | ✅ Campo 4.2 (formulário e planilha da engenharia seguem separados) |
+| Corte do Controle de Atendimentos: comparação, ajuste do estado e piso da numeração | ✅ Campo 4.2 (Bloco 3 do guia) |
+| Mesclagem de protocolos e PDF da ficha oficial | Próximo (antes do fechamento de outubro) |
 | Encerramento por pesquisa de satisfação | Depois (decisão de 01/10) |
 | RDAS alimentado pelo Campo 4.0 | A fazer |
 | Matriz de contatos (ANEXO 1), recados, links e materiais | A fazer |

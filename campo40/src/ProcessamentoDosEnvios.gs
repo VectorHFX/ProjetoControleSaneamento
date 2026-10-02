@@ -345,6 +345,8 @@ function retomarEnviosAutomaticamenteCampo40() {
   // Fichas de atendimento registradas que ainda não têm caso (falha pontual na abertura).
   try { ConfiguracaoDaBase.comTrava(() => AberturaDeAtendimentos.abrirPendentes(SpreadsheetApp.openById(ConfiguracaoDaBase.exigirInstalacao().baseId))); }
   catch (erro) { console.error('Abertura de casos pendentes adiada: ' + String(erro.message || erro)); }
+  // Retornos da engenharia que o gatilho do formulário de Execução não conseguiu gravar (trava ocupada).
+  if (typeof sincronizarExecucaoDaEngenhariaCampo40_ === 'function') sincronizarExecucaoDaEngenhariaCampo40_();
   return r;
 }
 /**

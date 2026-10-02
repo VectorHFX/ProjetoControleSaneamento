@@ -1,4 +1,4 @@
-/** DadosDaAplicacao 2.2.0. Somente leitura; compatível com a base Campo 4.0 importada. */
+/** DadosDaAplicacao 2.2.1. Somente leitura; compatível com a base Campo 4.0 importada. */
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -39,7 +39,9 @@ class DadosDaAplicacao {
   inicio(mes, atualizar) {
     const reg = this.registros(), atd = this.atendimentos();
     // CPT_ATD_VERSAO sobe a cada ação em um caso (linhas editadas não mudam a última linha).
-    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0);
+    // Movimentações cobre o que o Campo 4.0 grava (retorno da Execução), que é outro projeto.
+    const mov = this.base.getSheetByName('Movimentações');
+    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(mov?mov.getLastRow():0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0);
     const salvo = atualizar ? null : CacheCPT.ler(chave);
     if (salvo) return {...salvo, cache: true};
     const r = this.calcularInicio(mes, reg, atd);

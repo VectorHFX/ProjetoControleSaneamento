@@ -11,7 +11,7 @@ const atd=new Sheet('Atendimentos',[A,['ATD20260027','ATD20260027','Principal','
 const mov=new Sheet('Movimentações',[M]);
 const registros=new Sheet('Registros',[['cab'],reg(id(1),'Ficha de Atendimento','2026-09-20','Procedimentos de Campo 4.0',campos),reg(id(2),'Relato de atividade','2026-09-21','Procedimentos de Campo 4.0',[]),reg(id(3),'Ficha de Atendimento','2026-08-02','Histórico 3.0',campos),reg(id(4),'Ficha de atendimento','2026-10-01','Procedimentos de Campo 4.0',campos)]);
 const base={getSheetByName:n=>({Atendimentos:atd,'Movimentações':mov,Registros:registros})[n]||null,getSpreadsheetTimeZone:()=>'America/Sao_Paulo'};
-const ctx={console,JSON,Date,Utilities:{computeDigest:(_,v)=>[...crypto.createHash('sha256').update(v).digest()].map(b=>b>127?b-256:b),DigestAlgorithm:{SHA_256:1},Charset:{UTF_8:1},formatDate:(d,_,f)=>f==='yyyy'?String(new Date(d.getTime()-3*3600e3).getUTCFullYear()):''},base};
+const props=new Map();const ctx={console,JSON,Date,PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k)??null})},Utilities:{computeDigest:(_,v)=>[...crypto.createHash('sha256').update(v).digest()].map(b=>b>127?b-256:b),DigestAlgorithm:{SHA_256:1},Charset:{UTF_8:1},formatDate:(d,_,f)=>f==='yyyy'?String(new Date(d.getTime()-3*3600e3).getUTCFullYear()):''},base};
 vm.createContext(ctx);for(const f of ['ConfiguracaoDaBase','RepositorioDosRegistros','AberturaDeAtendimentos'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 let r=run('AberturaDeAtendimentos.abrirPendentes(base)');
@@ -20,4 +20,6 @@ const caso=atd.rows[3];assert.equal(caso[3],'Recebida');assert.equal(caso[6],'Mo
 const det=JSON.parse(caso[19]);assert.equal(det.tipo,'Reclamação');assert.equal(det.canal,'Atendimento itinerante');assert.equal(det.procedencia,'Em análise');assert.equal(det.campos.length,7);
 assert.equal(mov.rows.length,3);assert.equal(mov.rows[1][3],'Abertura');assert.equal(registros.rows[1][15],'ATD20260028');
 r=run('AberturaDeAtendimentos.abrirPendentes(base)');assert.equal(r.abertos.length,0,'repetir não cria protocolo novo');assert.equal(atd.rows.length,5);
+props.set('CAMPO40_PROTOCOLO_MINIMO',JSON.stringify({2026:40}));registros.rows.push(reg('REG-'+'c'.repeat(24),'Ficha de Atendimento','2026-10-01','Procedimentos de Campo 4.0',campos));
+r=run('AberturaDeAtendimentos.abrirPendentes(base)');assert.deepEqual(r.abertos.map(x=>x.protocolo),['ATD20260041'],'piso do Controle antigo respeitado');
 console.log('PASS: ficha do formulário vira caso ATD+ano+sequência (continua de ATD20260027), campos preservados, movimentação de abertura, registro marcado e repetição segura.');

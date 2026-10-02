@@ -1,5 +1,5 @@
 /**
- * AberturaDeAtendimentos — 1.0.0 — PERMANENTE.
+ * AberturaDeAtendimentos — 1.1.0 — PERMANENTE.
  * Transforma cada envio de "Ficha de Atendimento" do formulário em um caso com protocolo sequencial
  * (ATD + ano da data de realização + 4 dígitos), continuando a numeração já existente na aba Atendimentos.
  * - O formulário não muda: o protocolo nasce aqui, não é digitado por ninguém.
@@ -51,6 +51,9 @@ class AberturaDeAtendimentos {
       if (m) maiores[m[1]] = Math.max(maiores[m[1]] || 0, Number(m[2]));
       const reg = o.match(/REG-[a-f0-9]{24}/); if (reg) porOrigem.set(reg[0], p);
     });
+    // Piso gravado no corte (CorteDoControleAntigo): protocolos que só existem no Controle antigo não se repetem.
+    let minimo = {}; try { minimo = JSON.parse(PropertiesService.getScriptProperties().getProperty('CAMPO40_PROTOCOLO_MINIMO') || '{}') || {}; } catch (_) {}
+    Object.keys(minimo).forEach(ano => { maiores[ano] = Math.max(maiores[ano] || 0, Number(minimo[ano]) || 0); });
     return {porOrigem, maiores};
   }
   /**
@@ -59,8 +62,10 @@ class AberturaDeAtendimentos {
    * @param {Array} linhaRegistro linha da aba Registros (21 colunas) ou equivalente montado no processamento
    * @param {Object} detalhes JSON do registro (campos do formulário)
    * @param {Object} [idx] índice reaproveitado em lote
+   * @param {string} [origem] rótulo da origem (padrão: Formulário 4.0)
    */
-  static abrir(base, linhaRegistro, detalhes, idx) {
+  static abrir(base, linhaRegistro, detalhes, idx, origem) {
+    origem = origem || 'Formulário 4.0';
     const {a, m} = this.tabelas(base); idx = idx || this.indice(a);
     const registroId = String(linhaRegistro[0]);
     if (idx.porOrigem.has(registroId)) return {protocolo: idx.porOrigem.get(registroId), novo: false};
@@ -72,11 +77,11 @@ class AberturaDeAtendimentos {
     const resumo = {registroId, aberturaPor: String(linhaRegistro[11] || ''), procedencia: 'Em análise', ...f, campos};
     const obra = String(linhaRegistro[9] || '').replace(/\s*\[OBR-\d+\]\s*$/, '');
     const linha = [protocolo, protocolo, 'Principal', 'Recebida', dataReal, '', f.nome, f.assunto || f.tipo, f.endereco || f.local, obra,
-      'Atendimento', String(linhaRegistro[11] || f.acompanhamento || ''), 'Triagem do Atendimento', agora, '', '', 'Formulário 4.0 · ' + registroId,
+      'Atendimento', String(linhaRegistro[11] || f.acompanhamento || ''), 'Triagem do Atendimento', agora, '', '', origem + ' · ' + registroId,
       RepositorioDosRegistros.normalizar([protocolo, f.nome, f.assunto, f.tipo, f.endereco, f.solicitacao].join(' ')), RepositorioDosRegistros.hash(resumo), JSON.stringify(resumo).slice(0, 49000)];
     a.getRange(a.getLastRow() + 1, 1, 1, linha.length).setValues([linha]);
     const mov = ['MOV-' + RepositorioDosRegistros.hash([protocolo, 'Abertura', registroId]).slice(0, 24) + '-1', protocolo, agora, 'Abertura', 'Recebida',
-      String(linhaRegistro[11] || 'Formulário'), (f.solicitacao || f.assunto || 'Ficha de atendimento recebida pelo formulário').slice(0, 500), 'Formulário 4.0', '', JSON.stringify({registroId})];
+      String(linhaRegistro[11] || 'Formulário'), (f.solicitacao || f.assunto || 'Ficha de atendimento recebida pelo formulário').slice(0, 500), origem, '', JSON.stringify({registroId})];
     m.getRange(m.getLastRow() + 1, 1, 1, mov.length).setValues([mov]);
     idx.porOrigem.set(registroId, protocolo);
     return {protocolo, novo: true};
