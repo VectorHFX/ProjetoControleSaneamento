@@ -43,6 +43,23 @@ O token só **lê** o repositório. Não consegue alterar nada nem ver seus outr
 
 Este é o **último** copiar e colar.
 
+### 3B. Ligar o Atualizador a um projeto do Google Cloud (≈ 10 min, uma vez)
+Toda chamada à API vai em nome do projeto do Google Cloud ligado ao script. O projeto padrão não vem com a API do Apps Script ativada, então é preciso usar um projeto próprio.
+1. Abra https://console.cloud.google.com/projectcreate.
+   - **Nome:** `CPT Atualizador`. Organização e local: deixe o que vier (Veolia).
+   - **Criar.**
+   - Se aparecer que você não tem permissão para criar projetos, pare e me avise. É uma regra da Veolia e há um caminho alternativo.
+2. Com o projeto selecionado no topo, abra https://console.cloud.google.com/apis/library/script.googleapis.com e clique em **Ativar**.
+3. Abra https://console.cloud.google.com/auth/branding (ou "APIs e serviços → Tela de permissão OAuth").
+   - Clique em **Começar**.
+   - **Nome do app:** `CPT Atualizador`. **E-mail de suporte:** o seu.
+   - **Público:** **Interno**.
+   - **Contato:** o seu e-mail. Aceite e clique em **Criar**.
+4. Abra https://console.cloud.google.com/home/dashboard e copie o **Número do projeto** (só números).
+5. No **CPT • Atualizador**: ⚙️ **Configurações do projeto** → **Projeto do Google Cloud Platform (GCP)** → **Alterar projeto**. Cole o número e confirme.
+6. Execute `configurarAtualizadorCPT` de novo (pode deixar o token vazio) e autorize.
+7. Execute `conferirAtualizacaoCPT`.
+
 ### 4. Configurar (2 min)
 1. No Campo 4.0, copie o ID do projeto: **Configurações do projeto → IDs → ID do script**.
 2. No Atualizador, na função `configurarAtualizadorCPT`, preencha `TOKEN_GITHUB` e `ID_PROJETO_CAMPO40`.

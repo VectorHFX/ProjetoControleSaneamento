@@ -53,7 +53,11 @@ class AtualizadorCPT {
     const r = UrlFetchApp.fetch('https://script.googleapis.com/v1/' + caminho, {method: metodo, muteHttpExceptions: true, contentType: 'application/json',
       headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}, payload: corpo ? JSON.stringify(corpo) : undefined});
     const code = r.getResponseCode(), texto = r.getContentText();
-    if (code === 403 && /has not been used|disabled|User has not enabled/i.test(texto)) throw new Error('A API do Apps Script está desligada na sua conta. Ligue em https://script.google.com/home/usersettings e tente de novo.');
+    if (code === 403 && /has not been used in project|SERVICE_DISABLED|accessNotConfigured/i.test(texto)) {
+      const proj = (texto.match(/project (\d+)/) || [])[1] || '';
+      throw new Error('A API do Apps Script não está ativada no projeto do Google Cloud deste script' + (proj ? ' (nº ' + proj + ')' : '') + '. Ligue o Atualizador a um projeto do Google Cloud com a API ativada: veja docs/ATUALIZACAO_AUTOMATICA.md, passo 3B.');
+    }
+    if (code === 403 && /User has not enabled the Apps Script API/i.test(texto)) throw new Error('A API do Apps Script está desligada na sua conta. Ligue em https://script.google.com/home/usersettings e tente de novo.');
     if (code === 403 && /ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient authentication scopes/i.test(texto)) throw new Error('Falta permissão para gerenciar projetos. No Atualizador: ⚙️ Configurações → marque "Mostrar o arquivo de manifesto appsscript.json"; substitua o appsscript.json pelo do GitHub (atualizador/src/appsscript.json), salve e execute configurarAtualizadorCPT de novo para autorizar.');
     if (code >= 300) throw new Error('Apps Script API respondeu ' + code + ': ' + texto.slice(0, 300));
     return texto ? JSON.parse(texto) : {};

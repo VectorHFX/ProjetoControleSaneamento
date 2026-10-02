@@ -1,7 +1,7 @@
 # Anatomia do relatório mensal (referência: relatório nº 13, agosto/2026, elogiado)
 
 > Só a **estrutura**. O relatório tem informações confidenciais e **não** fica no repositório. O original fica no Drive (04_Modelos_Oficiais).
-> Lido em 02/10: páginas 1–55, até o item 4.2. **Falta a segunda metade** (itens 4.3 a 12).
+> Lido em 02/10: as duas metades (páginas 1–110, até o item 11).
 
 ## Moldura (todas as páginas)
 - **Cabeçalho:** logo do Consórcio Performance Tamanduateí e logos das consorciadas.
@@ -74,15 +74,71 @@ Abre com: "Na sequência, detalham-se as atividades socioambientais realizadas, 
 - **Fotos 2 por linha**, com legenda "**dd/mm/aaaa - Evento - Local**".
 - **Fonte:** o relato preparado na aplicação (tela Entregas), que já tem texto revisado e fotos escolhidas.
 
-## 5 a 12
-Material audiovisual · Imprensa regional · UMS · Obras concluídas · Atividades complementares (DDS entra aqui ou em 4: a confirmar) · Manifestações Locais e Sabesp · Equipe · Previstas para o período seguinte. A **segunda metade do PDF** vai mostrar o formato de cada um.
+## 4 (continuação). Regras dos eixos
+- **Eixo sem ação no mês:** entra um parágrafo padrão, não some. Exemplo do 4.3: "No período de referência não foram realizadas ações específicas de prevenção às doenças de veiculação hídrica. As atividades… permanecem previstas no planejamento…".
+- **Ordem em cada eixo:** frase de abertura do eixo, depois cada ação (narrativa e grade de fotos).
+- **A CAO pode aparecer em dois eixos:**
+  - 4.1 (reunião com moradores de uma obra);
+  - 4.5 Governança Colaborativa (CAO com lideranças, comerciantes e munícipes).
+- **Exemplos do mês:**
+  - campanhas de óleo e de pilhas/baterias com "Ponto de Coleta" entram no 4.2;
+  - tapete pedagógico no CRAS entra no 4.4.
+
+## 5. Material audiovisual
+- **Narrativa:**
+  - materiais externos: comunicados, convites para coleta de óleo e para a CAO;
+  - materiais internos: newsletter e peças de campanha (ex.: Agosto Lilás);
+  - captações para as redes sociais.
+- **Fecho:** link do acervo fotográfico (Flickr), igual todo mês.
+- **Fonte:** registros de **Captação de conteúdo** e o que a Comunicação informar.
+
+## 6. Mapeamentos de veículos de imprensa (regional)
+- **Narrativa:** se houve atualização e se houve demanda de imprensa no mês (ex.: pedido de posicionamento encaminhado pela Sabesp).
+- **Tabela fixa:** Veículo · Categoria (Jornal, Blog, Revista, Rádio, Institucional…). É uma lista mantida, que muda pouco.
+
+## 7. Atividades da Unidade Móvel Socioambiental (UMS)
+- **Narrativa:** onde a tenda ficou (frentes sensíveis, ex.: Viela Sanitária) e para que serviu (ponto de atendimento, ponto itinerante de campanha).
+- **Fotos:** legenda "**dd/mm/aaaa - UMS - Local**".
+- **Fonte:** registros com ferramenta **"Apoio da Tenda"** e **Atendimento em Tenda**.
+
+## 8. Obras concluídas
+- **Tabela:** Obra/Região · Conclusão apresentada (data).
+- **Fonte:** a tela **Obras** (situação Concluída e data de término).
+
+## 9. Atividades Complementares — aqui entram os DDS
+- **Narrativa por bloco:**
+  - **DDS do mês** (por tema ou frente: Comercial, Atendimento, Social; período eleitoral; datas temáticas como Agosto Lilás; Direitos Humanos);
+  - **treinamentos** (ex.: visita técnica a ETE);
+  - **campanhas internas** (agasalho, com a quantidade arrecadada; pilhas e baterias).
+- **Fecho:** parágrafo de síntese.
+- **Fotos:** legenda "**dd/mm/aaaa - DDS - Tema - Local**".
+- **Fonte:** registros de **DDS** e de treinamentos e campanhas internas.
+
+## 10. Manifestações Locais e Sabesp
+- **Caso de destaque do mês:** narrativa em ordem de datas (recebimento → apuração → intervenção → atendimento presencial → situação atual), com fotos legendadas: "dd/mm/aaaa - Endereço - Evidências / Antes da intervenção / Após a intervenção / Atendimento".
+- **Parágrafo padrão** sobre a importância da pesquisa de satisfação.
+- **Balanço do mês:** "N reclamações; X concluídas e checadas com pesquisa de satisfação; Y em tratativa", com um resumo das finalizadas.
+- **Fonte:** a tela **Atendimentos** da aplicação. Os números saem dos casos do mês e a narrativa do caso de destaque sai da linha do tempo. O ANEXO de manifestações sai do Fechamento.
+
+## 11. Equipe de Trabalho
+- **Narrativa:** quadro completo ou não, composição (mobilizadores, atendimento, comercial, assistente social, administrativo, comunicação, coordenação) e como a equipe atuou.
+- **Tabela da equipe:** nome, função e documento.
+- **Dados pessoais:** a tabela tem dados pessoais. O gerador lê do cadastro da equipe na aplicação; esses dados **nunca** entram no repositório.
+
+## 12. Atividades previstas para o período subsequente
+Não aparece nas páginas enviadas. Pela aplicação, sai da **agenda do mês seguinte**, como o gerador já faz.
 
 ## Regra de negócio (confirmada em 02/10)
-- **Ganham relato próprio, com narrativa e fotos, no item 4:** Ação Social Externa, **DDS** e **CAO**.
+- **Ganham relato próprio, com narrativa e fotos:**
+  - **Ação Social Externa** e **CAO** no item 4, distribuídas pelos eixos 4.1 a 4.5;
+  - **DDS**, treinamentos e campanhas internas no item 9 (Atividades Complementares).
 - **Atividade socioambiental consolidada** (tabela do item 3 e fotos por frente no 3.1): sensibilização em frente de obra, tenda, acompanhamento, entrega de comunicados.
 - **Diagnóstico** vai para o item 2.
 - **Matriz de contatos** vai para o 2.1 / ANEXO 1.
-- Captação de conteúdo, levantamento de traçado e atendimento de manifestação **não** viram relato (entram só na contagem da tabela).
+- **Tenda/UMS** vai para o item 7, com fotos.
+- **Captação de conteúdo** alimenta o item 5.
+- **Manifestações** vão para o item 10, a partir dos Atendimentos.
+- **Levantamento de traçado** entra só na contagem e na tabela do item 3.
 
 ## Impacto no gerador (RelatorioMensalCPT)
 O gerador atual segue os itens 1–13 do Orientador de forma genérica. Na fase Socioambiental, ele passa a seguir **esta** anatomia:
