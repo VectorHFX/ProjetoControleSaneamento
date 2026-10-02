@@ -14,8 +14,8 @@ class CicloAtendimentoCPT {
   static podeConduzir(p) { return PerfisCPT.gerencia(p) || p.papeis.includes('atendimento'); }
   /** A engenharia responde pelo formulário; na aplicação, quem conduz o caso registra execução em nome dela. */
   static podeExecutar(p) { return this.podeConduzir(p); }
-  /** Telefone e e-mail do munícipe: quem conduz o caso e a Gestão (visão completa, sem editar). */
-  static veContato(p) { return this.podeConduzir(p) || PerfisCPT.visaoCompleta(p); }
+  /** Telefone e e-mail do munícipe: só quem conduz o caso (Atendimento, Administrativo, Gestão). */
+  static veContato(p) { return this.podeConduzir(p); }
 
   /** Campos que o Atendimento pode corrigir: [rótulo, tamanho máximo, aparece no histórico como "alterado" (dado de contato)]. */
   static get corrigiveis() {

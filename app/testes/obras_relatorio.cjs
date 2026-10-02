@@ -40,7 +40,7 @@ vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicac
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
-ctx.p={id:'OBR-0002',atualizadoEm:'',nome:'Coletor B',situacao:'Em andamento',bairros:['Jardim'],noFormulario:true};assert.throws(()=>run('salvarObraCPT(p)'),/feita pelo Administrativo/);
+ctx.p={id:'OBR-0002',atualizadoEm:'',nome:'Coletor B',situacao:'Em andamento',bairros:['Jardim'],noFormulario:true};assert.throws(()=>run('salvarObraCPT(p)'),/Administrativo ou pela Gestão/);
 email='adm@example.com';let r=run('salvarObraCPT(p)');assert.match(r.resultado,/atualizada/);assert.equal(obras.rows[2][2],'Jardim');assert.equal(obras.rows[2][19],'Em andamento');assert.equal(obras.rows[2][34],'adm@example.com');assert.match(obras.rows[5][27],/^PENDENTE — alterado pela aplicação/);
 assert.equal(obras.rows[0][31],'Tipo de obra');assert.throws(()=>run('salvarObraCPT(p)'),/alterada por outra pessoa/);
 ctx.p={...ctx.p,atualizadoEm:r.obra.atualizadoEm,bairros:['Múltiplos bairros']};assert.throws(()=>run('salvarObraCPT(p)'),/não cadastrado/);

@@ -143,10 +143,12 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 - 3 Atendimento em tenda;
 - 1 de cada: CAO, Diagnóstico, Articulação Institucional, Captação de conteúdo, Levantamento de traçado e Atendimento de manifestação.
 
-Leitura a confirmar com o Victor:
+Leitura (CAO confirmada em 02/10; "CAL" foi erro de transcrição):
 - Só as **ações socioambientais internas e externas** ganham relato próprio no relatório: Ação Social Externa, DDS e CAO/CAL. Cada uma vira um bloco separado.
 - O restante (sensibilização, tenda, acompanhamento…) entra como **atividade socioambiental** consolidada na tabela.
 - Captação de conteúdo, levantamento de traçado e atendimento de manifestação não entram como relato.
 - Falta ver: o relatório nº 14, elogiado (≈ 40 MB), para a anatomia completa.
 
 **Design (depois):** as cores atuais estão apagadas. Preferência por algo mais vivo, e o tema escuro agrada mais.
+
+**Perfis (02/10):** a Gestão tem todos os poderes, como o Administrativo. Ela precisa saber fazer para cobrar e ensinar. O que difere são as visões pessoais (as do Victor: mascote, caderno) e, depois, ferramentas próprias da Gestão: pauta, caderno de gestão e montagem do diagnóstico de área (síntese com as palavras dela e escolha das fotos). Cada área tem seu espaço, sem interferir no trabalho das outras.

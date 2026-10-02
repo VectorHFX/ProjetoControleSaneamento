@@ -2,14 +2,15 @@
  * PerfisCPT 2.5.0. Cadastro de pessoas e papéis (Script Properties: CPT_PESSOA:<email>).
  * administrador  = administração técnica: SÓ o proprietário (concede acessos). Não se atribui a outras pessoas.
  * administrativo = todas as ferramentas de trabalho, sem conceder acessos.
- * gestao         = vê todas as telas e dados, sem alterar (somente leitura).
+ * gestao         = mesmos poderes do Administrativo: vê e faz tudo (acompanha, cobra e ensina a equipe).
+ *                  O que difere são as visões pessoais e, no futuro, ferramentas próprias (pauta, caderno).
  * A engenharia (Concrejato) não entra na aplicação: usa o formulário de Execução e a planilha compartilhada.
  */
 class PerfisCPT {
   static get papeis() { return ['administrador', 'administrativo', 'gestao', 'atendimento', 'socioambiental', 'comunicacao', 'comercializacao']; }
   /** Papéis que podem ser dados à equipe em Equipe e acessos. */
   static get atribuiveis() { return ['administrativo', 'gestao', 'atendimento', 'socioambiental', 'comunicacao', 'comercializacao']; }
-  static get nomes() { return {administrador: 'Administração técnica', administrativo: 'Administrativo', gestao: 'Gestão (somente visualização)', atendimento: 'Atendimento',
+  static get nomes() { return {administrador: 'Administração técnica', administrativo: 'Administrativo', gestao: 'Gestão', atendimento: 'Atendimento',
     socioambiental: 'Socioambiental', comunicacao: 'Comunicação', comercializacao: 'Comercialização'}; }
   static todos() {
     const p = PropertiesService.getScriptProperties().getProperties();
@@ -29,12 +30,9 @@ class PerfisCPT {
     if (!p || !p.ativo) throw new Error('Sua conta (' + email + ') ainda não está cadastrada ou está inativa. Peça à administração técnica para liberar seu acesso em Equipe e acessos.');
     return p;
   }
-  /** Quem altera tudo: Administrativo (e o proprietário). Gestão vê tudo, mas não altera. */
-  static gerencia(p) { return p.papeis.some(x => ['administrador', 'administrativo'].includes(x)); }
-  /** Visão completa (todas as frentes e telas), com ou sem edição. */
-  static visaoCompleta(p) { return this.gerencia(p) || p.papeis.includes('gestao'); }
-  /** Só visualização: tem Gestão e nenhum papel que edite. */
-  static somenteLeitura(p) { return !p.papeis.some(x => x !== 'gestao'); }
+  /** Quem vê e faz tudo: Administrativo, Gestão (e o proprietário). */
+  static gerencia(p) { return p.papeis.some(x => ['administrador', 'administrativo', 'gestao'].includes(x)); }
+  static visaoCompleta(p) { return this.gerencia(p); }
   static admin(p) { if (!p.papeis.includes('administrador')) throw new Error('Esta ação é exclusiva da administração técnica.'); }
   static lista(c) { return [this.obter(c.administrador, c), ...this.todos().filter(p => p.email !== c.administrador)]; }
   static salvar(ctx, p) {

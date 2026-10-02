@@ -21,7 +21,11 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 ---
 
+> **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
 ## Atualização 2.5 — casos encerrados, painel da Concrejato e perfis (≈ 15 min)
+
+> **Gestão (revisado em 02/10):** a Gestão tem os mesmos poderes do Administrativo. Ela vê e faz tudo, para acompanhar, cobrar e ensinar a equipe. A administração técnica (cadastro de acessos) continua só sua.
 
 **1. Campo 4.0** (pasta `campo40/src/`)
 
@@ -49,7 +53,6 @@ Depois, nesta ordem:
   - **Administração técnica** é só sua.
   - **Execução** saiu: a Concrejato usa o formulário e a planilha compartilhada.
   - Quem estava cadastrado com Execução perde esse papel sozinho, sem recadastro.
-- **Gestão** vê todas as telas e o contato dos moradores, mas não altera nada: casos, obras, relatos e geração do relatório ficam com quem trabalha neles.
 
 ---
 
