@@ -1,10 +1,13 @@
 /**
- * PerfisCPT 2.5.0. Cadastro de pessoas e papéis (Script Properties: CPT_PESSOA:<email>).
+ * PerfisCPT 2.7.0. Cadastro de pessoas e papéis (Script Properties: CPT_PESSOA:<email>).
  * administrador  = administração técnica: SÓ o proprietário (concede acessos). Não se atribui a outras pessoas.
  * administrativo = todas as ferramentas de trabalho, sem conceder acessos.
  * gestao         = mesmos poderes do Administrativo: vê e faz tudo (acompanha, cobra e ensina a equipe).
  *                  O que difere são as visões pessoais e, no futuro, ferramentas próprias (pauta, caderno).
  * A engenharia (Concrejato) não entra na aplicação: usa o formulário de Execução e a planilha compartilhada.
+ * 2.7: trava de configuração (CPT_TRAVA_CONFIG, ligada por padrão). Enquanto ligada, SÓ o proprietário altera
+ *      cadastros e papéis, o catálogo de obras, os conectores e publica nas planilhas oficiais.
+ *      Desligar: executar liberarConfiguracaoCPT no editor (não há botão na tela para isso).
  */
 class PerfisCPT {
   static get papeis() { return ['administrador', 'administrativo', 'gestao', 'atendimento', 'socioambiental', 'comunicacao', 'comercializacao']; }
@@ -33,6 +36,12 @@ class PerfisCPT {
   /** Quem vê e faz tudo: Administrativo, Gestão (e o proprietário). */
   static gerencia(p) { return p.papeis.some(x => ['administrador', 'administrativo', 'gestao'].includes(x)); }
   static visaoCompleta(p) { return this.gerencia(p); }
+  /** Período de testes: a configuração fica só com o proprietário até ele liberar no editor. */
+  static travada() { return PropertiesService.getScriptProperties().getProperty('CPT_TRAVA_CONFIG') !== 'liberada'; }
+  static exigirConfiguracao(p, oQue) {
+    if (p.papeis.includes('administrador')) return;
+    if (this.travada()) throw new Error(oQue + ' está reservado à administração técnica durante o período de testes.');
+  }
   static admin(p) { if (!p.papeis.includes('administrador')) throw new Error('Esta ação é exclusiva da administração técnica.'); }
   static lista(c) { return [this.obter(c.administrador, c), ...this.todos().filter(p => p.email !== c.administrador)]; }
   static salvar(ctx, p) {
@@ -54,3 +63,8 @@ class PerfisCPT {
     return {resultado: 'Acesso salvo.', pessoa: novo};
   }
 }
+
+/** Execute no editor quando terminar os testes: Gestão e Administrativo voltam a editar obras e publicar entregas oficiais. Cadastros e papéis continuam só com o proprietário. */
+function liberarConfiguracaoCPT() { PropertiesService.getScriptProperties().setProperty('CPT_TRAVA_CONFIG', 'liberada'); return {resultado: 'Configuração liberada para Gestão e Administrativo (obras e publicações oficiais). Cadastros e papéis continuam só com você.'}; }
+/** Execute no editor para voltar a travar. */
+function travarConfiguracaoCPT() { PropertiesService.getScriptProperties().deleteProperty('CPT_TRAVA_CONFIG'); return {resultado: 'Configuração travada: só você altera cadastros, obras, conectores e publicações oficiais.'}; }

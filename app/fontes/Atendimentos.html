@@ -3,12 +3,14 @@
  * Atendimentos 2.4.0 — carteira e ficha do caso, com o ciclo completo na aplicação:
  * consulta e observações (todos) · atualização e finalização (Atendimento/Gestão) · execução (Execução/Atendimento).
  * 2.4: filtro "com quem está", dias em aberto, correção dos dados, incorporação de protocolo e ficha oficial em PDF.
+ * 2.7: aba "Auditoria e números" (Atendimento, Administrativo e Gestão): o que precisa de cuidado na carteira,
+ *      com a ficha a um clique, e os números do serviço (idade dos casos, áreas, tipos, recebidos x concluídos).
  * Textos digitados ficam na tela em caso de erro ou conflito.
  */
 window.CPTAtendimentos = (() => {
   'use strict';
   let ui = null, filtro = {busca: '', estado: 'abertos', com: ''}, pagina = null, casos = [], ticket = 0, debounce = null;
-  let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false};
+  let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false}, modo = 'casos', auditoria = null;
   const ops = new Map(); // operação idempotente por formulário enquanto o conteúdo não muda
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
@@ -16,8 +18,13 @@ window.CPTAtendimentos = (() => {
   const corStatus = c => c.concluido ? 'status-concluida' : /receb/i.test(c.status) ? 'status-recebida' : 'status-andamento';
   const opId = (chave, conteudo) => { const sig = JSON.stringify(conteudo), atual = ops.get(chave); if (atual && atual.sig === sig) return atual.id; const id = 'OP-' + crypto.randomUUID(); ops.set(chave, {sig, id}); return id; };
 
+  /** A aba de auditoria aparece para quem conduz casos, na visão de Atendimento, Administrativo ou Gestão. */
+  const conduz = () => ['atendimento', 'administrativo', 'gestao'].includes(ui.visao()) && (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao', 'atendimento'].includes(p));
+  const abas = () => conduz() ? `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de atendimentos">${[['casos', 'Casos'], ['auditoria', 'Auditoria e números']].map(([k, n]) => `<button role="tab" aria-selected="${modo === k}" class="${modo === k ? 'chosen' : ''}" data-atd-modo="${k}">${n}</button>`).join('')}</div>` : '';
   function render() {
-    ui.view.innerHTML = ui.intro('Atendimentos', 'Cada ficha nasce do formulário com um protocolo. Acompanhe, registre a execução e finalize por aqui.') +
+    if (!conduz()) modo = 'casos';
+    if (modo === 'auditoria') { renderAuditoria(); return; }
+    ui.view.innerHTML = ui.intro('Atendimentos', 'Cada ficha nasce do formulário com um protocolo. Acompanhe, registre a execução e finalize por aqui.') + abas() +
       `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
       <label class="field">Situação<select name="estado"><option value="" ${!filtro.estado ? 'selected' : ''}>Todos os casos</option><option value="abertos" ${filtro.estado === 'abertos' ? 'selected' : ''}>Em aberto</option><option value="concluidos" ${filtro.estado === 'concluidos' ? 'selected' : ''}>Concluídos</option></select></label>
       <label class="field">Com quem está<select name="com"><option value="">Todos</option>${['Execução', 'Atendimento'].map(x => `<option ${filtro.com === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
@@ -42,6 +49,33 @@ window.CPTAtendimentos = (() => {
       $('caseResults').innerHTML = casos.length ? casos.map(cartao).join('') : '<p class="muted">Nenhum atendimento encontrado. Altere a situação ou o termo da busca.</p>';
       $('moreCases').innerHTML = d.proximaPagina !== null ? '<button class="button secondary" data-case-mais>Carregar mais</button>' : '';
     } catch (e) { if (mine !== ticket) return; $('caseResults').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; $('moreCases').innerHTML = ''; $('caseCount').textContent = 'Consulta não concluída'; }
+  }
+
+  // ---------- Auditoria e números ----------
+  async function renderAuditoria(atualizar = false) {
+    const mine = ++ticket, intro = ui.intro('Atendimentos', 'Auditoria da carteira: o que precisa de cuidado, com a ficha a um clique. Nada é alterado aqui.') + abas();
+    if (!auditoria || atualizar) ui.view.innerHTML = intro + '<div class="loading-label"><span class="spinner"></span>Conferindo todas as fichas…</div>';
+    try {
+      const d = await ui.call('auditarAtendimentosCPT', {atualizar}); if (mine !== ticket || ui.state.route !== 'atendimentos' || modo !== 'auditoria') return;
+      auditoria = d; const n = d.numeros, G = window.CPTGestao;
+      const ponto = v => !v.quantidade ? 'is-ok' : v.grave ? 'is-bad' : 'is-warn';
+      const lista = v => v.itens.length ? `<ul class="audit-cases">${v.itens.map(x => `<li><button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.protocolo)} · ${ui.esc(x.nome || 'Nome não informado')}</strong><small>${ui.esc([x.assunto, x.detalhe, x.area ? 'Com ' + x.area : ''].filter(Boolean).join(' · '))}</small></button></li>`).join('')}</ul>${v.quantidade > v.itens.length ? `<p class="small muted">Mostrando ${v.itens.length} de ${v.quantidade}, dos mais antigos para os mais novos.</p>` : ''}` : '<p class="ok-line">Nenhum caso nesta situação.</p>';
+      ui.view.innerHTML = intro + `<section class="stat-row" aria-label="Números da carteira">
+          <div class="stat-tile"><span class="stat-label">Em aberto</span><span class="stat-value">${ui.num(n.abertos)}</span><span class="stat-note">${ui.num(n.total)} casos principais no total.</span></div>
+          <div class="stat-tile"><span class="stat-label">Pedem ação já</span><span class="stat-value">${ui.num(d.pendencias)}</span><span class="stat-note">Recebidos parados e casos acima de 30 dias.</span></div>
+          <div class="stat-tile"><span class="stat-label">Prazo médio</span><span class="stat-value">${n.prazoMedio == null ? '—' : n.prazoMedio}<small> dias</small></span><span class="stat-note">Da abertura à conclusão, últimos 6 meses.</span></div>
+          <div class="stat-tile"><span class="stat-label">Concluídos</span><span class="stat-value">${ui.num(n.concluidos)}</span><span class="stat-note">Acumulado da carteira.</span></div></section>
+        <section class="panel"><div class="panel-head"><div><span class="eyebrow">AUDITORIA</span><h2>O que conferir</h2><p>Cada item explica o problema e o que fazer. Abra a ficha para corrigir; a correção fica no histórico.</p></div></div>
+          <div class="audit-list">${d.verificacoes.map(v => `<details class="audit-item ${ponto(v)}" ${v.grave && v.quantidade ? 'open' : ''}><summary><span class="alert-dot" aria-hidden="true"></span><span class="audit-title">${ui.esc(v.titulo)}</span><span class="audit-count">${ui.num(v.quantidade)}</span></summary><p class="small">${ui.esc(v.ajuda)}</p>${lista(v)}</details>`).join('')}</div></section>
+        <div class="painel-grid">
+          <section class="panel"><div class="panel-head"><div><h2>Recebidos e concluídos</h2><p>Últimos seis meses.</p></div></div>${G.colunas(n.porMes, [{k: 'recebidos', nome: 'Recebidos', cls: 'b'}, {k: 'concluidos', nome: 'Concluídos', cls: 'c'}], 'Atendimentos por mês')}</section>
+          <section class="panel"><div class="panel-head"><div><h2>Há quanto tempo estão abertos</h2></div></div>${G.barrasH(n.porIdade, 'Nenhum caso em aberto.')}</section>
+          <section class="panel"><div class="panel-head"><div><h2>Com quem estão</h2><p>Casos em aberto por área.</p></div></div>${G.barrasH(n.porArea, 'Nenhum caso em aberto.')}</section>
+          <section class="panel"><div class="panel-head"><div><h2>Tipos de manifestação</h2><p>Casos em aberto.</p></div></div>${G.barrasH(n.porTipo, 'Nenhum caso em aberto.')}</section>
+          <section class="panel"><div class="panel-head"><div><h2>Por onde chegaram</h2><p>Canal, últimos seis meses.</p></div></div>${G.barrasH(n.porCanal, 'Sem casos no período.')}</section>
+          <section class="panel"><div class="panel-head"><div><h2>Mais antigos em aberto</h2></div></div>${n.maisAntigos.length ? `<div class="mini-list">${n.maisAntigos.map(x => `<button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.protocolo)} · ${ui.esc(x.assunto || 'Assunto não informado')}</strong><small>${ui.esc(x.detalhe)}${x.area ? ' · com ' + ui.esc(x.area) : ''}</small></button>`).join('')}</div>` : '<p class="ok-line">Nenhum caso em aberto.</p>'}</section>
+        </div><p class="small muted painel-foot">Conferido em ${new Date(d.atualizadoEm).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'})}. Use Atualizar no topo para conferir de novo.</p>`;
+    } catch (e) { if (mine === ticket) ui.view.innerHTML = intro + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
 
   // ---------- Ficha ----------
@@ -155,6 +189,7 @@ window.CPTAtendimentos = (() => {
     ui = api;
     document.addEventListener('click', ev => {
       const c = ev.target.closest('[data-case]'); if (c) { abrir(c.dataset.case); return; }
+      const m = ev.target.closest('[data-atd-modo]'); if (m) { modo = m.dataset.atdModo; render(); return; }
       if (ev.target.closest('[data-case-mais]')) { carregar(true); return; }
       const f = ev.target.closest('[data-caso-form]'); if (f && aberto) { formulario(f.dataset.casoForm); return; }
       if (ev.target.closest('[data-caso-cancelar]')) { $('casoForm').innerHTML = ''; return; }
@@ -166,6 +201,6 @@ window.CPTAtendimentos = (() => {
       const nf = ev.target.closest('#noteForm'); if (nf && aberto) { ev.preventDefault(); enviarNota(nf); }
     });
   }
-  return {init, render, abrir, filtrar: estado => { filtro.estado = estado; }};
+  return {init, render, abrir, atualizar: () => { if (modo === 'auditoria' && conduz()) renderAuditoria(true); else render(); }, filtrar: estado => { if (estado === 'auditoria') { modo = 'auditoria'; return; } filtro.estado = estado; modo = 'casos'; }};
 })();
 </script>

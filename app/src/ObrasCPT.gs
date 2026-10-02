@@ -46,7 +46,7 @@ class ObrasCPT {
     const ordem = {'Em andamento': 0, 'Paralisada': 1, 'A confirmar': 2, '': 3, 'Finalizada': 4};
     obras.sort((a, b) => (ordem[a.situacao] ?? 3) - (ordem[b.situacao] ?? 3) || b.inicioObra.localeCompare(a.inicioObra) || a.nome.localeCompare(b.nome, 'pt-BR'));
     return {obras, bairros: this.bairros().filter(b => !b.especial).map(b => b.nome).sort((a, b) => a.localeCompare(b, 'pt-BR')),
-      situacoes: ObrasCPT.situacoes, impactos: ObrasCPT.impactos, podeEditar: PerfisCPT.gerencia(this.ctx.perfil), formulario: this.statusFormulario()};
+      situacoes: ObrasCPT.situacoes, impactos: ObrasCPT.impactos, podeEditar: PerfisCPT.gerencia(this.ctx.perfil) && (this.ctx.perfil.papeis.includes('administrador') || !PerfisCPT.travada()), formulario: this.statusFormulario()};
   }
   /** Mensagem do último salvamento das listas do formulário (área de controle AB5:AB6 do Campo 4.0). */
   statusFormulario() {
@@ -77,6 +77,7 @@ class ObrasCPT {
   }
   salvar(p) {
     if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('A atualização de obras é feita pelo Administrativo ou pela Gestão.');
+    PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'Alterar o catálogo de obras');
     if (!p || typeof p !== 'object') throw new Error('Dados da obra inválidos.');
     const T = ObrasCPT.texto, D = ObrasCPT.dataValida;
     const nome = T(p.nome, 200, 'Nome da obra', true), situacao = T(p.situacao, 20, 'Situação', true);
@@ -122,6 +123,7 @@ class ObrasCPT {
   /** Revisão diária: confirma que a situação continua a mesma, sem mudar os dados. */
   confirmar(p) {
     if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('A revisão de obras é feita pelo Administrativo ou pela Gestão.');
+    PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'Revisar o catálogo de obras');
     const {aba, linhas} = this.ler(), alvo = linhas.find(o => String(o.r[0]).trim() === String(p && p.id || ''));
     if (!alvo) throw new Error('Obra não encontrada.');
     const anterior = this.publico(alvo);

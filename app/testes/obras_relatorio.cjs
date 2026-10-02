@@ -41,7 +41,8 @@ const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
 ctx.p={id:'OBR-0002',atualizadoEm:'',nome:'Coletor B',situacao:'Em andamento',bairros:['Jardim'],noFormulario:true};assert.throws(()=>run('salvarObraCPT(p)'),/Administrativo ou pela Gestão/);
-email='adm@example.com';let r=run('salvarObraCPT(p)');assert.match(r.resultado,/atualizada/);assert.equal(obras.rows[2][2],'Jardim');assert.equal(obras.rows[2][19],'Em andamento');assert.equal(obras.rows[2][34],'adm@example.com');assert.match(obras.rows[5][27],/^PENDENTE — alterado pela aplicação/);
+email='adm@example.com';assert.equal(run('listarObrasCPT()').podeEditar,false);assert.throws(()=>run('salvarObraCPT(p)'),/período de testes/);
+props.set('CPT_TRAVA_CONFIG','liberada');assert.equal(run('listarObrasCPT()').podeEditar,true);let r=run('salvarObraCPT(p)');assert.match(r.resultado,/atualizada/);assert.equal(obras.rows[2][2],'Jardim');assert.equal(obras.rows[2][19],'Em andamento');assert.equal(obras.rows[2][34],'adm@example.com');assert.match(obras.rows[5][27],/^PENDENTE — alterado pela aplicação/);
 assert.equal(obras.rows[0][31],'Tipo de obra');assert.throws(()=>run('salvarObraCPT(p)'),/alterada por outra pessoa/);
 ctx.p={...ctx.p,atualizadoEm:r.obra.atualizadoEm,bairros:['Múltiplos bairros']};assert.throws(()=>run('salvarObraCPT(p)'),/não cadastrado/);
 ctx.p={...ctx.p,bairros:[],situacao:'Finalizada'};assert.throws(()=>run('salvarObraCPT(p)'),/término/);
@@ -50,7 +51,7 @@ ctx.n={nome:'Rede Nova',situacao:'Em andamento',bairros:['vila linda'],noFormula
 assert.throws(()=>run('salvarObraCPT(n)'),/mesmo nome|Já existe/);
 ctx.c={id:'OBR-0001',atualizadoEm:run('listarObrasCPT()').obras.find(o=>o.id==='OBR-0001').atualizadoEm};r=run('confirmarObraCPT(c)');assert.equal(r.obra.situacao,'Em andamento');
 assert.equal(books.get('agenda').getSheetByName('Histórico de obras').rows.length,4);assert.equal(locked,false);
-console.log('PASS: obras consultáveis por todos, edição restrita, conflito de versão, bairros validados, nova obra com ID sequencial, revisão diária e marcação para o formulário.');
+console.log('PASS: obras consultáveis por todos, edição restrita (travada no período de testes), conflito de versão, bairros validados, nova obra com ID sequencial, revisão diária e marcação para o formulário.');
 // Fechamento: conferência e geração.
 email='atd@example.com';assert.throws(()=>run("conferirFechamentoCPT('2026-10')"),/fechamento do mês está disponível/);
 email='social@example.com';const f=run("conferirFechamentoCPT('2026-10')");

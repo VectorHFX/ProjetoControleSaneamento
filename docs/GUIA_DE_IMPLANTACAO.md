@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.6 e Campo 4.0 (4.3)
+# Guia de instalação: Aplicação CPT 2.7 e Campo 4.0 (4.3)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,67 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.7 — Visões por cargo, Painel da gestão, Programa Parceiros e auditoria (≈ 15 min)
+
+**Como atualizar:** no Cloud Shell, `bash ~/atualizar.sh conferir` e depois `bash ~/atualizar.sh aplicar`. Só a Aplicação muda.
+
+**Arquivos novos:**
+
+- `ConectoresCPT.gs`
+- `ProgramaParceirosCPT.gs`
+- `PaineisGestaoCPT.gs`
+- `AuditoriaAtendimentosCPT.gs`
+- `Gestao.html`
+
+**Passos:**
+
+1. No editor, execute **`instalarAplicacaoCPT`** uma vez. Deve mostrar `versao: 2.7.0`.
+2. Abra a aplicação e vá em **Como usar → Conectores e pastas**.
+3. Confira se cada conector está verde.
+   - Se a **Máscara do Programa Parceiros** estiver amarela por ser .xlsx, salve-a como Planilha Google e cole o novo link ali.
+4. Na mesma página, compartilhe como **Leitor**, com a equipe, as pastas marcadas em amarelo (fotos do formulário e Entregas mensais).
+   - Detalhes em [VISOES_POR_CARGO.md](VISOES_POR_CARGO.md).
+5. Use **Ver como** (faixa no topo) para conferir a tela de cada cargo antes de liberar a equipe.
+
+**Correção que vem junto:** na 2.6, a página não carregava o componente Socioambiental no Google (`incluirCPT_` não o aceitava e a abertura parava com "Componente desconhecido"). Na 2.7 ele está liberado.
+
+**O que muda para a equipe:**
+
+- **Visão por cargo.** Cada pessoa vê só as páginas do seu trabalho, com atalhos próprios na Visão do mês. Quem tem vários cargos troca em **Ver como**: a faixa, a cor e a lateral mudam na hora. A troca é só de tela: a conta e as permissões não mudam.
+- **Trava de testes (ligada).** Só você muda cargos, obras e conectores e publica na máscara oficial. Para liberar obras e publicações, execute `liberarConfiguracaoCPT`; para travar de novo, `travarConfiguracaoCPT`.
+- **Painel da gestão** (Gestão e Administrativo), em três abas:
+  - **Contrato:**
+    - o que pede atenção: casos com mais de 30 dias, meta semanal de pesquisas, frentes paradas há mais de 14 dias, relatos sem público, Programa Parceiros pendente;
+    - os números do mês;
+    - seis meses em gráfico;
+    - itens do relatório, tipos de atividade e quem registrou.
+  - **Frentes de serviço:**
+    - cada obra com ações, pessoas, diagnósticos, casos abertos e o último registro;
+    - em vermelho, as frentes em andamento sem registro há mais de 14 dias;
+    - "Ver a frente" abre as atividades e os casos.
+  - **Relatos em resumo:** os relatos do mês por dia, com trecho do texto, público, fotos e situação.
+- **Programa Parceiros** (Gestão e Administrativo):
+  - as 90 perguntas da máscara de lançamento, na ordem e com a linha (L3 a L92);
+  - os dados da engenharia ficam recolhidos;
+  - cada pergunta mostra o mês anterior e uma **sugestão** com a regra de cálculo, que só entra com "Usar":
+    - reuniões abertas à comunidade e público;
+    - temas;
+    - satisfação e depoimentos;
+    - manifestações por tipo;
+    - não procedentes;
+    - prazo médio;
+    - cartas de vistoria cautelar.
+  - **Salvar** cria versão.
+  - **Publicar** grava **só os campos conferidos** na coluna do mês da máscara (cria a coluna se faltar), preserva fórmulas e desfaz tudo se algo falhar.
+  - **Planilha para conferência** gera um Excel/PDF novo, sem tocar na máscara.
+  - O texto digitado fica salvo no navegador se a conexão cair.
+- **Atendimentos → Auditoria e números** (Atendimento, Gestão e Administrativo):
+  - o que conferir: recebidos parados há mais de 3 dias, abertos há mais de 30, sem próxima ação ou área, dados faltando, datas inconsistentes, possíveis duplicados pelo endereço e casos sem PDF;
+  - cada caso abre a ficha com um clique;
+  - gráficos: recebidos × concluídos, idade dos casos, áreas, tipos e canais.
+
+---
 
 ## Atualização 2.6 — Socioambiental: mesa do relatório, relatos, diagnósticos e anexos (≈ 10 min)
 
