@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.9 e Campo 4.0 (4.4)
+# Guia de instalação: Aplicação CPT 2.9 e Campo 4.0 (4.5)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,26 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Campo 4.0 — 4.5: fichas oficiais em PDF na planilha da Execução (≈ 10 min)
+
+A Concrejato passa a ver e baixar o PDF de cada ficha oficial na própria planilha da Execução.
+
+**O que muda na planilha da engenharia:**
+- **CPT • Painel da Execução** ganha a última coluna, **Ficha oficial**, com dois links: **Ver** abre o PDF e **Baixar** salva o arquivo.
+- Nova aba **CPT • Fichas oficiais**, a segunda, com **todos** os casos (abertos e concluídos, os mais novos primeiro) e o mesmo Ver · Baixar. Ela substitui a aba antiga "Fichas Oficiais", que está oculta e não atualiza mais.
+- Entram as fichas geradas pela aplicação e as das fichas antigas migradas. Caso sem PDF aparece como "não gerada": o Atendimento gera pela aplicação (**Gerar ficha oficial**) e o link aparece na próxima sincronização (até 1 hora, ou na hora pelo passo 2).
+
+**Passos:**
+1. Projeto Campo 4.0: substitua `PainelDaExecucao.gs`, `ExecucaoDaEngenharia.gs` e `ConfiguracaoDaBase.gs` (ou rode `atualizarTudoCPT`).
+2. Execute **`sincronizarExecucaoDaEngenhariaCampo40`**. Em `ordens` deve aparecer **"fichas oficiais: X de Y com PDF"**.
+3. **Compartilhe as pastas de PDF com a engenharia, como Leitor** (sem isso, o link abre "Você precisa de acesso"):
+   - **CPT • Fichas oficiais → PDFs** (fichas geradas pela aplicação);
+   - **PDFs Atuais** (fichas antigas, da pasta das Fichas Oficiais 3.2.1).
+   Compartilhe **só as pastas de PDF**, não a pasta-mãe: "Documentos" e "Versões anteriores" ficam só com o CPT. Use os e-mails da Concrejato que já recebem a planilha (André, Gustavo e Erinaldo).
+4. Abra a planilha da engenharia com uma conta que não seja a sua (ou peça a um deles) e clique em **Ver** de uma ficha.
+
+---
 
 ## Campo 4.0 — 4.4: o RDAS passa a ser alimentado pelo Campo 4.0 (≈ 10 min, antes de ligar o formulário novo)
 

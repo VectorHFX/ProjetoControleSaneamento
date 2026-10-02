@@ -1,17 +1,19 @@
 // Execução da engenharia (serviços Google simulados, dados fictícios). node campo40/testes/execucao.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('crypto');
-class Sheet{constructor(n,rows){this.n=n;this.rows=rows;this.fmt={};this.merges=[];this.hidden=false;this.maxR=1000;this.maxC=26}getLastRow(){return this.rows.length}getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length))}getName(){return this.n}
+class Sheet{constructor(n,rows){this.n=n;this.rows=rows;this.fmt={};this.merges=[];this.link={};this.hidden=false;this.maxR=1000;this.maxC=26}getLastRow(){return this.rows.length}getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length))}getName(){return this.n}
   setName(n){this.n=n;return this}getMaxRows(){return this.maxR}getMaxColumns(){return this.maxC}insertRowsAfter(_,k){this.maxR+=k}insertColumnsAfter(_,k){this.maxC+=k}hideColumns(){}setRowHeight(){}setColumnWidth(){}setHiddenGridlines(){}setTabColor(){}
   hideSheet(){this.hidden=true}isSheetHidden(){return this.hidden}
   getDataRange(){const w=this.getLastColumn();return {getValues:()=>this.rows.map(r=>Array.from({length:w},(_,j)=>r[j]??''))}}
   clearContents(){this.rows=[]}setFrozenRows(){}protect(){const p={setWarningOnly:()=>p,setDescription:()=>p};return p}
   getRange(r,c,nr=1,nc=1){const s=this;const fmt=k=>v=>{s.fmt[k]=v;return g};const g=new Proxy({getValues:()=>Array.from({length:nr},(_,i)=>Array.from({length:nc},(_,j)=>s.rows[r+i-1]?.[c+j-1]??'')),setValues:v=>{v.forEach((row,i)=>{while(s.rows.length<r+i)s.rows.push([]);row.forEach((x,j)=>s.rows[r+i-1][c+j-1]=x)});return g},
-    clear:()=>{if(r===1&&nr>=s.rows.length){s.rows=[];s.fmt={};s.merges=[]}return g},merge:()=>{s.merges.push([r,c,nr,nc]);return g},setBackgrounds:fmt('bg'),setFontColors:fmt('fc'),setFontWeights:fmt('fw')},{get:(t,k)=>k in t?t[k]:()=>g});return g}}
+    clear:()=>{if(r===1&&nr>=s.rows.length){s.rows=[];s.fmt={};s.merges=[]}return g},merge:()=>{s.merges.push([r,c,nr,nc]);return g},setRichTextValues:v=>{v.forEach((row,i)=>row.forEach((rt,j)=>{if(rt.links.length)s.link[(r+i)+','+(c+j)]=rt.links}));return g},setBackgrounds:fmt('bg'),setFontColors:fmt('fc'),setFontWeights:fmt('fw')},{get:(t,k)=>k in t?t[k]:()=>g});return g}}
 const ss=sheets=>({setActiveSheet:x=>{ss.ativa=x},moveActiveSheet:i=>{const k=sheets.indexOf(ss.ativa);sheets.splice(k,1);sheets.splice(i-1,0,ss.ativa)},getSheets:()=>sheets,getSheetByName:n=>sheets.find(s=>s.n===n)||null,insertSheet:n=>{const s=new Sheet(n,[]);sheets.push(s);return s},getUrl:()=>'https://docs.google.com/spreadsheets/d/exec'});
 const A=['Protocolo','Protocolo principal','Situação do protocolo','Status','Data de abertura','Data de conclusão','Nome','Assunto','Endereço','Frente de obra','Área responsável','Responsável','Próxima ação','Atualização operacional','Documento','PDF','Origem','Pesquisa','Hash','Detalhes JSON'];
 const M=['ID','Protocolo','Data e hora','Tipo','Status','Autor','Resumo','Origem','Hash','Detalhes JSON'];
 const caso=(p,status,area,extra={})=>[p,extra.principal||p,'Principal',status,new Date('2026-09-01T12:00:00Z'),'','Morador '+p.slice(-2),'Vazamento','Rua Exemplo, '+p.slice(-2),'Coletor A',area,'Kesy','Analisar',new Date('2026-09-02T12:00:00Z'),'','','Migração','','',JSON.stringify({procedencia:'Em análise',telefone:'(11) 0000-00'+p.slice(-2)})];
-const atd=new Sheet('Atendimentos',[A,caso('ATD20260010','Recebida','Execução'),caso('ATD20260011','Em andamento','Execução'),caso('ATD20260012','Concluída','Atendimento'),caso('ATD20260013','Em andamento','Atendimento',{principal:'ATD20260011'}),caso('ATD20260014','Aguardando finalização','Execução')]);
+const comPdf=caso('ATD20260011','Em andamento','Execução');comPdf[15]='https://drive.google.com/file/d/PDFNOVO00000000000000001/view';
+const migrado=caso('ATD20260012','Concluída','Atendimento');migrado[19]=JSON.stringify({oficiais:[{campos:{'ID do PDF atual':'PDFANTIGO000000000000001'}}]});
+const atd=new Sheet('Atendimentos',[A,caso('ATD20260010','Recebida','Execução'),comPdf,migrado,caso('ATD20260013','Em andamento','Atendimento',{principal:'ATD20260011'}),caso('ATD20260014','Aguardando finalização','Execução')]);
 const mov=new Sheet('Movimentações',[M,['MOV-A','ATD20260010',new Date('2026-09-02'),'Atualização','Recebida','Kesy','Encaminhado: trocar tampa','Aplicação CPT']]);
 const base={getId:()=>'base',getSheetByName:n=>[atd,mov,...extras].find(s=>s.n===n)||null,insertSheet:n=>{const s=new Sheet(n,[]);extras.push(s);return s},getSpreadsheetTimeZone:()=>'America/Sao_Paulo'};const extras=[];
 const H=['Carimbo de data/hora','Endereço de e-mail','Você está abrindo ou executando uma ficha?','Qual o número de protocolo?','A demanda é procedente?','A demanda foi resolvida?','Título da execução','Relado detalhado do que foi executado ou proposto junto ao morador','Relato detalhado explicando a não procedência','Identifique-se, quem fez a execução','Data da atuação','Fotos da execução e documentos quando houver','Há pendências restantes?','Necessidade de retorno imediato do atendimento?','Observações para o seguimento da ficha','Endereço completo','Qual foi a solicitação ou reclamação?','Assunto','Se sim coloque nome completo e telefone ou email de solicitantes'];
@@ -38,7 +40,9 @@ const ctx={console,JSON,Date,Math,Map,Set,Object,Array,String,Number,RegExp,isNa
     formatDate:(d,_,f)=>{const x=new Date(d.getTime()-3*3600e3),p=n=>String(n).padStart(2,'0');const Y=x.getUTCFullYear(),Mo=p(x.getUTCMonth()+1),D=p(x.getUTCDate());return f==='yyyy'?String(Y):f==='yyyy-MM-dd'?Y+'-'+Mo+'-'+D:D+'/'+Mo+'/'+Y}},
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k)??null,setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k),getProperties:()=>Object.fromEntries(props)})},
   LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
-  SpreadsheetApp:{BorderStyle:{SOLID:'solid'},openById:id=>id==='base'?base:id==='1UHs_jFVD7jQRKgw7CVPCQ8R7sgvyhkJVv5rcj0v2K5g'?antigo:planilha},
+  SpreadsheetApp:{BorderStyle:{SOLID:'solid'},
+    newTextStyle:()=>{const o={setFontFamily:()=>o,setFontSize:()=>o,setBold:()=>o,setUnderline:()=>o,setForegroundColor:()=>o,build:()=>({})};return o;},
+    newRichTextValue:()=>{const o={text:'',links:[],setText(t){o.text=t;return o},setLinkUrl(a,b,u){o.links.push([o.text.slice(a,b),u]);return o},setTextStyle(){return o},build(){return {text:o.text,links:o.links}}};return o;},openById:id=>id==='base'?base:id==='1UHs_jFVD7jQRKgw7CVPCQ8R7sgvyhkJVv5rcj0v2K5g'?antigo:planilha},
   FormApp:{openById:()=>({getItems:()=>[item],getPublishedUrl:()=>'https://forms.example/exec'}),ItemType:{LIST:'LIST'}},
   ScriptApp:{getProjectTriggers:()=>triggers,deleteTrigger:()=>{},newTrigger:fn=>({forForm:id=>({onFormSubmit:()=>({create:()=>triggers.push({getHandlerFunction:()=>fn,id})})})})},
   MailApp:{getRemainingDailyQuota:()=>100,sendEmail:m=>email.push(m)}};
@@ -68,7 +72,17 @@ assert.ok(lin('ATD20260011')>cab,'caso com a Execução no primeiro quadro');ass
 const iAt=pv.findIndex(r=>r[0]==='Aguardando o Atendimento');assert.ok(lin('ATD20260010')>iAt,'caso devolvido ao Atendimento no segundo quadro');
 const rs=lin('ATD20260011');assert.equal(painel.fmt.bg[rs][3],'#FFF2C2','Em andamento em amarelo');
 assert.ok(pv.some(r=>r[0]==='Concluídas nos últimos 30 dias'));assert.ok(!pv.some(r=>r[0]==='ATD20260012'),'concluída sem data recente fica fora');
-assert.ok(painel.merges.length>5);assert.equal(dashAntigo.isSheetHidden(),true,'aba antiga oculta, não apagada');assert.ok(planilha.getSheetByName('Dashboard'));
+assert.ok(painel.merges.length>5);
+// Ficha oficial: Ver · Baixar no painel (PDF novo) e aba com todos os casos (inclui o PDF da ficha antiga migrada).
+const cf=pv[cab].indexOf('Ficha oficial');assert.equal(cf,10,'última coluna do painel');
+assert.equal(pv[rs][cf],'Ver · Baixar');assert.deepEqual(painel.link[(rs+1)+','+(cf+1)],[['Ver','https://drive.google.com/file/d/PDFNOVO00000000000000001/view'],['Baixar','https://drive.google.com/uc?export=download&id=PDFNOVO00000000000000001']]);
+assert.equal(pv[lin('ATD20260014')][cf],'não gerada');
+const fichas=planilha.getSheetByName('CPT • Fichas oficiais');assert.ok(fichas,'aba de fichas criada');assert.equal(planilha.getSheets()[1],fichas,'segunda aba');
+const fv=fichas.rows.map(r=>r.map(String)),fl=p=>fv.findIndex(r=>r[0]===p);
+assert.ok(fl('ATD20260012')>0,'concluída antiga também aparece');assert.equal(fv[fl('ATD20260012')][8],'Ver · Baixar');
+assert.match(fichas.link[(fl('ATD20260012')+1)+',9'][1][1],/id=PDFANTIGO000000000000001$/);
+assert.ok(fl('ATD20260013')<0,'incorporado fica de fora');assert.ok(fl('ATD20260015')<fl('ATD20260010'),'mais novos primeiro');
+assert.match(fv[1][0],/2 de 5 ficha\(s\) com PDF/);assert.match(r.ordens,/fichas oficiais: 2 de 5 com PDF/);assert.equal(dashAntigo.isSheetHidden(),true,'aba antiga oculta, não apagada');assert.ok(planilha.getSheetByName('Dashboard'));
 const avisos=base.getSheetByName('Avisos à engenharia');assert.ok(avisos.rows.slice(1).every(x=>x[4]==='REFERÊNCIA'));assert.equal(email.length,0,'instalação não envia e-mail');
 // Repetir é idempotente.
 const nMov=mov.rows.length,nAtd=atd.rows.length;run('sincronizarExecucaoDaEngenhariaCampo40()');assert.equal(mov.rows.length,nMov);assert.equal(atd.rows.length,nAtd);
@@ -93,4 +107,5 @@ const l20=linha('ATD20260020');assert.equal(l20[3],'Concluída','ficha oficial a
 assert.ok(mov.rows.some(x=>x[3]==='Ajuste do corte'));assert.equal(atd.rows[c40][3],'Em andamento');
 r=run('compararComControleAntigoCampo40()');assert.equal(r.aAjustar.length,0,'repetir não acha nada novo');
 console.log('PASS: corte — comparação sem alterar, piso de numeração, ajuste só onde a Base não foi movimentada.');
+console.log('PASS: painel com Ver · Baixar da ficha oficial e aba CPT • Fichas oficiais com todos os casos (PDF novo ou da ficha antiga).');
 console.log('PASS: retornos da engenharia viram movimentações com a regra da Central; abertura pela engenharia ganha protocolo; lista do formulário e ordens em aberto vêm da Base; avisos só após ativar, sem repetir; idempotente.');

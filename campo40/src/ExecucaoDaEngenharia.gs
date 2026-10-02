@@ -1,5 +1,5 @@
 /**
- * ExecucaoDaEngenharia — 1.1.0 — PERMANENTE.
+ * ExecucaoDaEngenharia — 1.2.0 — PERMANENTE.
  * Liga a Base 4.0 ao formulário "Execução de Atendimentos", que a engenharia (Concrejato) responde.
  * O formulário e a planilha de respostas continuam separados e compartilhados com a engenharia.
  * Nenhuma pergunta muda: só a lista da pergunta "Qual o número de protocolo?" passa a vir da Base.
@@ -11,7 +11,8 @@
  * 2. Abertura pela engenharia ("Você está abrindo..."): vira um caso novo com protocolo da sequência.
  * 3. Comunicação entre Áreas: mensagens escritas pela Execução viram movimentações "Comunicação".
  * 4. Lista de protocolos do formulário: casos em aberto da Base ("ATD… | Nome").
- * 5. Aba "CPT • Painel da Execução" na planilha da engenharia (PainelDaExecucao): visual para o cliente.
+ * 5. Aba "CPT • Painel da Execução" na planilha da engenharia (PainelDaExecucao): visual para o cliente,
+ *    com o PDF da ficha oficial (Ver · Baixar), e aba "CPT • Fichas oficiais" com todos os casos.
  * 6. Avisos por e-mail à engenharia quando o Atendimento encaminha um caso para a Execução (desligado até ativar).
  * Só entram respostas a partir da instalação (respostas antigas já estão no Controle antigo).
  * Idempotente: o ID de cada movimentação vem do conteúdo da resposta. Roda na trava do Campo 4.0.
@@ -207,6 +208,12 @@ class ExecucaoDaEngenharia {
     const o = ((d.oficiais || [])[0] || {}).campos || {}, m = ((d.manuais || []).slice(-1)[0] || {}).dados || {}, a = ((d.aberturas || [])[0] || {}).campos || {};
     return this.txt(d.telefone || o['Telefone'] || m.telefone || a['Telefones']);
   }
+  /** ID no Drive do PDF da ficha oficial: o gerado pela aplicação (coluna PDF) ou o da ficha antiga migrada. */
+  static pdf(r, d) {
+    const id = v => (this.txt(v).match(/(?:\/d\/|[?&]id=)([A-Za-z0-9_-]{20,})/) || [])[1] || (/^[A-Za-z0-9_-]{20,}$/.test(this.txt(v)) ? this.txt(v) : '');
+    const o = ((d.oficiais || [])[0] || {}).campos || {};
+    return id(r[15]) || id(o['ID do PDF atual']) || id(o['Baixar PDF']) || '';
+  }
   /** Casos principais em aberto, concluídos nos últimos 30 dias e a última movimentação que não veio da engenharia. */
   static casos(base) {
     const t = this.tabelas(base), agora = Date.now(), ultimo = new Map(), data = v => { const x = v instanceof Date ? v : (v ? new Date(v) : null); return x && !isNaN(x) ? x : null; };
@@ -217,9 +224,9 @@ class ExecucaoDaEngenharia {
       const frente = this.txt(r[9]).replace(/^atendimento$/i, '');
       return {protocolo: String(r[0]), nome: this.txt(r[6]), assunto: this.txt(r[7]), endereco: this.txt(r[8]), frente, area: this.txt(r[10]), proxima: this.txt(r[12]), status: this.txt(r[3]),
         concluida, conclusao: fim, abertura: ab, dias: ab ? Math.max(0, Math.floor(((concluida && fim ? fim.getTime() : agora) - ab.getTime()) / 864e5)) : '',
-        atualizado: r[13], telefone: this.telefone(d), ultimo: ultimo.get(String(r[0])) || null};
+        atualizado: r[13], telefone: this.telefone(d), pdf: this.pdf(r, d), ultimo: ultimo.get(String(r[0])) || null};
     });
-    return {abertos: todos.filter(x => !x.concluida), concluidas: todos.filter(x => x.concluida && x.conclusao && agora - x.conclusao.getTime() <= 30 * 864e5)};
+    return {todos, abertos: todos.filter(x => !x.concluida), concluidas: todos.filter(x => x.concluida && x.conclusao && agora - x.conclusao.getTime() <= 30 * 864e5)};
   }
 
   static atualizarLista(c, casos) {
@@ -237,13 +244,17 @@ class ExecucaoDaEngenharia {
 
   /** Painel do cliente (PainelDaExecucao). Refeito quando o conteúdo muda; a hora do título não conta como mudança. */
   static atualizarOrdens(c, planilha, casos) {
-    const agora = new Date(), modelo = PainelDaExecucao.montar(casos, agora, 'America/Sao_Paulo');
-    const assinatura = RepositorioDosRegistros.hash([PainelDaExecucao.NOME, modelo.linhas.slice(2).map(l => l.v), Utilities.formatDate(agora, 'America/Sao_Paulo', 'yyyy-MM-dd')]);
-    const existe = planilha.getSheetByName(PainelDaExecucao.NOME);
-    if (existe && c.ordensAssinatura === assinatura && c.legadoOculto) return 'sem mudança';
+    const agora = new Date(), fuso = 'America/Sao_Paulo', dia = Utilities.formatDate(agora, fuso, 'yyyy-MM-dd');
+    const modelo = PainelDaExecucao.montar(casos, agora, fuso), fichas = PainelDaExecucao.montarFichas(casos, agora, fuso);
+    const assina = (nome, m, de) => RepositorioDosRegistros.hash([nome, m.linhas.slice(de).map(l => [l.v, l.ln]), dia]);
+    const assinatura = assina(PainelDaExecucao.NOME, modelo, 2), assinaturaFichas = assina(PainelDaExecucao.NOME_FICHAS, fichas, 2);
+    const existe = planilha.getSheetByName(PainelDaExecucao.NOME), existeFichas = planilha.getSheetByName(PainelDaExecucao.NOME_FICHAS);
+    const comPdf = casos.todos.filter(x => x.pdf).length, resumoFichas = '; fichas oficiais: ' + comPdf + ' de ' + casos.todos.length + ' com PDF';
+    if (existe && existeFichas && c.ordensAssinatura === assinatura && c.fichasAssinatura === assinaturaFichas && c.legadoOculto) return 'sem mudança' + resumoFichas;
+    if (!existeFichas || c.fichasAssinatura !== assinaturaFichas) { PainelDaExecucao.desenhar(planilha, fichas, PainelDaExecucao.NOME_FICHAS); c.fichasAssinatura = assinaturaFichas; }
     const aba = PainelDaExecucao.desenhar(planilha, modelo), ocultas = PainelDaExecucao.organizar(planilha, aba, c);
     c.ordensAssinatura = assinatura; this.salvarConfig(c);
-    return casos.abertos.length + ' em aberto, ' + casos.concluidas.length + ' concluída(s) em 30 dias' + (ocultas.length ? '; abas antigas ocultas: ' + ocultas.join(', ') : '');
+    return casos.abertos.length + ' em aberto, ' + casos.concluidas.length + ' concluída(s) em 30 dias' + resumoFichas + (ocultas.length ? '; abas antigas ocultas: ' + ocultas.join(', ') : '');
   }
 
   static abaAvisos(base) {
