@@ -31,7 +31,7 @@ class RelatorioMensalCPT {
   numeroSugerido(mes) {
     let base = RelatorioMensalCPT.referenciaNumero;
     try {
-      const a = SpreadsheetApp.openById(this.ctx.config.agendaId).getSheetByName('Entregas mensais');
+      const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName('Entregas mensais');
       if (a && a.getLastRow() > 1 && a.getLastColumn() >= 9) a.getRange(2, 1, a.getLastRow() - 1, 9).getValues()
         .filter(r => Number(r[8]) > 0 && String(r[1]) <= mes).forEach(r => { if (String(r[1]) >= base.mes) base = {numero: Number(r[8]), mes: String(r[1])}; });
     } catch (_) {}
@@ -93,7 +93,7 @@ class RelatorioMensalCPT {
     // Entregas preparadas (última revisão de cada relato).
     const entregas = new Map();
     try {
-      const a = SpreadsheetApp.openById(this.ctx.config.agendaId).getSheetByName('Entregas');
+      const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName('Entregas');
       if (a && a.getLastRow() > 1) a.getRange(2, 1, a.getLastRow() - 1, 6).getValues().forEach(r => { try { entregas.set(String(r[0]), JSON.parse(r[5])); } catch (_) {} });
     } catch (_) {}
     // Atendimentos que tocam o período: abertos até o fim do mês e não concluídos antes do início.
@@ -152,7 +152,7 @@ class RelatorioMensalCPT {
 
   historicoGeracoes(mes) {
     try {
-      const a = SpreadsheetApp.openById(this.ctx.config.agendaId).getSheetByName('Entregas mensais'); if (!a || a.getLastRow() < 2) return [];
+      const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName('Entregas mensais'); if (!a || a.getLastRow() < 2) return [];
       return a.getRange(2, 1, a.getLastRow() - 1, 8).getValues().filter(r => String(r[1]) === mes).map(r => ({em: r[0] instanceof Date ? r[0].toISOString() : String(r[0]), versao: r[2], autor: String(r[4]), documento: String(r[5]), planilha: String(r[6]), avisos: String(r[7])})).reverse();
     } catch (_) { return []; }
   }
@@ -169,7 +169,7 @@ class RelatorioMensalCPT {
     if (!p || typeof p.operacaoId !== 'string' || !/^OP-[a-zA-Z0-9-]{12,70}$/.test(p.operacaoId)) throw new Error('Identificação do pedido inválida. Reabra o fechamento.');
     const mes = this.dados.mes(String(p.mes || '')), numero = p.numero === '' || p.numero == null ? '' : Number(p.numero);
     if (numero !== '' && (!Number.isInteger(numero) || numero < 1 || numero > 999)) throw new Error('Número do relatório inválido.');
-    const ss = SpreadsheetApp.openById(this.ctx.config.agendaId), cab = ['Gerado em', 'Competência', 'Versão', 'Operação ID', 'Autor', 'Documento', 'Planilha de apoio aos anexos', 'Avisos', 'Número'];
+    const ss = planilhaCPT_(this.ctx.config.agendaId), cab = ['Gerado em', 'Competência', 'Versão', 'Operação ID', 'Autor', 'Documento', 'Planilha de apoio aos anexos', 'Avisos', 'Número'];
     let log = ss.getSheetByName('Entregas mensais');
     if (!log) { log = ss.insertSheet('Entregas mensais'); log.getRange(1, 1, 1, cab.length).setValues([cab]); log.setFrozenRows(1); }
     const anteriores = log.getLastRow() > 1 ? log.getRange(2, 1, log.getLastRow() - 1, 9).getValues() : [];

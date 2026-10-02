@@ -16,7 +16,7 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 
 | Pasta | O que é | Instalar? |
 |---|---|---|
-| `app/` | **Aplicação CPT** (web app, versão 2.9.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
+| `app/` | **Aplicação CPT** (web app, versão 2.9.1). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
 | `campo40/` | **Procedimentos de Campo 4.0** (4.2.0): formulário → Base, abertura de casos com protocolo e ligação com o formulário de Execução da engenharia. `src/` é permanente; `migracao_executada/` já rodou e fica só para rastreio. | Sim, no projeto do Campo 4.0 |
 | `atualizador/` | **CPT • Atualizador**: projeto pequeno que traz o código do GitHub para a Aplicação e o Campo 4.0, com versão de segurança | Sim, uma vez (ver ATUALIZACAO_AUTOMATICA.md) |
 | `docs/` | Diagnóstico, plano, guia de implantação e, em `referencia/`, os requisitos originais e os modelos oficiais (Orientador, relato ilustrado, layout da ficha). | — |
@@ -42,14 +42,16 @@ node app/testes/socioambiental.cjs    # mesa do relatório, relato e diagnóstic
 node app/testes/gestao.cjs            # Programa Parceiros, painel da gestão, auditoria, conectores e trava
 node app/testes/comunicacao.cjs       # recados, contatos, lembretes, materiais, "Hoje" e galeria
 node app/testes/espaco.cjs            # Meu espaço: mascote, presentes, caderno, checklist e pontos
+node app/testes/desempenho.cjs        # planilha aberta uma vez por execução e cache comprimido (gzip)
 node atualizador/testes/atualizador.cjs # atualização a partir do GitHub (simulada)
 bash atualizador/testes/cloudshell.sh  # atualização pelo Cloud Shell (clasp simulado)
 node campo40/testes/processamento.cjs # vigência de obras/bairros e retomada de envios
 node campo40/testes/abertura.cjs      # ficha do formulário vira caso com protocolo
 node campo40/testes/rdas.cjs         # RDAS pelo Campo 4.0, lido pelos painéis reais (compatibilidade)
 node campo40/testes/execucao.cjs      # retorno da engenharia, lista de protocolos, avisos e corte do Controle antigo
+node campo40/testes/gatilhos.cjs      # conferir e reinstalar só os gatilhos necessários
 # Interface (precisa de Playwright e Chromium):
-python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs && node app/testes/inicio_ui.cjs && node app/testes/atendimentos_ui.cjs && node app/testes/socioambiental_ui.cjs && node app/testes/visoes_ui.cjs && node app/testes/comunicacao_ui.cjs && node app/testes/espaco_ui.cjs
+python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs && node app/testes/inicio_ui.cjs && node app/testes/atendimentos_ui.cjs && node app/testes/socioambiental_ui.cjs && node app/testes/visoes_ui.cjs && node app/testes/comunicacao_ui.cjs && node app/testes/espaco_ui.cjs && node app/testes/desempenho_ui.cjs
 ```
 Ao editar `app/fontes/*.html`, recompile para `app/src/` com `node app/testes/compilar.cjs` (requer Babel; veja o cabeçalho do arquivo).
 Teste local não substitui a validação com uma colaboradora real no Google.

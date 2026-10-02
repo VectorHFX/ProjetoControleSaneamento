@@ -15,7 +15,7 @@ window.CPTSocioambiental = (() => {
 
   async function render() {
     const mine = ++ticket, mes = ui.state.mes;
-    ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Organizando as atividades do mês…</div>';
+    ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Organizando as atividades do mês…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { const d = await ui.call('carregarMesaSocioambientalCPT', mes); if (mine !== ticket || ui.state.route !== 'socioambiental') return; dados = d; draw(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }

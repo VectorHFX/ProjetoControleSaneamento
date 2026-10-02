@@ -8,7 +8,7 @@ class ObservacoesCPT {
   static get canais() { return ['Escritório', 'Campo / itinerante', 'Telefone ou WhatsApp', 'E-mail', 'Reunião', 'Outro']; }
   static planilha(config) {
     if (!config.agendaId) throw new Error('Os dados da aplicação ainda não foram preparados. Avise a administração técnica.');
-    return SpreadsheetApp.openById(config.agendaId);
+    return planilhaCPT_(config.agendaId);
   }
   static tabela(ss, criar) {
     let a = ss.getSheetByName('Observações');

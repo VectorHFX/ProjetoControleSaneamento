@@ -20,7 +20,7 @@ class EntregasCPT {
   }
   tabela(criar){
     if(!this.ctx.config.agendaId)throw new Error('Agenda compartilhada não configurada.');
-    const ss=SpreadsheetApp.openById(this.ctx.config.agendaId);let a=ss.getSheetByName('Entregas');
+    const ss=planilhaCPT_(this.ctx.config.agendaId);let a=ss.getSheetByName('Entregas');
     const h=['Registro ID','Versão','Operação ID','Alterado em','Alterado por','Conteúdo JSON'];
     if(!a&&criar){a=ss.insertSheet('Entregas');a.getRange(1,1,1,6).setValues([h]);a.setFrozenRows(1);}
     if(a&&a.getRange(1,1,1,6).getValues()[0].some((x,i)=>x!==h[i]))throw new Error('Cabeçalho de Entregas incompatível. Nenhum dado foi substituído.');return a;

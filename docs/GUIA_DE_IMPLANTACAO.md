@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.9 e Campo 4.0 (4.5)
+# Guia de instalação: Aplicação CPT 2.9.1 e Campo 4.0 (4.5)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,26 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.9.1 — aplicação mais rápida e sem "pulos" na tela (≈ 5 min)
+
+Nada muda no jeito de usar. A tela abre sem saltar, as buscas não travam enquanto se digita e o servidor responde mais rápido.
+
+1. Rode **`atualizarTudoCPT`**. Ele troca todos os arquivos de uma vez. Isso importa: vários `.gs` agora usam uma função nova do `AplicacaoCPT.gs`, e trocar só parte deles quebra a aplicação.
+   - Se for copiar à mão: substitua **todos** os `.gs` e `.html` da pasta `app/src/`.
+2. Execute **`instalarAplicacaoCPT`**. Deve mostrar `versao: 2.9.1`.
+3. Publique uma **Nova versão** (Implantar → Gerenciar implantações → editar → Nova versão).
+
+**O que muda:**
+- **Tela sem pulos:** o aviso e a faixa de visão aparecem antes dos dados, não depois.
+- **Esqueletos** (blocos cinza animados) enquanto cada página carrega.
+- **Buscas** de contatos, materiais, galeria e painel da gestão esperam a pessoa parar de digitar.
+- **Contatos** aparecem de 60 em 60, com "Mostrar mais".
+- **Miniaturas** da galeria só baixam quando aparecem na tela.
+- **Servidor:** cada planilha é aberta uma vez por consulta, e os resultados grandes vão comprimidos para o cache. Antes, o que passava de 95 KB não era guardado.
+- **Avisos de recados** são pedidos logo depois da primeira tela, e não de novo a cada troca de aba do navegador.
+
+---
 
 ## Gatilhos: limpar os antigos e deixar só os que importam (≈ 20 min)
 

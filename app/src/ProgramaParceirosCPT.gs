@@ -122,7 +122,7 @@ class ProgramaParceirosCPT {
     if (!PerfisCPT.gerencia(ctx.perfil)) throw new Error('O Programa Parceiros é respondido pela Gestão e pelo Administrativo.');
   }
   tabela(criar) {
-    const ss = SpreadsheetApp.openById(this.ctx.config.agendaId); let a = ss.getSheetByName(ProgramaParceirosCPT.aba);
+    const ss = planilhaCPT_(this.ctx.config.agendaId); let a = ss.getSheetByName(ProgramaParceirosCPT.aba);
     if (!a && criar) { a = ss.insertSheet(ProgramaParceirosCPT.aba); a.getRange(1, 1, 1, 7).setValues([ProgramaParceirosCPT.cabecalho]); a.setFrozenRows(1); }
     return a;
   }

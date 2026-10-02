@@ -85,7 +85,7 @@ class DadosDaAplicacao {
   /** Situação e destino escolhido na última revisão de cada relato/diagnóstico (vazio se a agenda não estiver configurada). */
   situacoesEntregas(){
     const out=new Map();
-    try{const id=AplicacaoCPT.config().agendaId;if(!id)return out;const a=SpreadsheetApp.openById(id).getSheetByName('Entregas');
+    try{const id=AplicacaoCPT.config().agendaId;if(!id)return out;const a=planilhaCPT_(id).getSheetByName('Entregas');
       if(a&&a.getLastRow()>1)a.getRange(2,1,a.getLastRow()-1,6).getValues().forEach(r=>{try{const e=JSON.parse(r[5]);out.set(String(r[0]),{situacao:String(e.situacao||''),destino:String(e.destino||'')});}catch(_){}});}catch(_){}
     return out;
   }

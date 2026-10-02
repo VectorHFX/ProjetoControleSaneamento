@@ -32,7 +32,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   assert.match(await p.locator('.attention').textContent(),/3 pontos/);assert.equal(await p.locator('.mini-chart').count(),4);
   await p.locator('[role=tab][data-painel-aba=frentes]').click();await p.locator('.front-card').first().waitFor();
   assert.equal(await p.locator('.front-card.is-late').count(),1);
-  await p.locator('#frenteFiltro [name=busca]').fill('viela');assert.equal(await p.locator('.front-card').count(),1);
+  await p.locator('#frenteFiltro [name=busca]').fill('viela');await p.waitForFunction(()=>document.querySelectorAll('.front-card').length===1);assert.equal(await p.locator('#frenteFiltro [name=busca]').inputValue(),'viela','filtro com espera curta mantém o texto');
   assert.equal(await p.evaluate(()=>document.activeElement.name),'busca','foco mantido no filtro');
   await p.locator('[data-frente]').first().click();await p.waitForFunction(()=>document.querySelector('#detailType').textContent==='FRENTE DE SERVIÇO');
   assert.match(await p.locator('#detailContent').textContent(),/DEMO-102/);await p.locator('#closeDialog').click();

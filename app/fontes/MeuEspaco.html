@@ -92,7 +92,7 @@ window.CPTEspaco = (() => {
 
   async function render(manterDia) {
     const mine = ++ticket; if (!manterDia) dia = null;
-    if (!d) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div>';
+    if (!d) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { const r = await ui.call('carregarMeuEspacoCPT', {data: dia || undefined}); if (mine !== ticket || ui.state.route !== 'meuespaco') return; d = r; dia = r.data; desenhar(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
   }

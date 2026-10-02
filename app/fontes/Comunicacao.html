@@ -32,7 +32,7 @@ window.CPTComunicacao = (() => {
     if (ui.state.route === 'lembretes') { renderLembretes(); return; }
     ({hoje: renderHoje, lembretes: renderLembretes, materiais: renderMateriais, galeria: renderGaleria}[aba] || renderHoje)();
   }
-  const carregando = t => { ui.view.innerHTML = cabecalho() + `<div class="loading-label"><span class="spinner"></span>${t}</div>`; };
+  const carregando = t => { ui.view.innerHTML = cabecalho() + `<div class="loading-label"><span class="spinner"></span>${t}</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>`; };
   const falhou = (mine, e) => { if (mine === ticket) ui.view.innerHTML = cabecalho() + `<div class="notice">${ui.esc(e.message)}</div>`; };
   const ativo = mine => mine === ticket && ['comunicacao', 'lembretes'].includes(ui.state.route);
 
@@ -162,14 +162,14 @@ window.CPTComunicacao = (() => {
         <span class="search-input small-search">${ui.icon('search')}<input id="galBusca" value="${ui.esc(filtroGal.busca)}" placeholder="Atividade, bairro ou pessoa" aria-label="Procurar foto" maxlength="100"></span><button class="button" data-gal-enviar>Enviar fotos</button></div>
       <div class="gallery-bar" id="galBar"><span><strong id="galSel">${selecionadas.size}</strong> de 15 escolhidas para baixar</span><span><button class="button secondary" data-gal-baixar ${selecionadas.size ? '' : 'disabled'}>Baixar (.zip)</button> <button class="button ghost" data-gal-legendas ${selecionadas.size ? '' : 'disabled'}>Copiar legendas</button> <button class="button ghost" data-gal-limpar ${selecionadas.size ? '' : 'disabled'}>Limpar</button></span></div>
       <p class="small muted">${lista.length} ${lista.length === 1 ? 'arquivo' : 'arquivos'} em ${ui.esc(new Date(ui.state.mes + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'}))}. Se uma miniatura não aparecer, a pasta dela ainda não foi compartilhada com você.</p>
-      <div class="gallery-grid">${vis.map(x => `<figure class="photo ${selecionadas.has(x.fileId) ? 'is-picked' : ''}"><button class="photo-open" data-gal-abrir="${ui.esc(x.fileId)}" aria-label="Ampliar: ${ui.esc(x.legenda)}">${x.video ? '<span class="video-tag">Vídeo</span>' : ''}<img loading="lazy" alt="" src="${ui.esc(thumb(x.fileId))}"></button>
+      <div class="gallery-grid">${vis.map(x => `<figure class="photo ${selecionadas.has(x.fileId) ? 'is-picked' : ''}"><button class="photo-open" data-gal-abrir="${ui.esc(x.fileId)}" aria-label="Ampliar: ${ui.esc(x.legenda)}">${x.video ? '<span class="video-tag">Vídeo</span>' : ''}<img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" width="360" height="270" src="${ui.esc(thumb(x.fileId))}"></button>
         <figcaption><label class="photo-pick"><input type="checkbox" data-gal-marcar="${ui.esc(x.fileId)}" ${selecionadas.has(x.fileId) ? 'checked' : ''} ${x.video ? 'disabled title="Vídeos: baixe pelo Drive"' : ''}><span>${ui.esc(x.legenda)}</span></label><small>${ui.esc(x.origem === 'Extra' ? 'Extra · ' + (x.responsavel || '') : x.responsavel)}</small></figcaption></figure>`).join('') || '<p class="empty-line">Nenhuma foto neste mês com esse filtro.</p>'}</div>
       ${lista.length > vis.length ? `<div class="load-more"><button class="button secondary" data-gal-mais>Mostrar mais ${Math.min(24, lista.length - vis.length)}</button></div>` : ''}`;
     if (manterFoco) { const i = $('galBusca'); i.focus(); i.setSelectionRange(pos, pos); }
   }
   function abrirFoto(id) {
     const x = gal.itens.find(y => y.fileId === id); if (!x) return;
-    dialogo('GALERIA', x.legenda, `<iframe class="media-frame" src="https://drive.google.com/file/d/${encodeURIComponent(id)}/preview" title="Visualização" allow="fullscreen"></iframe>
+    dialogo('GALERIA', x.legenda, `<iframe class="media-frame" loading="lazy" src="https://drive.google.com/file/d/${encodeURIComponent(id)}/preview" title="Visualização" allow="fullscreen"></iframe>
       <p class="small">${ui.esc(x.legenda)}</p><div class="dialog-actions"><button class="button secondary" data-gal-copiar="${ui.esc(id)}">Copiar legenda</button><a class="button ghost" href="https://drive.google.com/file/d/${encodeURIComponent(id)}/view" target="_blank" rel="noopener noreferrer">Abrir no Drive</a>${x.registro ? `<button class="button ghost" data-record="${ui.esc(x.registro)}">Ver o registro</button>` : ''}</div>`);
   }
   function formEnvio() {
@@ -248,9 +248,12 @@ window.CPTComunicacao = (() => {
       m.closest('.photo').classList.toggle('is-picked', m.checked); $('galSel').textContent = selecionadas.size;
       document.querySelectorAll('#galBar button').forEach(b => b.disabled = !selecionadas.size);
     });
+    // Busca com espera curta (debounce): redesenha quando a pessoa para de digitar, não a cada tecla.
+    let buscaTimer = null;
+    const focado = id => !!document.activeElement && document.activeElement.id === id;
     document.addEventListener('input', e => {
-      if (e.target.id === 'matBusca') { filtroMat.busca = e.target.value; desenharMateriais(true); }
-      if (e.target.id === 'galBusca') { filtroGal.busca = e.target.value; filtroGal.limite = 24; desenharGaleria(true); }
+      if (e.target.id === 'matBusca') { filtroMat.busca = e.target.value; clearTimeout(buscaTimer); buscaTimer = setTimeout(() => { if ($('matBusca')) desenharMateriais(focado('matBusca')); }, 220); }
+      if (e.target.id === 'galBusca') { filtroGal.busca = e.target.value; filtroGal.limite = 24; clearTimeout(buscaTimer); buscaTimer = setTimeout(() => { if ($('galBusca')) desenharGaleria(focado('galBusca')); }, 220); }
     });
     document.addEventListener('submit', e => {
       const f = e.target; if (!['lemForm', 'matForm', 'galForm'].includes(f.id)) return; e.preventDefault();

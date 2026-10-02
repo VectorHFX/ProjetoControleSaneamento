@@ -8,7 +8,8 @@
  */
 window.CPTRecados = (() => {
   'use strict';
-  let ui = null, ticket = 0, rec = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: ''}, rascunhoVinculo = null;
+  let ui = null, ticket = 0, rec = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: '', limite: 60}, rascunhoVinculo = null;
+  const LIMITE_CON = 60; // contatos por vez; "Mostrar mais" traz o resto aos poucos
   const $ = id => document.getElementById(id);
   const ops = new Map(), opId = (k, c) => { const s = JSON.stringify(c), a = ops.get(k); if (a && a.s === s) return a.id; const id = 'OP-' + crypto.randomUUID(); ops.set(k, {s, id}); return id; };
   const NOMES = {atendimento: 'Atendimento', socioambiental: 'Socioambiental', comunicacao: 'Comunicação', comercializacao: 'Comercialização', gestao: 'Gestão', administrativo: 'Administrativo'};
@@ -18,7 +19,9 @@ window.CPTRecados = (() => {
   const erro = (id, e) => { const b = $(id); if (b) { b.hidden = false; b.textContent = e.message; } };
 
   // ---------------- Avisos (contador na lateral) ----------------
+  let ultimaContagem = 0; // evita perguntar ao servidor de novo a cada troca de aba do navegador
   async function contar(silencioso) {
+    ultimaContagem = Date.now();
     try {
       const r = await ui.call('contarAvisosCPT');
       [['recados', r.recados], ['comunicacao', r.lembretes], ['lembretes', r.lembretes]].forEach(([rota, n]) => {
@@ -33,7 +36,7 @@ window.CPTRecados = (() => {
   // ---------------- Recados ----------------
   const INTRO = ['Recados', 'Para avisar outra frente ou pessoa. Quem recebe vê o aviso na lateral ao abrir a aplicação.'];
   async function render() {
-    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Abrindo seus recados…</div>';
+    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Abrindo seus recados…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { rec = await ui.call('listarRecadosCPT'); if (mine !== ticket || ui.state.route !== 'recados') return; desenhar(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
@@ -97,19 +100,20 @@ window.CPTRecados = (() => {
   // ---------------- Contatos ----------------
   const INTRO_C = ['Contatos', 'Matriz de contatos da equipe. Procure antes de cadastrar e registre cada conversa no contato.'];
   async function renderContatos() {
-    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO_C) + '<div class="loading-label"><span class="spinner"></span>Abrindo a matriz de contatos…</div>';
+    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO_C) + '<div class="loading-label"><span class="spinner"></span>Abrindo a matriz de contatos…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { con = await ui.call('listarContatosCPT'); if (mine !== ticket || ui.state.route !== 'contatos') return; desenharContatos(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO_C) + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
   const fone = t => String(t || '').replace(/\D/g, '');
   function desenharContatos(manterFoco) {
     const b = ui.norm(filtroCon.busca), lista = con.itens.filter(c => (!filtroCon.tipo || c.tipo === filtroCon.tipo) && (!b || ui.norm([c.nome, c.instituicao, c.bairro, c.etiquetas, c.frente, c.telefone, c.email].join(' ')).includes(b)));
-    const lista_ = lista.map(c => `<article class="contact-card cor-${ui.esc(c.cor)}"><div class="card-top"><span class="badge">${ui.esc(c.tipo)}</span>${c.registros && c.registros.length ? `<span class="small muted">${c.registros.length} ${c.registros.length === 1 ? 'conversa' : 'conversas'}</span>` : ''}</div>
+    const vis = lista.slice(0, filtroCon.limite || LIMITE_CON);
+    const lista_ = vis.map(c => `<article class="contact-card cor-${ui.esc(c.cor)}"><div class="card-top"><span class="badge">${ui.esc(c.tipo)}</span>${c.registros && c.registros.length ? `<span class="small muted">${c.registros.length} ${c.registros.length === 1 ? 'conversa' : 'conversas'}</span>` : ''}</div>
       <h3>${ui.esc(c.nome || c.instituicao)}</h3>${c.nome && c.instituicao ? `<p class="small">${ui.esc(c.instituicao)}</p>` : ''}<p class="small muted">${ui.esc([c.bairro, c.frente].filter(Boolean).join(' · '))}</p>
       <div class="contact-actions">${c.telefone ? `<a class="button ghost" href="tel:${ui.esc(fone(c.telefone))}">Ligar</a>${fone(c.telefone).length >= 10 ? `<a class="button ghost" href="https://wa.me/55${ui.esc(fone(c.telefone).replace(/^55/, ''))}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : ''}` : ''}${c.email ? `<a class="button ghost" href="mailto:${ui.esc(c.email)}">E-mail</a>` : ''}<button class="button secondary" data-con-abrir="${ui.esc(c.id)}">Abrir</button></div></article>`).join('');
     const html = ui.intro(...INTRO_C) + `<section class="panel filter-panel"><form id="conFiltro" class="filters"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroCon.busca)}" placeholder="Nome, instituição, bairro, telefone…" maxlength="100"></span></label>
       <label class="field">Tipo<select name="tipo"><option value="">Todos</option>${con.tipos.map(t => `<option ${filtroCon.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><button class="button" type="button" data-con-novo>${ui.icon('plus')}Novo contato</button></form></section>
-      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'contato' : 'contatos'}</span><span>Dados de pessoas: use só para o trabalho</span></div><div class="cards contact-cards">${lista_ || '<p class="empty-line">Nenhum contato encontrado. Cadastre com "Novo contato".</p>'}</div>`;
+      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'contato' : 'contatos'}</span><span>Dados de pessoas: use só para o trabalho</span></div><div class="cards contact-cards">${lista_ || '<p class="empty-line">Nenhum contato encontrado. Cadastre com "Novo contato".</p>'}</div>${lista.length > vis.length ? `<div class="load-more"><button class="button secondary" data-con-mais>Mostrar mais ${Math.min(LIMITE_CON, lista.length - vis.length)}</button></div>` : ''}`;
     const pos = manterFoco ? document.activeElement.selectionStart : null; ui.view.innerHTML = html;
     if (manterFoco) { const i = $('conFiltro').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }
   }
@@ -155,6 +159,7 @@ window.CPTRecados = (() => {
       const a = e.target.closest('[data-rec-abrir]'); if (a) { abrir(a.dataset.recAbrir); return; }
       const s = e.target.closest('[data-rec-situacao]'); if (s) { agir(s.dataset.recSituacao); return; }
       if (e.target.closest('[data-con-novo]')) { formContato(); return; }
+      if (e.target.closest('[data-con-mais]')) { filtroCon.limite = (filtroCon.limite || LIMITE_CON) + LIMITE_CON; const y = window.scrollY; desenharContatos(); window.scrollTo({top: y, behavior: 'auto'}); return; }
       const c = e.target.closest('[data-con-abrir]'); if (c) { abrirContato(c.dataset.conAbrir); return; }
       const ed = e.target.closest('[data-con-editar]'); if (ed) { formContato(con.itens.find(x => x.id === ed.dataset.conEditar)); return; }
       if (e.target.closest('[data-con-arquivar]') && confirm('Arquivar este contato? Ele sai da lista, mas continua no histórico.')) salvarContato($('conForm'), true);
@@ -163,9 +168,10 @@ window.CPTRecados = (() => {
       const f = e.target; if (!['recForm', 'recResposta', 'conForm', 'conConversa'].includes(f.id)) return; e.preventDefault();
       if (f.id === 'recForm') enviar(f); else if (f.id === 'recResposta') agir('responder', f.elements.texto.value); else if (f.id === 'conForm') salvarContato(f); else registrarConversa(f);
     });
-    document.addEventListener('input', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'busca') { filtroCon.busca = e.target.value; desenharContatos(true); } });
-    document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; desenharContatos(); } });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil) contar(true); });
+    let buscaTimer = null; // debounce: redesenha quando a pessoa para de digitar
+    document.addEventListener('input', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'busca') { filtroCon.busca = e.target.value; filtroCon.limite = LIMITE_CON; clearTimeout(buscaTimer); buscaTimer = setTimeout(() => { const ff = $('conFiltro'); if (ff) desenharContatos(document.activeElement === ff.elements.busca); }, 220); } });
+    document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; filtroCon.limite = LIMITE_CON; desenharContatos(); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil && Date.now() - ultimaContagem > 60000) contar(true); });
   }
   return {init, render, renderContatos, novo, contar};
 })();

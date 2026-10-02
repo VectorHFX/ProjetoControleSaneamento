@@ -42,7 +42,7 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   await p.locator('[data-mat-concluir]').first().click();await p.locator('#matForm').waitFor();
   await p.locator('#matForm [name=alcance]').fill('1200');await p.locator('#matForm [name=publicadoEm]').fill('2026-09-20');await p.locator('#matForm [type=submit]').click();await toast(/concluído/);
   await p.waitForFunction(()=>/Publicações2/.test(document.querySelector('.month-strip')?.textContent));assert.match(await p.locator('.month-strip').textContent(),/6\.200/);
-  await p.locator('#matBusca').fill('vídeo');assert.equal(await p.evaluate(()=>document.activeElement.id),'matBusca');
+  await p.locator('#matBusca').fill('vídeo');await p.waitForTimeout(400);assert.equal(await p.evaluate(()=>document.activeElement.id),'matBusca','depois do redesenho com espera curta, o foco continua na busca');
   await p.locator('[data-mat-filtro=mes]').click();assert.equal(await p.locator('.material').count(),1);
   // Galeria: escolher, baixar, enviar foto.
   await p.locator('[data-com-aba=galeria]').click();await p.locator('.photo').first().waitFor();
@@ -58,7 +58,7 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   await p.locator('#conForm [name=nome]').fill('Jornalista de exemplo');await p.selectOption('#conForm [name=tipo]','Imprensa');await p.locator('#conForm [name=telefone]').fill('(11) 98888-7777');
   await p.locator('#conForm [type=submit]').click();await toast(/Contato salvo/);assert.equal(await p.locator('.contact-card').count(),2);
   assert.ok(await p.locator('.contact-card',{hasText:'Jornalista'}).locator('a[href^="https://wa.me/55"]').count());
-  await p.locator('#conFiltro [name=busca]').fill('horta');assert.equal(await p.locator('.contact-card').count(),1);assert.equal(await p.evaluate(()=>document.activeElement.name),'busca');
+  await p.locator('#conFiltro [name=busca]').fill('horta');await p.waitForFunction(()=>document.querySelectorAll('.contact-card').length===1);assert.equal(await p.evaluate(()=>document.activeElement.name),'busca','foco continua na busca depois de redesenhar');
   await p.locator('[data-con-abrir]').click();await p.locator('#conConversa [name=texto]').fill('Confirmou a oficina.');await p.locator('#conConversa [type=submit]').click();await toast(/Conversa registrada/);
   assert.match(await p.locator('#detailContent').textContent(),/Confirmou a oficina/);await p.locator('#closeDialog').click();
   // Celular: sem rolagem lateral.

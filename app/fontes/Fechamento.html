@@ -9,7 +9,7 @@ window.CPTFechamento = (() => {
 
   async function render() {
     const mine = ++ticket, mes = ui.state.mes;
-    ui.view.innerHTML = ui.intro('Fechamento do mês', 'Confira o que falta e gere a base do Relatório Mensal de Comunicação Social e Socioambiental.') + '<div class="loading-label"><span class="spinner"></span>Conferindo a competência…</div>';
+    ui.view.innerHTML = ui.intro('Fechamento do mês', 'Confira o que falta e gere a base do Relatório Mensal de Comunicação Social e Socioambiental.') + '<div class="loading-label"><span class="spinner"></span>Conferindo a competência…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { const d = await ui.call('conferirFechamentoCPT', mes); if (mine !== ticket || ui.state.route !== 'fechamento') return; draw(d); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Fechamento do mês', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }

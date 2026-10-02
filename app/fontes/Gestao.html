@@ -124,7 +124,7 @@ window.CPTGestao = (() => {
   const chaveLocal = () => 'cpt.parceiros.' + ui.state.mes;
   async function renderParceiros() {
     const mine = ++ticket, mes = ui.state.mes; ppSujo = false; ppOp = null;
-    ui.view.innerHTML = ui.intro(...INTRO_PP) + '<div class="loading-label"><span class="spinner"></span>Abrindo as perguntas e calculando as sugestões do mês…</div>';
+    ui.view.innerHTML = ui.intro(...INTRO_PP) + '<div class="loading-label"><span class="spinner"></span>Abrindo as perguntas e calculando as sugestões do mês…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try {
       const d = await ui.call('carregarParceirosCPT', mes); if (mine !== ticket || ui.state.route !== 'parceiros') return;
       pp = d; pp.campos = JSON.parse(JSON.stringify(d.atual.campos || {}));
@@ -253,9 +253,19 @@ window.CPTGestao = (() => {
       const usar = e.target.closest('[data-pp-usar]'); if (usar && pp && pp.sugestoes[usar.dataset.ppUsar]) { preencher(usar.dataset.ppUsar, pp.sugestoes[usar.dataset.ppUsar].valor); return; }
       if (e.target.closest('[data-pp-print]') && pp) imprimirPP();
     });
+    // Filtros com espera curta (debounce): o painel é redesenhado quando a pessoa para de digitar.
+    let buscaTimer = null;
+    const redesenhar = (form, desenhar) => {
+      const f = $(form); if (!f) return;
+      const i = f.elements.busca, foco = document.activeElement === i, pos = foco ? i.selectionStart : null;
+      desenhar(f);
+      const n = $(form) && $(form).elements.busca; if (n && foco) { n.focus(); n.setSelectionRange(pos, pos); }
+    };
     document.addEventListener('input', e => {
-      const f = e.target.closest('#frenteFiltro'); if (f) { filtroFrente = {busca: f.elements.busca.value, andamento: f.elements.andamento.checked}; const pos = e.target.selectionStart; desenharPainel(); const i = $('frenteFiltro') && $('frenteFiltro').elements.busca; if (i) { i.focus(); i.setSelectionRange(pos, pos); } return; }
-      const r = e.target.closest('#relatoFiltro'); if (r && e.target.name === 'busca') { filtroRelato.busca = e.target.value; const pos = e.target.selectionStart; desenharRelatos(); const i = $('relatoFiltro').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }
+      const f = e.target.closest('#frenteFiltro');
+      if (f) { clearTimeout(buscaTimer); buscaTimer = setTimeout(() => redesenhar('frenteFiltro', x => { filtroFrente = {busca: x.elements.busca.value, andamento: x.elements.andamento.checked}; desenharPainel(); }), e.target.name === 'busca' ? 220 : 0); return; }
+      const r = e.target.closest('#relatoFiltro');
+      if (r && e.target.name === 'busca') { clearTimeout(buscaTimer); buscaTimer = setTimeout(() => redesenhar('relatoFiltro', x => { filtroRelato.busca = x.elements.busca.value; desenharRelatos(); }), 220); }
     });
     document.addEventListener('change', e => {
       const f = e.target.closest('#frenteFiltro'); if (f && e.target.name === 'andamento') { filtroFrente.andamento = e.target.checked; desenharPainel(); return; }

@@ -3,7 +3,18 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.9.0';
+const VERSAO_CPT = '2.9.1';
+
+/**
+ * Cada planilha é aberta uma vez por execução e reaproveitada (o equivalente a um "pool" de conexões no Apps Script).
+ * openById custa de 0,1 a 0,5 s a cada chamada; uma mesma consulta chegava a abrir a planilha de dados 3 ou 4 vezes.
+ * O Google já descarta tudo ao fim de cada execução; executar() limpa no começo por segurança.
+ */
+const PLANILHAS_CPT_ = new Map();
+function planilhaCPT_(id) {
+  if (!PLANILHAS_CPT_.has(id)) PLANILHAS_CPT_.set(id, SpreadsheetApp.openById(id));
+  return PLANILHAS_CPT_.get(id);
+}
 
 class AplicacaoCPT {
   static get baseId() { return '1vmFipKi9UKvnhuD4Jpfu10rJiBrmI-FnmqMs-yr4jA0'; }
@@ -29,11 +40,12 @@ class AplicacaoCPT {
   }
   static contexto() {
     const ctx = this.identidade();
-    try { ctx.base = SpreadsheetApp.openById(ctx.config.baseId); }
+    try { ctx.base = planilhaCPT_(ctx.config.baseId); }
     catch (_) { throw new Error('A base de dados não está disponível no momento. Avise a administração técnica.'); }
     return ctx;
   }
   static executar(acao, operacao = 'dados.consultar') {
+    PLANILHAS_CPT_.clear();
     return DesempenhoCPT.medir(operacao, () => {
       const ctx = this.contexto();
       return acao(new DadosDaAplicacao(ctx.base, ctx.perfil), ctx);

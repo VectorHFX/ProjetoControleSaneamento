@@ -9,7 +9,7 @@ class ColecaoCPT {
   constructor(ctx, aba, prefixo) { this.ctx = ctx; this.nome = aba; this.prefixo = prefixo; this.cache = null; }
   aba() {
     if (!this.ctx.config.agendaId) throw new Error('Os dados da aplicação ainda não foram preparados. Avise a administração técnica.');
-    const ss = SpreadsheetApp.openById(this.ctx.config.agendaId); let a = ss.getSheetByName(this.nome);
+    const ss = planilhaCPT_(this.ctx.config.agendaId); let a = ss.getSheetByName(this.nome);
     if (!a) { a = ss.insertSheet(this.nome); a.getRange(1, 1, 1, 6).setValues([ColecaoCPT.cabecalho]); a.setFrozenRows(1); }
     return a;
   }
@@ -22,7 +22,12 @@ class ColecaoCPT {
     (n > 0 ? a.getRange(2, 1, n, 6).getValues() : []).forEach(r => { if (!r[0]) return; let e; try { e = JSON.parse(r[5]); } catch (_) { return; } const x = atuais.get(e.id); if (!x || x.versao < e.versao) atuais.set(e.id, e); });
     this.cache = [...atuais.values()]; CacheCPT.gravar(chave, this.cache, 3600); return this.cache;
   }
-  obter(id) { return this.itens().find(x => x.id === id) || null; }
+  /** Índice por ID (montado uma vez por leitura da coleção): busca direta em vez de percorrer a lista. */
+  obter(id) {
+    const itens = this.itens();
+    if (!this.indice || this.indice.fonte !== itens) this.indice = {fonte: itens, mapa: new Map(itens.map(x => [x.id, x]))};
+    return this.indice.mapa.get(id) || null;
+  }
   /** Grava uma nova versão. Mesma operação = devolve o que já foi gravado (clique duplo, conexão que caiu). */
   /** idFixo: para itens de uma pessoa (ex.: PES-email, CAD-email-data), o primeiro salvamento usa esse ID. */
   gravar(item, versaoEsperada, operacaoId, idFixo) {

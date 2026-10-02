@@ -55,7 +55,7 @@ class SocioambientalCPT {
   static entregas(ctx) {
     const out = new Map();
     try {
-      const a = SpreadsheetApp.openById(ctx.config.agendaId).getSheetByName('Entregas');
+      const a = planilhaCPT_(ctx.config.agendaId).getSheetByName('Entregas');
       if (a && a.getLastRow() > 1) a.getRange(2, 1, a.getLastRow() - 1, 6).getValues().forEach(r => { try { out.set(String(r[0]), JSON.parse(r[5])); } catch (_) {} });
     } catch (_) {}
     return out;

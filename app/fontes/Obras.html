@@ -25,7 +25,7 @@ window.CPTObras = (() => {
   }
   async function render() {
     const mine = ++ticket;
-    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') + '<div class="loading-label"><span class="spinner"></span>Carregando obras…</div>';
+    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') + '<div class="loading-label"><span class="spinner"></span>Carregando obras…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { dados = await ui.call('listarObrasCPT'); if (mine !== ticket || ui.state.route !== 'obras') return; draw(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Obras e frentes de serviço', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
