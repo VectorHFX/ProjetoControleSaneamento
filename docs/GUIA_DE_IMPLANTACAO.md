@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.5 e Campo 4.0 (4.3)
+# Guia de instalação: Aplicação CPT 2.6 e Campo 4.0 (4.3)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,39 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.6 — Socioambiental: mesa do relatório, relatos, diagnósticos e anexos (≈ 10 min)
+
+**Como atualizar:** no Cloud Shell, `bash ~/atualizar.sh conferir` e depois `bash ~/atualizar.sh aplicar`. Só a Aplicação muda (o Campo 4.0 fica igual). Arquivos novos: `SocioambientalCPT.gs` e `Socioambiental.html`.
+1. Depois de aplicar, abra a aplicação: no menu aparece **Socioambiental**.
+2. Na primeira geração de documento, o Google pede autorização para **Apresentações (Slides)**. Aceite: é para a apresentação do diagnóstico.
+3. (Opcional) **Cabeçalho e rodapé dos Anexos.** Converta o seu arquivo de Anexos para Google Docs e deixe só o cabeçalho e o rodapé (logos, endereço). Guarde o ID em `modeloAnexosId` na configuração da aplicação (eu faço isso por você se me mandar o link). Sem o modelo, os anexos saem sem cabeçalho.
+
+**O que muda para a equipe:**
+- **Visão do mês** mostra o que o relatório usa:
+  - a frase do item 3 ("Foram contabilizadas N ações socioambientais, totalizando N pessoas alcançadas");
+  - ações, pessoas alcançadas, frentes e diagnósticos;
+  - manifestações em tratativa, recebidas e concluídas no mês;
+  - **Para o relatório:** cada item (2, 4.1 a 4.5, 7, 9) com quantas ações tem e quantas estão prontas.
+  - A contagem bruta de "registros" e o gráfico por tipo de procedimento saíram: misturavam pesquisa, abertura de atendimento e ações.
+- **Socioambiental → Mesa do relatório:** cada atividade do mês já aparece no item em que entra, com a situação (A preparar, Rascunho, Pronto).
+  - Ação Social Externa vai para o eixo pelo tema (óleo e pilhas → 4.2; saúde e dengue → 4.3; demais → 4.4). CAO → 4.1 (com lideranças ou comerciantes → 4.5). Articulação → 4.5. DDS, treinamentos e campanhas internas → 9. Tenda → 7. Diagnóstico → 2.
+  - É uma **sugestão**: no preparo, a equipe muda o item se precisar.
+  - Eixo sem ação mostra o parágrafo padrão, pronto para copiar.
+  - Tabela de frentes do mês (item 3 e 3.1).
+- **Preparar relato:** quadro do anexo (atividade, local, endereço, data e horário, mediação, público, objetivo) já preenchido pelo formulário; texto-base; até 8 imagens com legenda no padrão do relatório; marcar o que é **lista de presença**. **Gerar relato** cria Docs + PDF na pasta do mês (Entregas mensais/AAAA-MM/Relatos).
+- **Preparar diagnóstico** (Gestão e equipe):
+  - síntese com as próprias palavras (botão **Montar texto-base** organiza as respostas por tema);
+  - próximos passos;
+  - os 24 campos da ficha **DIAGNÓSTICO LOCAL** já preenchidos;
+  - até 12 fotos.
+  - **Gerar ficha Sabesp** preenche uma cópia do modelo oficial (o modelo é conferido antes e nunca é redesenhado).
+  - **Gerar apresentação** cria um Slides em madeira, verde e vermelho.
+- **Gerar anexos do mês** (na mesa):
+  - ANEXO 1 (item 4), ANEXO 2 (DDS e complementares) e ANEXO 3 (audiovisual, para a Comunicação completar);
+  - **cada relato começa em página própria, com a faixa de título contornada**: era a separação que faltou em setembro.
+  - Só entram relatos marcados como **Pronto**.
+- Documentos antigos nunca são apagados: uma nova geração leva os anteriores para "Versões anteriores".
 
 ## Atualização 2.5 — casos encerrados, painel da Concrejato e perfis (≈ 15 min)
 

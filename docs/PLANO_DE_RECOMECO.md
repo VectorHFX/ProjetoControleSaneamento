@@ -152,3 +152,16 @@ Leitura (CAO confirmada em 02/10; "CAL" foi erro de transcrição):
 **Design (depois):** as cores atuais estão apagadas. Preferência por algo mais vivo, e o tema escuro agrada mais.
 
 **Perfis (02/10):** a Gestão tem todos os poderes, como o Administrativo. Ela precisa saber fazer para cobrar e ensinar. O que difere são as visões pessoais (as do Victor: mascote, caderno) e, depois, ferramentas próprias da Gestão: pauta, caderno de gestão e montagem do diagnóstico de área (síntese com as palavras dela e escolha das fotos). Cada área tem seu espaço, sem interferir no trabalho das outras.
+
+## 8. Capítulo Socioambiental (2.6, 02/10)
+- **Visão do mês revista** com base na anatomia do relatório:
+  - **Saiu:** a contagem bruta de registros e o gráfico por procedimento (misturavam pesquisa, abertura de caso e ação).
+  - **Entrou:** frase de totais do item 3, ações, pessoas alcançadas, frentes, diagnósticos, balanço de manifestações (item 10) e o preparo por item do relatório.
+- **Mesa do relatório:** cada atividade no item em que entra, com relato, diagnóstico e anexos gerados pela aplicação. As ferramentas de relato e de diagnóstico da Central 4.x foram trazidas para cá.
+- **Próximos passos combinados:**
+  - passe de design: madeira com letras em verde, um vermelho leve, imagem da sede da Veolia, tema escuro preferido;
+  - fotos por frente no 3.1;
+  - Programa Parceiros e Indicadores (preencher a máscara, sem alterar "Indicadores 2026");
+  - cronograma com a escala de home office;
+  - matriz de contatos e galeria RDAS;
+  - ferramentas próprias da Gestão (pauta, caderno).

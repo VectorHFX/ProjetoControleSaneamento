@@ -6,7 +6,7 @@ await page.goto(url+'?inicial=1&latencia=1000');await page.locator('.stat-value'
 const ch=await page.evaluate(()=>window.CPT_PREVIA.chamadas);assert(!ch.some(c=>c.nome==='carregarPerfilCPT'),'perfil já vem na página');
 const ini=ch.find(c=>c.nome==='carregarInicioCPT'),ag=ch.find(c=>c.nome==='carregarCronogramaCPT');assert(Math.abs(ini.inicio-ag.inicio)<150,'mês e agenda em paralelo');assert(total<2600,'abertura em ~1 chamada: '+total+'ms');
 assert.equal(await page.locator('.stat-tile').count(),4);assert.equal(await page.locator('.feature-tile').count(),0,'sem atalhos duplicados da navegação');
-await page.locator('.day-chart .hit').nth(8).hover();assert.match(await page.locator('.chart-tip').textContent(),/09\/09\/2026 · \d+ registro/);
+await page.locator('.day-chart .hit').nth(8).hover();assert.match(await page.locator('.chart-tip').textContent(),/09\/09\/2026 · \d+ aç(ão|ões)/);
 await page.locator('#homeAgenda .peek-row').first().click();await page.waitForTimeout(200);assert(await page.locator('#detailDialog').evaluate(d=>d.open),'detalhe da atividade abre sem nova consulta');await page.keyboard.press('Escape');
 const antes=(await page.evaluate(()=>window.CPT_PREVIA.chamadas.length));await page.locator('#refresh').click();await page.waitForTimeout(1300);
 const novas=await page.evaluate(n=>window.CPT_PREVIA.chamadas.slice(n).map(c=>c.nome),antes);assert(novas.includes('carregarInicioCPT')&&novas.includes('carregarCronogramaCPT'));

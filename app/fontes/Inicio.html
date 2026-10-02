@@ -1,7 +1,9 @@
 <script>
 /*
- * Visão geral (Início) 2.2.0.
- * Ordem de leitura: o que é do dia → números do mês → como o mês andou → o que vem pela frente.
+ * Visão geral (Início) 2.6.0.
+ * Ordem de leitura: o que é do dia → números do relatório → como o mês andou → o que vem pela frente.
+ * Os destaques são os números que o relatório usa: ações e pessoas alcançadas (item 3), pesquisas,
+ * manifestações (item 10) e o preparo de cada item (2, 4.1–4.5, 7, 9). A contagem bruta de registros saiu.
  * Gráficos em SVG próprio (sem biblioteca): uma série por gráfico, uma cor (--blue), barras finas
  * presas à base, grade discreta, valor ao passar o mouse/tocar e resumo em texto para leitor de tela.
  */
@@ -25,8 +27,8 @@ window.CPTInicio = (() => {
   }
 
   function delta(atual, anterior, mesAnterior) {
-    if (!mesAnterior) return 'Registros com data de realização no mês.';
-    if (!anterior) return 'Sem registros em ' + nomeMes(mesAnterior) + '.';
+    if (!mesAnterior) return 'Ações com data de realização no mês.';
+    if (!anterior) return 'Sem ações em ' + nomeMes(mesAnterior) + '.';
     const d = atual - anterior;
     return (d === 0 ? 'Igual a ' : (d > 0 ? '+' : '−') + ui.num(Math.abs(d)) + ' em relação a ') + nomeMes(mesAnterior) + (atual && ui.state.mes === hojeISO().slice(0, 7) ? ' (mês em andamento)' : '') + '.';
   }
@@ -49,22 +51,24 @@ window.CPTInicio = (() => {
     const barras = dias.map((x, i) => {
       const cx = i * passo + 2, h = base - y(x.n), r = Math.min(4, h / 2, larg / 2);
       const forma = x.n ? `<path class="bar" d="M${cx},${base}V${base - h + r}Q${cx},${base - h} ${cx + r},${base - h}H${cx + larg - r}Q${cx + larg},${base - h} ${cx + larg},${base - h + r}V${base}Z"/>` : '';
-      return `${x.fds ? `<rect class="weekend" x="${i * passo}" y="${base - alto - 6}" width="${passo}" height="${alto + 6}"/>` : ''}${forma}${x.iso === hoje ? `<line class="today" x1="${cx + larg / 2}" x2="${cx + larg / 2}" y1="${base - alto - 6}" y2="${base}"/>` : ''}<rect class="hit" x="${i * passo}" y="0" width="${passo}" height="${base}" tabindex="-1" data-tip="${ui.esc(diaSemana(x.iso) + ', ' + ui.date(x.iso) + ' · ' + (x.futuro ? 'ainda não chegou' : x.n + (x.n === 1 ? ' registro' : ' registros')))}"/>`;
+      return `${x.fds ? `<rect class="weekend" x="${i * passo}" y="${base - alto - 6}" width="${passo}" height="${alto + 6}"/>` : ''}${forma}${x.iso === hoje ? `<line class="today" x1="${cx + larg / 2}" x2="${cx + larg / 2}" y1="${base - alto - 6}" y2="${base}"/>` : ''}<rect class="hit" x="${i * passo}" y="0" width="${passo}" height="${base}" tabindex="-1" data-tip="${ui.esc(diaSemana(x.iso) + ', ' + ui.date(x.iso) + ' · ' + (x.futuro ? 'ainda não chegou' : x.n + (x.n === 1 ? ' ação' : ' ações')))}"/>`;
     }).join('');
     const marcas = [1, 8, 15, 22, ultimo].map(n => `<text class="axis" x="${(n - 1) * passo + passo / 2}" y="${H - 8}" text-anchor="middle">${String(n).padStart(2, '0')}</text>`).join('');
-    const resumo = dias.filter(x => x.n).map(x => ui.date(x.iso) + ': ' + x.n).join('; ') || 'Nenhum registro no mês';
-    return `<div class="chart-wrap"><svg class="day-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros por dia em ${ui.esc(nomeMes(mes))}. ${ui.esc(resumo)}">
+    const resumo = dias.filter(x => x.n).map(x => ui.date(x.iso) + ': ' + x.n).join('; ') || 'Nenhuma ação no mês';
+    return `<div class="chart-wrap"><svg class="day-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ações por dia em ${ui.esc(nomeMes(mes))}. ${ui.esc(resumo)}">
       <line class="grid" x1="0" x2="${W}" y1="${y(topo)}" y2="${y(topo)}"/><line class="grid" x1="0" x2="${W}" y1="${y(topo / 2)}" y2="${y(topo / 2)}"/><line class="baseline" x1="0" x2="${W}" y1="${base}" y2="${base}"/>
       <text class="axis" x="${W}" y="${y(topo) - 4}" text-anchor="end">${topo}</text><text class="axis" x="${W}" y="${y(topo / 2) - 4}" text-anchor="end">${topo / 2}</text>${barras}${marcas}</svg>
       <div class="chart-tip" hidden></div></div>
       <p class="chart-key"><span class="key-weekend"></span>Fim de semana${hoje.startsWith(mes) ? '<span class="key-today"></span>Hoje' : ''}</p>`;
   }
-  /** Procedimentos: barras horizontais com rótulo e valor escritos (sem legenda de cor). */
-  function graficoTipos(lista) {
-    if (!lista.length) return '<p class="muted">Os registros do mês aparecerão aqui.</p>';
-    const max = Math.max(...lista.map(x => x.quantidade)), top = lista.slice(0, 6), resto = lista.slice(6).reduce((n, x) => n + x.quantidade, 0);
-    const linhas = resto ? top.concat([{nome: 'Outros', quantidade: resto}]) : top;
-    return `<ul class="hbars" aria-label="Registros por tipo de procedimento">${linhas.map(x => `<li><span class="hbar-label">${ui.esc(x.nome)}</span><span class="hbar-track"><span class="hbar" style="width:${Math.max(2, x.quantidade / max * 100)}%"></span></span><span class="hbar-value">${ui.num(x.quantidade)}</span></li>`).join('')}</ul>`;
+  /** Para o relatório: cada item com as ações do mês e quantas já estão prontas. Eixo vazio pede o parágrafo padrão. */
+  function painelRelatorio(lista) {
+    if (!lista || !lista.length) return '<p class="muted">As ações do mês aparecerão aqui.</p>';
+    return `<ul class="report-items" aria-label="Preparo por item do relatório">${lista.map(x => {
+      const preparo = x.tipo === 'consolidado' ? 'Entra na tabela e nas fotos por frente' : !x.quantidade ? (/^4\./.test(x.item) ? 'Sem ação: entra o parágrafo padrão' : 'Sem registro no mês') : x.prontos + ' de ' + x.quantidade + ' pronto' + (x.quantidade === 1 ? '' : 's');
+      const pct = x.quantidade && x.tipo !== 'consolidado' ? Math.round(x.prontos / x.quantidade * 100) : 0;
+      return `<li class="${x.quantidade ? '' : 'is-empty'}"><span class="report-item">${ui.esc(x.item)}</span><span class="report-title">${ui.esc(x.titulo)}<small>${ui.esc(preparo)}</small></span><span class="report-count">${ui.num(x.quantidade)}</span>${x.tipo !== 'consolidado' && x.quantidade ? `<span class="report-track" aria-hidden="true"><span style="width:${pct}%"></span></span>` : '<span></span>'}</li>`;
+    }).join('')}</ul>`;
   }
   function desenharAgenda() {
     const box = $('homeAgenda'); if (!box) return;
@@ -82,17 +86,17 @@ window.CPTInicio = (() => {
     const gerencia = perfil?.papeis.some(p => GERENCIA.includes(p));
     if (agenda.mes !== d.mes) prefetchAgenda(d.mes);
     ui.view.innerHTML = `<section class="home-hero"><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
-        <p>${k.relatosSemPublico ? `<button class="chip-alert" data-pending="publico">${ui.num(k.relatosSemPublico)} relatos sem público informado · conferir</button>` : 'Números pela data em que cada atividade foi realizada.'}</p></div>
-        <div class="hero-actions">${ui.formLink().replace('button white', 'button')}${gerencia ? '<button class="button secondary" data-route="fechamento">Fechamento do mês</button>' : ''}</div></section>
+        <p class="home-phrase">${ui.esc(k.frase || 'Números pela data em que cada atividade foi realizada.')}</p>${k.relatosSemPublico ? `<p><button class="chip-alert" data-pending="publico">${ui.num(k.relatosSemPublico)} ${k.relatosSemPublico === 1 ? 'ação' : 'ações'} sem público informado · conferir</button></p>` : ''}</div>
+        <div class="hero-actions">${ui.formLink().replace('button white', 'button')}${gerencia ? '<button class="button secondary" data-route="socioambiental">Mesa do relatório</button>' : ''}</div></section>
       <section class="stat-row" aria-label="Números do mês">
-        ${tile('Registros de campo', k.registros, delta(k.registros, d.comparacao?.anterior, d.comparacao?.mesAnterior), '', 'registros')}
-        ${tile('Participações', k.participacoes, 'Público informado nos relatos de atividade.', '', 'registros', 'relatos')}
+        ${tile('Ações socioambientais', k.acoes ?? k.registros, delta(k.acoes ?? k.registros, d.comparacao?.anterior, d.comparacao?.mesAnterior), '', 'registros', 'relatos')}
+        ${tile('Pessoas alcançadas', k.pessoas ?? k.participacoes, ui.num(k.frentes || 0) + ' frentes acompanhadas · ' + ui.num(k.diagnosticos || 0) + ' diagnósticos.', '', gerencia ? 'socioambiental' : 'registros', gerencia ? '' : 'relatos')}
         ${tile('Pesquisas de satisfação', s.mes, s.semana ? 'Esta semana: ' + s.semana.total + ' de ' + s.semana.meta + '.' : 'Meta mensal: ' + s.meta + '.', medidor(s.mes, s.meta))}
-        ${tile('Casos em aberto', k.abertos, ui.num(k.concluidosNoMes || 0) + ' concluídos no mês · ' + ui.num(k.concluidos) + ' no total.', '', 'atendimentos', 'abertos')}
+        ${tile('Manifestações em tratativa', k.abertos, ui.num(k.recebidasNoMes || 0) + ' recebidas e ' + ui.num(k.concluidosNoMes || 0) + ' concluídas no mês.', '', 'atendimentos', 'abertos')}
       </section>
       <div class="home-grid"><div class="home-main">
-        <section class="panel panel-dias"><div class="panel-head"><div><h2>Registros por dia</h2><p>${ui.num(d.dias.length)} dias com registro em ${ui.esc(nomeMes(d.mes))}</p></div></div>${graficoDias(d)}</section>
-        <section class="panel panel-tipos"><div class="panel-head"><div><h2>Por tipo de procedimento</h2><p>${ui.num(k.registros)} registros · ${ui.num(k.bairros || 0)} bairros · ${ui.num(k.obras || 0)} obras citadas</p></div><button class="button ghost" data-route="registros">Consultar ${ui.icon('arrow')}</button></div>${graficoTipos(d.procedimentos)}</section>
+        <section class="panel panel-dias"><div class="panel-head"><div><h2>Ações por dia</h2><p>${ui.num(d.dias.length)} dias com ação em ${ui.esc(nomeMes(d.mes))}</p></div></div>${graficoDias(d)}</section>
+        <section class="panel panel-tipos"><div class="panel-head"><div><h2>Para o relatório</h2><p>${ui.num(k.frentes || 0)} frentes · ${ui.num(k.bairros || 0)} bairros · ${ui.num(k.diagnosticos || 0)} diagnósticos</p></div>${gerencia ? `<button class="button ghost" data-route="socioambiental">Preparar ${ui.icon('arrow')}</button>` : `<button class="button ghost" data-route="registros">Consultar ${ui.icon('arrow')}</button>`}</div>${painelRelatorio(d.destinos)}</section>
       </div><aside class="home-side">
         <section class="panel panel-agenda"><div class="panel-head"><div><span class="eyebrow">EM EQUIPE</span><h2>Agenda</h2></div><button class="icon-button" data-route="cronograma" aria-label="Abrir cronograma">↗</button></div><div id="homeAgenda"></div></section>
         <section class="panel panel-recentes"><div class="panel-head"><div><h2>Últimos registros</h2></div><button class="button ghost" data-route="registros">Ver todos</button></div><div class="mini-list">${d.recentes.length ? d.recentes.map(r => `<button class="mini-row" data-record="${ui.esc(r.id)}"><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small>${ui.date(r.data)} · ${ui.esc(r.bairro || 'Bairro não informado')}</small></button>`).join('') : '<p class="muted">Os novos registros aparecem aqui depois do processamento.</p>'}</div></section>

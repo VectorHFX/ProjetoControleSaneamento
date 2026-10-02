@@ -148,3 +148,17 @@ O gerador atual segue os itens 1–13 do Orientador de forma genérica. Na fase 
 - frase de totais e tabela no formato do Campo 3.0;
 - 3.1 agrupado por frente, com grade de fotos e legendas padronizadas;
 - item 4 por eixo, com os relatos preparados.
+
+## Anexos do relatório (referência: setembro/2026)
+> Lido em 02/10. Só a estrutura; o arquivo não fica no repositório.
+- **ANEXO 1 – Desenvolvimento de Ações Socioambientais** (item 4) e **ANEXO 2 – Atividades Complementares** (DDS, item 9):
+  - abrem com a lista "Relato - <atividade> + Lista de Presença (dd/mm)";
+  - em seguida, um relato por ação.
+- **ANEXO 3 – Material audiovisual:** lista de peças, newsletter, convites, captações e comunicados do mês.
+- **Formato de cada relato** (o mesmo da Central 4.x):
+  - faixa "Relato da atividade" e subtítulo "Atividade · Local";
+  - quadro de 6 linhas: Atividade, Local, Endereço e bairro, Data e horário, Mediação, Público;
+  - Objetivo, Relato da atividade, Registro fotográfico (2 por linha) e Listas de presença.
+- **O que faltou em setembro:** os relatos vinham emendados, sem quebra de página nem borda.
+  - O gerador 2.6 (Socioambiental → Gerar anexos do mês) põe cada relato em página própria, com a faixa de título contornada.
+  - Cabeçalho e rodapé vêm do modelo `modeloAnexosId`, quando configurado.

@@ -1,19 +1,180 @@
 <script>
-window.CPTEntregas=(()=>{
- let ui,loaded=null,dirty=false,busy=false,requestId='',lastPayload='',session=0;
- const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- function flatten(v){if(Array.isArray(v))return v.map(flatten).join('\n');if(v&&typeof v==='object')return Object.entries(v).map(([k,v])=>k+': '+flatten(v)).join('\n');return String(v??'');}
- function note(text){$('deliveryNotice').textContent=text;}
- function close(){if(busy){note('Aguarde a confirmação do salvamento.');return;}if(dirty&&!confirm('Há alterações não salvas. Deseja fechar sem salvar?'))return;++session;loaded=null;dirty=false;$('deliveryDialog').close();$('deliveryBody').innerHTML='';}
- async function open(id){if(busy)return;const ticket=++session;loaded=null;dirty=false;$('deliveryDialog').showModal();$('deliveryBody').innerHTML='<p>Carregando o registro e suas revisões…</p>';try{const r=await ui.call('carregarEntregaRelatoCPT',id);if(ticket!==session)return;loaded=r;draw();}catch(e){if(ticket===session)$('deliveryBody').textContent=e.message;}}
- function draw(){const r=loaded.fonte.registro,e=loaded.entrega||{titulo:r.atividade||r.procedimento,texto:'',situacao:'rascunho',fotos:[],versao:0};$('deliveryBody').innerHTML=`<p class="muted">Prepare o texto da entrega. O preenchimento original permanece preservado.</p><p class="document-id">${esc(r.id)} · ${esc(r.data)} · ${esc(r.bairro)} · ${esc(r.obra)}</p><p id="deliveryNotice" class="notice" role="status">${loaded.fonteAlterada?'O registro original mudou desde a última revisão. Confira as respostas antes de salvar.':e.versao?'Revisão '+e.versao+' · '+esc(e.alteradoPor):'Nenhuma revisão salva ainda.'}</p><form id="deliveryForm"><div class="editor-grid"><label class="wide">Título da entrega<input name="titulo" maxlength="180" required value="${esc(e.titulo)}"></label><label class="wide">Texto para o relatório<textarea name="texto" required maxlength="12000" rows="10" placeholder="Descreva a execução, o público, os resultados e as ocorrências a partir do registro.">${esc(e.texto)}</textarea></label><div class="reading-tools wide"><button type="button" class="button secondary" data-delivery="base">Trazer texto do registro</button></div><label>Situação<select name="situacao"><option value="rascunho" ${e.situacao==='rascunho'?'selected':''}>Rascunho</option><option value="pronto" ${e.situacao==='pronto'?'selected':''}>Pronto para entrega</option></select></label></div><h3 class="answers-head">Fotos da entrega · até duas</h3><p class="muted small">Confira o arquivo antes de marcar. Os anexos podem incluir documentos que não são fotos.</p><div class="delivery-photos">${loaded.fonte.anexos.map(a=>{const f=e.fotos.find(f=>f.id===a.id);return `<section class="attachment"><label><input type="checkbox" name="foto" value="${esc(a.id)}" ${f?'checked':''}> ${esc(a.titulo||'Foto')}</label><a href="https://drive.google.com/file/d/${esc(a.id)}/view" target="_blank" rel="noopener noreferrer">Conferir original ↗</a><label>Legenda<input data-caption="${esc(a.id)}" maxlength="300" value="${esc(f?.legenda||'')}"></label></section>`;}).join('')||'<p>Nenhum anexo disponível neste registro.</p>'}</div><div class="dialog-actions"><button class="button" type="submit" id="saveDelivery">Salvar revisão</button><button class="button secondary" type="button" data-delivery="preview">Ver entrega</button><button class="button secondary" type="button" data-delivery="copy">Copiar texto</button></div></form><details class="report-section"><summary>Consultar respostas originais</summary>${loaded.fonte.campos.map(c=>`<section class="answer"><h3>${esc(c.titulo)}</h3><p>${esc(flatten(c.valor))}</p></section>`).join('')}</details><details class="report-section"><summary>Últimas revisões salvas</summary>${loaded.historico.map(h=>`<p>Versão ${h.versao} · ${esc(h.situacao)} · ${esc(h.autor)} · ${esc(h.data)}</p>`).join('')||'<p>Nenhuma revisão salva.</p>'}</details><section id="deliveryPreview" hidden></section>`;
- $('deliveryForm').addEventListener('input',()=>{dirty=true;if($('deliveryPreview'))$('deliveryPreview').hidden=true;});$('deliveryForm').addEventListener('change',ev=>{dirty=true;if($('deliveryPreview'))$('deliveryPreview').hidden=true;if(ev.target.name==='foto'&&$('deliveryForm').querySelectorAll('[name=foto]:checked').length>2){ev.target.checked=false;note('Escolha até duas fotos.');}});$('deliveryForm').onsubmit=save;
- }
- function payload(){const form=$('deliveryForm');return {id:loaded.fonte.registro.id,versao:loaded.entrega?.versao||0,fonteHash:loaded.hash,titulo:form.elements.titulo.value,texto:form.elements.texto.value,situacao:form.elements.situacao.value,fotos:[...form.querySelectorAll('[name=foto]:checked')].map(c=>({id:c.value,legenda:[...form.querySelectorAll('[data-caption]')].find(x=>x.dataset.caption===c.value).value}))};}
- async function save(ev){ev.preventDefault();if(busy)return;const p=payload(),signature=JSON.stringify(p);if(signature!==lastPayload){requestId='OP-'+crypto.randomUUID();lastPayload=signature;}p.operacaoId=requestId;busy=true;[...$('deliveryForm').elements].forEach(e=>e.disabled=true);note('Salvando revisão…');try{const res=await ui.call('salvarEntregaRelatoCPT',p);loaded.entrega=res.entrega;loaded.historico.unshift({versao:res.entrega.versao,autor:res.entrega.alteradoPor,data:res.entrega.alteradoEm,situacao:res.entrega.situacao});dirty=false;loaded.fonteAlterada=false;lastPayload='';draw();note(res.resultado);}catch(e){note(e.message);}finally{busy=false;if($('deliveryForm'))[...$('deliveryForm').elements].forEach(e=>e.disabled=false);}}
- function preview(){const p=payload(),r=loaded.fonte.registro;const el=$('deliveryPreview');el.hidden=false;el.innerHTML=`<div class="reading-tools"><button class="button secondary" data-delivery="print">Imprimir / salvar PDF</button></div><article id="deliveryPaper"><p class="small">${p.situacao==='pronto'?'Texto marcado como pronto':'Rascunho'}${dirty?' · alterações ainda não salvas':''}</p><h1>${esc(p.titulo)}</h1><p>${esc(r.data)} · ${esc(r.bairro)} · ${esc(r.obra)}</p><p>Equipe: ${esc(r.responsavel||'Não informada')}</p><p class="delivery-text">${esc(p.texto)}</p><div class="delivery-photo-output">${p.fotos.map(f=>`<figure><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(f.id)}&sz=w1000" alt="${esc(f.legenda||'Foto selecionada')}" referrerpolicy="no-referrer"><figcaption>${esc(f.legenda)}</figcaption></figure>`).join('')}</div><p class="document-id">Registro ${esc(r.id)} · revisão salva ${loaded.entrega?.versao||0}</p></article>`;el.scrollIntoView({behavior:'auto',block:'start'});}
- async function print(){const imgs=[...$('deliveryPaper').querySelectorAll('img')];if(imgs.some(i=>!i.complete||!i.naturalWidth)){note('Uma foto ainda não carregou ou não está acessível. Aguarde, confira o original ou desmarque a foto antes de imprimir.');return;}const article=$('deliveryPaper').cloneNode(true);article.id='printDetail';document.body.append(article);document.body.classList.add('printing-detail');const parent=$('detailDialog'),wasOpen=parent.open;$('deliveryDialog').close();if(wasOpen)parent.close();try{window.print();}finally{article.remove();document.body.classList.remove('printing-detail');if(wasOpen)parent.showModal();$('deliveryDialog').showModal();}}
- function init(api){ui=api;const dialog=document.createElement('dialog');dialog.id='deliveryDialog';dialog.setAttribute('aria-labelledby','deliveryTitle');dialog.innerHTML='<div class="dialog-head"><h2 id="deliveryTitle">Preparar relato para entrega</h2><button class="icon-button" id="closeDelivery" aria-label="Fechar preparação">×</button></div><div class="dialog-body" id="deliveryBody"></div>';document.body.append(dialog);$('closeDelivery').onclick=close;dialog.addEventListener('cancel',ev=>{ev.preventDefault();close();});window.addEventListener('beforeunload',ev=>{if(dirty){ev.preventDefault();ev.returnValue='';}});document.addEventListener('click',async ev=>{const start=ev.target.closest('[data-prepare-relato]');if(start){open(start.dataset.prepareRelato);return;}const button=ev.target.closest('[data-delivery]');if(!button||!loaded||busy)return;switch(button.dataset.delivery){case 'base':{if($('deliveryForm').elements.texto.value&&!confirm('Substituir o texto em edição pelos trechos originais?'))return;const fields=loaded.fonte.campos.filter(c=>/relato|descri|desenvolvimento|objetivo|resultado|ocorr[eê]ncia/i.test(c.titulo)&&!/(foto|imagem|arquivo)/i.test(c.titulo));const text=fields.map(c=>c.titulo+'\n'+flatten(c.valor)).join('\n\n');if(!text){note('Não identifiquei um campo textual de relato. Consulte as respostas originais abaixo e componha o texto.');return;}if(text.length>12000){note('Os trechos excedem 12.000 caracteres. Selecione os trechos relevantes nas respostas originais.');return;}$('deliveryForm').elements.texto.value=text;dirty=true;note('Trechos originais copiados. Revise e amarre o texto antes de marcar como pronto.');break;}case 'preview':preview();break;case 'copy':{const p=payload();try{await navigator.clipboard.writeText(p.titulo+'\n\n'+p.texto);note('Texto copiado. Fotos não são incluídas na cópia.');}catch(e){note('Cópia bloqueada pelo navegador. Selecione o texto no campo para copiar.');}break;}case 'print':await print();break;}});}
- return {init};
+/*
+ * Preparo para o relatório 2.6.0 — relatos de atividade e diagnósticos de área.
+ * Relato: título, destino no relatório (item 3, 4.1–4.5, 7 ou 9), quadro do anexo, texto revisado e até 8 imagens
+ * (fotos e listas de presença) com legenda padrão. Sai no formato dos Anexos enviados à Sabesp.
+ * Diagnóstico: síntese com as palavras da Gestão, próximos passos, os 24 campos da ficha oficial e até 12 fotos.
+ * A resposta original nunca muda: cada salvamento é uma revisão nova. Documentos saem da revisão salva.
+ */
+window.CPTEntregas = (() => {
+  'use strict';
+  let ui, loaded = null, dirty = false, busy = false, requestId = '', lastPayload = '', session = 0;
+  const $ = id => document.getElementById(id);
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const br = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : (d || '');
+  const situacoes = {relato: [['rascunho', 'Rascunho'], ['pronto', 'Pronto para entrega']], diagnostico: [['rascunho', 'Rascunho'], ['revisao', 'Em revisão'], ['pronto', 'Pronto']]};
+  function flatten(v) { if (Array.isArray(v)) return v.map(flatten).join('\n'); if (v && typeof v === 'object') return Object.entries(v).map(([k, x]) => k + ': ' + flatten(x)).join('\n'); return String(v ?? ''); }
+  function note(text) { const n = $('deliveryNotice'); if (n) n.textContent = text; }
+  function close() {
+    if (busy) { note('Aguarde a confirmação do salvamento.'); return; }
+    if (dirty && !confirm('Há alterações não salvas. Deseja fechar sem salvar?')) return;
+    ++session; loaded = null; dirty = false; $('deliveryDialog').close(); $('deliveryBody').innerHTML = '';
+  }
+  async function open(id) {
+    if (busy) return;
+    const ticket = ++session; loaded = null; dirty = false; $('deliveryDialog').showModal();
+    $('deliveryBody').innerHTML = '<p>Carregando o registro e suas revisões…</p>';
+    try { const r = await ui.call('carregarEntregaRelatoCPT', id); if (ticket !== session) return; loaded = r; loaded.tipo = r.tipo || 'relato'; draw(); }
+    catch (e) { if (ticket === session) $('deliveryBody').textContent = e.message; }
+  }
+  const diag = () => loaded.tipo === 'diagnostico';
+  /** Legenda no padrão do relatório, com a data do registro já preenchida. */
+  function legendaPadrao(destino) {
+    const r = loaded.fonte.registro, d = (loaded.destinos || []).find(x => x.item === destino);
+    const modelo = diag() ? 'dd/mm/aaaa - Endereço - Diagnóstico' : (d && d.legenda) || 'dd/mm/aaaa - Evento - Local';
+    return modelo.replace('dd/mm/aaaa', br(r.data)).replace('Local', r.bairro || 'Local').replace('Endereço', r.bairro || 'Endereço');
+  }
+  function arquivosHtml() {
+    const a = loaded.arquivos || {}, nomes = {relato: 'Relato ilustrado', ficha: 'Ficha Sabesp', slides: 'Apresentação'};
+    const itens = Object.keys(nomes).filter(k => a[k]).map(k => `<li><strong>${nomes[k]}</strong> · revisão ${esc(a[k].versao)} · <a href="${esc(a[k].doc)}" target="_blank" rel="noopener noreferrer">Abrir</a> · <a href="${esc(a[k].pdf)}" target="_blank" rel="noopener noreferrer">PDF</a></li>`);
+    return itens.length ? `<ul class="generated-files">${itens.join('')}</ul>` : '<p class="muted small">Nenhum documento gerado ainda.</p>';
+  }
+  function draw() {
+    const r = loaded.fonte.registro, s = loaded.sugestao || {}, d = diag();
+    const e = loaded.entrega || {titulo: d ? (s.titulo || 'Diagnóstico local') : (r.atividade || r.procedimento), texto: '', situacao: 'rascunho', fotos: [], versao: 0, destino: s.destino, oficiais: s.oficiais || {}, encaminhamentos: ''};
+    const destino = e.destino || s.destino || '3', limite = loaded.limite || (d ? 12 : 8);
+    $('deliveryTitle').textContent = d ? 'Preparar diagnóstico de área' : 'Preparar relato para o relatório';
+    const status = loaded.fonteAlterada ? 'O registro original mudou desde a última revisão. Confira as respostas antes de salvar.' : e.versao ? 'Revisão ' + e.versao + ' · ' + esc(e.alteradoPor) : 'Nenhuma revisão salva ainda.';
+    const campos = d ? `<details class="report-section wide" open><summary>Ficha oficial DIAGNÓSTICO LOCAL · ${loaded.campos.length} campos</summary><p class="muted small">Vem preenchida com as respostas do formulário. Ajuste o que precisar: a ficha Sabesp sai exatamente destes campos.</p><div class="official-grid">${loaded.campos.map(c => `<label>${esc(c.rotulo)}<textarea rows="2" maxlength="2000" data-oficial="${esc(c.chave)}">${esc((e.oficiais || {})[c.chave] ?? (s.oficiais || {})[c.chave] ?? '')}</textarea></label>`).join('')}</div></details>` : '';
+    const quadro = !d && (loaded.quadro || []).length ? `<details class="report-section wide" open><summary>Quadro do relato (anexo)</summary><p class="muted small">Vem das respostas do formulário. É o quadro que abre o relato nos Anexos do mês.</p><div class="official-grid">${loaded.quadro.map(c => `<label class="${c.chave === 'objetivo' ? 'wide' : ''}">${esc(c.rotulo)}<textarea rows="${c.chave === 'objetivo' ? 3 : 1}" maxlength="${c.chave === 'objetivo' ? 3000 : 500}" data-quadro="${esc(c.chave)}">${esc((e.quadro || {})[c.chave] ?? (s.quadro || {})[c.chave] ?? '')}</textarea></label>`).join('')}</div></details>` : '';
+    const fotos = loaded.fonte.anexos.map(a => {
+      const f = (e.fotos || []).find(x => x.id === a.id);
+      return `<section class="photo-pick ${f ? 'is-picked' : ''}"><label class="photo-thumb"><input type="checkbox" name="foto" value="${esc(a.id)}" ${f ? 'checked' : ''}><img loading="lazy" referrerpolicy="no-referrer" alt="" src="https://drive.google.com/thumbnail?id=${encodeURIComponent(a.id)}&sz=w320"><span>${esc(a.titulo || 'Foto')}</span></label><a href="https://drive.google.com/file/d/${esc(a.id)}/view" target="_blank" rel="noopener noreferrer">Conferir original ↗</a><label>Legenda<input data-caption="${esc(a.id)}" maxlength="300" placeholder="${esc(legendaPadrao(destino))}" value="${esc(f ? f.legenda : '')}"></label>${d ? '' : `<label class="small"><input type="checkbox" data-lista="${esc(a.id)}" ${f && f.lista ? 'checked' : ''}> É lista de presença</label>`}</section>`;
+    }).join('');
+    const gerar = d ? '<button type="button" class="button secondary" data-delivery="gerar" data-tipo="ficha">Gerar ficha Sabesp</button><button type="button" class="button secondary" data-delivery="gerar" data-tipo="slides">Gerar apresentação</button>' : '<button type="button" class="button secondary" data-delivery="gerar" data-tipo="relato">Gerar relato (Docs + PDF)</button>';
+    $('deliveryBody').innerHTML = `<p class="document-id">${esc(r.id)} · ${esc(br(r.data))} · ${esc(r.bairro)} · ${esc(r.obra)}</p>
+      <p id="deliveryNotice" class="notice" role="status">${status}</p>
+      <form id="deliveryForm"><div class="editor-grid">
+        <label class="wide">Título<input name="titulo" maxlength="180" required value="${esc(e.titulo)}"></label>
+        ${d ? '' : `<label class="wide">Entra no relatório em<select name="destino">${loaded.destinos.map(x => `<option value="${esc(x.item)}" ${x.item === destino ? 'selected' : ''}>${esc(x.item + '. ' + x.titulo)}</option>`).join('')}</select><span class="small muted">Sugestão pela atividade: ${esc(s.destino || '3')}. Ação Social Externa e CAO vão para o item 4 (por eixo); DDS, treinamentos e campanhas internas para o 9; tenda para o 7.</span></label>`}
+        <label class="wide">${d ? 'Síntese do diagnóstico (com as suas palavras)' : 'Texto para o relatório'}<textarea name="texto" required maxlength="${d ? 20000 : 12000}" rows="${d ? 12 : 10}" placeholder="${d ? 'Onde foi o diagnóstico, o que se observou e o que ele permitiu.' : 'Data, local e público; objetivo; o que foi feito; resultado e importância.'}">${esc(e.texto)}</textarea></label>
+        <div class="reading-tools wide"><button type="button" class="button secondary" data-delivery="base">${d ? 'Montar texto-base' : 'Trazer texto do registro'}</button></div>
+        ${d ? `<label class="wide">Próximos passos<textarea name="encaminhamentos" maxlength="5000" rows="3">${esc(e.encaminhamentos || '')}</textarea></label>` : ''}
+        <label>Situação<select name="situacao">${situacoes[loaded.tipo].map(([v, t]) => `<option value="${v}" ${e.situacao === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        ${campos}${quadro}
+      </div>
+      <h3 class="answers-head">${d ? 'Fotos' : 'Fotos e listas de presença'} · até ${limite === 8 ? 'oito' : 'doze'} <small class="muted" id="photoCount"></small></h3>
+      <p class="muted small">Saem 2 por linha. Sem legenda, vale o padrão mostrado no campo.${d ? '' : ' Listas de presença vão para a seção própria do relato.'}</p>
+      <div class="delivery-photos">${fotos || '<p>Nenhum anexo disponível neste registro.</p>'}</div>
+      <div class="dialog-actions"><button class="button" type="submit" id="saveDelivery">Salvar revisão</button><button class="button secondary" type="button" data-delivery="preview">Ver entrega</button><button class="button secondary" type="button" data-delivery="copy">Copiar formatado</button></div>
+      <section class="panel generated"><h3>Documentos</h3><p class="muted small">Saem da última revisão salva, na pasta do mês em Entregas mensais. Cada geração cria arquivos novos; os anteriores vão para “Versões anteriores”.</p><div class="dialog-actions">${gerar}</div><div id="deliveryFiles">${arquivosHtml()}</div></section>
+      </form>
+      <details class="report-section"><summary>Consultar respostas originais</summary>${loaded.fonte.campos.map(c => `<section class="answer"><h3>${esc(c.titulo)}</h3><p>${esc(flatten(c.valor))}</p></section>`).join('')}</details>
+      <details class="report-section"><summary>Últimas revisões salvas</summary>${loaded.historico.map(h => `<p>Versão ${h.versao} · ${esc(h.situacao)} · ${esc(h.autor)} · ${esc(h.data)}</p>`).join('') || '<p>Nenhuma revisão salva.</p>'}</details>
+      <section id="deliveryPreview" hidden></section>`;
+    const form = $('deliveryForm');
+    const contar = () => { $('photoCount').textContent = '(' + form.querySelectorAll('[name=foto]:checked').length + ' de ' + limite + ')'; };
+    contar();
+    form.addEventListener('input', () => { dirty = true; $('deliveryPreview').hidden = true; });
+    form.addEventListener('change', ev => {
+      dirty = true; $('deliveryPreview').hidden = true;
+      if (ev.target.name === 'foto') {
+        if (form.querySelectorAll('[name=foto]:checked').length > limite) { ev.target.checked = false; note('Escolha até ' + limite + ' fotos.'); }
+        ev.target.closest('.photo-pick').classList.toggle('is-picked', ev.target.checked); contar();
+      }
+      if (ev.target.name === 'destino') form.querySelectorAll('[data-caption]').forEach(i => { i.placeholder = legendaPadrao(ev.target.value); });
+    });
+    form.onsubmit = save;
+  }
+  function payload() {
+    const form = $('deliveryForm'), d = diag();
+    const p = {id: loaded.fonte.registro.id, versao: loaded.entrega?.versao || 0, fonteHash: loaded.hash, titulo: form.elements.titulo.value, texto: form.elements.texto.value, situacao: form.elements.situacao.value,
+      fotos: [...form.querySelectorAll('[name=foto]:checked')].map(c => { const i = form.querySelector(`[data-caption="${CSS.escape(c.value)}"]`); const l = form.querySelector(`[data-lista="${CSS.escape(c.value)}"]`); const f = {id: c.value, legenda: i.value.trim() || (l && l.checked ? 'Lista de presença' : i.placeholder)}; if (l && l.checked) f.lista = true; return f; })};
+    if (d) { p.encaminhamentos = form.elements.encaminhamentos.value; p.oficiais = {}; form.querySelectorAll('[data-oficial]').forEach(t => { p.oficiais[t.dataset.oficial] = t.value; }); }
+    else { p.destino = form.elements.destino.value; p.quadro = {}; form.querySelectorAll('[data-quadro]').forEach(t => { p.quadro[t.dataset.quadro] = t.value; }); }
+    return p;
+  }
+  async function save(ev) {
+    ev.preventDefault(); if (busy) return;
+    const p = payload(), signature = JSON.stringify(p);
+    if (signature !== lastPayload) { requestId = 'OP-' + crypto.randomUUID(); lastPayload = signature; }
+    p.operacaoId = requestId; busy = true; [...$('deliveryForm').elements].forEach(x => x.disabled = true); note('Salvando revisão…');
+    try {
+      const res = await ui.call('salvarEntregaRelatoCPT', p);
+      loaded.entrega = res.entrega; loaded.historico.unshift({versao: res.entrega.versao, autor: res.entrega.alteradoPor, data: res.entrega.alteradoEm, situacao: res.entrega.situacao});
+      dirty = false; loaded.fonteAlterada = false; lastPayload = ''; draw(); note(res.resultado);
+      document.dispatchEvent(new CustomEvent('cpt:entrega-salva', {detail: {id: p.id, situacao: res.entrega.situacao, destino: res.entrega.destino}}));
+    } catch (e) { note(e.message); }
+    finally { busy = false; if ($('deliveryForm')) [...$('deliveryForm').elements].forEach(x => x.disabled = false); }
+  }
+  async function gerar(tipo) {
+    if (dirty) { note('Salve a revisão antes de gerar: o documento sai da última revisão salva.'); return; }
+    if (!loaded.entrega) { note('Salve a revisão antes de gerar o documento.'); return; }
+    busy = true; const botoes = [...document.querySelectorAll('[data-delivery=gerar]')]; botoes.forEach(b => b.disabled = true);
+    note('Gerando o documento. Leva de 30 segundos a 2 minutos, conforme as fotos…');
+    try { const r = await ui.call('gerarDocumentoSocioambientalCPT', {id: loaded.fonte.registro.id, tipo}); loaded.arquivos = r.arquivos; $('deliveryFiles').innerHTML = arquivosHtml(); note(r.resultado); document.dispatchEvent(new CustomEvent('cpt:entrega-salva', {detail: {id: loaded.fonte.registro.id}})); }
+    catch (e) { note(e.message); }
+    finally { busy = false; botoes.forEach(b => b.disabled = false); }
+  }
+  /** Texto-base. Relato: os campos de narrativa. Diagnóstico: as respostas organizadas por tema. */
+  function textoBase() {
+    const form = $('deliveryForm');
+    if (form.elements.texto.value && !confirm('Substituir o texto em edição pelo texto-base?')) return;
+    let text = '';
+    if (diag()) text = (loaded.sugestao || {}).textoBase || '';
+    else {
+      const r = loaded.fonte.registro, campo = re => { const c = loaded.fonte.campos.find(x => re.test(x.titulo) && !/(foto|imagem|arquivo)/i.test(x.titulo)); return c ? flatten(c.valor).trim() : ''; };
+      const abertura = ['Em ' + br(r.data), r.bairro ? 'no bairro ' + r.bairro : '', r.obra && !/não se aplica/i.test(r.obra) ? 'na frente ' + r.obra.replace(/\s*\[OBR-\d+\]\s*$/, '') : ''].filter(Boolean).join(', ');
+      const publico = [campo(/p[uú]blico[- ]?alvo/i), r.publico != null ? r.publico + ' participantes' : ''].filter(Boolean).join(', ');
+      text = [abertura + ', a equipe realizou a atividade ' + (r.atividade || r.procedimento) + (publico ? ', com ' + publico : '') + '.', campo(/objetivo/i), campo(/^relato|relato da atividade|descri|desenvolvimento/i), campo(/resultado|encaminhamento|ocorr[eê]ncia/i)].filter(Boolean).join('\n\n');
+    }
+    if (!text.trim()) { note('Não identifiquei campos de texto. Consulte as respostas originais abaixo e componha o texto.'); return; }
+    form.elements.texto.value = text.slice(0, diag() ? 20000 : 12000); dirty = true;
+    note(diag() ? 'Texto-base montado. Reescreva com as suas palavras: o que se observou e o que o diagnóstico permitiu.' : 'Texto-base montado. Revise e amarre a narrativa antes de marcar como pronto.');
+  }
+  function html(p) {
+    return `<h3>${esc(p.titulo)}</h3>${String(p.texto).split(/\n+/).filter(Boolean).map(t => `<p style="text-align:justify;font-family:Arial;font-size:12pt">${esc(t)}</p>`).join('')}`;
+  }
+  function preview() {
+    const p = payload(), r = loaded.fonte.registro, el = $('deliveryPreview'), d = (loaded.destinos || []).find(x => x.item === p.destino);
+    el.hidden = false;
+    el.innerHTML = `<div class="reading-tools"><button class="button secondary" data-delivery="print">Imprimir / salvar PDF</button></div><article id="deliveryPaper"><p class="small">${d ? esc(d.item + '. ' + d.titulo) + ' · ' : ''}${p.situacao === 'pronto' ? 'Pronto' : 'Rascunho'}${dirty ? ' · alterações ainda não salvas' : ''}</p><h1>${esc(p.titulo)}</h1><p>${esc(br(r.data))} · ${esc(r.bairro)} · ${esc(r.obra)}</p>${String(p.texto).split(/\n+/).filter(Boolean).map(t => `<p class="delivery-text">${esc(t)}</p>`).join('')}${p.encaminhamentos ? `<h2>Próximos passos</h2><p class="delivery-text">${esc(p.encaminhamentos)}</p>` : ''}<div class="delivery-photo-output">${p.fotos.map(f => `<figure><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(f.id)}&sz=w1000" alt="${esc(f.legenda || 'Foto selecionada')}" referrerpolicy="no-referrer"><figcaption>${esc(f.legenda)}</figcaption></figure>`).join('')}</div><p class="document-id">Registro ${esc(r.id)} · revisão salva ${loaded.entrega?.versao || 0}</p></article>`;
+    el.scrollIntoView({behavior: 'auto', block: 'start'});
+  }
+  async function print() {
+    const imgs = [...$('deliveryPaper').querySelectorAll('img')];
+    if (imgs.some(i => !i.complete || !i.naturalWidth)) { note('Uma foto ainda não carregou ou não está acessível. Aguarde, confira o original ou desmarque a foto antes de imprimir.'); return; }
+    const article = $('deliveryPaper').cloneNode(true); article.id = 'printDetail'; document.body.append(article); document.body.classList.add('printing-detail');
+    const parent = $('detailDialog'), wasOpen = parent.open; $('deliveryDialog').close(); if (wasOpen) parent.close();
+    try { window.print(); } finally { article.remove(); document.body.classList.remove('printing-detail'); if (wasOpen) parent.showModal(); $('deliveryDialog').showModal(); }
+  }
+  async function copiar() {
+    const p = payload(), texto = p.titulo + '\n\n' + p.texto;
+    try {
+      if (window.ClipboardItem && navigator.clipboard.write) await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html(p)], {type: 'text/html'}), 'text/plain': new Blob([texto], {type: 'text/plain'})})]);
+      else await navigator.clipboard.writeText(texto);
+      note('Texto copiado com formatação (Arial, justificado). Fotos não vão na cópia: use o documento gerado.');
+    } catch (e) { note('Cópia bloqueada pelo navegador. Selecione o texto no campo para copiar.'); }
+  }
+  function init(api) {
+    ui = api;
+    const dialog = document.createElement('dialog'); dialog.id = 'deliveryDialog'; dialog.setAttribute('aria-labelledby', 'deliveryTitle');
+    dialog.innerHTML = '<div class="dialog-head"><h2 id="deliveryTitle">Preparar para o relatório</h2><button class="icon-button" id="closeDelivery" aria-label="Fechar preparação">×</button></div><div class="dialog-body" id="deliveryBody"></div>';
+    document.body.append(dialog); $('closeDelivery').onclick = close;
+    dialog.addEventListener('cancel', ev => { ev.preventDefault(); close(); });
+    window.addEventListener('beforeunload', ev => { if (dirty) { ev.preventDefault(); ev.returnValue = ''; } });
+    document.addEventListener('click', async ev => {
+      const start = ev.target.closest('[data-prepare-relato]'); if (start) { open(start.dataset.prepareRelato); return; }
+      const button = ev.target.closest('[data-delivery]'); if (!button || !loaded || busy) return;
+      switch (button.dataset.delivery) {
+        case 'base': textoBase(); break;
+        case 'preview': preview(); break;
+        case 'copy': await copiar(); break;
+        case 'print': await print(); break;
+        case 'gerar': await gerar(button.dataset.tipo); break;
+      }
+    });
+  }
+  return {init, open};
 })();
 </script>

@@ -1,4 +1,4 @@
-/** DadosDaAplicacao 2.4.0. Somente leitura; compatível com a base Campo 4.0 importada. */
+/** DadosDaAplicacao 2.6.0. Somente leitura; compatível com a base Campo 4.0 importada. */
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -43,25 +43,37 @@ class DadosDaAplicacao {
     // CPT_ATD_VERSAO sobe a cada ação em um caso (linhas editadas não mudam a última linha).
     // Movimentações cobre o que o Campo 4.0 grava (retorno da Execução), que é outro projeto.
     const mov = this.base.getSheetByName('Movimentações');
-    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(mov?mov.getLastRow():0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0);
+    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(mov?mov.getLastRow():0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ENTREGAS_VERSAO')||0);
     const salvo = atualizar ? null : CacheCPT.ler(chave);
     if (salvo) return {...salvo, cache: true};
     const r = this.calcularInicio(mes, reg, atd);
     CacheCPT.gravar(chave, r, 600); CacheCPT.gravar('inicio:ultimo:'+mes, r, 21600);
     return r;
   }
+  /**
+   * Visão do mês 2.6: os números que o relatório usa (frase de totais do item 3, frentes, diagnósticos do item 2,
+   * balanço de manifestações do item 10) e o preparo por item. Contagem bruta de registros sai do destaque.
+   */
   calcularInicio(mes, reg, atd) {
     const linhas=this.ler(reg,19).filter(r=>this.permitido(r)), fichas=this.ler(atd,18).filter(r=>this.principal(r));
-    const periodo=linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mes), tipos=new Map(), dias=new Map();
-    let participacoes=0, semPublico=0;
-    periodo.forEach(r=>{tipos.set(String(r[1]),(tipos.get(String(r[1]))||0)+1);const dia=this.data(r[2]);if(dia.startsWith(mes))dias.set(dia,(dias.get(dia)||0)+1);
-      if(DadosDaAplicacao.norm(r[1])==='relato de atividade'){if(r[14]!==''&&/^\d+$/.test(String(r[14])))participacoes+=Number(r[14]);else semPublico++;}});
+    const periodo=linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mes), tipos=new Map(), dias=new Map(), destinos=new Map(), frentes=new Set(), bairros=new Set(), entregas=this.situacoesEntregas();
+    let acoes=0, pessoas=0, semPublico=0, diagnosticos=0;
+    const contar=(item,id)=>{const e=entregas.get(id)||{};if(e.destino&&item!=='2'&&SocioambientalCPT.item(e.destino))item=e.destino;const d=destinos.get(item)||{quantidade:0,prontos:0};d.quantidade++;if(e.situacao==='pronto')d.prontos++;destinos.set(item,d);};
+    periodo.forEach(r=>{tipos.set(String(r[1]),(tipos.get(String(r[1]))||0)+1);
+      const destino=SocioambientalCPT.destino(r[1],r[13],r[17]);if(!destino)return;
+      if(destino==='2'){diagnosticos++;contar('2',String(r[0]));return;}
+      acoes++;contar(destino,String(r[0]));if(r[14]!==''&&/^\d+$/.test(String(r[14])))pessoas+=Number(r[14]);else semPublico++;
+      const dia=this.data(r[2]);if(dia.startsWith(mes))dias.set(dia,(dias.get(dia)||0)+1);
+      const f=SocioambientalCPT.frente(r[9]);if(f)frentes.add(f);if(r[7])bairros.add(String(r[7]));});
     const concluidas=fichas.filter(r=>this.encerrado(r)), inicio=this.base.getSheetByName('Início');
     const formulario=inicio?this.url(inicio.getRange(3,2).getValue()):'';
     const anterior=new Date(mes+'-15T12:00:00Z');anterior.setUTCMonth(anterior.getUTCMonth()-1);const mesAnterior=anterior.toISOString().slice(0,7);
-    const resultado={comparacao:{mesAnterior,anterior:linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mesAnterior).length},mes,atualizadoEm:new Date().toISOString(),cache:false,
-      indicadores:{bairros:new Set(periodo.map(r=>r[7]).filter(Boolean)).size,obras:new Set(periodo.map(r=>r[9]).filter(Boolean)).size,registros:periodo.length,participacoes,relatosSemPublico:semPublico,abertos:fichas.length-concluidas.length,concluidos:concluidas.length,
-        concluidosNoMes:concluidas.filter(r=>this.data(r[5]).startsWith(mes)).length},
+    const acoesAnterior=linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mesAnterior&&!['2',null].includes(SocioambientalCPT.destino(r[1],r[13],r[17]))).length;
+    const resultado={comparacao:{mesAnterior,anterior:acoesAnterior},mes,atualizadoEm:new Date().toISOString(),cache:false,
+      indicadores:{acoes,pessoas,frentes:frentes.size,diagnosticos,bairros:bairros.size,obras:frentes.size,registros:periodo.length,participacoes:pessoas,relatosSemPublico:semPublico,abertos:fichas.length-concluidas.length,concluidos:concluidas.length,
+        recebidasNoMes:fichas.filter(r=>this.data(r[4]).startsWith(mes)).length,concluidosNoMes:concluidas.filter(r=>this.data(r[5]).startsWith(mes)).length,
+        frase:'Foram contabilizadas '+acoes+' ações socioambientais, totalizando '+pessoas+' pessoas alcançadas.'},
+      destinos:SocioambientalCPT.itens.filter(x=>x.tipo!=='consolidado'||destinos.has(x.item)).map(x=>({item:x.item,titulo:x.titulo,tipo:x.tipo,quantidade:(destinos.get(x.item)||{}).quantidade||0,prontos:(destinos.get(x.item)||{}).prontos||0})),
       procedimentos:[...tipos].map(([nome,quantidade])=>({nome,quantidade})).sort((a,b)=>b.quantidade-a.quantidade),
       dias:[...dias].map(([data,quantidade])=>({data,quantidade})).sort((a,b)=>a.data.localeCompare(b.data)),
       recentes:periodo.slice(-5).reverse().map(r=>this.registro(r)),
@@ -69,6 +81,13 @@ class DadosDaAplicacao {
       links:{formulario},notaCarteira:'Estado atual das fichas importadas. O mês filtra os registros de campo.'};
     resultado.satisfacao=this.satisfacao(periodo,mes);
     return resultado;
+  }
+  /** Situação e destino escolhido na última revisão de cada relato/diagnóstico (vazio se a agenda não estiver configurada). */
+  situacoesEntregas(){
+    const out=new Map();
+    try{const id=AplicacaoCPT.config().agendaId;if(!id)return out;const a=SpreadsheetApp.openById(id).getSheetByName('Entregas');
+      if(a&&a.getLastRow()>1)a.getRange(2,1,a.getLastRow()-1,6).getValues().forEach(r=>{try{const e=JSON.parse(r[5]);out.set(String(r[0]),{situacao:String(e.situacao||''),destino:String(e.destino||'')});}catch(_){}});}catch(_){}
+    return out;
   }
   /** Pesquisas de satisfação: total do mês (meta 60) e semana atual de segunda a domingo (meta 15), só quando o mês é o corrente. */
   satisfacao(periodo,mes){

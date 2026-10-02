@@ -1,0 +1,73 @@
+<script>
+/*
+ * Socioambiental 2.6.0 — Mesa do relatório.
+ * Mostra as atividades do mês no item do relatório em que entram (anatomia do relatório nº 13):
+ * 2 Diagnósticos · 4.1–4.5 eixos (Ação Social Externa, CAO, articulação) · 7 UMS · 9 DDS e complementares ·
+ * 3 frentes (tabela e fotos por frente). Cada atividade abre o preparo (texto, fotos e documento).
+ */
+window.CPTSocioambiental = (() => {
+  'use strict';
+  let ui = null, ticket = 0, dados = null;
+  const $ = id => document.getElementById(id);
+  const rotulo = {sem: 'A preparar', rascunho: 'Rascunho', revisao: 'Em revisão', pronto: 'Pronto'};
+  const cor = {sem: '', rascunho: 'status-andamento', revisao: 'status-andamento', pronto: 'status-concluida'};
+  const INTRO = ['Socioambiental', 'Mesa do relatório: cada atividade do mês no item em que entra, com texto, fotos e documento.'];
+
+  async function render() {
+    const mine = ++ticket, mes = ui.state.mes;
+    ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Organizando as atividades do mês…</div>';
+    try { const d = await ui.call('carregarMesaSocioambientalCPT', mes); if (mine !== ticket || ui.state.route !== 'socioambiental') return; dados = d; draw(); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function numero(rot, valor, nota) { return `<div class="stat-tile"><span class="stat-label">${rot}</span><span class="stat-value">${ui.num(valor)}</span><span class="stat-note">${nota}</span></div>`; }
+  function linha(x) {
+    return `<li class="mesa-row"><span class="mesa-date">${ui.esc(ui.date(x.data))}</span>
+      <span class="mesa-main"><strong>${ui.esc(x.titulo || x.atividade)}</strong><small>${ui.esc([x.atividade !== (x.titulo || x.atividade) ? x.atividade : '', x.frente || x.bairro, x.publico != null ? x.publico + ' pessoas' : '', x.responsavel].filter(Boolean).join(' · '))}</small></span>
+      <span class="badge ${cor[x.situacao] || ''}">${rotulo[x.situacao] || ui.esc(x.situacao)}</span>
+      <span class="mesa-actions"><button class="button ghost" data-record="${ui.esc(x.id)}">Registro</button><button class="button ${x.situacao === 'pronto' ? 'secondary' : ''}" data-prepare-relato="${ui.esc(x.id)}">${x.situacao === 'sem' ? 'Preparar' : 'Abrir'}</button>${x.documento ? `<a class="button ghost" href="${ui.esc(x.documento)}" target="_blank" rel="noopener noreferrer">PDF</a>` : ''}</span></li>`;
+  }
+  function grupo(g) {
+    const vazio = !g.itens.length;
+    return `<section class="panel mesa-group ${vazio ? 'is-empty' : ''}" id="item-${ui.esc(g.item.replace('.', '-'))}"><div class="panel-head"><div><span class="eyebrow">ITEM ${ui.esc(g.item)}</span><h2>${ui.esc(g.titulo)}</h2>
+      <p>${vazio ? 'Nenhuma atividade no mês.' : ui.num(g.prontos) + ' de ' + ui.num(g.itens.length) + ' pronto' + (g.itens.length === 1 ? '' : 's') + '.'}</p></div></div>
+      ${vazio ? (g.vazio ? `<div class="mesa-empty"><p>${ui.esc(g.vazio)}</p><button class="button ghost" data-copiar-texto="${ui.esc(g.vazio)}">Copiar parágrafo padrão</button></div>` : '') : `<ul class="mesa-list">${g.itens.map(linha).join('')}</ul>`}</section>`;
+  }
+  function draw() {
+    const d = dados, t = d.totais, ordem = ['2', '4.1', '4.2', '4.3', '4.4', '4.5', '7', '9'];
+    const grupos = ordem.map(i => d.grupos.find(g => g.item === i)).filter(Boolean);
+    const pct = t.proprios ? Math.round(t.prontos / t.proprios * 100) : 0;
+    ui.view.innerHTML = ui.intro(...INTRO) + `
+      <section class="panel mesa-hero"><p class="home-phrase">${ui.esc(t.frase)}</p>
+        <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${t.proprios}" aria-valuenow="${t.prontos}" aria-label="${t.prontos} de ${t.proprios} prontos"><span style="width:${pct}%"></span></div>
+        <p class="small muted">${ui.num(t.prontos)} de ${ui.num(t.proprios)} relatos e diagnósticos prontos para o relatório.${t.semPublico ? ' ' + ui.num(t.semPublico) + ' ações sem público informado.' : ''}</p>
+        <div class="dialog-actions"><button class="button secondary" id="gerarAnexos">${ui.icon('file')}Gerar anexos do mês</button>${d.anexos ? `<span class="small">Última geração: ${ui.esc(new Date(d.anexos.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'}))} · ${ui.num(d.anexos.relatos)} relatos · <a href="${ui.esc(d.anexos.doc)}" target="_blank" rel="noopener noreferrer">Documento</a> · <a href="${ui.esc(d.anexos.pdf)}" target="_blank" rel="noopener noreferrer">PDF</a></span>` : ''}</div>
+        <p class="small muted">ANEXO 1 (item 4), ANEXO 2 (DDS e complementares) e ANEXO 3 (audiovisual). Só entram relatos “Pronto”; cada um começa em página própria.</p><div id="anexosResultado" aria-live="polite"></div></section>
+      <section class="stat-row" aria-label="Números do mês">
+        ${numero('Ações socioambientais', t.acoes, 'Contagem do item 3.')}
+        ${numero('Pessoas alcançadas', t.pessoas, t.semPublico ? ui.num(t.semPublico) + ' sem público informado.' : 'Público informado nos relatos.')}
+        ${numero('Frentes acompanhadas', t.frentes, 'Obras com atividade no mês.')}
+        ${numero('Diagnósticos', t.diagnosticos, 'Item 2 do relatório.')}
+      </section>
+      <nav class="mesa-index" aria-label="Itens do relatório">${grupos.map(g => `<a href="#item-${ui.esc(g.item.replace('.', '-'))}" class="${g.itens.length ? '' : 'is-empty'}">${ui.esc(g.item)}<small>${g.itens.length ? g.prontos + '/' + g.itens.length : '—'}</small></a>`).join('')}<a href="#item-3">3<small>${ui.num(t.frentes)} fr.</small></a></nav>
+      ${grupos.map(grupo).join('')}
+      <section class="panel" id="item-3"><div class="panel-head"><div><span class="eyebrow">ITEM 3 E 3.1</span><h2>Atividades por frente de serviço</h2><p>Todas as ações entram na tabela do mês. No 3.1, cada frente ganha um parágrafo e fotos 2 por linha.</p></div><button class="button ghost" data-route="registros" data-filter="relatos">Consultar relatos ${ui.icon('arrow')}</button></div>
+        ${d.frentes.length ? `<table class="simple-table"><thead><tr><th>Frente</th><th>Bairros</th><th>Ações</th><th>Pessoas</th></tr></thead><tbody>${d.frentes.map(f => `<tr class="${f.semObra ? 'muted' : ''}"><td>${ui.esc(f.frente)}</td><td>${ui.esc(f.bairros)}</td><td>${ui.num(f.acoes)}</td><td>${ui.num(f.pessoas)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nenhuma ação no mês.</p>'}</section>`;
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('cpt:entrega-salva', () => { if (ui.state.route === 'socioambiental') render(); });
+    document.addEventListener('click', async ev => {
+      if (ev.target.closest('#gerarAnexos')) {
+        const btn = $('gerarAnexos'); if (btn.disabled) return; btn.disabled = true; $('anexosResultado').innerHTML = '<p class="loading-label"><span class="spinner"></span>Montando os anexos. Leva de 1 a 5 minutos, conforme as fotos…</p>';
+        try { const r = await ui.call('gerarAnexosDoMesCPT', ui.state.mes); $('anexosResultado').innerHTML = `<div class="notice">${ui.esc(r.resultado)} <a href="${ui.esc(r.doc)}" target="_blank" rel="noopener noreferrer">Abrir documento</a> · <a href="${ui.esc(r.pdf)}" target="_blank" rel="noopener noreferrer">PDF</a>${r.avisos.length ? '<br>' + r.avisos.map(ui.esc).join('<br>') : ''}</div>`; }
+        catch (e) { $('anexosResultado').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+        finally { if ($('gerarAnexos')) $('gerarAnexos').disabled = false; }
+        return;
+      }
+      const b = ev.target.closest('[data-copiar-texto]'); if (!b) return;
+      try { await navigator.clipboard.writeText(b.dataset.copiarTexto); ui.toast('Parágrafo padrão copiado.'); } catch (_) { ui.toast('Cópia bloqueada pelo navegador.'); }
+    });
+  }
+  return {init, render};
+})();
+</script>
