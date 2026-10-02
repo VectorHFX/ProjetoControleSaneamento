@@ -56,12 +56,22 @@ sincronizar() {
   for f in "$CFG/repo/$pasta"/*.gs "$CFG/repo/$pasta"/*.html; do [ -e "$f" ] && cp "$f" "$w/src/"; done
   if [ "$publicar" = sim ] && [ -e "$CFG/repo/$pasta/appsscript.json" ]; then cp "$CFG/repo/$pasta/appsscript.json" "$w/src/"; fi
   local mudou criou mantidos
-  mudou="$(cd "$w/src" && for f in *; do [ -e "../atual/$f" ] && ! cmp -s "$f" "../atual/$f" && echo "$f"; done || true)"
+  # Diferenças só de espaços ou linhas em branco no fim não contam (o Google normaliza o texto).
+  mudou="$(cd "$w/src" && for f in *; do [ -e "../atual/$f" ] && ! diff -qBZ "$f" "../atual/$f" > /dev/null && echo "$f"; done || true)"
   criou="$(cd "$w/src" && for f in *; do [ -e "../atual/$f" ] || echo "$f"; done || true)"
   mantidos="$(cd "$w/atual" && for f in *; do [ -e "$CFG/repo/$pasta/$f" ] || echo "$f"; done || true)"
   echo "  Alterar: ${mudou:-nada}" | tr '\n' ' '; echo
   echo "  Criar:   ${criou:-nada}" | tr '\n' ' '; echo
   echo "  Fica só no Google (mantido): ${mantidos:-nada}" | tr '\n' ' '; echo
+  # Um arquivo que só existe no Google e declara a mesma classe de um arquivo do GitHub quebra o projeto inteiro.
+  local dup="" m c
+  for m in $mantidos; do
+    case "$m" in *.gs) ;; *) continue ;; esac
+    for c in $(grep -oE '^class [A-Za-z0-9_]+' "$w/atual/$m" | cut -d' ' -f2); do
+      grep -lqE "^class $c\b" "$CFG/repo/$pasta"/*.gs 2>/dev/null && dup="$dup $m(class $c)"
+    done
+  done
+  if [ -n "$dup" ]; then echo "  ⚠ ATENÇÃO: no Google há arquivo(s) que repetem uma classe do GitHub:$dup"; echo "    Apague esse(s) arquivo(s) no editor (⋮ → Excluir). Com classe repetida, o projeto inteiro para de funcionar."; fi
   if [ -z "$mudou$criou" ]; then echo "  Já estava atualizado."; return 0; fi
   [ "$MODO" = aplicar ] || return 0
   (cd "$w" && $CLASP version "Segurança antes da atualização de $QUANDO" | tail -1 | sed 's/^/  Versão de segurança: /')
