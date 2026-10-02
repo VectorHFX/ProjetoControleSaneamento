@@ -8,9 +8,9 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   const toast=async re=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source);
   await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+'?perfil=comunicacao&latencia=30');
   // Entra direto no "Hoje", com aviso de recado na lateral.
-  await p.locator('.today-hello').waitFor();
-  assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'comunicacao');
-  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['inicio','comunicacao','recados','cronograma','registros','atendimentos','socioambiental','obras','contatos','fechamento','ajuda']);
+  await p.locator('.welcome-pets').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'meuespaco');
+  await p.locator('.nav-item[data-route=comunicacao]').click();await p.locator('.today-hello').waitFor();
+  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','comunicacao','recados','cronograma','registros','atendimentos','socioambiental','obras','contatos','fechamento','ajuda']);
   await p.waitForFunction(()=>document.querySelector('.nav-item[data-route=recados] .nav-badge')?.textContent==='1');
   assert.match(await p.locator('.today-hello').textContent(),/coisas para olhar/);
   assert.equal(await p.locator('.today-block').count(),5);assert.equal(await p.locator('.today-step').first().textContent(),'1');
@@ -66,10 +66,10 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   for(const aba of ['hoje','galeria','lembretes']){await p.evaluate(()=>document.querySelector('.nav-item[data-route=comunicacao]').click());await p.locator('.com-tabs').waitFor();await p.locator('[data-com-aba='+aba+']').click();await p.waitForTimeout(400);
     assert(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral: '+aba);}
   // Social vê lembretes (rota própria), não a Comunicação.
-  await p.setViewportSize({width:1366,height:900});await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+'?perfil=socioambiental&latencia=20');await p.locator('.shortcuts').waitFor();
+  await p.setViewportSize({width:1366,height:900});await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+'?perfil=socioambiental&latencia=20');await p.locator('.welcome-pets').waitFor();
   assert.equal(await p.locator('.nav-item[data-route=comunicacao]').isHidden(),true);await p.locator('.nav-item[data-route=lembretes]').click();await p.locator('.reminder').first().waitFor();
   assert.equal(await p.locator('.com-tabs').count(),0);
   assert.deepEqual(errors,[]);
-  console.log('PASS: Comunicação começa pelo "Hoje" (5 blocos numerados, aviso de recado), lembrete feito e criado a partir da ação da semana, recado lido/respondido/resolvido e novo recado validado, material concluído entra no mês, galeria (mais, escolher, baixar .zip, enviar foto), contatos (cadastro, WhatsApp, conversa, filtro com foco), celular sem rolagem e Social com lembretes.');
+  console.log('PASS: Comunicação (entra pelo Meu espaço) com "Hoje" (5 blocos numerados, aviso de recado), lembrete feito e criado a partir da ação da semana, recado lido/respondido/resolvido e novo recado validado, material concluído entra no mês, galeria (mais, escolher, baixar .zip, enviar foto), contatos (cadastro, WhatsApp, conversa, filtro com foco), celular sem rolagem e Social com lembretes.');
   await b.close();
 })().catch(e=>{console.error(e);process.exit(1);});

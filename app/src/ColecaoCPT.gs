@@ -24,13 +24,14 @@ class ColecaoCPT {
   }
   obter(id) { return this.itens().find(x => x.id === id) || null; }
   /** Grava uma nova versão. Mesma operação = devolve o que já foi gravado (clique duplo, conexão que caiu). */
-  gravar(item, versaoEsperada, operacaoId) {
+  /** idFixo: para itens de uma pessoa (ex.: PES-email, CAD-email-data), o primeiro salvamento usa esse ID. */
+  gravar(item, versaoEsperada, operacaoId, idFixo) {
     if (typeof operacaoId !== 'string' || !/^OP-[\w-]{8,70}$/.test(operacaoId)) throw new Error('Operação inválida. Recarregue a página.');
     const a = this.aba(), ja = this.porOperacao(operacaoId); if (ja) return ja;
-    const antigo = item.id ? this.obter(item.id) : null;
-    if (item.id && !antigo) throw new Error('Item não encontrado. Atualize a página.');
+    const antigo = idFixo ? this.obter(idFixo) : item.id ? this.obter(item.id) : null;
+    if (!idFixo && item.id && !antigo) throw new Error('Item não encontrado. Atualize a página.');
     if (antigo && Number(versaoEsperada) !== antigo.versao) throw new Error('Outra pessoa alterou este item agora há pouco. Seu texto continua na tela: atualize e confira antes de salvar de novo.');
-    const agora = new Date().toISOString(), e = {...item, id: antigo ? antigo.id : this.prefixo + '-' + Utilities.getUuid(), versao: (antigo ? antigo.versao : 0) + 1,
+    const agora = new Date().toISOString(), e = {...item, id: antigo ? antigo.id : idFixo || this.prefixo + '-' + Utilities.getUuid(), versao: (antigo ? antigo.versao : 0) + 1,
       criadoPor: antigo ? antigo.criadoPor : this.ctx.email, criadoEm: antigo ? antigo.criadoEm : agora, alteradoPor: this.ctx.email, alteradoEm: agora};
     a.getRange(a.getLastRow() + 1, 1, 1, 6).setValues([[e.id, e.versao, operacaoId, agora, this.ctx.email, JSON.stringify(e)]]);
     this.cache = null; return e;

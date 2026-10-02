@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.8 e Campo 4.0 (4.3)
+# Guia de instalação: Aplicação CPT 2.9 e Campo 4.0 (4.3)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,35 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.9 — Meu espaço: mascote, checklist e caderno (≈ 5 min)
+
+**Como atualizar:** no Cloud Shell, `bash ~/atualizar.sh conferir` e depois `bash ~/atualizar.sh aplicar`. Só a Aplicação muda.
+
+**Arquivos novos:**
+
+- `PessoalCPT.gs`
+- `MeuEspaco.html`
+
+**Passos:**
+
+1. No editor, execute **`instalarAplicacaoCPT`** uma vez. Deve mostrar `versao: 2.9.0`.
+2. Abra a aplicação com **Ver como → Atendimento** (ou outra frente): ela abre no **Meu espaço**.
+
+As abas "Meu espaço", "Caderno" e "Checklist" são criadas sozinhas no primeiro uso.
+
+**O que muda para a equipe:**
+
+- Quem não é da Gestão ou do Administrativo entra pelo **Meu espaço**, e não mais pela Visão do mês (que continua na lateral).
+- No Meu espaço:
+  - mascote com nome e guarda-roupa;
+  - presente semanal;
+  - checklist com pontos;
+  - caderno pessoal com salvamento automático;
+  - atalho para o trabalho do dia.
+- Regras completas em [VISOES_POR_CARGO.md](VISOES_POR_CARGO.md).
+
+---
 
 ## Atualização 2.8 — Comunicação, Recados, Contatos e Lembretes (≈ 10 min)
 

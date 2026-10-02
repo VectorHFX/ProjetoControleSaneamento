@@ -1,0 +1,222 @@
+<script>
+/*
+ * Meu espaço 2.9.0 — a página inicial de cada pessoa (exceto Gestão/Administrativo, que abrem na Visão do mês).
+ * Mascote com nome e guarda-roupa, checklist do dia (e de outros dias), caderno pessoal com salvamento automático
+ * e um atalho para o trabalho do dia. Privado: cada pessoa só vê o próprio espaço.
+ * Mascotes e peças desenhados em SVG próprio (sem imagens externas): carregam na hora, inclusive no celular.
+ */
+window.CPTMascote = (() => {
+  'use strict';
+  let seq = 0;
+  const PELE = {gato: ['#f2a65a', '#fbe3c8'], cachorro: ['#c98b55', '#f3dcc2'], pato: ['#ffd84d', '#fff3b0'], aguia: ['#7a5230', '#efe3cf'], dinossauro: ['#6cbf6a', '#d8f0c0'], abelha: ['#ffcf33', '#fff1b8']};
+  const camisa = (id, clip) => {
+    const r = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`, base = (c, extra) => `<g clip-path="url(#${clip})">${r(36, 92, 88, 50, c)}${extra || ''}</g>`;
+    return {
+      'camisa-timao': base('#fafafa', [48, 60, 72, 84, 96, 108].map(x => r(x, 92, 6, 50, '#1b1b1b')).join('')),
+      'camisa-verdao': base('#1e7a3c', '<path d="M68 96 L80 108 L92 96" fill="none" stroke="#fff" stroke-width="4"/>'),
+      'camisa-tricolor': base('#fafafa', r(36, 112, 88, 6, '#d6252c') + r(36, 118, 88, 4, '#fafafa') + r(36, 122, 88, 6, '#1b1b1b')),
+      'camisa-peixe': base('#fafafa', '<path d="M68 96 L80 106 L92 96" fill="none" stroke="#1b1b1b" stroke-width="3"/>' + r(40, 92, 4, 50, '#1b1b1b') + r(116, 92, 4, 50, '#1b1b1b')),
+      'camisa-cpt': base('#2672ac', '<text x="80" y="124" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" font-family="Arial">CPT</text>'),
+      'colete': base('#ff8a1f', r(36, 112, 88, 5, '#e8eef2') + r(36, 126, 88, 5, '#e8eef2') + r(77, 92, 6, 50, '#ff8a1f') + '<line x1="80" y1="96" x2="80" y2="142" stroke="#c96a12" stroke-width="1.5"/>'),
+      'colete-mestre': base('#e6b422', r(36, 112, 88, 5, '#3b3b3b') + r(36, 126, 88, 5, '#3b3b3b') + '<circle cx="96" cy="104" r="4" fill="#fff6c8"/>')
+    }[id] || '';
+  };
+  const PECAS = {
+    'capacete-amarelo': () => capacete('#ffcc1f', '#e0a800'), 'capacete-branco': () => capacete('#f7f7f2', '#c9c9c0'), 'capacete-dourado': () => capacete('#f2c94c', '#b8860b') + '<path d="M70 34 l4 -6 l4 6" fill="none" stroke="#fff6c8" stroke-width="2"/>',
+    'bone': () => '<path d="M50 52 Q50 30 80 30 Q110 30 110 52 Z" fill="#2f6fb5"/><path d="M106 50 Q128 50 130 56 Q110 58 104 55 Z" fill="#245a94"/><circle cx="80" cy="31" r="3" fill="#245a94"/>',
+    'laco': () => '<path d="M98 34 L84 26 L86 44 Z M98 34 L112 26 L110 44 Z" fill="#e85d8a"/><circle cx="98" cy="35" r="4" fill="#c43c6c"/>',
+    'abafador': () => '<path d="M48 64 Q48 30 80 30 Q112 30 112 64" fill="none" stroke="#d6252c" stroke-width="5"/><rect x="40" y="56" width="12" height="18" rx="5" fill="#d6252c"/><rect x="108" y="56" width="12" height="18" rx="5" fill="#d6252c"/>',
+    'fone': () => '<path d="M48 62 Q48 30 80 30 Q112 30 112 62" fill="none" stroke="#333" stroke-width="4"/><circle cx="46" cy="66" r="8" fill="#333"/><circle cx="114" cy="66" r="8" fill="#333"/>',
+    'coroa-folhas': () => [40, 55, 70, 90, 105, 120].map((a, i) => { const x = 50 + i * 12, y = 40 - Math.sin(i / 5 * Math.PI) * 8; return `<ellipse cx="${x}" cy="${y}" rx="7" ry="4" fill="${i % 2 ? '#3f9a4b' : '#5fbf5f'}" transform="rotate(${-30 + i * 12} ${x} ${y})"/>`; }).join(''),
+    'oculos-protecao': () => '<rect x="56" y="55" width="48" height="17" rx="8" fill="#9fd6f5" fill-opacity=".45" stroke="#3d7ea6" stroke-width="2.5"/>',
+    'oculos-sol': () => '<rect x="57" y="57" width="20" height="13" rx="5" fill="#222"/><rect x="83" y="57" width="20" height="13" rx="5" fill="#222"/><line x1="77" y1="62" x2="83" y2="62" stroke="#222" stroke-width="3"/>',
+    'cachecol': () => '<rect x="54" y="94" width="52" height="10" rx="5" fill="#d6252c"/>' + [60, 72, 84, 96].map(x => `<rect x="${x}" y="94" width="5" height="10" fill="#fff"/>`).join('') + '<rect x="90" y="100" width="10" height="22" rx="3" fill="#d6252c"/>',
+    'cracha': () => '<path d="M66 96 L80 116 L94 96" fill="none" stroke="#2672ac" stroke-width="3"/><rect x="71" y="114" width="18" height="22" rx="3" fill="#fff" stroke="#9aa"/><rect x="71" y="114" width="18" height="6" fill="#2672ac"/>',
+    'medalha': () => '<path d="M68 96 L80 116 L92 96" fill="none" stroke="#1e7a3c" stroke-width="4"/><circle cx="80" cy="120" r="8" fill="#f2c94c" stroke="#b8860b" stroke-width="2"/><text x="80" y="124" font-size="9" text-anchor="middle" fill="#8a6400" font-family="Arial" font-weight="800">1</text>',
+    'capa': () => '<path d="M54 100 L36 168 L124 168 L106 100 Z" fill="#d6252c"/><path d="M54 100 L36 168 L52 168 Z" fill="#a91c22"/>',
+    'botina': () => '<rect x="54" y="156" width="22" height="12" rx="5" fill="#6b4226"/><rect x="84" y="156" width="22" height="12" rx="5" fill="#6b4226"/><rect x="54" y="164" width="22" height="4" fill="#3d2615"/><rect x="84" y="164" width="22" height="4" fill="#3d2615"/>',
+    'prancheta': () => '<rect x="114" y="104" width="22" height="30" rx="2" fill="#a8743f"/><rect x="117" y="109" width="16" height="22" fill="#fff"/><rect x="121" y="101" width="8" height="5" rx="1" fill="#777"/><path d="M119 115h12M119 120h12M119 125h8" stroke="#9ab" stroke-width="1.5"/>',
+    'trena': () => '<rect x="114" y="112" width="20" height="20" rx="5" fill="#ffcc1f" stroke="#c99a00" stroke-width="2"/><circle cx="124" cy="122" r="4" fill="#555"/><rect x="132" y="126" width="12" height="4" fill="#c9c9c0"/>',
+    'camera': () => '<rect x="110" y="112" width="28" height="19" rx="4" fill="#333"/><circle cx="124" cy="121.5" r="6" fill="#6aa9d8" stroke="#ddd" stroke-width="2"/><rect x="114" y="108" width="8" height="5" rx="1" fill="#333"/>',
+    'megafone': () => '<path d="M112 118 L134 106 L134 136 L112 126 Z" fill="#ff8a1f"/><rect x="108" y="117" width="6" height="10" fill="#fafafa"/>',
+    'muda': () => '<path d="M114 122 L134 122 L131 138 L117 138 Z" fill="#a8743f"/><path d="M124 122 Q124 108 124 104" stroke="#3f9a4b" stroke-width="2.5" fill="none"/><ellipse cx="118" cy="108" rx="7" ry="4" fill="#5fbf5f" transform="rotate(-25 118 108)"/><ellipse cx="130" cy="106" rx="7" ry="4" fill="#3f9a4b" transform="rotate(25 130 106)"/>',
+    'chave': () => '<rect x="122" y="104" width="6" height="32" rx="3" fill="#9aa4ab" transform="rotate(25 125 120)"/><circle cx="131" cy="104" r="7" fill="none" stroke="#9aa4ab" stroke-width="5"/>',
+    'trofeu': () => '<path d="M114 106 L134 106 L132 120 Q124 128 116 120 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="1.5"/><rect x="121" y="125" width="6" height="6" fill="#b8860b"/><rect x="116" y="131" width="16" height="5" rx="1" fill="#8a6400"/>'
+  };
+  function capacete(c, b) { return `<path d="M46 58 Q46 26 80 26 Q114 26 114 58 Z" fill="${c}"/><rect x="40" y="54" width="80" height="8" rx="4" fill="${b}"/><path d="M80 27 V54" stroke="${b}" stroke-width="3"/>`; }
+  function olhos() { return '<circle cx="68" cy="64" r="7" fill="#fff"/><circle cx="92" cy="64" r="7" fill="#fff"/><circle cx="69" cy="65" r="4" fill="#2b211a"/><circle cx="93" cy="65" r="4" fill="#2b211a"/><circle cx="70.5" cy="63.5" r="1.4" fill="#fff"/><circle cx="94.5" cy="63.5" r="1.4" fill="#fff"/><circle cx="60" cy="76" r="4" fill="#f4a3a3" opacity=".6"/><circle cx="100" cy="76" r="4" fill="#f4a3a3" opacity=".6"/>'; }
+  function especie(e, parte) {
+    const [p, b] = PELE[e] || PELE.gato, d = {
+      gato: {atras: '', orelhas: `<path d="M50 52 L56 22 L76 40 Z M110 52 L104 22 L84 40 Z" fill="${p}"/><path d="M55 44 L58 30 L68 40 Z M105 44 L102 30 L92 40 Z" fill="#f7b6b6"/>`, rosto: '<path d="M76 73 L84 73 L80 78 Z" fill="#e88"/><path d="M80 78 Q76 84 72 81 M80 78 Q84 84 88 81" fill="none" stroke="#5a3a2a" stroke-width="1.6"/><path d="M58 76 H44 M58 80 L45 84 M102 76 H116 M102 80 L115 84" stroke="#5a3a2a" stroke-width="1.2"/>', depois: ''},
+      cachorro: {atras: '', orelhas: '', rosto: '<ellipse cx="80" cy="75" rx="6" ry="4.5" fill="#2b211a"/><path d="M80 79 V83 M80 83 Q75 88 71 84 M80 83 Q85 88 89 84" fill="none" stroke="#2b211a" stroke-width="1.6"/><ellipse cx="80" cy="89" rx="4" ry="3" fill="#e86f7c"/>', depois: '<ellipse cx="50" cy="70" rx="10" ry="20" fill="#8a5a33" transform="rotate(15 50 70)"/><ellipse cx="110" cy="70" rx="10" ry="20" fill="#8a5a33" transform="rotate(-15 110 70)"/>'},
+      pato: {atras: '', orelhas: '<path d="M78 36 Q74 24 84 26 Q78 30 82 36" fill="#ffd84d"/>', rosto: '<ellipse cx="80" cy="79" rx="15" ry="7" fill="#ff9f1c"/><path d="M66 79 H94" stroke="#d9800b" stroke-width="1.5"/>', depois: ''},
+      aguia: {atras: `<path d="M46 110 Q20 120 30 150 Q44 136 52 140 Z M114 110 Q140 120 130 150 Q116 136 108 140 Z" fill="#5c3c22"/>`, orelhas: '', rosto: '<path d="M72 74 Q80 70 88 74 Q86 86 80 90 Q82 82 72 74 Z" fill="#f2b705"/><path d="M60 55 L74 58 M100 55 L86 58" stroke="#3a2a1a" stroke-width="3" stroke-linecap="round"/>', depois: '', cabeca: '#f6f2ea'},
+      dinossauro: {atras: `<path d="M48 140 Q20 150 18 132 Q30 138 46 128 Z" fill="${p}"/>`, orelhas: '<path d="M62 38 L68 22 L74 36 Z M74 34 L80 16 L86 34 Z M86 36 L92 22 L98 38 Z" fill="#3f9a4b"/>', rosto: '<circle cx="75" cy="76" r="1.6" fill="#2b5a2b"/><circle cx="85" cy="76" r="1.6" fill="#2b5a2b"/><path d="M68 82 Q80 90 92 82" fill="none" stroke="#2b5a2b" stroke-width="1.8"/>', depois: ''},
+      abelha: {atras: '<ellipse cx="54" cy="104" rx="16" ry="11" fill="#cfeaff" opacity=".85" transform="rotate(-30 54 104)"/><ellipse cx="106" cy="104" rx="16" ry="11" fill="#cfeaff" opacity=".85" transform="rotate(30 106 104)"/>', orelhas: '<path d="M70 38 Q64 22 58 18 M90 38 Q96 22 102 18" fill="none" stroke="#2b211a" stroke-width="2.5"/><circle cx="58" cy="18" r="4" fill="#2b211a"/><circle cx="102" cy="18" r="4" fill="#2b211a"/>', rosto: '<path d="M72 80 Q80 87 88 80" fill="none" stroke="#5a3a2a" stroke-width="1.8"/>', depois: '', listras: true}
+    }[e] || {};
+    if (parte === 'cores') return {p, b, cabeca: d.cabeca || p};
+    return d[parte] || '';
+  }
+  /** SVG do mascote com as peças equipadas. tam: tamanho em px. */
+  function desenhar(e, equipado, tam, rotulo) {
+    const id = 'm' + (++seq), clip = 'c' + id, c = especie(e, 'cores'), q = equipado || {}, peca = s => q[s] && PECAS[q[s]] ? PECAS[q[s]]() : '';
+    const pePato = e === 'pato' ? '#ff9f1c' : c.p;
+    return `<svg class="mascot-svg" viewBox="0 0 160 180" width="${tam}" height="${Math.round(tam * 1.125)}" role="img" aria-label="${rotulo ? String(rotulo).replace(/[<>"&]/g, '') : 'Mascote'}"><defs><clipPath id="${clip}"><ellipse cx="80" cy="128" rx="36" ry="38"/></clipPath></defs>
+      <ellipse cx="80" cy="170" rx="40" ry="6" fill="#000" opacity=".08"/>${peca('costas')}${especie(e, 'atras')}
+      <ellipse cx="65" cy="162" rx="11" ry="7" fill="${pePato}"/><ellipse cx="95" cy="162" rx="11" ry="7" fill="${pePato}"/>
+      <ellipse cx="80" cy="128" rx="36" ry="38" fill="${c.p}"/><ellipse cx="80" cy="136" rx="22" ry="26" fill="${c.b}"/>
+      ${especie(e, 'listras') ? `<g clip-path="url(#${clip})"><rect x="40" y="112" width="80" height="9" fill="#2b211a"/><rect x="40" y="134" width="80" height="9" fill="#2b211a"/></g>` : ''}
+      ${q.corpo ? camisa(q.corpo, clip) : ''}<ellipse cx="46" cy="124" rx="9" ry="13" fill="${c.p}"/>${peca('pes')}
+      ${especie(e, 'orelhas')}<circle cx="80" cy="66" r="33" fill="${c.cabeca}"/>${especie(e, 'depois')}${olhos()}${especie(e, 'rosto')}
+      ${peca('rosto')}${peca('cabeca')}${peca('pescoco')}${peca('mao')}<ellipse cx="114" cy="124" rx="9" ry="12" fill="${c.p}"/></svg>`;
+  }
+  return {desenhar, temDesenho: id => !!PECAS[id] || !!camisa(id, 'x')};
+})();
+
+window.CPTEspaco = (() => {
+  'use strict';
+  let ui = null, ticket = 0, d = null, dia = null, notaTimer = null, fila = Promise.resolve(), guardaAba = 'cabeca';
+  const $ = id => document.getElementById(id);
+  const store = {get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} }, del: k => { try { localStorage.removeItem(k); } catch (_) {} }};
+  const op = () => 'OP-' + crypto.randomUUID();
+  const M = () => d.perfil.mascotes[d.perfil.ativo];
+  const desenho = (m, tam) => window.CPTMascote.desenhar(m.especie, m.equipado, tam, m.nome);
+  const dataLonga = x => new Date(x + 'T12:00:00Z').toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'});
+  const somaDias = (x, n) => { const t = new Date(x + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+  const dialogo = (tipo, titulo, html) => { $('detailType').textContent = tipo; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); };
+  const fechar = () => { if ($('detailDialog').open) $('closeDialog').click(); };
+  const SUGESTAO = {pato: 'Cleber', gato: 'Mingau', cachorro: 'Paçoca', aguia: 'Tietê', dinossauro: 'Rex', abelha: 'Mel'};
+  const TRABALHO = {
+    atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Abrir a mesa do relatório', 'socioambiental', ''], comunicacao: ['Abrir meu dia na Comunicação', 'comunicacao', 'hoje'],
+    comercializacao: ['Ver obras e endereços', 'obras', ''], gestao: ['Abrir o painel da gestão', 'painel', ''], administrativo: ['Abrir o painel da gestão', 'painel', '']};
+
+  async function render(manterDia) {
+    const mine = ++ticket; if (!manterDia) dia = null;
+    if (!d) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div>';
+    try { const r = await ui.call('carregarMeuEspacoCPT', {data: dia || undefined}); if (mine !== ticket || ui.state.route !== 'meuespaco') return; d = r; dia = r.data; desenhar(); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function desenhar() {
+    if (!d.perfil) { boasVindas(); return; }
+    const m = M(), nome = ((ui.state.perfil || {}).nome || '').split(' ')[0], cad = d.caderno, faltam = cad.porPeca - (cad.dias % cad.porPeca);
+    const v = ui.visao(), t = TRABALHO[v] || TRABALHO.atendimento, tr = d.trabalho || {};
+    ui.view.innerHTML = `<div class="space-grid">
+      <section class="panel mascot-stage"><div class="mascot-art">${desenho(m, 210)}</div>
+        <h2 class="mascot-name">${ui.esc(m.nome)} <button class="link-button" data-esp-nomear aria-label="Mudar o nome">mudar nome</button></h2><p class="small muted">${ui.esc(d.especies[m.especie])} de ${ui.esc(nome || 'você')}</p>
+        ${d.pendentes.length ? `<button class="gift" data-esp-presente>🎁 ${d.pendentes.length === 1 ? ui.esc(d.pendentes[0].titulo) : d.pendentes.length + ' presentes'} esperando por você</button>` : ''}
+        <div class="mascot-stats"><span title="Pontos do checklist">⭐ <strong id="espPontos">${ui.num(d.pontos.saldo)}</strong> pontos</span><span title="Dias com anotação no caderno">📓 <strong id="espDias">${cad.dias}</strong> ${cad.dias === 1 ? 'dia' : 'dias'} no caderno</span></div>
+        <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${cad.porPeca}" aria-valuenow="${cad.porPeca - faltam}" aria-label="Caderno até a próxima peça"><span style="width:${(cad.porPeca - faltam) / cad.porPeca * 100}%"></span></div>
+        <p class="small muted">Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'} de caderno para a próxima peça.</p>
+        <div class="dialog-actions center"><button class="button" data-esp-guarda>Guarda-roupa</button>${d.perfil.mascotes.length > 1 ? '<button class="button secondary" data-esp-trocar>Trocar mascote</button>' : ''}</div></section>
+      <div class="space-main">
+        <section class="today-hello"><h2>Olá${nome ? ', ' + ui.esc(nome) : ''}! Hoje é ${ui.esc(dataLonga(d.hoje))}.</h2>
+          <p>${tr.recados ? `<button class="link-button" data-route="recados">${tr.recados} ${tr.recados === 1 ? 'recado novo' : 'recados novos'}</button> · ` : ''}${tr.lembretes ? `${tr.lembretes} ${tr.lembretes === 1 ? 'lembrete para hoje' : 'lembretes para hoje'} · ` : ''}${ui.esc(m.nome)} está torcendo por você.</p>
+          <div class="quick-actions">${ui.podeVer(t[1]) ? `<button class="button" data-route="${t[1]}" ${t[2] ? `data-filter="${t[2]}"` : ''}>${t[0]} ${ui.icon('arrow')}</button>` : ''}<button class="button secondary" data-route="inicio">Números do mês</button></div></section>
+        <section class="panel"><div class="day-nav"><button class="icon-button" data-esp-dia="-1" aria-label="Dia anterior">‹</button><div><span class="eyebrow">${dia === d.hoje ? 'HOJE' : dia > d.hoje ? 'PLANEJAMENTO' : 'DIA ANTERIOR'}</span><h2>${ui.esc(dataLonga(dia))}</h2></div><button class="icon-button" data-esp-dia="1" aria-label="Próximo dia">›</button>${dia !== d.hoje ? '<button class="button ghost" data-esp-dia="0">Voltar para hoje</button>' : ''}</div>
+          <h3 class="peek-title">Checklist</h3><div id="espLista"></div>
+          <form id="espNova" class="inline-add"><input name="texto" maxlength="200" placeholder="${dia > d.hoje ? 'Planejar uma tarefa para este dia' : 'Nova tarefa para hoje'}" aria-label="Nova tarefa" autocomplete="off"><button class="button" type="submit">${ui.icon('plus')}Adicionar</button></form>
+          <p class="small muted">Cada tarefa feita vale ${d.regras.pontosPorTarefa} pontos (até ${d.regras.tarefasPorDia} por dia). Pontos compram peças exclusivas.${d.proximos.length ? ' Planejado: ' + d.proximos.map(p => `<button class="link-button" data-esp-ir="${p.data}">${ui.date(p.data)} (${p.pendentes})</button>`).join(' ') : ''}</p></section>
+        <section class="panel"><div class="panel-head"><div><h3 class="peek-title">Meu caderno</h3><p class="small muted">Só você lê. Salva sozinho enquanto você escreve.</p></div><span id="espNotaEstado" class="small muted" aria-live="polite"></span></div>
+          ${dia > d.hoje ? '<p class="empty-line">O caderno é para hoje e dias anteriores. Use o checklist para planejar este dia.</p>' : `<textarea id="espNota" class="notebook" rows="8" maxlength="10000" placeholder="Como foi o dia? O que aprendeu, o que ficou para amanhã, uma ideia…">${ui.esc(d.nota.texto)}</textarea>`}
+          ${cad.recentes.length ? `<details class="notebook-past"><summary>Dias anteriores</summary>${cad.recentes.map(r => `<button class="mini-row" data-esp-ir="${r.data}"><strong>${ui.date(r.data)}</strong><small>${ui.esc(r.trecho)}</small></button>`).join('')}</details>` : ''}</section>
+      </div></div>`;
+    desenharLista(); recuperarNota();
+  }
+  // ---------- Boas-vindas: escolher o primeiro mascote ----------
+  function boasVindas(escolhido) {
+    ui.view.innerHTML = `<section class="panel welcome-pets"><span class="eyebrow">BEM-VINDO(A) AO SEU ESPAÇO</span><h1>Escolha seu mascote</h1><p>Ele vai acompanhar seu trabalho. Toda semana você ganha um presente; escrevendo no caderno e cumprindo seu checklist, ganha roupas e acessórios.</p>
+      <div class="pet-picker">${Object.entries(d.especies).map(([k, n]) => `<button class="pet-option ${escolhido === k ? 'is-picked' : ''}" data-esp-especie="${k}" aria-pressed="${escolhido === k}">${window.CPTMascote.desenhar(k, {}, 110, n)}<span>${n}</span></button>`).join('')}</div>
+      ${escolhido ? `<form id="espInicio" class="inline-add"><label class="field">Dê um nome<input name="nome" maxlength="30" required value="${ui.esc(SUGESTAO[escolhido])}"></label><button class="button" type="submit">Começar com ${ui.esc(d.especies[escolhido])}</button></form>` : ''}<div id="espErro" class="notice" hidden></div></section>`;
+    if (escolhido) { const i = $('espInicio').elements.nome; i.focus(); i.select(); $('espInicio').dataset.especie = escolhido; }
+  }
+  // ---------- Checklist ----------
+  function desenharLista() {
+    const box = $('espLista'); if (!box) return; const itens = d.lista.itens.filter(t => !t.removido);
+    box.innerHTML = itens.length ? `<ul class="check-list">${itens.map(t => `<li class="${t.feito ? 'is-done' : ''}"><label><input type="checkbox" data-esp-check="${ui.esc(t.id)}" ${t.feito ? 'checked' : ''}><span>${ui.esc(t.texto)}</span></label>${t.pontuado ? '<span class="pts" title="Já pontuou">⭐</span>' : ''}<button class="icon-button small-x" data-esp-apagar="${ui.esc(t.id)}" aria-label="Apagar tarefa">×</button></li>`).join('')}</ul>` : `<p class="empty-line">${dia > d.hoje ? 'Nada planejado ainda.' : 'Nenhuma tarefa ainda. Que tal anotar a primeira?'}</p>`;
+  }
+  function salvarLista() {
+    const pedido = {data: dia, itens: d.lista.itens.filter(t => !t.removido).map(({id, texto, feito}) => ({id, texto, feito}))};
+    fila = fila.then(async () => {
+      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; desenharLista(); } d.pontos = r.pontos; const s = $('espPontos'); if (s) s.textContent = ui.num(r.pontos.saldo); if (/pontos!/.test(r.resultado)) ui.toast(r.resultado); }
+      catch (e) { ui.toast('Checklist não salvou: ' + e.message); render(true); }
+    });
+  }
+  // ---------- Caderno: salva sozinho (e guarda no navegador até o servidor confirmar) ----------
+  const chaveNota = () => 'cpt.caderno.' + dia;
+  function recuperarNota() {
+    const t = $('espNota'); if (!t) return; const local = store.get(chaveNota());
+    if (local !== null && local !== d.nota.texto) { t.value = local; estadoNota('Texto recuperado deste navegador. Salvando…'); agendarNota(10); }
+  }
+  function estadoNota(t) { const e = $('espNotaEstado'); if (e) e.textContent = t; }
+  function agendarNota(ms) { clearTimeout(notaTimer); notaTimer = setTimeout(salvarNota, ms == null ? 1500 : ms); }
+  function salvarNota() {
+    const t = $('espNota'); if (!t) return; const texto = t.value, data = dia;
+    if (texto === d.nota.texto) { store.del(chaveNota()); return; }
+    estadoNota('Salvando…');
+    fila = fila.then(async () => {
+      try {
+        const r = await ui.call('salvarNotaCPT', {data, texto, versao: d.nota.data === data ? d.nota.versao : 0, operacaoId: op()});
+        if (data === dia) { d.nota = r.nota; if (($('espNota') || {}).value === texto) store.del('cpt.caderno.' + data); }
+        d.caderno.dias = r.dias; if ($('espDias')) $('espDias').textContent = r.dias; estadoNota('Salvo às ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}));
+        if (r.pendentes.length > d.pendentes.length) { d.pendentes = r.pendentes; ui.toast(r.resultado); desenhar(); }
+      } catch (e) { estadoNota('Não salvou: ' + e.message + ' Seu texto continua aqui.'); }
+    });
+  }
+  function irPara(novo) { salvarNota(); dia = novo; render(true); }
+  // ---------- Mascote: nome, guarda-roupa, presentes, loja ----------
+  async function mascote(dados, okMsg) {
+    try { const r = await ui.call('salvarMascoteCPT', {...dados, versao: d.perfil ? d.perfil.versao : 0, operacaoId: op()}); d.perfil = r.perfil; d.pontos = r.pontos; d.pendentes = r.pendentes; ui.toast(okMsg || r.resultado); return true; }
+    catch (e) { const b = $('espErro'); if (b) { b.hidden = false; b.textContent = e.message; } else ui.toast(e.message); return false; }
+  }
+  function guardaRoupa() {
+    const m = M(), meus = new Set(d.perfil.pecas), it = d.catalogo.filter(x => x.slot === guardaAba);
+    const comuns = it.filter(x => !x.preco && meus.has(x.id)), exclusivas = it.filter(x => x.preco);
+    const carta = (x, acao) => `<button class="wardrobe-item ${m.equipado[x.slot] === x.id ? 'is-on' : ''}" ${acao}>${window.CPTMascote.desenhar(m.especie, {...m.equipado, [x.slot]: x.id}, 84, x.nome)}<span>${ui.esc(x.nome)}</span>${x.preco ? `<small>${meus.has(x.id) ? 'Sua' : '⭐ ' + x.preco + ' pontos'}</small>` : ''}</button>`;
+    dialogo('GUARDA-ROUPA', 'Guarda-roupa de ' + m.nome, `<div id="espErro" class="notice" hidden></div><div class="segmented painel-tabs wardrobe-tabs">${Object.entries(d.slots).map(([k, n]) => `<button class="${guardaAba === k ? 'chosen' : ''}" data-esp-aba="${k}">${n}</button>`).join('')}</div>
+      <h3 class="answers-head">Suas peças</h3><div class="wardrobe">${m.equipado[guardaAba] ? `<button class="wardrobe-item" data-esp-tirar="${guardaAba}">${window.CPTMascote.desenhar(m.especie, {...m.equipado, [guardaAba]: ''}, 84, 'Sem peça')}<span>Sem nada</span></button>` : ''}${comuns.concat(exclusivas.filter(x => meus.has(x.id))).map(x => carta(x, `data-esp-vestir="${x.id}"`)).join('') || '<p class="empty-line">Você ainda não tem peças aqui. Ganhe no presente da semana ou no caderno.</p>'}</div>
+      ${exclusivas.some(x => !meus.has(x.id)) ? `<h3 class="answers-head">Exclusivas por pontos <small class="muted">(você tem ⭐ ${ui.num(d.pontos.saldo)})</small></h3><div class="wardrobe">${exclusivas.filter(x => !meus.has(x.id)).map(x => carta(x, `data-esp-comprar="${x.id}" ${d.pontos.saldo < x.preco ? 'aria-disabled="true"' : ''}`)).join('')}</div>` : ''}`);
+  }
+  function presente(chave, modo) {
+    const p = d.pendentes.find(x => x.chave === chave) || d.pendentes[0]; if (!p) return; const meus = new Set(d.perfil.pecas), m = M();
+    const especiesNovas = Object.keys(d.especies).filter(k => !d.perfil.mascotes.some(x => x.especie === k));
+    const pecas = d.catalogo.filter(x => !x.preco && !meus.has(x.id));
+    modo = modo || (p.tipo === 'semana' ? '' : 'peca');
+    const escolha = !modo ? `<p>${ui.esc(p.texto)}</p><div class="big-choice"><label><input type="radio" name="m" data-esp-modo="mascote" ${especiesNovas.length ? '' : 'disabled'}><span><strong>Um mascote novo</strong><small>${especiesNovas.length ? 'Escolha a espécie e dê um nome' : 'Você já tem todos!'}</small></span></label><label><input type="radio" name="m" data-esp-modo="peca"><span><strong>Uma peça</strong><small>Roupa, EPI ou acessório</small></span></label></div>`
+      : modo === 'mascote' ? `<div class="pet-picker">${especiesNovas.map(k => `<button class="pet-option" data-esp-novo="${k}">${window.CPTMascote.desenhar(k, {}, 90, d.especies[k])}<span>${d.especies[k]}</span></button>`).join('')}</div><form id="espNovoMascote" class="inline-add" hidden><label class="field">Nome<input name="nome" maxlength="30" required></label><button class="button" type="submit">Adotar</button></form>`
+      : `<div class="wardrobe">${pecas.map(x => `<button class="wardrobe-item" data-esp-ganhar="${x.id}">${window.CPTMascote.desenhar(m.especie, {...m.equipado, [x.slot]: x.id}, 84, x.nome)}<span>${ui.esc(x.nome)}</span><small>${ui.esc(x.grupo)}</small></button>`).join('') || '<p class="empty-line">Você já tem todas as peças comuns!</p>'}</div>`;
+    dialogo('PRESENTE', '🎁 ' + p.titulo, `<div id="espErro" class="notice" hidden></div>${escolha}`); $('detailContent').dataset.chave = p.chave;
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', async e => {
+      const t = e.target;
+      const esp = t.closest('[data-esp-especie]'); if (esp) { boasVindas(esp.dataset.espEspecie); return; }
+      const dd = t.closest('[data-esp-dia]'); if (dd) { const n = Number(dd.dataset.espDia); irPara(n ? somaDias(dia, n) : d.hoje); return; }
+      const ir = t.closest('[data-esp-ir]'); if (ir) { fechar(); irPara(ir.dataset.espIr); return; }
+      const ck = t.closest('[data-esp-check]'); if (ck) { const x = d.lista.itens.find(y => y.id === ck.dataset.espCheck); x.feito = ck.checked; ck.closest('li').classList.toggle('is-done', ck.checked); salvarLista(); return; }
+      const ap = t.closest('[data-esp-apagar]'); if (ap) { d.lista.itens = d.lista.itens.filter(y => y.id !== ap.dataset.espApagar); desenharLista(); salvarLista(); return; }
+      if (t.closest('[data-esp-nomear]')) { const n = prompt('Novo nome para ' + M().nome + ':', M().nome); if (n && n.trim() && n.trim() !== M().nome && await mascote({acao: 'nomear', nome: n.trim()})) desenhar(); return; }
+      if (t.closest('[data-esp-guarda]')) { guardaAba = 'cabeca'; guardaRoupa(); return; }
+      const ab = t.closest('[data-esp-aba]'); if (ab) { guardaAba = ab.dataset.espAba; guardaRoupa(); return; }
+      const ve = t.closest('[data-esp-vestir]'); if (ve) { const it = d.catalogo.find(x => x.id === ve.dataset.espVestir); if (await mascote({acao: 'vestir', slot: it.slot, item: it.id})) { guardaRoupa(); desenhar(); } return; }
+      const ti = t.closest('[data-esp-tirar]'); if (ti) { if (await mascote({acao: 'vestir', slot: ti.dataset.espTirar, item: ''})) { guardaRoupa(); desenhar(); } return; }
+      const co = t.closest('[data-esp-comprar]'); if (co) { const it = d.catalogo.find(x => x.id === co.dataset.espComprar); if (d.pontos.saldo < it.preco) { ui.toast('Faltam ' + (it.preco - d.pontos.saldo) + ' pontos. Complete tarefas do checklist.'); return; } if (confirm('Usar ' + it.preco + ' pontos em "' + it.nome + '"?') && await mascote({acao: 'comprar', item: it.id})) { guardaRoupa(); desenhar(); } return; }
+      if (t.closest('[data-esp-trocar]')) { dialogo('MASCOTES', 'Seus mascotes', `<div class="pet-picker">${d.perfil.mascotes.map((m, i) => `<button class="pet-option ${i === d.perfil.ativo ? 'is-picked' : ''}" data-esp-ativar="${i}">${desenho(m, 100)}<span>${ui.esc(m.nome)}</span></button>`).join('')}</div>`); return; }
+      const at = t.closest('[data-esp-ativar]'); if (at) { if (await mascote({acao: 'ativar', indice: Number(at.dataset.espAtivar)})) { fechar(); desenhar(); } return; }
+      if (t.closest('[data-esp-presente]')) { presente(d.pendentes[0].chave); return; }
+      const mo = t.closest('[data-esp-modo]'); if (mo) { presente($('detailContent').dataset.chave, mo.dataset.espModo); return; }
+      const nv = t.closest('[data-esp-novo]'); if (nv) { document.querySelectorAll('[data-esp-novo]').forEach(b => b.classList.toggle('is-picked', b === nv)); const f = $('espNovoMascote'); f.hidden = false; f.dataset.especie = nv.dataset.espNovo; f.elements.nome.value = SUGESTAO[nv.dataset.espNovo]; f.elements.nome.focus(); f.elements.nome.select(); return; }
+      const ga = t.closest('[data-esp-ganhar]'); if (ga) { if (await mascote({acao: 'resgatar', chave: $('detailContent').dataset.chave, escolha: 'peca', item: ga.dataset.espGanhar})) { fechar(); desenhar(); } }
+    });
+    document.addEventListener('submit', async e => {
+      const f = e.target;
+      if (f.id === 'espInicio') { e.preventDefault(); if (await mascote({acao: 'iniciar', especie: f.dataset.especie, nome: f.elements.nome.value})) render(); }
+      else if (f.id === 'espNovoMascote') { e.preventDefault(); if (await mascote({acao: 'resgatar', chave: $('detailContent').dataset.chave, escolha: 'mascote', especie: f.dataset.especie, nome: f.elements.nome.value})) { fechar(); desenhar(); } }
+      else if (f.id === 'espNova') { e.preventDefault(); const texto = f.elements.texto.value.trim(); if (!texto) return; if (d.lista.itens.filter(t => !t.removido).length >= 30) { ui.toast('Use até 30 tarefas por dia.'); return; } d.lista.itens.push({id: 'T-' + crypto.randomUUID().slice(0, 8), texto, feito: false}); f.reset(); desenharLista(); salvarLista(); f.elements.texto.focus(); }
+    });
+    document.addEventListener('input', e => { if (e.target.id === 'espNota') { store.set(chaveNota(), e.target.value); estadoNota('Escrevendo…'); agendarNota(); } });
+    document.addEventListener('focusout', e => { if (e.target.id === 'espNota') agendarNota(0); });
+  }
+  return {init, render, sair: () => { clearTimeout(notaTimer); salvarNota(); }};
+})();
+</script>

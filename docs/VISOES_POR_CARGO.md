@@ -1,4 +1,4 @@
-# O que cada pessoa vê (Aplicação CPT 2.8)
+# O que cada pessoa vê (Aplicação CPT 2.9)
 
 A aplicação mostra a cada pessoa **a tela do seu trabalho**. A tela é escolhida pelo cargo cadastrado em **Equipe e acessos**.
 
@@ -27,7 +27,8 @@ Quem tem **um cargo só** não vê a faixa nem a troca. Para essa pessoa, aparec
 
 | Página | Atendimento | Comercialização | Socioambiental | Comunicação | Gestão | Administrativo |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
-| Visão do mês (com atalhos do cargo) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Meu espaço** (mascote, checklist e caderno) | ✓ entrada | ✓ entrada | ✓ entrada | ✓ entrada | ✓ | ✓ |
+| Visão do mês (com atalhos do cargo) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ← entrada da Gestão e do Administrativo
 | **Recados** (avisar outra frente ou pessoa) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | **Contatos** (matriz comum, conversas registradas) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | **Comunicação** (Hoje, Lembretes, Materiais e links, Galeria) | | | | ✓ (página de entrada) | ✓ | ✓ |
@@ -112,3 +113,34 @@ As outras abas:
   - **Escolher e baixar:** até 15 fotos em um .zip, com a lista de legendas.
 
 As fotos extras ficam na pasta **CPT • Comunicação – Fotos extras**, criada no primeiro envio. Compartilhe essa pasta como Leitor com a equipe; ela aparece em Conectores e pastas.
+
+## Meu espaço: a página de entrada (mascote, checklist e caderno)
+
+Atendimento, Socioambiental, Comunicação e Comercialização abrem a aplicação no **Meu espaço**. Gestão e Administrativo continuam abrindo na Visão do mês. A Visão do mês segue na lateral para todos.
+
+No Meu espaço:
+
+- **Mascote.** No primeiro acesso, a pessoa escolhe entre gato, águia, pato, dinossauro, abelha e cachorro, e dá um nome. O pato já sugere "Cleber". O nome pode ser mudado a qualquer hora.
+- **Guarda-roupa:**
+  - EPI: capacetes, colete refletivo, óculos de proteção, protetor auricular, botina;
+  - camisas de futebol de São Paulo, só nas cores, sem escudos: alvinegra listrada, verde, tricolor e branca do Peixe;
+  - camiseta CPT;
+  - acessórios: boné, laço, óculos escuros, cachecol, crachá, fone;
+  - ferramentas na mão: prancheta, trena, câmera, megafone, muda de planta, chave inglesa;
+  - exclusivas por pontos: capacete dourado, coroa de folhas, capa de herói da obra, medalha, troféu, colete de mestre de obras.
+- **Checklist do dia.** Também serve para planejar outros dias com as setas.
+- **Caderno pessoal.** Salva sozinho enquanto a pessoa escreve. Se a conexão cair, o texto fica guardado no navegador e é salvo depois.
+- **Atalho para o trabalho do dia**, conforme o cargo (por exemplo, "Ver casos em aberto" ou "Abrir meu dia na Comunicação"), e o aviso de recados.
+
+**Regras dos presentes.** O servidor confere todas; nada é ganho duas vezes.
+
+| Como ganha | O quê |
+|---|---|
+| Toda semana (segunda a domingo) | 1 presente: escolher **um mascote novo** ou **uma peça** |
+| A cada 5 dias com anotação no caderno (pelo menos 20 letras no dia) | 1 peça à escolha |
+| Cada tarefa própria marcada como feita no checklist | 10 pontos, uma única vez por tarefa; até 8 tarefas por dia; tarefa de dia futuro só pontua no dia |
+| Pontos | Compram as peças exclusivas (200 a 400 pontos) |
+
+Desmarcar e marcar de novo não soma pontos. Apagar uma tarefa que já pontuou não tira os pontos.
+
+**Privacidade.** Caderno, checklist, pontos e mascote são de cada conta. Ninguém vê o espaço de outra pessoa pela aplicação, nem a Gestão. Os dados ficam nas abas "Meu espaço", "Caderno" e "Checklist" da planilha "CPT • Dados da aplicação". Ela é sua e não deve ser compartilhada com a equipe.

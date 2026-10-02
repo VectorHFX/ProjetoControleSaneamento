@@ -352,4 +352,40 @@ html[data-theme=dark][data-visao=comercializacao]{--visao:#b7d58a}
 
 .photo-pick{border:0!important;padding:0!important;background:none!important;box-shadow:none!important;min-height:0!important}
 .gallery-bar>span:last-child{display:flex;gap:6px;flex-wrap:wrap}
+
+/* 2.9 — Meu espaço: mascote, checklist e caderno. */
+.space-grid{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:18px;align-items:start}
+.space-main{display:grid;gap:16px;min-width:0}.space-main .today-hello{margin:0}
+.mascot-stage{text-align:center;position:sticky;top:12px;background:linear-gradient(180deg,color-mix(in srgb,var(--visao) 12%,var(--surface)),var(--surface) 60%)}
+.mascot-art{display:flex;justify-content:center;padding-top:6px}
+.mascot-art .mascot-svg{animation:bob 3.2s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-5px) rotate(-1.5deg)}}
+@media(prefers-reduced-motion:reduce){.mascot-art .mascot-svg{animation:none}}html[data-motion=reduce] .mascot-art .mascot-svg{animation:none}
+.mascot-name{margin:4px 0 0;font-size:24px}.mascot-name .link-button{font-size:12px;font-weight:600}
+.gift{display:block;width:100%;margin:12px 0;padding:12px;border-radius:12px;border:2px dashed #d18a1f;background:#fff4df;color:#6b4300;font:inherit;font-weight:750;cursor:pointer;animation:pulse 2.4s ease-in-out infinite}
+html[data-theme=dark] .gift{background:#3a2c17;color:#ffd99a}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #d18a1f33}50%{box-shadow:0 0 0 6px #d18a1f22}}@media(prefers-reduced-motion:reduce){.gift{animation:none}}
+.mascot-stats{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:10px 0 8px;font-size:14px}
+.dialog-actions.center{justify-content:center}
+.day-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.day-nav>div{flex:1;min-width:160px}.day-nav h2{margin:0;font-size:18px}
+.inline-add{display:flex;gap:8px;align-items:flex-end;margin:10px 0;flex-wrap:wrap}.inline-add input{flex:1 1 220px;min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.inline-add .field{flex:1 1 220px;display:grid;gap:5px}
+.check-list{list-style:none;margin:6px 0;padding:0;display:grid;gap:6px}
+.check-list li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--bg)}
+.check-list label{flex:1;display:flex;gap:10px;align-items:center;cursor:pointer;min-height:32px}.check-list input{width:20px;height:20px;flex:none;accent-color:var(--visao)}
+.check-list li.is-done span{text-decoration:line-through;color:var(--muted)}
+.pts{font-size:13px}.small-x{width:30px;height:30px;font-size:18px;line-height:1}
+.notebook{width:100%;min-height:180px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);font:inherit;font-size:15px;line-height:1.7;color:var(--ink);resize:vertical;
+  background:repeating-linear-gradient(var(--surface),var(--surface) 25px,color-mix(in srgb,var(--visao) 14%,var(--surface)) 26px);background-attachment:local}
+.notebook-past{margin-top:10px}.notebook-past summary{cursor:pointer;font-weight:650}
+.welcome-pets{text-align:center}.welcome-pets h1{margin:6px 0}
+.pet-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin:16px 0}
+.pet-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.pet-option:hover,.pet-option:focus-visible,.pet-option.is-picked{border-color:var(--visao);background:color-mix(in srgb,var(--visao) 8%,var(--surface))}
+.welcome-pets .inline-add{justify-content:center;max-width:520px;margin:0 auto}
+.wardrobe-tabs{display:flex;flex-wrap:wrap;margin-bottom:6px}
+.wardrobe{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.wardrobe-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;text-align:center}
+.wardrobe-item small{color:var(--muted)}.wardrobe-item.is-on{border-color:var(--visao);background:color-mix(in srgb,var(--visao) 9%,var(--surface))}.wardrobe-item[aria-disabled=true]{opacity:.55}
+@media(max-width:900px){.space-grid{grid-template-columns:1fr}.mascot-stage{position:static}}
 </style>

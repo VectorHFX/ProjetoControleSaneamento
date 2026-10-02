@@ -100,6 +100,23 @@ if(nome==='carregarComunicacaoHojeCPT'){const pend=COM.lembretes.filter(l=>l.sit
 if(nome==='listarGaleriaCPT')return {mes:p.mes,itens:COM.extras.concat(Array.from({length:30},(_,i)=>({fileId:'FOTODEMO'+String(i).padStart(14,'0'),data:'2026-09-'+String(28-i%20).padStart(2,'0'),atividade:['Oficina de horta','Diálogo com moradores'][i%2],local:'Vila Linda',legenda:String(28-i%20).padStart(2,'0')+'/09/2026 - '+['Oficina de horta','Diálogo com moradores'][i%2]+' - Vila Linda',responsavel:'Equipe de exemplo',video:i===3,origem:'Registro',registro:registros[1].id}))),pasta:'',podeEnviar:true};
 if(nome==='enviarFotoGaleriaCPT'){if(!p.atividade)throw new Error('Preencha: atividade.');const it={fileId:'EXTRA'+crypto.randomUUID().replace(/-/g,'').slice(0,20),data:p.data,atividade:p.atividade,local:p.local,legenda:p.data.split('-').reverse().join('/')+' - '+p.atividade+(p.local?' - '+p.local:''),responsavel:perfilDemo.nome,origem:'Extra',video:false};COM.extras.push(it);return {resultado:'Foto guardada na galeria.',item:it};}
 if(nome==='baixarPacoteGaleriaCPT'){if(!p.ids.length||p.ids.length>15)throw new Error('Escolha de 1 a 15 fotos para baixar.');return {nome:'Fotos '+p.mes+'.zip',base64:btoa('PK'),legendas:''};}
+if(!window.CPT_ESP){window.CPT_ESP={perfil:null,notas:{},listas:{},v:0};}
+const ESP=window.CPT_ESP,hojeE=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),CAT=__CATALOGO__;
+const espPontos=()=>{const g=Object.values(ESP.listas).reduce((a,l)=>a+Math.min(8,l.itens.filter(t=>t.pontuado).length)*10,0),c=ESP.perfil?ESP.perfil.compras.reduce((a,x)=>a+x.preco,0):0;return {ganhos:g,gastos:c,saldo:g-c};};
+const espDias=()=>Object.values(ESP.notas).filter(n=>n.texto.trim().length>=20).length;
+const espPend=()=>{if(!ESP.perfil)return [];const r=ESP.perfil.resgates,out=[];if(!r['semana:atual'])out.push({chave:'semana:atual',tipo:'semana',titulo:'Presente da semana',texto:'Escolha um mascote novo ou uma peça.'});for(let i=1;i<=Math.floor(espDias()/5);i++)if(!r['caderno:'+i*5])out.push({chave:'caderno:'+i*5,tipo:'caderno',titulo:i*5+' dias de caderno',texto:'Escolha uma peça nova.'});return out;};
+if(nome==='carregarMeuEspacoCPT'){const dia=(p&&p.data)||hojeE,n=ESP.notas[dia],l=ESP.listas[dia];return {hoje:hojeE,data:dia,perfil:ESP.perfil,catalogo:CAT.catalogo,especies:CAT.especies,slots:CAT.slots,pontos:espPontos(),pendentes:espPend(),nota:n?{data:dia,...n}:{data:dia,texto:'',versao:0},lista:l?{data:dia,...l}:{data:dia,itens:[],versao:0},
+  caderno:{dias:espDias(),porPeca:5,minimo:20,recentes:Object.entries(ESP.notas).filter(([,n])=>n.texto.trim()).map(([d,n])=>({data:d,trecho:n.texto.slice(0,90)}))},proximos:[],regras:{pontosPorTarefa:10,tarefasPorDia:8},trabalho:{recados:1,lembretes:2}};}
+if(nome==='salvarMascoteCPT'){let pf=ESP.perfil?JSON.parse(JSON.stringify(ESP.perfil)):null,res='';if(p.acao==='iniciar'){if(!p.nome)throw new Error('Preencha: nome do mascote.');pf={mascotes:[{especie:p.especie,nome:p.nome,equipado:{}}],ativo:0,pecas:[],resgates:{},compras:[],versao:0};res='Bem-vindo(a), '+p.nome+'!';}else{const m=pf.mascotes[pf.ativo];
+  if(p.acao==='nomear'){m.nome=p.nome;res='Agora seu mascote se chama '+p.nome+'.';}
+  if(p.acao==='ativar'){pf.ativo=p.indice;res=pf.mascotes[p.indice].nome+' está com você agora.';}
+  if(p.acao==='vestir'){if(p.item)m.equipado[p.slot]=p.item;else delete m.equipado[p.slot];res='Pronto!';}
+  if(p.acao==='resgatar'){if(pf.resgates[p.chave])throw new Error('Esse presente já foi resgatado.');if(p.escolha==='mascote'){pf.mascotes.push({especie:p.especie,nome:p.nome,equipado:{}});pf.ativo=pf.mascotes.length-1;res='Chegou '+p.nome+'!';}else{const it=CAT.catalogo.find(x=>x.id===p.item);pf.pecas.push(it.id);m.equipado[it.slot]=it.id;res='Peça nova: '+it.nome+'!';}pf.resgates[p.chave]={em:new Date().toISOString()};}
+  if(p.acao==='comprar'){const it=CAT.catalogo.find(x=>x.id===p.item);if(espPontos().saldo<it.preco)throw new Error('Faltam pontos: complete tarefas do seu checklist.');pf.pecas.push(it.id);pf.compras.push({item:it.id,preco:it.preco});m.equipado[it.slot]=it.id;res='Peça exclusiva: '+it.nome+'!';}}
+  pf.versao=(pf.versao||0)+1;ESP.perfil=pf;return {resultado:res,perfil:pf,pontos:espPontos(),pendentes:espPend()};}
+if(nome==='salvarNotaCPT'){const antes=espDias();ESP.notas[p.data]={texto:p.texto,versao:((ESP.notas[p.data]||{}).versao||0)+1};const dias=espDias();return {resultado:Math.floor(dias/5)>Math.floor(antes/5)?'Caderno salvo. Você completou '+dias+' dias: tem peça nova esperando!':'Salvo.',nota:{data:p.data,...ESP.notas[p.data]},dias,pendentes:espPend()};}
+if(nome==='salvarChecklistCPT'){const ant=new Map(((ESP.listas[p.data]||{}).itens||[]).map(t=>[t.id,t]));let pts=[...ant.values()].filter(t=>t.pontuado).length,novos=0;const itens=p.itens.map(t=>{const v=ant.get(t.id),x={...t,pontuado:!!(v&&v.pontuado)};if(t.feito&&!x.pontuado&&p.data<=hojeE&&pts<8){x.pontuado=true;pts++;novos++;}return x;});
+  ESP.listas[p.data]={itens,versao:((ESP.listas[p.data]||{}).versao||0)+1};return {resultado:novos?'+'+novos*10+' pontos!':'Checklist salvo.',lista:{data:p.data,...ESP.listas[p.data]},pontos:espPontos()};}
 if(nome==='listarEquipeCPT')return {pessoas:equipeDemo,agendaUrl:'https://docs.google.com/spreadsheets/'};
 if(nome==='salvarPessoaCPT'){const i=equipeDemo.findIndex(x=>x.email===p.email);if(i>=0)equipeDemo[i]=p;else equipeDemo.push(p);return {resultado:'Cadastro demonstrativo atualizado.'};}
 if(nome==='conferirSaudeCPT')return {itens:[{nome:'Registros',quantidade:54,unidade:'registros',orientacao:'Dados fictícios desta prévia.'}],tempoServidorMs:120};
@@ -118,4 +135,8 @@ s=s.replace("<?!= incluirCPT_('Socioambiental'); ?>",(root/'src/Socioambiental.h
 s=s.replace("<?!= incluirCPT_('Gestao'); ?>",(root/'src/Gestao.html').read_text())
 s=s.replace("<?!= incluirCPT_('Comunicacao'); ?>",(root/'src/Comunicacao.html').read_text())
 s=s.replace("<?!= incluirCPT_('Recados'); ?>",(root/'src/Recados.html').read_text())
+s=s.replace("<?!= incluirCPT_('MeuEspaco'); ?>",(root/'src/MeuEspaco.html').read_text())
+import subprocess,json
+cat=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={catalogo:PessoalCPT.catalogo,especies:PessoalCPT.especies,slots:PessoalCPT.slots};',c);console.log(JSON.stringify(c.x))",str(root/'src/PessoalCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
+s=s.replace('__CATALOGO__',cat)
 (root/'previa/CPT_Previa_1_2_1.html').write_text(s)
