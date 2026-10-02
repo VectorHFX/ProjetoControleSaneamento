@@ -51,6 +51,11 @@ r=masc({acao:'resgatar',chave,escolha:'peca',item:'capacete-amarelo',versao:r.pe
 assert.throws(()=>masc({acao:'resgatar',chave,escolha:'mascote',especie:'gato',nome:'Mingau',versao:r.perfil.versao}),/já foi resgatado/);
 assert.throws(()=>masc({acao:'nomear',nome:'Velho',versao:r.perfil.versao-1}),/Outra pessoa alterou/);
 r=masc({acao:'nomear',nome:'Cleber Jr',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[0].nome,'Cleber Jr');
+// 2.10: cor do mascote (lista fixa, livre) e capivara.
+assert.throws(()=>masc({acao:'colorir',cor:'neon',versao:r.perfil.versao}),/opção válida/);
+r=masc({acao:'colorir',cor:'azul',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[0].cor,'azul');assert.match(r.resultado,/azul/);
+r=masc({acao:'colorir',cor:'',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[0].cor,'');assert.match(r.resultado,/cor original/);
+assert.ok(run('PessoalCPT.especies').capivara,'capivara entre os mascotes');
 console.log('PASS: mascote — escolha e nome validados, presente da semana uma única vez (peça comum), peça só de quem tem, conflito de versão.');
 // 3. Caderno: a cada 5 dias com anotação (≥ 20 caracteres) uma peça; futuro não; editar não duplica.
 const dia=n=>{const x=new Date(hoje+'T12:00:00Z');x.setUTCDate(x.getUTCDate()-n);return x.toISOString().slice(0,10);};

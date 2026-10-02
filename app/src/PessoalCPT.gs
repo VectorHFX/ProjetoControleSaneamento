@@ -1,5 +1,6 @@
 /**
- * PessoalCPT 2.9.0. "Meu espaço": mascote, caderno e checklist de cada pessoa.
+ * PessoalCPT 2.10.0. "Meu espaço": mascote, caderno e checklist de cada pessoa.
+ * 2.10: capivara entre os mascotes e cor de cada mascote (lista fixa de cores, trocar a cor é livre e não gasta nada).
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
  *
  * Regras das recompensas (calculadas no servidor; nada é concedido duas vezes):
@@ -11,7 +12,13 @@
  * - Recompensa resgatada fica registrada pela chave (semana:AAAA-Snn, caderno:5, caderno:10…): repetir não duplica.
  */
 class PessoalCPT {
-  static get especies() { return {gato: 'Gato', aguia: 'Águia', pato: 'Pato', dinossauro: 'Dinossauro', abelha: 'Abelha', cachorro: 'Cachorro'}; }
+  static get especies() { return {gato: 'Gato', aguia: 'Águia', pato: 'Pato', dinossauro: 'Dinossauro', abelha: 'Abelha', cachorro: 'Cachorro', capivara: 'Capivara'}; }
+  /** Cores possíveis do mascote. Sem cor escolhida, cada espécie usa a sua (o gato é laranja). */
+  static get cores() {
+    return {laranja: 'Laranja', caramelo: 'Caramelo', marrom: 'Marrom', creme: 'Creme', cinza: 'Cinza', grafite: 'Grafite', branco: 'Branco',
+      amarelo: 'Amarelo', verde: 'Verde', azul: 'Azul', lilas: 'Lilás', rosa: 'Rosa'};
+  }
+  static cor(v) { return v === '' || v == null ? '' : ColecaoCPT.opcao(v, Object.keys(PessoalCPT.cores), 'cor do mascote'); }
   static get slots() { return {cabeca: 'Cabeça', rosto: 'Rosto', pescoco: 'Pescoço', corpo: 'Roupa', costas: 'Costas', mao: 'Na mão', pes: 'Pés'}; }
   /** [id, nome, parte, grupo, preço em pontos (0 = peça comum, ganha por semana ou caderno)] */
   static get catalogo() {
@@ -70,7 +77,7 @@ class PessoalCPT {
 
   carregar(p) {
     const dia = ColecaoCPT.data((p && p.data) || this.hoje, 'data', true), perfil = this.perfil(), notas = this.minhasNotas();
-    const out = {hoje: this.hoje, data: dia, perfil, catalogo: PessoalCPT.catalogo, especies: PessoalCPT.especies, slots: PessoalCPT.slots,
+    const out = {hoje: this.hoje, data: dia, perfil, catalogo: PessoalCPT.catalogo, especies: PessoalCPT.especies, cores: PessoalCPT.cores, slots: PessoalCPT.slots,
       pontos: this.pontos(perfil), pendentes: this.pendentes(perfil), nota: this.nota(dia), lista: this.lista(dia),
       caderno: {dias: this.diasEscritos(), porPeca: PessoalCPT.diasPorPeca, minimo: PessoalCPT.minimoCaderno,
         recentes: notas.filter(n => String(n.texto || '').trim()).map(n => ({data: n.id.slice(-10), trecho: String(n.texto).trim().slice(0, 90)})).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 12)},
@@ -80,7 +87,7 @@ class PessoalCPT {
     return out;
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }
-  /** Ações do mascote: iniciar, nomear, ativar, vestir, resgatar, comprar. Tudo sobre o próprio perfil. */
+  /** Ações do mascote: iniciar, nomear, colorir, ativar, vestir, resgatar, comprar. Tudo sobre o próprio perfil. */
   mascote(p) {
     p = p || {}; const atual = this.perfil(), acao = p.acao;
     if (!atual && acao !== 'iniciar') throw new Error('Escolha seu primeiro mascote.');
@@ -88,11 +95,12 @@ class PessoalCPT {
     if (acao === 'iniciar') {
       if (atual) return {resultado: 'Seu mascote já está aqui.', perfil: atual};
       ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.especies), 'mascote');
-      novo = {mascotes: [{especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: {}}], ativo: 0, pecas: [], resgates: {}, compras: []};
+      novo = {mascotes: [{especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: {}, cor: PessoalCPT.cor(p.cor)}], ativo: 0, pecas: [], resgates: {}, compras: []};
       resultado = 'Bem-vindo(a), ' + novo.mascotes[0].nome + '!';
     } else {
       novo = JSON.parse(JSON.stringify(atual)); const m = novo.mascotes[novo.ativo];
       if (acao === 'nomear') { m.nome = PessoalCPT.nome(p.nome); resultado = 'Agora seu mascote se chama ' + m.nome + '.'; }
+      else if (acao === 'colorir') { m.cor = PessoalCPT.cor(p.cor); resultado = m.cor ? m.nome + ' agora está ' + PessoalCPT.cores[m.cor].toLowerCase() + '.' : m.nome + ' voltou à cor original.'; }
       else if (acao === 'ativar') { const i = Number(p.indice); if (!Number.isInteger(i) || !novo.mascotes[i]) throw new Error('Mascote não encontrado.'); novo.ativo = i; resultado = novo.mascotes[i].nome + ' está com você agora.'; }
       else if (acao === 'vestir') {
         const slot = ColecaoCPT.opcao(p.slot, Object.keys(PessoalCPT.slots), 'parte');
@@ -104,7 +112,7 @@ class PessoalCPT {
           if (pend.tipo !== 'semana') throw new Error('Mascote novo é só no presente da semana.');
           ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.especies), 'mascote');
           if (novo.mascotes.some(x => x.especie === p.especie)) throw new Error('Você já tem esse mascote. Escolha outro.');
-          novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: {}}); novo.ativo = novo.mascotes.length - 1; resultado = 'Chegou ' + novo.mascotes[novo.ativo].nome + '!';
+          novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: {}, cor: PessoalCPT.cor(p.cor)}); novo.ativo = novo.mascotes.length - 1; resultado = 'Chegou ' + novo.mascotes[novo.ativo].nome + '!';
         } else {
           const it = PessoalCPT.item(p.item); if (!it || it.preco) throw new Error('Escolha uma peça comum.');
           if (novo.pecas.includes(it.id)) throw new Error('Você já tem essa peça. Escolha outra.');

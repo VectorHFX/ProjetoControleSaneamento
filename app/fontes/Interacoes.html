@@ -14,6 +14,24 @@
   const store={get:k=>{try{return localStorage.getItem(k);}catch(_){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(_){}}};
   const savedTheme=store.get('cpt.theme');document.documentElement.dataset.theme=savedTheme==='dark'?'dark':'light';
   if(store.get('cpt.motion')==='reduce')document.documentElement.dataset.motion='reduce';
+  // ---------- Menu (hambúrguer): no computador recolhe a lateral (só ícones); no celular abre a gaveta com todas as páginas ----------
+  const celular=()=>window.matchMedia('(max-width:800px)').matches;
+  function abrirMenu(abrir){document.body.classList.toggle('nav-open',abrir);$('navScrim').hidden=!abrir;$('menuToggle').setAttribute('aria-expanded',String(abrir));const tm=$('tabMenu');if(tm)tm.setAttribute('aria-expanded',String(abrir));
+    if(abrir){const alvo=document.querySelector('#navigation .nav-item.active')||document.querySelector('#navigation .nav-item:not([hidden])');if(alvo)alvo.focus();}}
+  function alternarMenu(){if(celular()){abrirMenu(!document.body.classList.contains('nav-open'));return;}const compacto=!document.body.classList.contains('nav-compact');document.body.classList.toggle('nav-compact',compacto);store.set('cpt.nav',compacto?'compacto':'');$('menuToggle').setAttribute('aria-expanded',String(!compacto));}
+  if(store.get('cpt.nav')==='compacto'&&!celular()){document.body.classList.add('nav-compact');$('menuToggle').setAttribute('aria-expanded','false');}
+  if(celular())$('menuToggle').setAttribute('aria-expanded','false');
+  $('menuToggle').addEventListener('click',alternarMenu);$('menuClose').addEventListener('click',()=>abrirMenu(false));$('navScrim').addEventListener('click',()=>abrirMenu(false));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('nav-open'))abrirMenu(false);});
+  document.addEventListener('click',e=>{if(e.target.closest('#tabMenu'))abrirMenu(true);});
+  // Barra de atalhos do celular: as 4 páginas mais usadas de cada cargo + Menu.
+  const ATALHOS={atendimento:['meuespaco','atendimentos','cronograma','recados'],socioambiental:['meuespaco','socioambiental','cronograma','recados'],comunicacao:['meuespaco','comunicacao','cronograma','recados'],
+    comercializacao:['meuespaco','obras','cronograma','recados'],gestao:['inicio','painel','atendimentos','recados'],administrativo:['inicio','painel','atendimentos','recados']};
+  function montarTabbar(){const bar=$('tabbar');if(!bar)return;const vis=[...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden),por=new Map(vis.map(b=>[b.dataset.route,b]));
+    const rotas=(ATALHOS[visao()]||[]).filter(r=>por.has(r));vis.forEach(b=>{if(rotas.length<4&&!rotas.includes(b.dataset.route))rotas.push(b.dataset.route);});
+    bar.innerHTML=rotas.slice(0,4).map(r=>{const b=por.get(r),uso=b.querySelector('use'),nome=b.querySelector('span').textContent;return `<button class="tab-item${state.route===r?' active':''}" data-route="${esc(r)}"${state.route===r?' aria-current="page"':''}><svg class="icon" aria-hidden="true"><use href="${esc(uso?uso.getAttribute('href'):'#i-home')}"/></svg><span>${esc(nome)}</span></button>`;}).join('')+
+      '<button class="tab-item" id="tabMenu" type="button" aria-controls="navigation" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg><span>Menu</span></button>';
+    if(window.CPTRecados&&window.CPTRecados.copiarAvisos)window.CPTRecados.copiarAvisos();}
   $('theme').value=document.documentElement.dataset.theme;$('month').value=state.mes;
   const pendingReads=new Map();
   function call(nome,arg){
@@ -34,7 +52,7 @@
   function notice(text){$('globalNotice').textContent=text;$('globalNotice').hidden=!text;}
   function empty(title,text,action=''){return `<div class="empty">${icon('records')}<h3>${esc(title)}</h3><p>${esc(text)}</p>${action}</div>`;}
   function skeleton(){return `<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Buscando as informações do mês…</div><div class="skeleton hero-loading"></div><div class="kpis">${'<div class="skeleton"></div>'.repeat(4)}</div>`;}
-  function intro(title,description){return `<div class="page-intro"><div><div class="eyebrow muted">CAMPO E GESTÃO</div><h1>${esc(title)}</h1><p>${esc(description)}</p></div><span class="date-tag">${esc(monthLabel(state.mes))}</span></div>`;}
+  function intro(title,description){return `<div class="page-intro"><div class="intro-text"><div class="eyebrow muted">CAMPO E GESTÃO</div><h1>${esc(title)}</h1><p>${esc(description)}</p><span class="date-tag">${esc(monthLabel(state.mes))}</span></div><div class="intro-art" aria-hidden="true">${window.CPTArte?window.CPTArte.pagina(state.route):''}</div></div>`;}
   function safeURL(value){try{const u=new URL(value);return u.protocol==='https:'&&['drive.google.com','docs.google.com'].includes(u.hostname)?u.href:'';}catch(_){return '';}}
   function formLink(){const url=safeURL(state.home?.links?.formulario);return url?`<a class="button white" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${icon('plus')}Registrar procedimento</a>`:`<button class="button white" data-action="noform">${icon('plus')}Registrar procedimento</button>`;}
   // Visão geral: componente Inicio.html.
@@ -76,7 +94,7 @@
   function visao(){return $('roleView').value||'atendimento';}
   function podeVer(route){return permitido(route)&&(VISOES[visao()]||COMUNS).includes(route);}
   function aplicarVisao(){const v=visao(),varias=$('roleView').options.length>1;document.documentElement.dataset.visao=v;
-    document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=!podeVer(b.dataset.route);});
+    document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=!podeVer(b.dataset.route);});montarTabbar();
     const banner=$('viewBanner');if(banner){banner.hidden=!varias;banner.innerHTML=varias?'<span class="view-dot" aria-hidden="true"></span><span><strong>Tela de '+esc(window.CPTAgenda.names[v])+'</strong> · '+esc(RESUMO_VISAO[v]||'')+'</span><label class="view-switch">Ver como<select id="viewSwitch" aria-label="Ver a aplicação como">'+[...$('roleView').options].map(o=>'<option value="'+esc(o.value)+'" '+(o.value===v?'selected':'')+'>'+esc(o.textContent)+'</option>').join('')+'</select></label>':'';}}
   /** Página de entrada de cada visão: a Comunicação começa pelo "Hoje" (uma coisa de cada vez). */
   /** Gestão e Administrativo entram pelos números do mês; as demais frentes, pelo "Meu espaço" (mascote, checklist e caderno). */
@@ -85,7 +103,7 @@
     if(state.perfil&&!podeVer(route)){toast(permitido(route)?'Esta página não faz parte da tela de '+window.CPTAgenda.names[visao()]+'. Troque a visão para abri-la.':'Seu acesso não inclui esta página.');return;}
     if(state.route==='parceiros'&&route!=='parceiros'&&!window.CPTGestao.sair())return;if(state.route==='meuespaco'&&route!=='meuespaco')window.CPTEspaco.sair();clearTimeout(debounce);state.route=route;++state.listRequest;state.cursor=null;
     if(filter==='relatos')state.filters.procedimento='Relato de atividade';if(route==='comunicacao'&&filter)window.CPTComunicacao.irPara(filter);if(route==='atendimentos'&&filter)window.CPTAtendimentos.filtrar(filter);
-    document.querySelectorAll('.nav-item').forEach(b=>{const active=b.dataset.route===route;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+    document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===route;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);
     $('pageLabel').textContent={inicio:'Visão do mês',registros:'Registros',atendimentos:'Atendimentos',ajuda:'Como usar',cronograma:'Cronograma',equipe:'Equipe e acessos',obras:'Obras',fechamento:'Fechamento do mês',socioambiental:'Socioambiental',painel:'Painel da gestão',parceiros:'Programa Parceiros',conectores:'Conectores e pastas',comunicacao:'Comunicação',lembretes:'Lembretes',recados:'Recados',contatos:'Contatos',meuespaco:'Meu espaço'}[route];
     ({inicio:renderHome,registros:renderRecords,atendimentos:window.CPTAtendimentos.render,ajuda:renderHelp,cronograma:window.CPTAgenda.render,equipe:window.CPTAgenda.team,obras:window.CPTObras.render,fechamento:window.CPTFechamento.render,socioambiental:window.CPTSocioambiental.render,painel:()=>window.CPTGestao.renderPainel(),parceiros:window.CPTGestao.renderParceiros,conectores:window.CPTGestao.renderConectores,comunicacao:window.CPTComunicacao.render,lembretes:window.CPTComunicacao.render,recados:window.CPTRecados.render,contatos:window.CPTRecados.renderContatos,meuespaco:()=>window.CPTEspaco.render()}[route])();window.scrollTo({top:0,behavior:'auto'});}
   // Aviso da prévia: aparece já no começo, para a tela não "pular" quando os dados chegam.

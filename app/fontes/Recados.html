@@ -20,15 +20,21 @@ window.CPTRecados = (() => {
 
   // ---------------- Avisos (contador na lateral) ----------------
   let ultimaContagem = 0; // evita perguntar ao servidor de novo a cada troca de aba do navegador
-  async function contar(silencioso) {
-    ultimaContagem = Date.now();
-    try {
-      const r = await ui.call('contarAvisosCPT');
-      [['recados', r.recados], ['comunicacao', r.lembretes], ['lembretes', r.lembretes]].forEach(([rota, n]) => {
-        const b = document.querySelector('.nav-item[data-route="' + rota + '"]'); if (!b) return;
+  let avisos = null; // última contagem, para repor os números quando a barra de atalhos do celular é remontada
+  /** Números de recados e lembretes na lateral e na barra de atalhos do celular. */
+  function marcar() {
+    if (!avisos) return;
+    [['recados', avisos.recados], ['comunicacao', avisos.lembretes], ['lembretes', avisos.lembretes]].forEach(([rota, n]) => {
+      document.querySelectorAll('.nav-item[data-route="' + rota + '"], .tab-item[data-route="' + rota + '"]').forEach(b => {
         let s = b.querySelector('.nav-badge'); if (!n) { if (s) s.remove(); return; }
         if (!s) { s = document.createElement('span'); s.className = 'nav-badge'; b.append(s); } s.textContent = n > 99 ? '99+' : n; s.setAttribute('aria-label', n + (rota === 'recados' ? ' recados novos' : ' lembretes para hoje ou atrasados'));
       });
+    });
+  }
+  async function contar(silencioso) {
+    ultimaContagem = Date.now();
+    try {
+      const r = await ui.call('contarAvisosCPT'); avisos = r; marcar();
       if (!silencioso && r.recados) ui.toast(r.recados === 1 ? 'Você tem 1 recado novo.' : 'Você tem ' + r.recados + ' recados novos.');
     } catch (_) {}
   }
@@ -173,6 +179,6 @@ window.CPTRecados = (() => {
     document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; filtroCon.limite = LIMITE_CON; desenharContatos(); } });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil && Date.now() - ultimaContagem > 60000) contar(true); });
   }
-  return {init, render, renderContatos, novo, contar};
+  return {init, render, renderContatos, novo, contar, copiarAvisos: marcar};
 })();
 </script>

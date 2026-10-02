@@ -1,4 +1,4 @@
-# O que cada pessoa vê (Aplicação CPT 2.9)
+# O que cada pessoa vê (Aplicação CPT 2.10)
 
 A aplicação mostra a cada pessoa **a tela do seu trabalho**. A tela é escolhida pelo cargo cadastrado em **Equipe e acessos**.
 
@@ -22,6 +22,12 @@ O que muda na hora:
 - botões de ação dentro das fichas seguem a sua conta.
 
 Quem tem **um cargo só** não vê a faixa nem a troca. Para essa pessoa, aparece apenas a tela do próprio cargo.
+
+## Navegação
+
+- **Computador:** o botão ☰ no topo recolhe a lateral (fica só com os ícones). A escolha fica guardada no navegador.
+- **Celular:** a barra de baixo mostra as 4 páginas mais usadas do cargo e o botão **Menu**. O Menu, ou o ☰ do topo, abre a gaveta com todas as páginas. Para fechar: ✕, tocar fora ou Esc.
+- Cada página tem uma ilustração própria ao lado do título. As cores seguem o tema claro ou escuro.
 
 ## Páginas por cargo
 
@@ -120,7 +126,17 @@ Atendimento, Socioambiental, Comunicação e Comercialização abrem a aplicaç�
 
 No Meu espaço:
 
-- **Mascote.** No primeiro acesso, a pessoa escolhe entre gato, águia, pato, dinossauro, abelha e cachorro, e dá um nome. O pato já sugere "Cleber". O nome pode ser mudado a qualquer hora.
+- **Página inicial com cenário.** O mascote aparece num cenário com céu, morros, casinhas e rio, junto com:
+  - saudação do horário;
+  - avisos de recados e lembretes;
+  - pontos;
+  - atalho para o trabalho do dia.
+- **Hoje na agenda.** Atividades do cronograma de hoje e dos próximos dias. As da frente da pessoa aparecem destacadas, com "sua frente".
+- **Mascote.** No primeiro acesso, a pessoa escolhe entre gato, águia, pato, dinossauro, abelha, cachorro e **capivara**, e dá um nome.
+  - O pato já sugere "Cleber" e a capivara, "Capitu".
+  - O nome pode ser mudado a qualquer hora.
+  - Os mascotes respiram e piscam, a não ser com movimento reduzido.
+- **Cor do mascote.** No botão 🎨 Cor há 12 cores, mais a original da espécie (o gato é laranja). Trocar a cor é livre e não gasta pontos.
 - **Guarda-roupa:**
   - EPI: capacetes, colete refletivo, óculos de proteção, protetor auricular, botina;
   - camisas de futebol de São Paulo, só nas cores, sem escudos: alvinegra listrada, verde, tricolor e branca do Peixe;

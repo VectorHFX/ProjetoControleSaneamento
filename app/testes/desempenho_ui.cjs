@@ -14,10 +14,10 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const ini=ch.find(c=>c[0]==='carregarInicioCPT'),avi=ch.find(c=>c[0]==='contarAvisosCPT');assert.ok(ini&&avi&&avi[1]>ini[1]+1000,'contarAvisosCPT adiado: '+JSON.stringify(ch));
   // 3) Esqueleto enquanto a página carrega.
   await p.goto(url('?inicial=1&latencia=900'));await p.locator('.report-items').waitFor();
-  await p.locator('.nav-item[data-route=obras]').click({force:true});await p.locator('.skel-list .skeleton').first().waitFor();await p.locator('.skel-list').waitFor({state:'detached'});
+  await p.locator('#tabMenu').click();await p.locator('.nav-item[data-route=obras]').click();await p.locator('.skel-list .skeleton').first().waitFor();await p.locator('.skel-list').waitFor({state:'detached'});
   // 4) Contatos: 60 por vez, "Mostrar mais", busca com espera curta.
   await p.goto(url('?inicial=1&latencia=20'));await p.locator('.report-items').waitFor();
-  await p.locator('.nav-item[data-route=contatos]').click({force:true});await p.locator('.contact-card').first().waitFor();
+  await p.locator('#tabMenu').click();await p.locator('.nav-item[data-route=contatos]').click();await p.locator('.contact-card').first().waitFor();
   await p.evaluate(()=>{for(let i=0;i<130;i++)window.CPT_COM.contatos.push({id:'CON-X'+i,versao:1,nome:'Contato extra '+i,instituicao:'',tipo:'Comércio',telefone:'',email:'',endereco:'',bairro:'Vila Linda',frente:'',etiquetas:i===77?'padaria-unica':'',observacao:'',registros:[]});});
   await p.locator('#refresh').click();await p.waitForFunction(()=>document.querySelectorAll('.contact-card').length>=60);
   const total=await p.evaluate(()=>window.CPT_COM.contatos.length);
@@ -29,7 +29,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.waitForFunction(()=>document.querySelectorAll('.contact-card').length===1);assert.equal(await p.evaluate(()=>document.activeElement.name),'busca');
   assert.equal(await p.locator('#conFiltro [name=busca]').inputValue(),'padaria-un','nenhuma letra perdida');
   // 5) Galeria: miniaturas pequenas, carregadas só quando aparecem.
-  await p.locator('.nav-item[data-route=comunicacao]').click({force:true});await p.locator('[data-com-aba=galeria]').click();await p.locator('.photo').first().waitFor();
+  await p.locator('#tabMenu').click();await p.locator('.nav-item[data-route=comunicacao]').click();await p.locator('[data-com-aba=galeria]').click();await p.locator('.photo').first().waitFor();
   const img=await p.locator('.photo-open img').first().evaluate(i=>({l:i.getAttribute('loading'),d:i.getAttribute('decoding'),src:i.getAttribute('src')}));
   assert.equal(img.l,'lazy');assert.equal(img.d,'async');assert.match(img.src,/sz=w360$/);
   assert.deepEqual(errors,[]);

@@ -101,7 +101,7 @@ window.CPTInicio = (() => {
     const k = d.indicadores, s = d.satisfacao || {mes: 0, meta: 60, semana: null}, perfil = ui.state.perfil || d.perfil, nome = (perfil?.nome || '').split(' ')[0];
     const visao = ui.visao(), gerencia = ui.podeVer('socioambiental');
     if (agenda.mes !== d.mes) prefetchAgenda(d.mes);
-    ui.view.innerHTML = `<section class="home-hero"><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'} · TELA DE ${ui.esc((window.CPTAgenda.names[visao] || '').toUpperCase())}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
+    ui.view.innerHTML = `<section class="home-hero"><div class="home-hero-art" aria-hidden="true">${window.CPTArte ? window.CPTArte.pagina('inicio') : ''}</div><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'} · TELA DE ${ui.esc((window.CPTAgenda.names[visao] || '').toUpperCase())}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
         <p class="home-phrase">${ui.esc(k.frase || 'Números pela data em que cada atividade foi realizada.')}</p>${k.relatosSemPublico ? `<p><button class="chip-alert" data-pending="publico">${ui.num(k.relatosSemPublico)} ${k.relatosSemPublico === 1 ? 'ação' : 'ações'} sem público informado · conferir</button></p>` : ''}</div>
         <div class="hero-actions">${ui.formLink().replace('button white', 'button')}${gerencia ? '<button class="button secondary" data-route="socioambiental">Mesa do relatório</button>' : ''}</div></section>
       ${atalhos(visao, d)}
@@ -133,6 +133,12 @@ window.CPTInicio = (() => {
     document.addEventListener('pointerover', tooltip); document.addEventListener('pointerdown', tooltip);
     document.addEventListener('pointerleave', () => document.querySelectorAll('.chart-tip').forEach(t => t.hidden = true), true);
   }
-  return {init, render, prefetchAgenda};
+  /** Itens do cronograma de um mês, reaproveitando o que já foi buscado (usado pela página inicial do Meu espaço). */
+  function agendaDoMes(mes) {
+    if (agenda.mes === mes && agenda.pedido) return agenda.pedido;
+    if (agenda.mes === mes && Array.isArray(agenda.itens)) return Promise.resolve(agenda.itens);
+    return prefetchAgenda(mes);
+  }
+  return {init, render, prefetchAgenda, agendaDoMes};
 })();
 </script>

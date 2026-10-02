@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.9.1 e Campo 4.0 (4.5)
+# Guia de instalação: Aplicação CPT 2.10 e Campo 4.0 (4.5)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,31 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.10 — visual novo, página inicial com mascote e menu ☰ (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**. Ele troca todos os arquivos juntos, inclusive o `PessoalCPT.gs`, que passa a aceitar a capivara e a cor do mascote.
+2. Execute **`instalarAplicacaoCPT`**. Deve mostrar `versao: 2.10.0`.
+3. Publique uma **Nova versão**.
+
+**O que muda:**
+- **Cores:** paleta calma, verde-água e areia, no lugar do ameixa e rosa. O modo escuro acompanha.
+- **Página inicial (Meu espaço):**
+  - cenário com o mascote, saudação e avisos;
+  - **Hoje na agenda**, com as atividades de hoje e dos próximos dias;
+  - checklist e caderno logo abaixo.
+- **Mascotes:**
+  - desenho novo, com volume, olhos com brilho e bochechas, que respiram e piscam;
+  - a **capivara** chega como mascote novo;
+  - **cor** à escolha, livre.
+- **Menu ☰:**
+  - no computador, recolhe a lateral;
+  - no celular, há uma barra com 4 atalhos e um Menu, que abre a gaveta com todas as páginas.
+- **Páginas:** cabeçalho com ilustração própria e mais espaço entre os blocos.
+
+Nada muda nos dados nem nas permissões.
+
+---
 
 ## Atualização 2.9.1 — aplicação mais rápida e sem "pulos" na tela (≈ 5 min)
 
