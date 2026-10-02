@@ -27,7 +27,7 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 **Como atualizar:** no Cloud Shell, `bash ~/atualizar.sh conferir` e depois `bash ~/atualizar.sh aplicar`. Só a Aplicação muda (o Campo 4.0 fica igual). Arquivos novos: `SocioambientalCPT.gs` e `Socioambiental.html`.
 1. Depois de aplicar, abra a aplicação: no menu aparece **Socioambiental**.
-2. Na primeira geração de documento, o Google pede autorização para **Apresentações (Slides)**. Aceite: é para a apresentação do diagnóstico.
+2. No editor da Aplicação, execute **`instalarAplicacaoCPT`** uma vez e aceite a nova permissão de **Apresentações (Slides)**, usada na apresentação do diagnóstico. Deve mostrar `versao: 2.6.0`. Sem isso, a geração de documentos dá erro de autorização, porque a aplicação roda com a sua conta.
 3. (Opcional) **Cabeçalho e rodapé dos Anexos.** Converta o seu arquivo de Anexos para Google Docs e deixe só o cabeçalho e o rodapé (logos, endereço). Guarde o ID em `modeloAnexosId` na configuração da aplicação (eu faço isso por você se me mandar o link). Sem o modelo, os anexos saem sem cabeçalho.
 
 **O que muda para a equipe:**
