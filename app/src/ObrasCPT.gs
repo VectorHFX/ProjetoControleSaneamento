@@ -76,7 +76,7 @@ class ObrasCPT {
     else if (atual.some((v, i) => v !== c.cabecalho[i])) throw new Error('As colunas AF:AI da aba Obras têm outro conteúdo. Nada foi gravado.');
   }
   salvar(p) {
-    if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('A atualização de obras é feita pelo Administrativo ou pela Gestão.');
+    if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('A atualização de obras é feita pelo Administrativo.');
     if (!p || typeof p !== 'object') throw new Error('Dados da obra inválidos.');
     const T = ObrasCPT.texto, D = ObrasCPT.dataValida;
     const nome = T(p.nome, 200, 'Nome da obra', true), situacao = T(p.situacao, 20, 'Situação', true);
@@ -121,7 +121,7 @@ class ObrasCPT {
   }
   /** Revisão diária: confirma que a situação continua a mesma, sem mudar os dados. */
   confirmar(p) {
-    if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('A revisão de obras é feita pelo Administrativo ou pela Gestão.');
+    if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('A revisão de obras é feita pelo Administrativo.');
     const {aba, linhas} = this.ler(), alvo = linhas.find(o => String(o.r[0]).trim() === String(p && p.id || ''));
     if (!alvo) throw new Error('Obra não encontrada.');
     const anterior = this.publico(alvo);

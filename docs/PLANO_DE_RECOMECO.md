@@ -130,3 +130,23 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | Programa Parceiros e Anexos oficiais | A fazer |
 | Galeria, caderno, checklist e mascote | A fazer |
 | Planilha da cliente | A fazer |
+
+## 7. Próxima fase: Socioambiental e relatório (anotações de 02/10)
+
+**Planilhas que o cliente vê** (Concrejato: Execução de Atendimentos, RDAS): precisam ser bonitas e organizadas. Painel no topo, cores com significado, nada de abas técnicas visíveis. O Painel da Execução (Campo 4.3) é o padrão.
+
+**Entregas Sabesp** (relatório, anexos, fichas): seguem **estritamente** o Orientador e os modelos oficiais. Nada de redesenho.
+
+**Regra do relatório**, lida na aba "Relatório 2026-09" do Campo 3.0. A aba lista **todas** as atividades do mês nas colunas Bairro, Título da frente de serviço, Endereço, Data, Atividade, Ferramenta, Público-alvo e Total, com um cabeçalho de registros, participantes e período. Em setembro: 83 registros e 642 participantes. A distribuição foi:
+- 65 Sensibilização em frente de obra;
+- 5 Ação Social Externa e 4 DDS;
+- 3 Atendimento em tenda;
+- 1 de cada: CAO, Diagnóstico, Articulação Institucional, Captação de conteúdo, Levantamento de traçado e Atendimento de manifestação.
+
+Leitura a confirmar com o Victor:
+- Só as **ações socioambientais internas e externas** ganham relato próprio no relatório: Ação Social Externa, DDS e CAO/CAL. Cada uma vira um bloco separado.
+- O restante (sensibilização, tenda, acompanhamento…) entra como **atividade socioambiental** consolidada na tabela.
+- Captação de conteúdo, levantamento de traçado e atendimento de manifestação não entram como relato.
+- Falta ver: o relatório nº 14, elogiado (≈ 40 MB), para a anatomia completa.
+
+**Design (depois):** as cores atuais estão apagadas. Preferência por algo mais vivo, e o tema escuro agrada mais.

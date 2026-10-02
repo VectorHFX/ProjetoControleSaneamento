@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.4 e Campo 4.0 (4.2)
+# Guia de instalação: Aplicação CPT 2.5 e Campo 4.0 (4.3)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -18,6 +18,38 @@ Cada passo diz o que deve aparecer. Se aparecer outra coisa, pare e me mande o p
 4. Salve com 💾.
 
 Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.gs` ou `.html`.
+
+---
+
+## Atualização 2.5 — casos encerrados, painel da Concrejato e perfis (≈ 15 min)
+
+**1. Campo 4.0** (pasta `campo40/src/`)
+
+| Arquivo | Ação |
+|---|---|
+| `CorteDoControleAntigo.gs`, `ExecucaoDaEngenharia.gs`, `ConfiguracaoDaBase.gs` | substituir |
+| `PainelDaExecucao` | **criar** (＋ → Script) |
+
+Depois, nesta ordem:
+1. Execute **`compararComControleAntigoCampo40`**. Em `aAjustar` devem aparecer **ATD20260003** e **ATD20260007** indo para **Concluída**, com a data de conclusão de setembro.
+   - Motivo: no Controle antigo, a aba de fichas ficou "Recebida", mas o Histórico registra a finalização em 18/09.
+   - Se aparecerem em `conferirNaAplicacao`, finalize os dois pela aplicação (**Finalizar ficha**, com a data de setembro).
+2. Execute **`trazerEstadoDoControleAntigoCampo40`**.
+3. Execute **`sincronizarExecucaoDaEngenhariaCampo40`**. Na planilha da engenharia:
+   - a aba **CPT • Ordens em aberto** vira **CPT • Painel da Execução**, a primeira aba, com indicadores, cores e três quadros;
+   - as abas antigas que pararam de atualizar (Dashboard, Fichas Oficiais, Acompanhamento diário, Base Executiva…) ficam **ocultas**. Nada é apagado.
+
+**2. Aplicação** (pasta `app/src/`): substitua `AplicacaoCPT.gs`, `PerfisCPT.gs`, `CicloAtendimentoCPT.gs`, `ObrasCPT.gs`, `RelatorioMensalCPT.gs`, `EntregasCPT.gs`, `Estilos.html`, `Agenda.html` e `Atendimentos.html`. Depois:
+1. Execute `instalarAplicacaoCPT`. Deve mostrar `versao: 2.5.0`.
+2. Publique uma **Nova versão**.
+
+**O que muda para a equipe:**
+- **Situação com cor:** Recebida em vermelho, Em andamento em amarelo, Concluída em verde.
+- **Equipe e acessos** oferece só: Administrativo, Gestão, Atendimento, Socioambiental, Comunicação e Comercialização.
+  - **Administração técnica** é só sua.
+  - **Execução** saiu: a Concrejato usa o formulário e a planilha compartilhada.
+  - Quem estava cadastrado com Execução perde esse papel sozinho, sem recadastro.
+- **Gestão** vê todas as telas e o contato dos moradores, mas não altera nada: casos, obras, relatos e geração do relatório ficam com quem trabalha neles.
 
 ---
 
@@ -154,7 +186,7 @@ Abra o projeto do **Procedimentos de Campo 4.0**.
 | Arquivo | Ação |
 |---|---|
 | `ConfiguracaoDaBase.gs`, `ProcessamentoDosEnvios.gs` | substituir |
-| `AberturaDeAtendimentos`, `ExecucaoDaEngenharia`, `CorteDoControleAntigo` | **criar** (＋ → Script) |
+| `AberturaDeAtendimentos`, `ExecucaoDaEngenharia`, `PainelDaExecucao`, `CorteDoControleAntigo` | **criar** (＋ → Script) |
 
 Salve.
 

@@ -12,7 +12,8 @@ window.CPTAtendimentos = (() => {
   const ops = new Map(); // operação idempotente por formulário enquanto o conteúdo não muda
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
-  const corStatus = c => c.concluido ? 'green' : /receb/i.test(c.status) ? 'blue' : 'orange';
+  // Situação: Recebida = vermelho (ninguém atuou ainda) · Em andamento = amarelo · Concluída = verde.
+  const corStatus = c => c.concluido ? 'status-concluida' : /receb/i.test(c.status) ? 'status-recebida' : 'status-andamento';
   const opId = (chave, conteudo) => { const sig = JSON.stringify(conteudo), atual = ops.get(chave); if (atual && atual.sig === sig) return atual.id; const id = 'OP-' + crypto.randomUUID(); ops.set(chave, {sig, id}); return id; };
 
   function render() {

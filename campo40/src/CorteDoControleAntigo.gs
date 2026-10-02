@@ -1,9 +1,11 @@
 /**
- * CorteDoControleAntigo — 1.0.0 — TEMPORÁRIO (usar no corte; pode ser apagado depois do primeiro mês).
+ * CorteDoControleAntigo — 1.1.0 — TEMPORÁRIO (usar no corte; pode ser apagado depois do primeiro mês).
  * Compara os casos da Base 4.0 com o Controle de Atendimentos antigo e, se pedido, traz o estado atual de lá.
  * - Lê "Base Fichas Oficiais" (estado oficial) e "Histórico" (procedência) do Controle antigo. Não altera o Controle.
  * - Guarda o maior número de protocolo do Controle antigo como piso da numeração (CAMPO40_PROTOCOLO_MINIMO),
  *   para a abertura automática nunca repetir um protocolo que só existe lá.
+ * - 1.1: a situação não vem só da aba Base Fichas Oficiais (que ficou "Recebida" em casos já finalizados):
+ *   vale a mais avançada entre ela, o último evento do Histórico, a data de conclusão e "Atendimento concluído".
  * - Caso já movimentado na Aplicação ou pela engenharia depois da migração não é sobrescrito: vai para conferência.
  * Depende de ConfiguracaoDaBase, RepositorioDosRegistros, AberturaDeAtendimentos e ExecucaoDaEngenharia.
  */
@@ -24,6 +26,13 @@ class CorteDoControleAntigo {
     if (n === 'em andamento' || /aguardando/.test(n)) return 'Em andamento';
     return '';
   }
+  /** A mais avançada entre a ficha oficial, o último evento do Histórico e os sinais de conclusão. */
+  static situacao(oficial, ultimoHistorico, dataConclusao, area) {
+    const ordem = ['Recebida', 'Em andamento', 'Concluída'], candidatas = [this.status(oficial), this.status(ultimoHistorico)];
+    if (dataConclusao || /atendimento concluido/.test(ExecucaoDaEngenharia.N(area))) candidatas.push('Concluída');
+    const validas = candidatas.filter(Boolean); if (!validas.length) return '';
+    return validas.sort((a, b) => ordem.indexOf(b) - ordem.indexOf(a))[0];
+  }
   static area(v, atual) {
     const n = ExecucaoDaEngenharia.N(v);
     if (/execucao|engenharia/.test(n)) return 'Execução';
@@ -35,9 +44,13 @@ class CorteDoControleAntigo {
   static executar(aplicar) {
     const E = ExecucaoDaEngenharia, base = SpreadsheetApp.openById(ConfiguracaoDaBase.exigirInstalacao().baseId), antigo = SpreadsheetApp.openById(this.CONTROLE_ID);
     const oficiais = this.tabela(antigo, 'Base Fichas Oficiais', ['Protocolo', 'Status', 'Data de conclusão', 'Área responsável pela próxima ação', 'Próxima ação']);
-    const procedencia = new Map();
-    this.tabela(antigo, 'Histórico', ['ID', 'Data e hora', 'Procedência']).map(g => ({id: String(g('ID')), quando: g('Data e hora'), proc: String(g('Procedência') || '')}))
-      .sort((a, b) => new Date(a.quando) - new Date(b.quando)).forEach(e => { if (e.proc) procedencia.set(e.id, e.proc); });
+    const procedencia = new Map(), ultimo = new Map(), conclusaoHist = new Map();
+    this.tabela(antigo, 'Histórico', ['ID', 'Data e hora', 'Status', 'Procedência']).map(g => ({id: String(g('ID')), quando: g('Data e hora'), status: String(g('Status') || ''), proc: String(g('Procedência') || '')}))
+      .sort((a, b) => new Date(a.quando) - new Date(b.quando)).forEach(e => {
+        if (e.proc) procedencia.set(e.id, e.proc);
+        if (e.status) ultimo.set(e.id, e.status);
+        if (this.status(e.status) === 'Concluída') conclusaoHist.set(e.id, e.quando);
+      });
     const t = E.tabelas(base), tocados = new Set(t.movs.filter(m => /^MOV-(APP|EXT|COM)-/.test(String(m[0]))).map(m => String(m[1])));
     const res = {faltandoNaBase: [], aAjustar: [], ajustados: [], conferirNaAplicacao: [], semMudanca: 0, minimo: {}};
     const novas = [], agora = new Date();
@@ -46,9 +59,10 @@ class CorteDoControleAntigo {
       if (m) res.minimo[m[1]] = Math.max(res.minimo[m[1]] || 0, Number(m[2]));
       const i = t.pos.get(p); if (i === undefined) { res.faltandoNaBase.push(p); return; }
       const r = t.linhas[i]; if (r[1] && String(r[1]) !== p) return; // incorporado: segue o principal
-      const d = E.json(r[19]), status = this.status(g('Status'));
+      const d = E.json(r[19]);
+      const status = this.situacao(g('Status'), ultimo.get(p), g('Data de conclusão'), g('Área responsável pela próxima ação'));
       if (!status) { res.conferirNaAplicacao.push({protocolo: p, motivo: 'Situação desconhecida no Controle antigo: ' + g('Status')}); return; }
-      const proc = E.procedencia(procedencia.get(p) || '').valor, conclusao = status === 'Concluída' ? this.dia(g('Data de conclusão')) : '';
+      const proc = E.procedencia(procedencia.get(p) || '').valor, conclusao = status === 'Concluída' ? this.dia(g('Data de conclusão') || conclusaoHist.get(p)) : '';
       const novo = {status, area: this.area(g('Área responsável pela próxima ação'), String(r[10] || 'Atendimento')), proxima: status === 'Concluída' ? '' : String(g('Próxima ação') || r[12] || ''), conclusao, procedencia: proc === 'Em análise' ? (d.procedencia || 'Em análise') : proc};
       const atual = {status: String(r[3]), area: String(r[10] || ''), proxima: String(r[12] || ''), conclusao: this.dia(r[5]), procedencia: d.procedencia || 'Em análise'};
       const mudancas = Object.keys(novo).filter(k => novo[k] !== atual[k]).map(k => k + ': ' + (atual[k] || '—') + ' → ' + (novo[k] || '—'));

@@ -1,5 +1,5 @@
 /**
- * ExecucaoDaEngenharia — 1.0.1 — PERMANENTE.
+ * ExecucaoDaEngenharia — 1.1.0 — PERMANENTE.
  * Liga a Base 4.0 ao formulário "Execução de Atendimentos", que a engenharia (Concrejato) responde.
  * O formulário e a planilha de respostas continuam separados e compartilhados com a engenharia.
  * Nenhuma pergunta muda: só a lista da pergunta "Qual o número de protocolo?" passa a vir da Base.
@@ -11,7 +11,7 @@
  * 2. Abertura pela engenharia ("Você está abrindo..."): vira um caso novo com protocolo da sequência.
  * 3. Comunicação entre Áreas: mensagens escritas pela Execução viram movimentações "Comunicação".
  * 4. Lista de protocolos do formulário: casos em aberto da Base ("ATD… | Nome").
- * 5. Aba "CPT • Ordens em aberto" na planilha da engenharia: o que está em aberto e com quem está.
+ * 5. Aba "CPT • Painel da Execução" na planilha da engenharia (PainelDaExecucao): visual para o cliente.
  * 6. Avisos por e-mail à engenharia quando o Atendimento encaminha um caso para a Execução (desligado até ativar).
  * Só entram respostas a partir da instalação (respostas antigas já estão no Controle antigo).
  * Idempotente: o ID de cada movimentação vem do conteúdo da resposta. Roda na trava do Campo 4.0.
@@ -27,11 +27,10 @@ class ExecucaoDaEngenharia {
   static get PERGUNTA() { return 'Qual o número de protocolo?'; }
   static get MODO() { return 'Você está abrindo ou executando uma ficha?'; }
   static get ORIGEM() { return 'Formulário de Execução'; }
-  static get ABA_ORDENS() { return 'CPT • Ordens em aberto'; }
+  static get ABA_ORDENS() { return 'CPT • Painel da Execução'; }
   static get ABA_COMUNICACAO() { return 'Comunicação entre Áreas'; }
   static get ABA_AVISOS() { return 'Avisos à engenharia'; }
   static get CAB_AVISOS() { return ['Chave', 'Protocolo', 'Motivo', 'Detectado em', 'Estado', 'Atualizado em']; }
-  static get CAB_ORDENS() { return ['Protocolo', 'Abertura', 'Dias em aberto', 'Está com', 'Próxima ação', 'Assunto', 'Nome', 'Telefone', 'Endereço', 'Frente de obra', 'Última atualização']; }
   static get VAZIO() { return 'Nenhuma ordem de serviço em aberto. Consulte o Atendimento.'; }
   static get POR() { return ['Identifique-se, quem fez a execução', 'Identique-se, quem fez a execução', 'Indentique-se, quem fez a execução', 'Indentifique-se, quem fez a execução', 'Responsável pela execução', 'Endereço de e-mail', 'E-mail']; }
 
@@ -48,7 +47,7 @@ class ExecucaoDaEngenharia {
   /** Abas de respostas da planilha da engenharia (o Forms já criou mais de uma com ordens de colunas diferentes). */
   static fontes(planilha) {
     return planilha.getSheets().map(aba => {
-      if ([this.ABA_ORDENS, this.ABA_COMUNICACAO].includes(aba.getName()) || aba.getLastRow() < 2 || aba.getLastColumn() < 2) return null;
+      if ([this.ABA_ORDENS, 'CPT • Ordens em aberto', this.ABA_COMUNICACAO].includes(aba.getName()) || aba.getLastRow() < 2 || aba.getLastColumn() < 2) return null;
       const dados = aba.getDataRange().getValues(), mapa = {};
       dados[0].forEach((h, i) => { const k = this.N(h); if (k && !(k in mapa)) mapa[k] = i; });
       if (!('carimbo de data/hora' in mapa) || !((this.N(this.PERGUNTA) in mapa) || (this.N(this.MODO) in mapa))) return null;
@@ -202,16 +201,25 @@ class ExecucaoDaEngenharia {
     res.comunicacoes = novas.length;
   }
 
-  /** Casos em aberto (principais) e a última movimentação que não veio da engenharia. */
+  /** Telefone do caso em qualquer formato (aberto pelo 4.0, migrado do Controle antigo, corrigido na aplicação). */
+  static telefone(d) {
+    const c = d.corrigido || {}; if (Object.prototype.hasOwnProperty.call(c, 'telefone')) return this.txt(c.telefone);
+    const o = ((d.oficiais || [])[0] || {}).campos || {}, m = ((d.manuais || []).slice(-1)[0] || {}).dados || {}, a = ((d.aberturas || [])[0] || {}).campos || {};
+    return this.txt(d.telefone || o['Telefone'] || m.telefone || a['Telefones']);
+  }
+  /** Casos principais em aberto, concluídos nos últimos 30 dias e a última movimentação que não veio da engenharia. */
   static casos(base) {
-    const t = this.tabelas(base), agora = Date.now(), ultimo = new Map();
+    const t = this.tabelas(base), agora = Date.now(), ultimo = new Map(), data = v => { const x = v instanceof Date ? v : (v ? new Date(v) : null); return x && !isNaN(x) ? x : null; };
     t.movs.forEach(m => { if (![this.ORIGEM, this.ABA_COMUNICACAO].includes(String(m[7]))) ultimo.set(String(m[1]), {id: String(m[0]), tipo: String(m[3]), resumo: this.txt(m[6])}); });
-    const abertos = t.linhas.filter(r => r[0] && (!r[1] || String(r[1]) === String(r[0])) && !/conclu/i.test(String(r[3]))).map(r => {
-      const d = this.json(r[19]), ab = r[4] instanceof Date ? r[4] : (r[4] ? new Date(r[4]) : null);
-      return {protocolo: String(r[0]), nome: this.txt(r[6]), assunto: this.txt(r[7]), endereco: this.txt(r[8]), frente: this.txt(r[9]), area: this.txt(r[10]), proxima: this.txt(r[12]),
-        abertura: ab && !isNaN(ab) ? ab : null, dias: ab && !isNaN(ab) ? Math.max(0, Math.floor((agora - ab.getTime()) / 864e5)) : '', atualizado: r[13], telefone: this.txt(d.telefone), ultimo: ultimo.get(String(r[0])) || null};
+    const todos = t.linhas.filter(r => r[0] && (!r[1] || String(r[1]) === String(r[0]))).map(r => {
+      const d = this.json(r[19]), ab = data(r[4]), fim = data(r[5]), concluida = /conclu/i.test(String(r[3]));
+      // "Atendimento" na frente de obra é herança do Controle antigo (sem frente definida).
+      const frente = this.txt(r[9]).replace(/^atendimento$/i, '');
+      return {protocolo: String(r[0]), nome: this.txt(r[6]), assunto: this.txt(r[7]), endereco: this.txt(r[8]), frente, area: this.txt(r[10]), proxima: this.txt(r[12]), status: this.txt(r[3]),
+        concluida, conclusao: fim, abertura: ab, dias: ab ? Math.max(0, Math.floor(((concluida && fim ? fim.getTime() : agora) - ab.getTime()) / 864e5)) : '',
+        atualizado: r[13], telefone: this.telefone(d), ultimo: ultimo.get(String(r[0])) || null};
     });
-    return {abertos};
+    return {abertos: todos.filter(x => !x.concluida), concluidas: todos.filter(x => x.concluida && x.conclusao && agora - x.conclusao.getTime() <= 30 * 864e5)};
   }
 
   static atualizarLista(c, casos) {
@@ -227,20 +235,15 @@ class ExecucaoDaEngenharia {
     return opcoes.length;
   }
 
+  /** Painel do cliente (PainelDaExecucao). Refeito quando o conteúdo muda; a hora do título não conta como mudança. */
   static atualizarOrdens(c, planilha, casos) {
-    const ordem = x => (x.area === 'Execução' ? 0 : 1);
-    const linhas = casos.abertos.slice().sort((a, b) => ordem(a) - ordem(b) || (a.abertura || 0) - (b.abertura || 0)).map(x =>
-      [x.protocolo, x.abertura ? this.dataBr(x.abertura) : '', x.dias, x.area, x.proxima, x.assunto, x.nome, x.telefone, x.endereco, x.frente, x.atualizado ? this.dataBr(x.atualizado) : ''].map(v => typeof v === 'number' ? v : this.celula(v)));
-    const assinatura = RepositorioDosRegistros.hash(linhas);
-    let aba = planilha.getSheetByName(this.ABA_ORDENS);
-    if (aba && c.ordensAssinatura === assinatura) return 'sem mudança';
-    if (!aba) { aba = planilha.insertSheet(this.ABA_ORDENS); aba.protect().setWarningOnly(true).setDescription('Gerada pela Base CPT. Alterações aqui são substituídas.'); }
-    aba.clearContents();
-    const valores = [this.CAB_ORDENS].concat(linhas.length ? linhas : [[this.VAZIO].concat(Array(this.CAB_ORDENS.length - 1).fill(''))]);
-    aba.getRange(1, 1, valores.length, this.CAB_ORDENS.length).setValues(valores);
-    aba.getRange(1, 1, 1, this.CAB_ORDENS.length).setFontWeight('bold'); aba.setFrozenRows(1);
+    const agora = new Date(), modelo = PainelDaExecucao.montar(casos, agora, 'America/Sao_Paulo');
+    const assinatura = RepositorioDosRegistros.hash([PainelDaExecucao.NOME, modelo.linhas.slice(2).map(l => l.v), Utilities.formatDate(agora, 'America/Sao_Paulo', 'yyyy-MM-dd')]);
+    const existe = planilha.getSheetByName(PainelDaExecucao.NOME);
+    if (existe && c.ordensAssinatura === assinatura && c.legadoOculto) return 'sem mudança';
+    const aba = PainelDaExecucao.desenhar(planilha, modelo), ocultas = PainelDaExecucao.organizar(planilha, aba, c);
     c.ordensAssinatura = assinatura; this.salvarConfig(c);
-    return linhas.length + ' caso(s)';
+    return casos.abertos.length + ' em aberto, ' + casos.concluidas.length + ' concluída(s) em 30 dias' + (ocultas.length ? '; abas antigas ocultas: ' + ocultas.join(', ') : '');
   }
 
   static abaAvisos(base) {

@@ -1,10 +1,13 @@
 // Execução da engenharia (serviços Google simulados, dados fictícios). node campo40/testes/execucao.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('crypto');
-class Sheet{constructor(n,rows){this.n=n;this.rows=rows}getLastRow(){return this.rows.length}getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length))}getName(){return this.n}
+class Sheet{constructor(n,rows){this.n=n;this.rows=rows;this.fmt={};this.merges=[];this.hidden=false;this.maxR=1000;this.maxC=26}getLastRow(){return this.rows.length}getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length))}getName(){return this.n}
+  setName(n){this.n=n;return this}getMaxRows(){return this.maxR}getMaxColumns(){return this.maxC}insertRowsAfter(_,k){this.maxR+=k}insertColumnsAfter(_,k){this.maxC+=k}hideColumns(){}setRowHeight(){}setColumnWidth(){}setHiddenGridlines(){}setTabColor(){}
+  hideSheet(){this.hidden=true}isSheetHidden(){return this.hidden}
   getDataRange(){const w=this.getLastColumn();return {getValues:()=>this.rows.map(r=>Array.from({length:w},(_,j)=>r[j]??''))}}
   clearContents(){this.rows=[]}setFrozenRows(){}protect(){const p={setWarningOnly:()=>p,setDescription:()=>p};return p}
-  getRange(r,c,nr=1,nc=1){const s=this;const g={getValues:()=>Array.from({length:nr},(_,i)=>Array.from({length:nc},(_,j)=>s.rows[r+i-1]?.[c+j-1]??'')),setValues:v=>{v.forEach((row,i)=>{while(s.rows.length<r+i)s.rows.push([]);row.forEach((x,j)=>s.rows[r+i-1][c+j-1]=x)});return g},setFontWeight:()=>g};return g}}
-const ss=sheets=>({getSheets:()=>sheets,getSheetByName:n=>sheets.find(s=>s.n===n)||null,insertSheet:n=>{const s=new Sheet(n,[]);sheets.push(s);return s},getUrl:()=>'https://docs.google.com/spreadsheets/d/exec'});
+  getRange(r,c,nr=1,nc=1){const s=this;const fmt=k=>v=>{s.fmt[k]=v;return g};const g=new Proxy({getValues:()=>Array.from({length:nr},(_,i)=>Array.from({length:nc},(_,j)=>s.rows[r+i-1]?.[c+j-1]??'')),setValues:v=>{v.forEach((row,i)=>{while(s.rows.length<r+i)s.rows.push([]);row.forEach((x,j)=>s.rows[r+i-1][c+j-1]=x)});return g},
+    clear:()=>{if(r===1&&nr>=s.rows.length){s.rows=[];s.fmt={};s.merges=[]}return g},merge:()=>{s.merges.push([r,c,nr,nc]);return g},setBackgrounds:fmt('bg'),setFontColors:fmt('fc'),setFontWeights:fmt('fw')},{get:(t,k)=>k in t?t[k]:()=>g});return g}}
+const ss=sheets=>({setActiveSheet:x=>{ss.ativa=x},moveActiveSheet:i=>{const k=sheets.indexOf(ss.ativa);sheets.splice(k,1);sheets.splice(i-1,0,ss.ativa)},getSheets:()=>sheets,getSheetByName:n=>sheets.find(s=>s.n===n)||null,insertSheet:n=>{const s=new Sheet(n,[]);sheets.push(s);return s},getUrl:()=>'https://docs.google.com/spreadsheets/d/exec'});
 const A=['Protocolo','Protocolo principal','Situação do protocolo','Status','Data de abertura','Data de conclusão','Nome','Assunto','Endereço','Frente de obra','Área responsável','Responsável','Próxima ação','Atualização operacional','Documento','PDF','Origem','Pesquisa','Hash','Detalhes JSON'];
 const M=['ID','Protocolo','Data e hora','Tipo','Status','Autor','Resumo','Origem','Hash','Detalhes JSON'];
 const caso=(p,status,area,extra={})=>[p,extra.principal||p,'Principal',status,new Date('2026-09-01T12:00:00Z'),'','Morador '+p.slice(-2),'Vazamento','Rua Exemplo, '+p.slice(-2),'Coletor A',area,'Kesy','Analisar',new Date('2026-09-02T12:00:00Z'),'','','Migração','','',JSON.stringify({procedencia:'Em análise',telefone:'(11) 0000-00'+p.slice(-2)})];
@@ -23,10 +26,10 @@ const respostas=new Sheet('Respostas ao formulário 1',[H,
   resp('2026-10-02T18:00:00Z',{'Você está abrindo ou executando uma ficha?':'Abrindo uma nova ficha','Endereço completo':'Rua Nova, 5','Qual foi a solicitação ou reclamação?':'Buraco na via','Assunto':'Pavimento','Identifique-se, quem fez a execução':'Eng. Teste','Se sim coloque nome completo e telefone ou email de solicitantes':'Fulana Teste 11 91234-5678'})]);
 const comunicacao=new Sheet('Comunicação entre Áreas',[['Chave do evento','Protocolo','Data e hora','Registrado por','Área autora','Encaminhado para','Tipo de registro','Mensagem'],
   ['C1','ATD20260011',new Date('2026-10-02T19:00:00Z'),'Eng. Teste','Execução','Atendimento','Mensagem','Morador não estava em casa'],['C2','ATD20260011',new Date('2026-10-02T19:00:00Z'),'Kesy','Atendimento','Execução','Mensagem','Ignorar: autoria do Atendimento']]);
-const planilha=ss([respostas,comunicacao]);
+const dashAntigo=new Sheet('Dashboard',[['CENTRAL DE ATENDIMENTOS']]);const planilha=ss([respostas,comunicacao,dashAntigo]);
 const OF=['Protocolo','Status','Data de conclusão','Área responsável pela próxima ação','Próxima ação'];
-const antigo=ss([new Sheet('Base Fichas Oficiais',[OF,['ATD20260010','Recebida','','Execução','Analisar'],['ATD20260011','Concluída',new Date('2026-09-30T12:00:00Z'),'Atendimento concluído',''],['ATD20260014','Aguardando finalização','','Atendimento','Finalizar'],['ATD20260032','Recebida','','Execução','Analisar']]),
-  new Sheet('Histórico',[['ID','Data e hora','Procedência'],['ATD20260014',new Date('2026-09-10'),'Procedente']])]);
+const antigo=ss([new Sheet('Base Fichas Oficiais',[OF,['ATD20260010','Recebida','','Execução','Analisar'],['ATD20260011','Concluída',new Date('2026-09-30T12:00:00Z'),'Atendimento concluído',''],['ATD20260014','Aguardando finalização','','Atendimento','Finalizar'],['ATD20260032','Recebida','','Execução','Analisar'],['ATD20260020','Recebida',new Date('2026-09-18T03:00:00Z'),'Atendimento concluído','Nenhuma pendência']]),
+  new Sheet('Histórico',[['ID','Data e hora','Status','Procedência'],['ATD20260014',new Date('2026-09-10'),'Aguardando finalização','Procedente'],['ATD20260020',new Date('2026-09-03'),'Recebida','Em análise'],['ATD20260020',new Date('2026-09-18T14:00:00Z'),'Concluída','Procedente']])]);
 let escolhas=['ATD20260001 | antigo'],tipo='LIST';const email=[];
 const item={getTitle:()=>'Qual o número de protocolo?',getType:()=>tipo,asListItem:()=>({getChoices:()=>escolhas.map(v=>({getValue:()=>v})),setChoiceValues:v=>{escolhas=v}})};
 const props=new Map([['CAMPO40_INSTALACAO',JSON.stringify({pronto:true,baseId:'base'})]]);const triggers=[];
@@ -35,11 +38,11 @@ const ctx={console,JSON,Date,Math,Map,Set,Object,Array,String,Number,RegExp,isNa
     formatDate:(d,_,f)=>{const x=new Date(d.getTime()-3*3600e3),p=n=>String(n).padStart(2,'0');const Y=x.getUTCFullYear(),Mo=p(x.getUTCMonth()+1),D=p(x.getUTCDate());return f==='yyyy'?String(Y):f==='yyyy-MM-dd'?Y+'-'+Mo+'-'+D:D+'/'+Mo+'/'+Y}},
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k)??null,setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k),getProperties:()=>Object.fromEntries(props)})},
   LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
-  SpreadsheetApp:{openById:id=>id==='base'?base:id==='1UHs_jFVD7jQRKgw7CVPCQ8R7sgvyhkJVv5rcj0v2K5g'?antigo:planilha},
+  SpreadsheetApp:{BorderStyle:{SOLID:'solid'},openById:id=>id==='base'?base:id==='1UHs_jFVD7jQRKgw7CVPCQ8R7sgvyhkJVv5rcj0v2K5g'?antigo:planilha},
   FormApp:{openById:()=>({getItems:()=>[item],getPublishedUrl:()=>'https://forms.example/exec'}),ItemType:{LIST:'LIST'}},
   ScriptApp:{getProjectTriggers:()=>triggers,deleteTrigger:()=>{},newTrigger:fn=>({forForm:id=>({onFormSubmit:()=>({create:()=>triggers.push({getHandlerFunction:()=>fn,id})})})})},
   MailApp:{getRemainingDailyQuota:()=>100,sendEmail:m=>email.push(m)}};
-vm.createContext(ctx);for(const f of ['ConfiguracaoDaBase','RepositorioDosRegistros','AberturaDeAtendimentos','ExecucaoDaEngenharia','CorteDoControleAntigo'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['ConfiguracaoDaBase','RepositorioDosRegistros','AberturaDeAtendimentos','ExecucaoDaEngenharia','PainelDaExecucao','CorteDoControleAntigo'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Instalação no corte: só respostas a partir de agora; avisos atuais viram referência.
 props.set('CAMPO40_EXECUCAO',JSON.stringify({desde:'2026-10-01T03:00:00.000Z'}));
@@ -58,7 +61,14 @@ assert.ok(!mov.rows.some(x=>/Antes do corte/.test(x[6])),'respostas antes da ins
 const nova=atd.rows.find(x=>/Formulário de Execução · REG-/.test(x[16]));assert.equal(nova[0],'ATD20260015','abertura pela engenharia continua a sequência');assert.equal(nova[6],'Fulana Teste');assert.equal(JSON.parse(nova[19]).telefone,'11 91234-5678');
 assert.ok(r.erros.length===0,JSON.stringify(r.erros));
 assert.deepEqual(escolhas,['ATD20260010 | Morador 10','ATD20260011 | Morador 11','ATD20260014 | Morador 14','ATD20260015 | Fulana Teste'],'lista: casos em aberto, sem concluídos e sem incorporados');
-const ordens=planilha.getSheetByName('CPT • Ordens em aberto');assert.equal(ordens.rows[0][0],'Protocolo');assert.equal(ordens.rows[1][0],'ATD20260011','Execução primeiro');assert.equal(ordens.rows[1][7],'(11) 0000-0011');
+const painel=planilha.getSheetByName('CPT • Painel da Execução');assert.ok(painel,'painel criado');assert.equal(planilha.getSheets()[0],painel,'painel é a primeira aba');
+const pv=painel.rows.map(r=>r.map(String));assert.match(pv[0][0],/Painel de Atendimentos/);
+const lin=p=>pv.findIndex(r=>r[0]===p),cab=pv.findIndex(r=>r[0]==='Protocolo');assert.deepEqual(pv[cab].slice(0,4),['Protocolo','Aberta em','Dias','Situação']);
+assert.ok(lin('ATD20260011')>cab,'caso com a Execução no primeiro quadro');assert.equal(pv[lin('ATD20260011')][7],'(11) 0000-0011');
+const iAt=pv.findIndex(r=>r[0]==='Aguardando o Atendimento');assert.ok(lin('ATD20260010')>iAt,'caso devolvido ao Atendimento no segundo quadro');
+const rs=lin('ATD20260011');assert.equal(painel.fmt.bg[rs][3],'#FFF2C2','Em andamento em amarelo');
+assert.ok(pv.some(r=>r[0]==='Concluídas nos últimos 30 dias'));assert.ok(!pv.some(r=>r[0]==='ATD20260012'),'concluída sem data recente fica fora');
+assert.ok(painel.merges.length>5);assert.equal(dashAntigo.isSheetHidden(),true,'aba antiga oculta, não apagada');assert.ok(planilha.getSheetByName('Dashboard'));
 const avisos=base.getSheetByName('Avisos à engenharia');assert.ok(avisos.rows.slice(1).every(x=>x[4]==='REFERÊNCIA'));assert.equal(email.length,0,'instalação não envia e-mail');
 // Repetir é idempotente.
 const nMov=mov.rows.length,nAtd=atd.rows.length;run('sincronizarExecucaoDaEngenhariaCampo40()');assert.equal(mov.rows.length,nMov);assert.equal(atd.rows.length,nAtd);
@@ -71,13 +81,15 @@ run('sincronizarExecucaoDaEngenhariaCampo40()');assert.equal(email.length,1,'nã
 // Pergunta que não é lista: erro claro, o resto continua.
 tipo='TEXT';r=run('sincronizarExecucaoDaEngenhariaCampo40()');assert.match(r.erros.join(),/Lista suspensa/);
 // Corte: compara com o Controle antigo, protege a numeração e só ajusta casos ainda não movimentados na Base.
+atd.rows.push(caso('ATD20260020','Recebida','Atendimento'));
 const c40=atd.rows.findIndex(x=>x[0]==='ATD20260011');const antes=JSON.stringify(atd.rows);
 r=run('compararComControleAntigoCampo40()');assert.equal(JSON.stringify(atd.rows),antes,'comparar não altera casos');
 assert.deepEqual(r.faltandoNaBase,['ATD20260032']);assert.deepEqual(JSON.parse(props.get('CAMPO40_PROTOCOLO_MINIMO')),{2026:32});
 assert.ok(r.conferirNaAplicacao.some(x=>x.protocolo==='ATD20260011'),'movimentado pela engenharia: não sobrescreve');
 const l14=linha('ATD20260014');mov.rows=mov.rows.filter(x=>x[1]!=='ATD20260014');l14[3]='Aguardando finalização';
 r=run('compararComControleAntigoCampo40()');assert.ok(r.aAjustar.some(x=>x.protocolo==='ATD20260014'));
-r=run('trazerEstadoDoControleAntigoCampo40()');assert.deepEqual(r.ajustados,['ATD20260014']);assert.equal(l14[3],'Em andamento');assert.equal(JSON.parse(l14[19]).procedencia,'Procedente');
+r=run('trazerEstadoDoControleAntigoCampo40()');assert.deepEqual(r.ajustados.sort(),['ATD20260014','ATD20260020']);
+const l20=linha('ATD20260020');assert.equal(l20[3],'Concluída','ficha oficial antiga dizia Recebida, mas o Histórico finalizou');assert.ok(l20[5] instanceof Date);assert.equal(l20[12],'');assert.equal(JSON.parse(l20[19]).procedencia,'Procedente');assert.equal(l14[3],'Em andamento');assert.equal(JSON.parse(l14[19]).procedencia,'Procedente');
 assert.ok(mov.rows.some(x=>x[3]==='Ajuste do corte'));assert.equal(atd.rows[c40][3],'Em andamento');
 r=run('compararComControleAntigoCampo40()');assert.equal(r.aAjustar.length,0,'repetir não acha nada novo');
 console.log('PASS: corte — comparação sem alterar, piso de numeração, ajuste só onde a Base não foi movimentada.');

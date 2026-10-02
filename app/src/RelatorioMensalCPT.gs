@@ -166,6 +166,7 @@ class RelatorioMensalCPT {
   }
 
   gerar(p) {
+    if (PerfisCPT.somenteLeitura(this.ctx.perfil)) throw new Error('A Gestão acompanha o fechamento; a geração é feita pelo Administrativo, Socioambiental ou Comunicação.');
     if (!p || typeof p.operacaoId !== 'string' || !/^OP-[a-zA-Z0-9-]{12,70}$/.test(p.operacaoId)) throw new Error('Identificação do pedido inválida. Reabra o fechamento.');
     const mes = this.dados.mes(String(p.mes || '')), numero = p.numero === '' || p.numero == null ? '' : Number(p.numero);
     if (numero !== '' && (!Number.isInteger(numero) || numero < 1 || numero > 999)) throw new Error('Número do relatório inválido.');

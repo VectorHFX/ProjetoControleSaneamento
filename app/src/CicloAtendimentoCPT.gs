@@ -12,9 +12,10 @@ class CicloAtendimentoCPT {
   static get procedencias() { return ['Em análise', 'Procedente', 'Não procedente']; }
   static get areas() { return ['Atendimento', 'Execução', 'Socioambiental', 'Comunicação', 'Gestão']; }
   static podeConduzir(p) { return PerfisCPT.gerencia(p) || p.papeis.includes('atendimento'); }
-  static podeExecutar(p) { return this.podeConduzir(p) || p.papeis.includes('execucao'); }
-  /** Telefone e e-mail do munícipe: só quem conduz ou executa o caso. */
-  static veContato(p) { return this.podeExecutar(p); }
+  /** A engenharia responde pelo formulário; na aplicação, quem conduz o caso registra execução em nome dela. */
+  static podeExecutar(p) { return this.podeConduzir(p); }
+  /** Telefone e e-mail do munícipe: quem conduz o caso e a Gestão (visão completa, sem editar). */
+  static veContato(p) { return this.podeConduzir(p) || PerfisCPT.visaoCompleta(p); }
 
   /** Campos que o Atendimento pode corrigir: [rótulo, tamanho máximo, aparece no histórico como "alterado" (dado de contato)]. */
   static get corrigiveis() {

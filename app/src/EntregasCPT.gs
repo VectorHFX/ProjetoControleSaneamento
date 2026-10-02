@@ -18,6 +18,7 @@ class EntregasCPT {
   publico(e){if(!e)return null;const {assinatura,...p}=e;return p;}
   carregar(id){const {fonte,hash}=this.fonte(id),rows=this.revisoes(this.tabela(false),id),atual=rows.length?rows[rows.length-1].conteudo:null;return {fonte,hash,entrega:this.publico(atual),fonteAlterada:!!atual&&atual.fonteHash!==hash,historico:rows.slice(-20).reverse().map(r=>({versao:r.conteudo.versao,autor:r.autor,data:r.conteudo.alteradoEm,situacao:r.conteudo.situacao}))};}
   salvar(p){
+    if(PerfisCPT.somenteLeitura(this.ctx.perfil))throw new Error('A Gestão acompanha os relatos; a preparação é feita pelo Administrativo, Socioambiental ou Comunicação.');
     if(!p||typeof p.id!=='string'||!/^OP-[a-zA-Z0-9-]{12,70}$/.test(p.operacaoId||''))throw new Error('Identificação de salvamento inválida.');
     const {fonte,hash}=this.fonte(p.id),a=this.tabela(false),rows=this.revisoes(a,p.id),atual=rows.length?rows[rows.length-1].conteudo:null;
     const assinatura=JSON.stringify([p.id,p.versao,p.fonteHash,p.titulo,p.texto,p.fotos,p.situacao]);const repetida=rows.find(r=>r.op===p.operacaoId);
