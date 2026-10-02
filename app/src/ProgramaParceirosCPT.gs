@@ -178,7 +178,17 @@ class ProgramaParceirosCPT {
   sugestoes(mes) {
     const reg = this.ctx.base.getSheetByName('Registros'), atd = this.ctx.base.getSheetByName('Atendimentos');
     const chave = 'parceiros:sug:' + mes + ':' + (reg ? reg.getLastRow() : 0) + ':' + (atd ? atd.getLastRow() : 0) + ':' + (PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO') || 0);
-    return CacheCPT.obter(chave, 600, () => ProgramaParceirosCPT.calcularSugestoes(new RelatorioMensalCPT(this.ctx).coletar(mes)));
+    const out = CacheCPT.obter(chave, 600, () => ProgramaParceirosCPT.calcularSugestoes(new RelatorioMensalCPT(this.ctx).coletar(mes)));
+    // Comunicação (linhas 32 a 34): o que foi concluído no mês na pasta de materiais.
+    try {
+      const r = MateriaisCPT.resumo(new ColecaoCPT(this.ctx, 'Materiais', 'MAT').itens(), mes);
+      if (r.publicacoes) {
+        out[32] = {valor: r.publicacoes, regra: 'Publicações e matérias marcadas como concluídas no mês em Comunicação → Materiais e links.'};
+        out[33] = {valor: r.alcance, regra: 'Soma das pessoas alcançadas informadas nessas publicações.' + (r.semAlcance ? ' ' + r.semAlcance + ' sem alcance informado.' : '')};
+        out[34] = {valor: 'Foram realizadas ' + r.publicacoes + ' publicações: ' + r.temas.join('; ') + '.', regra: 'Títulos das publicações do mês. Complete com a estratégia de divulgação.'};
+      }
+    } catch (_) {}
+    return out;
   }
   static calcularSugestoes(c) {
     const R = RelatorioMensalCPT, N = ProgramaParceirosCPT.norm, mes = c.mes, out = {};

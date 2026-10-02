@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.7 e Campo 4.0 (4.3)
+# Guia de instalação: Aplicação CPT 2.8 e Campo 4.0 (4.3)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,47 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.8 — Comunicação, Recados, Contatos e Lembretes (≈ 10 min)
+
+**Como atualizar:** no Cloud Shell, `bash ~/atualizar.sh conferir` e depois `bash ~/atualizar.sh aplicar`. Só a Aplicação muda.
+
+**Arquivos novos:**
+
+- `ColecaoCPT.gs`
+- `RecadosCPT.gs`
+- `ContatosCPT.gs`
+- `ComunicacaoCPT.gs`
+- `GaleriaCPT.gs`
+- `Comunicacao.html`
+- `Recados.html`
+
+**Passos:**
+
+1. No editor, execute **`instalarAplicacaoCPT`** uma vez. Deve mostrar `versao: 2.8.0`.
+2. Abra a aplicação com **Ver como → Comunicação** e confira a página **Hoje**.
+3. Depois do primeiro envio de foto pela galeria, compartilhe a pasta **CPT • Comunicação – Fotos extras** como Leitor com a equipe (ela aparece em Conectores e pastas).
+
+As abas novas (Recados, Contatos, Lembretes, Materiais, Mídias extras) são criadas sozinhas na planilha **CPT • Dados da aplicação** no primeiro uso. Não é preciso criar nada nem rodar outra função.
+
+**O que muda para a equipe:**
+
+- **Recados** (todos):
+  - para uma frente ou para pessoas;
+  - aviso com número na lateral e ao abrir a aplicação;
+  - leitura registrada por pessoa, resposta e "resolvido";
+  - pode levar um link, protocolo, registro ou lembrete;
+  - não envia e-mail nem WhatsApp.
+- **Contatos** (todos):
+  - matriz comum com tipo, telefone (botões Ligar e WhatsApp), e-mail, bairro, frente, etiquetas, sinalizador por cor e observação interna;
+  - cada conversa fica registrada no contato;
+  - edita o cadastro quem criou, a Comunicação e a Gestão.
+- **Comunicação** (Comunicação, Gestão e Administrativo). A Comunicação **abre direto nela**, na aba **Hoje**: cinco blocos numerados com só o que pede ação.
+  - **Lembretes:** compartilhados com o Social. O Social os vê na página **Lembretes**.
+  - **Materiais e links:** com prazo e situação. O que é concluído entra no mês e vira sugestão no Programa Parceiros (linhas 32 a 34).
+  - **Galeria:** fotos do mês, envio, pacote .zip e legendas no padrão do relatório.
+
+---
 
 ## Atualização 2.7 — Visões por cargo, Painel da gestão, Programa Parceiros e auditoria (≈ 15 min)
 

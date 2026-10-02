@@ -1,4 +1,4 @@
-# O que cada pessoa vê (Aplicação CPT 2.7)
+# O que cada pessoa vê (Aplicação CPT 2.8)
 
 A aplicação mostra a cada pessoa **a tela do seu trabalho**. A tela é escolhida pelo cargo cadastrado em **Equipe e acessos**.
 
@@ -28,6 +28,10 @@ Quem tem **um cargo só** não vê a faixa nem a troca. Para essa pessoa, aparec
 | Página | Atendimento | Comercialização | Socioambiental | Comunicação | Gestão | Administrativo |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
 | Visão do mês (com atalhos do cargo) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Recados** (avisar outra frente ou pessoa) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Contatos** (matriz comum, conversas registradas) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Comunicação** (Hoje, Lembretes, Materiais e links, Galeria) | | | | ✓ (página de entrada) | ✓ | ✓ |
+| **Lembretes** (ações e materiais com a Comunicação) | | | ✓ | ✓ (dentro de Comunicação) | ✓ | ✓ |
 | Cronograma | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Registros (relatos e fotos) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Atendimentos: consultar e anotar observação | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -43,8 +47,8 @@ Quem tem **um cargo só** não vê a faixa nem a troca. Para essa pessoa, aparec
 Atalhos da Visão do mês, por cargo:
 
 - **Atendimento:** casos em aberto, auditoria das fichas, cronograma, obras.
-- **Socioambiental:** mesa do relatório, pesquisas da semana (meta 15), fechamento, cronograma.
-- **Comunicação:** mesa do relatório, relatos e fotos, fechamento, cronograma.
+- **Socioambiental:** mesa do relatório, lembretes, pesquisas da semana (meta 15), recados.
+- **Comunicação:** abre direto em **Comunicação → Hoje**. Atalhos: meu dia, lembretes, materiais e links, galeria.
 - **Comercialização:** obras e endereços, cronograma, atendimentos, registros.
 - **Gestão e Administrativo:** painel da gestão, Programa Parceiros, auditoria de atendimentos, fechamento.
 
@@ -88,3 +92,23 @@ O que costuma aparecer:
 
 1. Abra o .xlsx no Drive e use Arquivo → Salvar como Planilhas Google.
 2. Na página de conectores, cole o link da nova planilha em "Máscara do Programa Parceiros".
+
+## Comunicação: como usar (para explicar à comunicadora)
+
+A Comunicação abre direto na página **Hoje**. Ela é lida de cima para baixo, um bloco de cada vez:
+
+1. **Recados para você:** o que alguém da equipe pediu. Clique em **Ler**.
+2. **Lembretes de hoje:** o que é para hoje e o que ficou para trás. Fez? Clique em **Feito ✓**.
+3. **Ações da equipe nos próximos 7 dias:** vem do cronograma. Se a ação precisa de panfleto, banner ou foto, clique em **Precisa de material?** e o lembrete já sai ligado à ação.
+4. **Materiais com prazo:** peças a fazer ou em produção. Quando publicar ou entregar, clique em **Concluir** e informe a data e, se for publicação, quantas pessoas alcançou.
+5. **Guardado para o fechamento do mês:** publicações, pessoas alcançadas, impressos e vídeos já concluídos. Esses números aparecem como sugestão no Programa Parceiros (linhas 32 a 34).
+
+As outras abas:
+
+- **Lembretes:** tudo o que foi combinado com o Social, separado em atrasados, hoje, próximos 7 dias e mais adiante.
+- **Materiais e links:** a pasta de links. Cada item tem título, link, observação, responsável, prazo e situação (A fazer, Em produção, Concluído). "Enviar por recado" manda o link para alguém da equipe.
+- **Galeria:** as fotos do mês que vieram dos registros, mais as fotos extras enviadas por aqui.
+  - **Enviar fotos:** do computador ou do celular, ou por link do Drive. Use a data em que a atividade aconteceu; a legenda sai no padrão do relatório.
+  - **Escolher e baixar:** até 15 fotos em um .zip, com a lista de legendas.
+
+As fotos extras ficam na pasta **CPT • Comunicação – Fotos extras**, criada no primeiro envio. Compartilhe essa pasta como Leitor com a equipe; ela aparece em Conectores e pastas.

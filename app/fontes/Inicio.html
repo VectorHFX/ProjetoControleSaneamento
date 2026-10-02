@@ -87,8 +87,8 @@ window.CPTInicio = (() => {
     const pesq = s.semana ? s.semana.total + ' de ' + s.semana.meta + ' nesta semana' : s.mes + ' de ' + s.meta + ' no mês';
     const mapa = {
       atendimento: [b('atendimentos', 'Casos em aberto', ui.num(k.abertos) + ' em tratativa', 'abertos'), b('atendimentos', 'Auditoria das fichas', 'O que conferir na carteira', 'auditoria'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('obras', 'Obras e endereços', 'Frentes de serviço')],
-      socioambiental: [b('socioambiental', 'Mesa do relatório', 'Relatos e diagnósticos do mês'), b('registros', 'Pesquisas de satisfação', pesq), b('fechamento', 'Fechamento do mês', 'Conferir e gerar a base'), b('cronograma', 'Cronograma', 'Agenda da equipe')],
-      comunicacao: [b('socioambiental', 'Mesa do relatório', 'Relatos e fotos do mês'), b('registros', 'Relatos e fotos', 'Registros de campo', 'relatos'), b('fechamento', 'Fechamento do mês', 'Conferir e gerar a base'), b('cronograma', 'Cronograma', 'Agenda da equipe')],
+      socioambiental: [b('socioambiental', 'Mesa do relatório', 'Relatos e diagnósticos do mês'), b('lembretes', 'Lembretes', 'Ações e materiais com a Comunicação'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
+      comunicacao: [b('comunicacao', 'Meu dia', 'O que fazer hoje', 'hoje'), b('comunicacao', 'Lembretes', 'Ações e materiais', 'lembretes'), b('comunicacao', 'Materiais e links', 'Prazos e publicações', 'materiais'), b('comunicacao', 'Galeria', 'Fotos do mês', 'galeria')],
       comercializacao: [b('obras', 'Obras e endereços', 'Onde estão as frentes'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('atendimentos', 'Consultar atendimentos', 'Casos e observações'), b('registros', 'Registros', 'O que a equipe registrou')],
       gestao: [b('painel', 'Painel da gestão', 'Contrato e frentes de serviço'), b('parceiros', 'Programa Parceiros', 'Responder e publicar'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('fechamento', 'Fechamento do mês', 'Relatório e anexos')]
     };

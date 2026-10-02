@@ -1,0 +1,172 @@
+<script>
+/*
+ * Recados e Contatos 2.8.0 — ferramentas comuns a toda a equipe.
+ * Recados: para uma frente ou pessoa, com aviso na lateral, leitura registrada, resposta e "resolvido".
+ *   Não envia e-mail nem WhatsApp. Pode levar um vínculo (material, protocolo, registro, lembrete, obra).
+ * Contatos: matriz comum com observação interna e o caderno de conversas de cada contato.
+ * Formulários abrem na janela de detalhes; o texto digitado fica na tela se algo falhar.
+ */
+window.CPTRecados = (() => {
+  'use strict';
+  let ui = null, ticket = 0, rec = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: ''}, rascunhoVinculo = null;
+  const $ = id => document.getElementById(id);
+  const ops = new Map(), opId = (k, c) => { const s = JSON.stringify(c), a = ops.get(k); if (a && a.s === s) return a.id; const id = 'OP-' + crypto.randomUUID(); ops.set(k, {s, id}); return id; };
+  const NOMES = {atendimento: 'Atendimento', socioambiental: 'Socioambiental', comunicacao: 'Comunicação', comercializacao: 'Comercialização', gestao: 'Gestão', administrativo: 'Administrativo'};
+  const quando = iso => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'}); };
+  const dialogo = (tipo, titulo, html) => { $('detailType').textContent = tipo; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); };
+  const fechar = () => { if ($('detailDialog').open) $('closeDialog').click(); };
+  const erro = (id, e) => { const b = $(id); if (b) { b.hidden = false; b.textContent = e.message; } };
+
+  // ---------------- Avisos (contador na lateral) ----------------
+  async function contar(silencioso) {
+    try {
+      const r = await ui.call('contarAvisosCPT');
+      [['recados', r.recados], ['comunicacao', r.lembretes], ['lembretes', r.lembretes]].forEach(([rota, n]) => {
+        const b = document.querySelector('.nav-item[data-route="' + rota + '"]'); if (!b) return;
+        let s = b.querySelector('.nav-badge'); if (!n) { if (s) s.remove(); return; }
+        if (!s) { s = document.createElement('span'); s.className = 'nav-badge'; b.append(s); } s.textContent = n > 99 ? '99+' : n; s.setAttribute('aria-label', n + (rota === 'recados' ? ' recados novos' : ' lembretes para hoje ou atrasados'));
+      });
+      if (!silencioso && r.recados) ui.toast(r.recados === 1 ? 'Você tem 1 recado novo.' : 'Você tem ' + r.recados + ' recados novos.');
+    } catch (_) {}
+  }
+
+  // ---------------- Recados ----------------
+  const INTRO = ['Recados', 'Para avisar outra frente ou pessoa. Quem recebe vê o aviso na lateral ao abrir a aplicação.'];
+  async function render() {
+    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Abrindo seus recados…</div>';
+    try { rec = await ui.call('listarRecadosCPT'); if (mine !== ticket || ui.state.route !== 'recados') return; desenhar(); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  const destino = r => [...r.para.frentes.map(f => NOMES[f] || f), ...r.para.pessoas.map(e => (rec.pessoas.find(p => p.email === e) || {nome: e}).nome)].join(', ');
+  function desenhar() {
+    const filtros = {recebidos: r => r.paraMim && r.situacao !== 'resolvido', enviados: r => r.meu && r.situacao !== 'resolvido', resolvidos: r => r.situacao === 'resolvido'};
+    const lista = rec.itens.filter(filtros[aba]), n = k => rec.itens.filter(filtros[k]).length;
+    ui.view.innerHTML = ui.intro(...INTRO) + `<div class="tool-head"><div class="segmented painel-tabs" role="tablist">${[['recebidos', 'Para mim'], ['enviados', 'Que enviei'], ['resolvidos', 'Resolvidos']].map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-rec-aba="${k}">${t} <span class="count-pill">${n(k)}</span></button>`).join('')}</div>
+      <button class="button" data-rec-novo>${ui.icon('plus')}Novo recado</button></div>
+      <div class="simple-list">${lista.map(r => `<button class="simple-row ${r.paraMim && !r.lido ? 'is-new' : ''}" data-rec-abrir="${ui.esc(r.id)}"><span class="row-dot" aria-hidden="true"></span>
+        <span class="row-main"><strong>${r.importante ? '<span class="tag-important">Importante</span> ' : ''}${ui.esc(r.assunto)}</strong><small>${r.meu ? 'Para ' + ui.esc(destino(r)) : 'De ' + ui.esc(r.nomeAutor || r.criadoPor)} · ${ui.esc(quando(r.atualizadoEm))}${r.respostas.length ? ' · ' + r.respostas.length + (r.respostas.length === 1 ? ' resposta' : ' respostas') : ''}${r.prazo ? ' · prazo ' + ui.date(r.prazo) : ''}</small></span>
+        ${r.paraMim && !r.lido ? '<span class="badge orange">Novo</span>' : ''}</button>`).join('') || `<p class="empty-line">${aba === 'recebidos' ? 'Nenhum recado esperando por você.' : aba === 'enviados' ? 'Você não tem recados em aberto.' : 'Nenhum recado resolvido ainda.'}</p>`}</div>`;
+  }
+  function vinculoHtml(v) {
+    if (!v) return '';
+    const rot = {link: 'Material', protocolo: 'Atendimento', obra: 'Obra', lembrete: 'Lembrete', registro: 'Registro'}[v.tipo];
+    const acao = v.tipo === 'protocolo' ? `data-case="${ui.esc(v.id)}"` : v.tipo === 'registro' ? `data-record="${ui.esc(v.id)}"` : v.tipo === 'obra' ? 'data-route="obras"' : v.tipo === 'lembrete' ? 'data-route="lembretes"' : '';
+    return `<div class="link-chip"><span>${rot}: <strong>${ui.esc(v.titulo || v.id)}</strong></span>${v.url ? `<a class="button ghost" href="${ui.esc(ui.safeURL(v.url))}" target="_blank" rel="noopener noreferrer">Abrir link</a>` : acao ? `<button class="button ghost" ${acao}>Abrir</button>` : ''}</div>`;
+  }
+  async function abrir(id) {
+    const r = rec.itens.find(x => x.id === id); if (!r) return;
+    const corpo = () => {
+      const x = rec.itens.find(y => y.id === id);
+      return `<p class="small muted">De ${ui.esc(x.nomeAutor || x.criadoPor)} para ${ui.esc(destino(x))} · ${ui.esc(quando(x.criadoEm))}${x.prazo ? ' · prazo ' + ui.date(x.prazo) : ''}</p>${vinculoHtml(x.vinculo)}
+        <div class="message"><p>${ui.esc(x.texto)}</p></div>${x.respostas.map(a => `<div class="message reply"><small>${ui.esc(a.nome || a.autor)} · ${ui.esc(quando(a.em))}</small><p>${ui.esc(a.texto)}</p></div>`).join('')}
+        <div id="recErro" class="notice" hidden></div>
+        <form id="recResposta" class="stack-form"><label class="field">Responder<textarea name="texto" rows="3" maxlength="2000" placeholder="Escreva sua resposta" required></textarea></label>
+        <div class="dialog-actions"><button class="button" type="submit">Enviar resposta</button><button class="button secondary" type="button" data-rec-situacao="${x.situacao === 'resolvido' ? 'reabrir' : 'resolver'}">${x.situacao === 'resolvido' ? 'Reabrir' : 'Marcar como resolvido'}</button></div></form>`;
+    };
+    dialogo('RECADO', r.assunto, corpo()); $('detailContent').dataset.recado = id;
+    if (r.paraMim && !r.lido) try { const x = await ui.call('agirRecadoCPT', {id, acao: 'lido'}); atualizarItem(x.recado); contar(true); } catch (_) {}
+    $('detailContent').__corpo = corpo;
+  }
+  function atualizarItem(r) { const i = rec.itens.findIndex(x => x.id === r.id); if (i >= 0) rec.itens[i] = r; else rec.itens.unshift(r); }
+  async function agir(acao, texto) {
+    const id = $('detailContent').dataset.recado; const dados = {id, acao, texto};
+    try { const r = await ui.call('agirRecadoCPT', {...dados, operacaoId: opId('rec-' + acao + id, dados)}); atualizarItem(r.recado); ui.toast(r.resultado); if ($('detailContent').__corpo) $('detailContent').innerHTML = $('detailContent').__corpo(); if (ui.state.route === 'recados') desenhar(); contar(true); }
+    catch (e) { erro('recErro', e); }
+  }
+  /** Novo recado. vinculo opcional: {tipo,id,titulo,url}; usado por materiais e lembretes ("Avisar por recado"). */
+  async function novo(vinculo, sugestao) {
+    if (!rec) { try { rec = await ui.call('listarRecadosCPT'); } catch (e) { ui.toast(e.message); return; } }
+    rascunhoVinculo = vinculo || null; const s = sugestao || {};
+    dialogo('RECADO', 'Novo recado', `<form id="recForm" class="stack-form"><div id="recErro" class="notice" hidden></div>
+      <fieldset class="choice-group"><legend>Para qual frente?</legend>${Object.entries(NOMES).map(([k, n]) => `<label class="choice"><input type="checkbox" name="frente" value="${k}" ${(s.frentes || []).includes(k) ? 'checked' : ''}>${n}</label>`).join('')}</fieldset>
+      <details class="people-pick" ${s.pessoas && s.pessoas.length ? 'open' : ''}><summary>Ou escolher pessoas</summary>${rec.pessoas.filter(p => p.email !== (ui.state.perfil || {}).email).map(p => `<label class="choice"><input type="checkbox" name="pessoa" value="${ui.esc(p.email)}" ${(s.pessoas || []).includes(p.email) ? 'checked' : ''}>${ui.esc(p.nome)}</label>`).join('')}</details>
+      ${vinculo ? vinculoHtml(vinculo) : ''}
+      <label class="field">Assunto<input name="assunto" maxlength="120" required value="${ui.esc(s.assunto || '')}" placeholder="Ex.: Fotos da ação na escola"></label>
+      <label class="field">Mensagem<textarea name="texto" rows="5" maxlength="2000" required placeholder="Escreva o que a pessoa precisa saber ou fazer.">${ui.esc(s.texto || '')}</textarea></label>
+      <div class="form-row"><label class="field">Prazo (se tiver)<input type="date" name="prazo"></label><label class="choice"><input type="checkbox" name="importante">Marcar como importante</label></div>
+      <div class="dialog-actions"><button class="button" type="submit">Enviar recado</button></div></form>`);
+  }
+  async function enviar(f) {
+    const b = f.querySelector('[type=submit]'), dados = {para: {frentes: [...f.querySelectorAll('[name=frente]:checked')].map(x => x.value), pessoas: [...f.querySelectorAll('[name=pessoa]:checked')].map(x => x.value)},
+      assunto: f.elements.assunto.value, texto: f.elements.texto.value, prazo: f.elements.prazo.value, importante: f.elements.importante.checked, vinculo: rascunhoVinculo};
+    b.disabled = true;
+    try { const r = await ui.call('enviarRecadoCPT', {...dados, operacaoId: opId('recNovo', dados)}); atualizarItem(r.recado); ops.delete('recNovo'); ui.toast(r.resultado); fechar(); if (ui.state.route === 'recados') { aba = 'enviados'; desenhar(); } }
+    catch (e) { erro('recErro', e); } finally { b.disabled = false; }
+  }
+
+  // ---------------- Contatos ----------------
+  const INTRO_C = ['Contatos', 'Matriz de contatos da equipe. Procure antes de cadastrar e registre cada conversa no contato.'];
+  async function renderContatos() {
+    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO_C) + '<div class="loading-label"><span class="spinner"></span>Abrindo a matriz de contatos…</div>';
+    try { con = await ui.call('listarContatosCPT'); if (mine !== ticket || ui.state.route !== 'contatos') return; desenharContatos(); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO_C) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  const fone = t => String(t || '').replace(/\D/g, '');
+  function desenharContatos(manterFoco) {
+    const b = ui.norm(filtroCon.busca), lista = con.itens.filter(c => (!filtroCon.tipo || c.tipo === filtroCon.tipo) && (!b || ui.norm([c.nome, c.instituicao, c.bairro, c.etiquetas, c.frente, c.telefone, c.email].join(' ')).includes(b)));
+    const lista_ = lista.map(c => `<article class="contact-card cor-${ui.esc(c.cor)}"><div class="card-top"><span class="badge">${ui.esc(c.tipo)}</span>${c.registros && c.registros.length ? `<span class="small muted">${c.registros.length} ${c.registros.length === 1 ? 'conversa' : 'conversas'}</span>` : ''}</div>
+      <h3>${ui.esc(c.nome || c.instituicao)}</h3>${c.nome && c.instituicao ? `<p class="small">${ui.esc(c.instituicao)}</p>` : ''}<p class="small muted">${ui.esc([c.bairro, c.frente].filter(Boolean).join(' · '))}</p>
+      <div class="contact-actions">${c.telefone ? `<a class="button ghost" href="tel:${ui.esc(fone(c.telefone))}">Ligar</a>${fone(c.telefone).length >= 10 ? `<a class="button ghost" href="https://wa.me/55${ui.esc(fone(c.telefone).replace(/^55/, ''))}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : ''}` : ''}${c.email ? `<a class="button ghost" href="mailto:${ui.esc(c.email)}">E-mail</a>` : ''}<button class="button secondary" data-con-abrir="${ui.esc(c.id)}">Abrir</button></div></article>`).join('');
+    const html = ui.intro(...INTRO_C) + `<section class="panel filter-panel"><form id="conFiltro" class="filters"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroCon.busca)}" placeholder="Nome, instituição, bairro, telefone…" maxlength="100"></span></label>
+      <label class="field">Tipo<select name="tipo"><option value="">Todos</option>${con.tipos.map(t => `<option ${filtroCon.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><button class="button" type="button" data-con-novo>${ui.icon('plus')}Novo contato</button></form></section>
+      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'contato' : 'contatos'}</span><span>Dados de pessoas: use só para o trabalho</span></div><div class="cards contact-cards">${lista_ || '<p class="empty-line">Nenhum contato encontrado. Cadastre com "Novo contato".</p>'}</div>`;
+    const pos = manterFoco ? document.activeElement.selectionStart : null; ui.view.innerHTML = html;
+    if (manterFoco) { const i = $('conFiltro').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }
+  }
+  function abrirContato(id) {
+    const c = con.itens.find(x => x.id === id); if (!c) return;
+    const hoje = new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
+    dialogo('CONTATO', c.nome || c.instituicao, `<dl class="detail-summary">${[['Instituição, função ou cargo', c.instituicao], ['Tipo', c.tipo], ['Telefone', c.telefone], ['E-mail', c.email], ['Endereço', c.endereco], ['Bairro', c.bairro], ['Frente de obra', c.frente], ['Etiquetas', c.etiquetas]].filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${ui.esc(v)}</dd></div>`).join('')}</dl>
+      ${c.observacao ? `<h3 class="answers-head">Observação interna</h3><p class="message">${ui.esc(c.observacao)}</p>` : ''}
+      <h3 class="answers-head">Conversas registradas</h3>${(c.registros || []).slice().reverse().map(r => `<div class="message reply"><small>${ui.date(r.em)} · ${ui.esc(r.canal)} · ${ui.esc(r.nome || r.autor)}</small><p>${ui.esc(r.texto)}</p></div>`).join('') || '<p class="muted">Nenhuma conversa registrada ainda.</p>'}
+      <div id="conErro" class="notice" hidden></div>
+      <form id="conConversa" class="stack-form" data-id="${ui.esc(c.id)}"><div class="form-row"><label class="field">Data<input type="date" name="data" value="${hoje}" required></label><label class="field">Canal<select name="canal">${con.canais.map(x => `<option>${x}</option>`).join('')}</select></label></div>
+        <label class="field">O que foi conversado<textarea name="texto" rows="3" maxlength="1500" required placeholder="Resumo curto: assunto, combinado e próximo passo."></textarea></label>
+        <div class="dialog-actions"><button class="button" type="submit">Registrar conversa</button>${c.podeEditar ? `<button class="button secondary" type="button" data-con-editar="${ui.esc(c.id)}">Editar cadastro</button>` : ''}</div></form>`);
+  }
+  function formContato(c) {
+    c = c || {cor: 'azul', tipo: ''};
+    dialogo('CONTATO', c.id ? 'Editar contato' : 'Novo contato', `<form id="conForm" class="stack-form" data-id="${ui.esc(c.id || '')}" data-versao="${c.versao || 0}"><div id="conErro" class="notice" hidden></div>
+      <div class="form-row"><label class="field">Nome da pessoa<input name="nome" maxlength="120" value="${ui.esc(c.nome || '')}"></label><label class="field">Instituição, função ou cargo<input name="instituicao" maxlength="200" value="${ui.esc(c.instituicao || '')}"></label></div>
+      <div class="form-row"><label class="field">Tipo<select name="tipo" required><option value="">Escolha</option>${con.tipos.map(t => `<option ${c.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><label class="field">Sinalizador<select name="cor">${[['azul', 'Azul (padrão)'], ['verde', 'Verde (parceiro)'], ['amarelo', 'Amarelo (atenção)'], ['vermelho', 'Vermelho (cuidado)'], ['cinza', 'Cinza (inativo)']].map(([k, n]) => `<option value="${k}" ${c.cor === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+      <div class="form-row"><label class="field">Telefone<input name="telefone" maxlength="60" inputmode="tel" value="${ui.esc(c.telefone || '')}"></label><label class="field">E-mail<input name="email" type="email" maxlength="160" value="${ui.esc(c.email || '')}"></label></div>
+      <div class="form-row"><label class="field">Endereço<input name="endereco" maxlength="300" value="${ui.esc(c.endereco || '')}"></label><label class="field">Bairro<input name="bairro" maxlength="120" value="${ui.esc(c.bairro || '')}"></label></div>
+      <div class="form-row"><label class="field">Frente de obra<input name="frente" maxlength="200" value="${ui.esc(c.frente || '')}"></label><label class="field">Etiquetas<input name="etiquetas" maxlength="200" value="${ui.esc(c.etiquetas || '')}" placeholder="Ex.: escola, horta, imprensa"></label></div>
+      <label class="field">Observação interna<textarea name="observacao" rows="3" maxlength="2000" placeholder="Como abordar, melhor horário, cuidados.">${ui.esc(c.observacao || '')}</textarea></label>
+      <div class="dialog-actions"><button class="button" type="submit">Salvar contato</button>${c.id ? '<button class="button ghost" type="button" data-con-arquivar>Arquivar</button>' : ''}</div></form>`);
+  }
+  async function salvarContato(f, arquivar) {
+    const b = f.querySelector('[type=submit]'), dados = Object.fromEntries(new FormData(f)); dados.id = f.dataset.id; dados.versao = Number(f.dataset.versao); dados.arquivado = !!arquivar; dados.confirmarDuplicado = f.dataset.dup === '1';
+    b.disabled = true;
+    try { const r = await ui.call('salvarContatoCPT', {...dados, operacaoId: opId('con' + dados.id, dados)}); const i = con.itens.findIndex(x => x.id === r.contato.id); if (r.contato.arquivado) con.itens.splice(i, 1); else if (i >= 0) con.itens[i] = r.contato; else con.itens.push(r.contato); ui.toast(r.resultado); fechar(); desenharContatos(); }
+    catch (e) { if (/Já existe/.test(e.message)) { f.dataset.dup = '1'; e.message += ' Se for outra pessoa, clique em Salvar de novo.'; } erro('conErro', e); } finally { b.disabled = false; }
+  }
+  async function registrarConversa(f) {
+    const b = f.querySelector('[type=submit]'), dados = {id: f.dataset.id, data: f.elements.data.value, canal: f.elements.canal.value, texto: f.elements.texto.value}; b.disabled = true;
+    try { const r = await ui.call('registrarConversaContatoCPT', {...dados, operacaoId: opId('conv' + dados.id, dados)}); const i = con.itens.findIndex(x => x.id === r.contato.id); con.itens[i] = r.contato; ui.toast(r.resultado); abrirContato(r.contato.id); desenharContatos(); }
+    catch (e) { erro('conErro', e); } finally { b.disabled = false; }
+  }
+
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', e => {
+      const t = e.target.closest('[data-rec-aba]'); if (t) { aba = t.dataset.recAba; desenhar(); return; }
+      if (e.target.closest('[data-rec-novo]')) { novo(); return; }
+      const a = e.target.closest('[data-rec-abrir]'); if (a) { abrir(a.dataset.recAbrir); return; }
+      const s = e.target.closest('[data-rec-situacao]'); if (s) { agir(s.dataset.recSituacao); return; }
+      if (e.target.closest('[data-con-novo]')) { formContato(); return; }
+      const c = e.target.closest('[data-con-abrir]'); if (c) { abrirContato(c.dataset.conAbrir); return; }
+      const ed = e.target.closest('[data-con-editar]'); if (ed) { formContato(con.itens.find(x => x.id === ed.dataset.conEditar)); return; }
+      if (e.target.closest('[data-con-arquivar]') && confirm('Arquivar este contato? Ele sai da lista, mas continua no histórico.')) salvarContato($('conForm'), true);
+    });
+    document.addEventListener('submit', e => {
+      const f = e.target; if (!['recForm', 'recResposta', 'conForm', 'conConversa'].includes(f.id)) return; e.preventDefault();
+      if (f.id === 'recForm') enviar(f); else if (f.id === 'recResposta') agir('responder', f.elements.texto.value); else if (f.id === 'conForm') salvarContato(f); else registrarConversa(f);
+    });
+    document.addEventListener('input', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'busca') { filtroCon.busca = e.target.value; desenharContatos(true); } });
+    document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; desenharContatos(); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil) contar(true); });
+  }
+  return {init, render, renderContatos, novo, contar};
+})();
+</script>

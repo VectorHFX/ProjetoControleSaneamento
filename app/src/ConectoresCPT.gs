@@ -74,6 +74,7 @@ class ConectoresCPT {
       }
     } catch (_) {}
     try { const c = AplicacaoCPT.config(); if (c.pastaEntregasId) anotar(DriveApp.getFolderById(c.pastaEntregasId), 'Relatórios, anexos, fichas e Programa Parceiros gerados pela aplicação'); } catch (_) {}
+    try { const c = AplicacaoCPT.config(); if (c.pastaExtrasId) anotar(DriveApp.getFolderById(c.pastaExtrasId), 'Fotos extras enviadas pela Comunicação na galeria'); } catch (_) {}
     try { anotar(DriveApp.getFolderById(ConectoresCPT.id('anexos')), 'Anexos do relatório (oficial)'); } catch (_) {}
     return [...out.values()];
   }
