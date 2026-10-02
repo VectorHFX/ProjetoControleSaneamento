@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.9 e Campo 4.0 (4.3)
+# Guia de instalação: Aplicação CPT 2.9 e Campo 4.0 (4.4)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,35 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Campo 4.0 — 4.4: o RDAS passa a ser alimentado pelo Campo 4.0 (≈ 10 min, antes de ligar o formulário novo)
+
+**Por que:** a planilha **RDAS** (a que a cliente acessa) era montada só a partir do **Procedimentos 3.0**. Quando a equipe passar a usar o formulário do Campo 4.0, os relatos novos não chegariam ao RDAS. Agora o próprio Campo 4.0 monta as fichas, na **mesma planilha, com as mesmas abas e o mesmo layout**. A cliente não percebe a troca.
+
+**O que melhora no visual**, sem mudar a estrutura que o Painel do RDAS e o painel da gestão leem:
+
+- fotos maiores, numa moldura mais alta e com menos margem;
+- legenda curta: "Foto 1 de 5 | data | ID · abrir original ↗", com o link para o original;
+- uma linha acima das fotos dizendo quantas são e que a legenda abre o original;
+- na tabela "Execuções registradas no dia", o **ID leva direto à ficha** do relato.
+
+**Passos (no projeto do Campo 4.0):**
+
+1. Atualize pelo Cloud Shell (`atualizar.sh conferir` e `aplicar`). Entra o arquivo novo `SincronizacaoDoRDAS.gs`.
+2. No editor do Campo 4.0, execute **`conferirRDASCampo40`** e autorize. A autorização nova é para ler as fotos do Drive e buscar a miniatura. O resultado mostra quantos relatos do Campo 4.0 existem por dia e não altera nada.
+3. Depois do primeiro relato real enviado pelo formulário novo, a aba do dia aparece sozinha no RDAS. Para refazer na mão os dias mais recentes, execute **`atualizarRDASRecentesCampo40`**.
+4. **No dia em que o formulário 3.0 for desligado** (previsto para segunda, 05/10), abra a planilha do **Procedimentos 3.0** e use o menu **RDAS • Sincronização → Remover atualização automática**. Assim só o Campo 4.0 escreve no RDAS.
+   - Se a troca acontecer em outra data, informe a data na propriedade do script `RDAS_SO_CAMPO40` (formato `2026-10-05`).
+
+**Regras:**
+
+- Relato enviado depois com data antiga (por exemplo, um relato de 03/10 enviado em 06/10): o dia é refeito juntando o que veio do 3.0 com o do 4.0. Os IDs antigos (REL-…) continuam iguais.
+- Dia sem nenhum relato: a aba existente nunca é apagada.
+- As abas antigas (até setembro) **não são tocadas**.
+- Se as fotos demorarem ou a planilha estiver ocupada, o dia fica marcado e é refeito na retomada automática de hora em hora. O envio do formulário nunca é prejudicado.
+- Os relatos do Campo 4.0 aparecem com ID curto (`R4-ABC123`).
+
+---
 
 ## Atualização 2.9 — Meu espaço: mascote, checklist e caderno (≈ 5 min)
 

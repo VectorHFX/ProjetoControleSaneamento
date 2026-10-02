@@ -46,6 +46,7 @@ node atualizador/testes/atualizador.cjs # atualização a partir do GitHub (simu
 bash atualizador/testes/cloudshell.sh  # atualização pelo Cloud Shell (clasp simulado)
 node campo40/testes/processamento.cjs # vigência de obras/bairros e retomada de envios
 node campo40/testes/abertura.cjs      # ficha do formulário vira caso com protocolo
+node campo40/testes/rdas.cjs         # RDAS pelo Campo 4.0, lido pelos painéis reais (compatibilidade)
 node campo40/testes/execucao.cjs      # retorno da engenharia, lista de protocolos, avisos e corte do Controle antigo
 # Interface (precisa de Playwright e Chromium):
 python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs && node app/testes/inicio_ui.cjs && node app/testes/atendimentos_ui.cjs && node app/testes/socioambiental_ui.cjs && node app/testes/visoes_ui.cjs && node app/testes/comunicacao_ui.cjs && node app/testes/espaco_ui.cjs

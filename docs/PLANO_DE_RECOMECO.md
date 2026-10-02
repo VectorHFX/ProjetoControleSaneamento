@@ -124,7 +124,7 @@ Perfis: `administracao_tecnica` (só concede acessos e mexe na configuração), 
 | Ficha oficial em PDF no modelo Sabesp e pacote do mês (ANEXO 4) | ✅ 2.4 |
 | Inventário do Drive para limpeza (`inventariarDriveCPT`) | ✅ 2.4 — ver LIMPEZA_E_BACKUP.md |
 | Encerramento por pesquisa de satisfação | Depois (decisão de 01/10) |
-| RDAS alimentado pelo Campo 4.0 | A fazer |
+| RDAS alimentado pelo Campo 4.0 | Feito no código (4.4). Falta validar com o primeiro relato real e desligar a sincronização 3.0 na troca |
 | Matriz de contatos (ANEXO 1), recados, links e materiais | A fazer |
 | Diagnósticos de área (item 2) e Slides | A fazer |
 | Programa Parceiros e Anexos oficiais | A fazer |

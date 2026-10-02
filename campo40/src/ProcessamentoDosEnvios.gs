@@ -213,6 +213,10 @@ class ProcessamentoDosEnvios {
         AberturaDeAtendimentos.marcarRegistro(contexto.base, id, caso.protocolo); }
       catch (erro) { console.error('Caso não aberto agora para ' + id + ': ' + String(erro.message || erro)); }
     }
+    // RDAS: o dia do relato fica marcado e é refeito fora da trava dos envios (SincronizacaoDoRDAS).
+    if (r.inserido && RepositorioDosRegistros.normalizar(preparado.linha[1]) === 'relato de atividade' && preparado.linha[2] instanceof Date && typeof SincronizacaoDoRDAS !== 'undefined') {
+      try { SincronizacaoDoRDAS.marcarPendente(preparado.linha[2].toISOString().slice(0, 10)); } catch (erro) { console.error('RDAS: dia não marcado: ' + erro.message); }
+    }
     // O contador não substitui a tabela: uma interrupção depois da escrita é retomável pelo ID.
     const e = this.estado();
     e.ultimoProcessamento = {em: new Date().toISOString(), id: r.id, resultado: r.resultado, tempoMs: Date.now() - inicio};
@@ -233,8 +237,9 @@ class ProcessamentoDosEnvios {
     const config = ConfiguracaoDaBase.exigirInstalacao();
     // Eventos de outra fonte não pertencem à fila de retomada desta base.
     if (String(e.source.getId()) !== config.formId) throw new Error('O evento veio de outro formulário.');
+    let resultado;
     try {
-      return ConfiguracaoDaBase.comTrava(() => {
+      resultado = ConfiguracaoDaBase.comTrava(() => {
         const c = ConfiguracaoDaBase.exigirInstalacao();
         if (c.formId !== config.formId) throw new Error('A configuração mudou durante o recebimento.');
         if (ConfiguracaoDaBase.lerDestinoRespostas(e.source) !== c.baseId) throw new Error('O destino do formulário mudou; o envio ficou pendente, sem escrever em outra base.');
@@ -246,6 +251,9 @@ class ProcessamentoDosEnvios {
       try { this.falha(erro, e.response.getId()); } catch (falhaLog) { console.error('Não foi possível registrar o diagnóstico: ' + falhaLog.message); }
       throw erro;
     }
+    // O registro já está salvo: o RDAS é refeito depois, com trava própria, e nunca derruba o envio.
+    if (typeof SincronizacaoDoRDAS !== 'undefined') { try { console.log(JSON.stringify(SincronizacaoDoRDAS.processarPendentes())); } catch (erro) { console.error('RDAS: ' + erro.message); } }
+    return resultado;
   }
   static retomar() {
     return ConfiguracaoDaBase.comTrava(() => {
@@ -347,6 +355,8 @@ function retomarEnviosAutomaticamenteCampo40() {
   catch (erro) { console.error('Abertura de casos pendentes adiada: ' + String(erro.message || erro)); }
   // Retornos da engenharia que o gatilho do formulário de Execução não conseguiu gravar (trava ocupada).
   if (typeof sincronizarExecucaoDaEngenhariaCampo40_ === 'function') sincronizarExecucaoDaEngenhariaCampo40_();
+  // Dias do RDAS que ficaram para depois (foto lenta, planilha ocupada).
+  if (typeof SincronizacaoDoRDAS !== 'undefined') { try { SincronizacaoDoRDAS.processarPendentes(); } catch (erro) { console.error('RDAS adiado: ' + erro.message); } }
   return r;
 }
 /**
