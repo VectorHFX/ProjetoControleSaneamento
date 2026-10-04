@@ -111,20 +111,37 @@ class DadosDaAplicacao {
     return {itens,proximoCursor:linha>1?JSON.stringify({linha,topo,filtro:assinatura}):null};
   }
   localizar(a,id) {const ids=this.ler(a,1);const encontrados=[];ids.forEach((r,i)=>{if(String(r[0])===id)encontrados.push(i+2);});if(encontrados.length!==1)throw new Error('Registro não encontrado ou identidade repetida.');return encontrados[0];}
+  /** Detalhes JSON de um registro (coluna "Detalhes JSON"). Registros grandes guardam os detalhes num arquivo à parte (arquivoDetalhesId). */
+  static lerDetalhes(celula) {
+    let d = typeof celula === 'string' ? JSON.parse(celula || '{}') : (celula || {});
+    return d.arquivoDetalhesId ? JSON.parse(DriveApp.getFileById(d.arquivoDetalhesId).getBlob().getDataAsString('UTF-8')) : (d.conteudo || d);
+  }
+  /**
+   * Todos os arquivos de um registro, sem repetir, em qualquer formato salvo: link do Drive, código puro do Formulário 4.0,
+   * lista de anexos do Campo 4.0 e links do histórico migrado. Usado pelo detalhe do registro e pela galeria (um lugar só).
+   * Cada item: {id, titulo (pergunta), tipo: 'FILE_UPLOAD' | 'campo' | 'anexo' | 'historico'}.
+   */
+  static arquivosDoRegistro(d) {
+    const out = [], vistos = new Set(), eArquivo = t => /foto|imagem|imagens|arquivo|video/.test(DadosDaAplicacao.norm(t));
+    const incluir = (valor, titulo, tipo) => { const s = String(valor || ''), m = s.match(/(?:\/d\/|[?&]id=)([A-Za-z0-9_-]{10,})/), fid = m ? m[1] : /^[A-Za-z0-9_-]{10,}$/.test(s) ? s : '';
+      if (fid && !vistos.has(fid)) { vistos.add(fid); out.push({id: fid, titulo, tipo}); } };
+    [d.consolidado, ...(d.respostas30 || [])].filter(Boolean).forEach(fonte => Object.entries(fonte.links || {}).forEach(([titulo, urls]) => { if (eArquivo(titulo)) (Array.isArray(urls) ? urls : [urls]).forEach(u => incluir(u, titulo, 'historico')); }));
+    const campos = (Array.isArray(d.campos) ? d.campos : []).concat(d.consolidado && d.consolidado.campos ? Object.entries(d.consolidado.campos).map(([titulo, valor]) => ({titulo, valor, tipo: ''})) : []);
+    campos.filter(x => x.tipo === 'FILE_UPLOAD' || eArquivo(x.titulo)).forEach(x => {
+      const v = DadosDaAplicacao.json(x.valor);
+      (Array.isArray(v) ? v : [v]).forEach(item => { const urls = String(item).match(/https:\/\/[^\s,;"]+/g); if (urls) urls.forEach(u => incluir(u, x.titulo, x.tipo === 'FILE_UPLOAD' ? 'FILE_UPLOAD' : 'campo')); else if (x.tipo === 'FILE_UPLOAD') incluir(item, x.titulo, 'FILE_UPLOAD'); });
+    });
+    (d.anexos || []).forEach(x => incluir(x.arquivoId || x.url, x.titulo || 'Anexo do registro', 'anexo'));
+    return out;
+  }
   detalhe(id) {
     if(typeof id!=='string'||!/^REG-[a-f0-9]{24}$/.test(id))throw new Error('ID de registro inválido.');
-    const a=this.registros(),r=a.getRange(this.localizar(a,id),1,1,21).getValues()[0];if(!this.permitido(r))throw new Error('Seu perfil não permite consultar este registro.');let d=JSON.parse(r[20]);
-    if(d.arquivoDetalhesId)d=JSON.parse(DriveApp.getFileById(d.arquivoDetalhesId).getBlob().getDataAsString('UTF-8'));else d=d.conteudo||d;
-    const campos=[],anexos=[];
+    const a=this.registros(),r=a.getRange(this.localizar(a,id),1,1,21).getValues()[0];if(!this.permitido(r))throw new Error('Seu perfil não permite consultar este registro.');const d=DadosDaAplicacao.lerDetalhes(r[20]);
+    const campos=[];
     if(Array.isArray(d.campos))d.campos.forEach(x=>{if(x.valor!==''&&x.valor!=null&&!(Array.isArray(x.valor)&&!x.valor.length))campos.push({titulo:x.titulo,valor:DadosDaAplicacao.json(x.valor),secao:x.secao||'',tipo:x.tipo||''});});
     // Compatibilidade com o JSON preservado da migração 1.0/2.0/3.0.
     if(d.consolidado&&d.consolidado.campos)Object.entries(d.consolidado.campos).forEach(([titulo,valor])=>{if(valor!==''&&valor!=null)campos.push({titulo,valor:DadosDaAplicacao.json(valor),secao:'Registro original',tipo:''});});
-    const vistos=new Set();const incluir=(valor,titulo)=>{const s=String(valor||''),m=s.match(/(?:\/d\/|[?&]id=)([A-Za-z0-9_-]{10,})/);const fid=m?m[1]:/^[A-Za-z0-9_-]{10,}$/.test(s)?s:'';
-      if(fid&&!vistos.has(fid)){vistos.add(fid);anexos.push({id:fid,titulo,url:'https://drive.google.com/file/d/'+fid+'/view',previa:'https://drive.google.com/file/d/'+fid+'/preview'});}};
-    [d.consolidado,...(d.respostas30||[])].filter(Boolean).forEach(fonte=>Object.entries(fonte.links||{}).forEach(([titulo,urls])=>{if(/foto|imagem|imagens|arquivo|video/.test(DadosDaAplicacao.norm(titulo)))(Array.isArray(urls)?urls:[urls]).forEach(u=>incluir(u,titulo));}));
-    (d.anexos||[]).forEach(x=>incluir(x.arquivoId||x.url,x.titulo||'Anexo do registro'));
-    campos.filter(x=>x.tipo==='FILE_UPLOAD'||/foto|imagem|imagens|arquivo|video/.test(DadosDaAplicacao.norm(x.titulo))).forEach(x=>{
-      const valores=Array.isArray(x.valor)?x.valor:[x.valor];valores.forEach(v=>{const urls=String(v).match(/https:\/\/[^\s,;]+/g);if(urls)urls.forEach(u=>incluir(u,x.titulo));else if(x.tipo==='FILE_UPLOAD')incluir(v,x.titulo);});});
+    const anexos=DadosDaAplicacao.arquivosDoRegistro(d).map(x=>({id:x.id,titulo:x.titulo,url:'https://drive.google.com/file/d/'+x.id+'/view',previa:'https://drive.google.com/file/d/'+x.id+'/preview'}));
     return {registro:this.registro(r),campos,anexos,fonte:d.consolidado?'Histórico consolidado':'Formulário 4.0'};
   }
   carteira(p) {

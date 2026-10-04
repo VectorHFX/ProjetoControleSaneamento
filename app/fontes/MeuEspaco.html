@@ -154,6 +154,7 @@ window.CPTEspaco = (() => {
   }
   function desenhar() {
     if (!d.perfil) { boasVindas(); return; }
+    if (window.CPTAvatar) window.CPTAvatar.guardar(M());
     const m = M(), nome = ((ui.state.perfil || {}).nome || '').split(' ')[0], cad = d.caderno, faltam = cad.porPeca - (cad.dias % cad.porPeca);
     const v = ui.visao(), t = TRABALHO[v] || TRABALHO.atendimento, tr = d.trabalho || {}, hora = Number(new Date().toLocaleString('en-US', {hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo'}));
     const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';

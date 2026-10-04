@@ -21,6 +21,9 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await p.locator('#deliveryForm [name=destino]').inputValue(),'4.4');
   await p.locator('[data-delivery=base]').click();assert.match(await p.locator('#deliveryForm [name=texto]').inputValue(),/^Em \d{2}\/\d{2}\/2026/);assert.equal(await p.locator('[data-quadro]').count(),7);
   await p.locator('[data-delivery=gerar]').click();assert.match(await p.locator('#deliveryNotice').textContent(),/Salve a revisão/);
+  // 2.13.1: o cartão de cada foto do relato fica inteiro (borda, miniatura, link e legenda em blocos), sem herdar o estilo da galeria.
+  const card=await p.locator('#deliveryForm .photo-pick').first().evaluate(e=>{const c=getComputedStyle(e),leg=e.querySelector('[data-caption]').getBoundingClientRect(),img=e.querySelector('img').getBoundingClientRect(),lk=e.querySelector('a').getBoundingClientRect();return {display:c.display,borda:c.borderTopWidth,legenda:leg.width,abaixo:lk.top>=img.bottom-1};});
+  assert.equal(card.display,'grid');assert.notEqual(card.borda,'0px');assert.ok(card.legenda>=150,'legenda com largura útil: '+card.legenda);assert.ok(card.abaixo,'link abaixo da miniatura, sem sobrepor');
   await p.locator('.photo-pick input[name=foto]').first().check();assert((await p.locator('#photoCount').textContent()).includes('1 de 8'));
   assert.match(await p.locator('[data-caption]').first().getAttribute('placeholder'),/^\d{2}\/\d{2}\/2026 - Evento - /);
   await p.selectOption('#deliveryForm [name=destino]','9');assert.match(await p.locator('[data-caption]').first().getAttribute('placeholder'),/ - DDS - Tema - /);

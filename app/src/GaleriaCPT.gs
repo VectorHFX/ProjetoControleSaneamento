@@ -31,13 +31,13 @@ class GaleriaCPT {
       let j = i; while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++;
       const v = a.getRange(idx[i] + 2, 21, idx[j] - idx[i] + 1, 1).getValues();
       v.forEach((x, k) => {
-        const r = base[idx[i] + k]; let d; try { d = JSON.parse(x[0] || '{}'); } catch (_) { return; } d = d.conteudo || d;
-        const campos = (d.campos || []).filter(c => c.tipo === 'FILE_UPLOAD' || /foto|imagem|video/.test(DadosDaAplicacao.norm(c.titulo)));
+        const r = base[idx[i] + k]; let d; try { d = DadosDaAplicacao.lerDetalhes(x[0]); } catch (_) { return; }
         const data = this.dados.data(r[2]), atividade = String(r[13] || r[1]), local = String(r[7] || '');
-        campos.forEach(c => (Array.isArray(c.valor) ? c.valor : [c.valor]).forEach(val => GaleriaCPT.ids(val).forEach(id => {
-          if (vistos.has(id)) return; vistos.add(id);
-          out.push({fileId: id, data, atividade, local, legenda: GaleriaCPT.legenda(data, atividade, local), responsavel: String(r[11] || ''), video: /video/.test(DadosDaAplicacao.norm(c.titulo)), origem: 'Registro', registro: String(r[0])});
-        })));
+        // 2.13.1: mesma leitura de arquivos do detalhe do registro (fotos do 4.0 como código puro, anexos e detalhes em arquivo).
+        DadosDaAplicacao.arquivosDoRegistro(d).filter(f => f.tipo === 'FILE_UPLOAD' || f.tipo === 'anexo' || /foto|imagem|video/.test(DadosDaAplicacao.norm(f.titulo))).forEach(f => {
+          if (vistos.has(f.id)) return; vistos.add(f.id);
+          out.push({fileId: f.id, data, atividade, local, legenda: GaleriaCPT.legenda(data, atividade, local), responsavel: String(r[11] || ''), video: /video/.test(DadosDaAplicacao.norm(f.titulo)), origem: 'Registro', registro: String(r[0])});
+        });
       });
       i = j + 1;
     }

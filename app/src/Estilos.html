@@ -347,10 +347,10 @@ html[data-theme=dark][data-visao=comercializacao]{--visao:#b7d58a}
 .photo-missing{display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:var(--muted);padding:8px;text-align:center}
 .video-tag{position:absolute;top:6px;left:6px;background:#000a;color:#fff;font-size:11px;padding:2px 6px;border-radius:6px}
 .photo figcaption{padding:8px 10px;font-size:12px;display:flex;flex-direction:column;gap:2px}.photo figcaption small{color:var(--muted)}
-.photo-pick{display:flex;gap:6px;align-items:flex-start;cursor:pointer}.photo-pick input{margin-top:2px;width:16px;height:16px;flex:none}
+.gal-pick{display:flex;gap:6px;align-items:flex-start;cursor:pointer}.gal-pick input{margin-top:2px;width:16px;height:16px;flex:none}
 @media(max-width:800px){.tool-head>.button{margin-left:0}.today-row{flex-wrap:wrap}.today-row .button{width:100%}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-.photo-pick{border:0!important;padding:0!important;background:none!important;box-shadow:none!important;min-height:0!important}
+.gal-pick{border:0!important;padding:0!important;background:none!important;box-shadow:none!important;min-height:0!important}
 .gallery-bar>span:last-child{display:flex;gap:6px;flex-wrap:wrap}
 
 /* 2.9 — Meu espaço: mascote, checklist e caderno. */
@@ -714,4 +714,8 @@ body.detail-side .contacts-table .c-inst,body.detail-side .contacts-table .c-tip
 @media(max-width:800px){.contacts-table .list-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nome acoes" "inst acoes"}.contacts-table .c-nome{grid-area:nome}.contacts-table .c-inst{grid-area:inst;font-size:12.5px;color:var(--muted)}.contacts-table .c-acoes{grid-area:acoes}.contacts-table .c-tipo,.contacts-table .c-bairro{display:none}}
 /* Com o painel aberto, o topo fica mais enxuto (busca só com o ícone). */
 body.detail-side .search-trigger{flex:0 0 42px;padding:0;justify-content:center}body.detail-side .search-trigger span,body.detail-side .search-trigger kbd{display:none}body.detail-side .month-label{font-size:0;gap:0}body.detail-side .view-banner{flex-wrap:nowrap}body.detail-side .view-banner>span:not(.view-dot){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top-avatar{width:46px;height:46px;border-radius:50%;border:2px solid color-mix(in srgb,var(--blue) 35%,var(--line));background:linear-gradient(180deg,var(--sky1),var(--sky2));overflow:hidden;display:grid;place-items:end center;padding:0;flex:none;cursor:pointer;min-height:0}.top-avatar[hidden]{display:none}.top-avatar .mascot-svg{width:46px;height:52px;margin-bottom:-14px}.top-avatar .mascot-svg .m-all{animation:none}.top-avatar:hover{border-color:var(--blue)}
+@media(max-width:800px){.top-avatar{display:none}}
+/* 2.13.1: "Minha visão" saiu da lateral (a troca de tela fica no "Ver como"). O seletor segue no documento só como estado interno. */
+.sidebar .role-label{display:none!important}
 </style>

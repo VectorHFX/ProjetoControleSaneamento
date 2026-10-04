@@ -23,6 +23,20 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.13.1 — correções: galeria, fotos do relato, ícone do mascote (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.13.1`) e publique uma **Nova versão**.
+
+**Corrigido:**
+- **Galeria da Comunicação sem fotos.**
+  - Causa: a galeria só reconhecia fotos gravadas como link. O Formulário 4.0 grava o código do arquivo puro e às vezes guarda os detalhes num arquivo à parte.
+  - Agora a galeria e o detalhe do registro usam a mesma leitura de fotos.
+- **Seleção de fotos do relato embaralhada.** A galeria usava o mesmo nome de estilo que o relato. Cada um agora tem o seu.
+- **"Minha visão" saiu da lateral.** A troca de tela fica no **Ver como**. No topo aparece o **ícone do seu mascote**, que leva ao Meu espaço.
+- **Socioambiental e Comunicação:** os grupos do menu começam abertos. Só Gestão e Administrativo começam com eles fechados.
+
+---
+
 ## Atualização 2.13 — listas em linhas com painel ao lado (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**.

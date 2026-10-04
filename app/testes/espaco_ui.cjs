@@ -11,6 +11,9 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('[data-esp-especie=pato]').click();assert.equal(await p.locator('#espInicio [name=nome]').inputValue(),'Cleber');
   await p.locator('#espInicio [name=nome]').fill('Cleber Jr');await p.locator('#espInicio [type=submit]').click();await p.locator('.mascot-stage').waitFor();
   assert.match(await p.locator('.mascot-name').textContent(),/Cleber Jr/);assert.match(await p.locator('.mascot-stage').textContent(),/Pato de Paula/);
+  // 2.13.1: o mascote vira o ícone da pessoa no topo (no lugar de "Minha visão"), e continua lá ao recarregar.
+  await p.locator('#topAvatar .mascot-svg').waitFor();assert.match(await p.locator('#topAvatar').getAttribute('aria-label'),/Cleber Jr/);
+  assert.equal(JSON.parse(await p.evaluate(()=>localStorage.getItem('cpt.avatar'))).especie,'pato','ícone guardado para aparecer já ao abrir');
   // Presente da semana → peça → aparece no mascote.
   await p.locator('[data-esp-presente]').click();await p.locator('[data-esp-modo=peca]').click();await p.locator('[data-esp-ganhar=capacete-amarelo]').click();await toast(/Capacete amarelo/);
   assert.equal(await p.locator('[data-esp-presente]').count(),0);
