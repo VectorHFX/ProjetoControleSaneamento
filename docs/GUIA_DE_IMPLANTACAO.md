@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.12 e Campo 4.0 (4.5)
+# Guia de instalação: Aplicação CPT 2.13 e Campo 4.0 (4.5)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,26 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.13 — listas em linhas com painel ao lado (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**.
+2. Execute **`instalarAplicacaoCPT`**. Deve mostrar `versao: 2.13.0`.
+3. Publique uma **Nova versão**.
+
+**O que muda:**
+- **Atendimentos** em linhas: Protocolo · Nome · Assunto · Situação · Com quem está · **Dias** · Próxima ação.
+  - Os dias têm cor: até 29 verde, de 30 a 59 amarelo, 60 ou mais vermelho.
+- **Registros** em linhas: Data · etiqueta do procedimento (Relato, Pesquisa, Vistoria, Diagnóstico) · Atividade · Bairro · Responsável.
+- **Contatos** em linhas: Nome · Instituição · Tipo · Bairro, com **Ligar** e **WhatsApp** na própria linha.
+- As listas trazem **50 por vez**, com "Mostrar mais".
+- **No computador, o detalhe abre num painel à direita**, e a lista continua visível e clicável:
+  - **↑ ↓** ou **J/K** passam ao item anterior ou ao próximo;
+  - **Esc** ou ✕ fecha;
+  - o painel tem as mesmas ações e permissões de antes.
+- **Em telas médias e no celular**, o detalhe abre como janela por cima. No celular, cada linha vira duas faixas.
+
+---
 
 ## Atualização 2.12 — Visão do mês e Painel numa página só (≈ 5 min)
 

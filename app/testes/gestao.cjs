@@ -138,3 +138,9 @@ assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'sem-acesso-sem-ac
 run('liberarConfiguracaoCPT()');email='gestao@example.com';assert.equal(run("carregarParceirosCPT('2026-09')").podePublicar,true);run('travarConfiguracaoCPT()');assert.equal(run("carregarParceirosCPT('2026-09')").podePublicar,false);
 ctx.pessoa={email:'nova@example.com',nome:'Nova',papeis:['atendimento'],ativo:true,versao:0};assert.throws(()=>run('PerfisCPT.salvar(AplicacaoCPT.identidade(),pessoa)'),/exclusiva da administração técnica/);
 console.log('PASS: conectores só para a administração técnica (conferência, pasta das fotos, troca por link validada); trava de testes liga/desliga publicação; cargos só pelo proprietário.');
+// 2.13: registros vêm 50 por vez (linhas ocupam menos espaço), com cursor para "Mostrar mais".
+for(let i=0;i<60;i++)registros.rows.push(reg(900+i,'Relato de atividade','2026-10-'+String(1+i%28).padStart(2,'0'),'OBR-0001','Coletor A [OBR-0001]','Plantão '+i,3));
+{const p1=JSON.parse(JSON.stringify(vm.runInContext("buscarRegistrosCPT({mes:'2026-10'})",ctx)));assert.equal(p1.itens.length,50,'primeira página com 50');assert.ok(p1.proximoCursor);
+ ctx.cur=p1.proximoCursor;const p2=JSON.parse(JSON.stringify(vm.runInContext("buscarRegistrosCPT({mes:'2026-10',cursor:cur})",ctx)));assert.equal(p2.itens.length,10,'segunda página com o resto');assert.equal(p2.proximoCursor,null);
+ assert.equal(new Set(p1.itens.concat(p2.itens).map(x=>x.id)).size,60,'sem repetir nem pular');}
+console.log('PASS: registros 50 por vez, sem repetir nem pular.');

@@ -98,7 +98,7 @@ class DadosDaAplicacao {
     return {mes:datas.length,meta:60,semana};
   }
   buscar(p) {
-    p=p||{};const f=this.filtros(p), a=this.registros(), limite=24;
+    p=p||{};const f=this.filtros(p), a=this.registros(), limite=50; // 2.13: 50 por vez (lista em linhas)
     const assinatura=JSON.stringify(f);let linha=a.getLastRow(),topo=linha;
     if(p.cursor){let c;try{c=JSON.parse(p.cursor);}catch(_){throw new Error('Reinicie a busca.');}
       if(c.filtro!==assinatura||!Number.isInteger(c.linha)||!Number.isInteger(c.topo)||c.linha<1||c.linha>c.topo||c.topo>a.getLastRow())throw new Error('Os filtros mudaram. Reinicie a busca.');linha=c.linha;topo=c.topo;}
@@ -136,7 +136,8 @@ class DadosDaAplicacao {
     // Com filtro de responsável, os mais antigos primeiro (fila de trabalho); sem filtro, os mais novos.
     selecionados.sort((a,b)=>f.com?String(a[0]).localeCompare(String(b[0])):String(b[0]).localeCompare(String(a[0])));
     const pagina=p.pagina==null?0:Number(p.pagina);if(!Number.isInteger(pagina)||pagina<0)throw new Error('Página inválida.');
-    return {itens:selecionados.slice(pagina*24,pagina*24+24).map(r=>this.atendimento(r)),total:selecionados.length,proximaPagina:(pagina+1)*24<selecionados.length?pagina+1:null};
+    // 2.13: 50 por página (a lista em linhas mostra mais casos por tela).
+    const POR=50;return {itens:selecionados.slice(pagina*POR,pagina*POR+POR).map(r=>this.atendimento(r)),total:selecionados.length,proximaPagina:(pagina+1)*POR<selecionados.length?pagina+1:null};
   }
   ficha(protocolo) {
     if(typeof protocolo!=='string'||!protocolo||protocolo.length>100)throw new Error('Protocolo inválido.');

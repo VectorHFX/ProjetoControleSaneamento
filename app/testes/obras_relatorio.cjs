@@ -147,3 +147,8 @@ email='atd@example.com';const mesP='2026-09';r=run(`gerarPacoteFichasCPT({mes:'$
 assert.equal(locked,false);
 console.log('PASS: casos migrados mostram os dados da ficha antiga; correção com histórico sem expor contato; incorporação de protocolo; filtro por responsável com dias em aberto; ficha oficial no modelo, sem refazer à toa, e pacote do mês.');
 }
+// 2.13: atendimentos vêm 50 por vez (linhas ocupam menos espaço).
+{const modelo=atd.rows.find(x=>x[0]==='ATD20260007');for(let i=0;i<60;i++){const r=modelo.slice();r[0]=r[1]='ATD2026'+String(500+i);r[2]='';r[3]='Em andamento';atd.rows.push(r);}
+ const p1=run("buscarAtendimentosCPT({estado:'abertos'})");assert.equal(p1.itens.length,50,'primeira página com 50');assert.equal(p1.proximaPagina,1);
+ const p2=run("buscarAtendimentosCPT({estado:'abertos',pagina:1})");assert.equal(p1.total-50,p2.itens.length,'segunda página com o resto');assert.equal(p2.proximaPagina,null);}
+console.log('PASS: atendimentos 50 por vez.');

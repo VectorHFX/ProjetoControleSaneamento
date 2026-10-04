@@ -17,7 +17,7 @@ for t in processamento abertura rdas execucao gatilhos; do roda "campo40/$t" nod
 if [ "${1:-}" != "rapido" ]; then
   echo "Telas (prévia)"
   roda previa python3 app/testes/gerar_previa.py
-  for t in acesso_ui modulos_ui inicio_ui atendimentos_ui socioambiental_ui visoes_ui comunicacao_ui espaco_ui desempenho_ui navegacao_ui; do roda "app/$t" node "app/testes/$t.cjs"; done
+  for t in acesso_ui modulos_ui inicio_ui atendimentos_ui socioambiental_ui visoes_ui comunicacao_ui espaco_ui desempenho_ui navegacao_ui listas_ui; do roda "app/$t" node "app/testes/$t.cjs"; done
 fi
 echo
 if [ ${#falhas[@]} -eq 0 ]; then echo "TUDO CERTO: $ok testes passaram."; exit 0; fi

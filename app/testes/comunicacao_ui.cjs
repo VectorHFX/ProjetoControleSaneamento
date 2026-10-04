@@ -53,12 +53,12 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   await p.setInputFiles('#galForm [name=arquivos]',png);await p.locator('#galForm [name=atividade]').fill('Oficina de horta');await p.locator('#galForm [type=submit]').click();
   await toast(/Foto guardada/);
   // Contatos: cadastrar, registrar conversa, filtro mantém o foco.
-  await p.locator('.nav-item[data-route=contatos]').click();await p.locator('.contact-card').first().waitFor();
+  await p.locator('.nav-item[data-route=contatos]').click();await p.locator('.contacts-table .list-row').first().waitFor();
   await p.locator('[data-con-novo]').click();await p.locator('#conForm').waitFor();
   await p.locator('#conForm [name=nome]').fill('Jornalista de exemplo');await p.selectOption('#conForm [name=tipo]','Imprensa');await p.locator('#conForm [name=telefone]').fill('(11) 98888-7777');
-  await p.locator('#conForm [type=submit]').click();await toast(/Contato salvo/);assert.equal(await p.locator('.contact-card').count(),2);
-  assert.ok(await p.locator('.contact-card',{hasText:'Jornalista'}).locator('a[href^="https://wa.me/55"]').count());
-  await p.locator('#conFiltro [name=busca]').fill('horta');await p.waitForFunction(()=>document.querySelectorAll('.contact-card').length===1);assert.equal(await p.evaluate(()=>document.activeElement.name),'busca','foco continua na busca depois de redesenhar');
+  await p.locator('#conForm [type=submit]').click();await toast(/Contato salvo/);assert.equal(await p.locator('.contacts-table .list-row').count(),2);
+  assert.ok(await p.locator('.contacts-table .list-row',{hasText:'Jornalista'}).locator('a[href^="https://wa.me/55"]').count());
+  await p.locator('#conFiltro [name=busca]').fill('horta');await p.waitForFunction(()=>document.querySelectorAll('.contacts-table .list-row').length===1);assert.equal(await p.evaluate(()=>document.activeElement.name),'busca','foco continua na busca depois de redesenhar');
   await p.locator('[data-con-abrir]').click();await p.locator('#conConversa [name=texto]').fill('Confirmou a oficina.');await p.locator('#conConversa [type=submit]').click();await toast(/Conversa registrada/);
   assert.match(await p.locator('#detailContent').textContent(),/Confirmou a oficina/);await p.locator('#closeDialog').click();
   // Celular: sem rolagem lateral.

@@ -28,17 +28,24 @@ window.CPTAtendimentos = (() => {
       `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
       <label class="field">Situação<select name="estado"><option value="" ${!filtro.estado ? 'selected' : ''}>Todos os casos</option><option value="abertos" ${filtro.estado === 'abertos' ? 'selected' : ''}>Em aberto</option><option value="concluidos" ${filtro.estado === 'concluidos' ? 'selected' : ''}>Concluídos</option></select></label>
       <label class="field">Com quem está<select name="com"><option value="">Todos</option>${['Execução', 'Atendimento'].map(x => `<option ${filtro.com === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
-      <button type="submit" class="button">${ui.icon('search')}Buscar</button></form></section><div class="results-head"><span id="caseCount">Consultando atendimentos…</span><span>Protocolos ATD + ano + número</span></div><div id="caseResults" class="cards"></div><div id="moreCases" class="load-more"></div>`;
+      <button type="submit" class="button">${ui.icon('search')}Buscar</button></form></section><div class="results-head"><span id="caseCount">Consultando atendimentos…</span><span>Protocolos ATD + ano + número</span></div><div id="caseResults" class="list-table cases-table"></div><div id="moreCases" class="load-more"></div>`;
     const f = $('caseFilters'), ler = () => { filtro = Object.fromEntries(new FormData(f)); };
     f.addEventListener('submit', e => { e.preventDefault(); ler(); carregar(); });
     f.addEventListener('change', () => { ler(); carregar(); });
     f.elements.busca.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => { if (ui.state.route === 'atendimentos') { ler(); carregar(); } }, 400); });
     carregar();
   }
-  function cartao(r) {
-    return `<article class="entry-card"><div class="card-top"><span class="badge ${corStatus(r)}">${ui.esc(r.concluido ? 'Concluído' : r.status || 'Em aberto')}</span><span class="date">${ui.esc(r.protocolo)}</span></div><h3>${ui.esc(r.nome || 'Nome não informado')}</h3>
-      <p><strong>${ui.esc(r.assunto || 'Assunto não informado')}</strong><br>${ui.esc(r.endereco || 'Endereço não informado')}</p>${r.proximaAcao && !r.concluido ? `<p class="small muted">Próxima ação: ${ui.esc(r.proximaAcao)}</p>` : ''}
-      <div class="card-bottom"><span>${ui.esc(r.concluido ? (r.abertura ? 'Aberto em ' + ui.date(r.abertura) : '') : [r.area ? 'Com ' + r.area : '', r.dias != null ? r.dias + (r.dias === 1 ? ' dia' : ' dias') + ' em aberto' : ''].filter(Boolean).join(' · '))}</span><button class="button ghost" data-case="${ui.esc(r.protocolo)}">Abrir ficha ${ui.icon('arrow')}</button></div></article>`;
+  // 2.13: uma linha por caso (mais casos por tela). Clicar abre o detalhe (painel ao lado no computador).
+  const COLUNAS = ['Protocolo', 'Nome', 'Assunto', 'Situação', 'Com quem está', 'Dias', 'Próxima ação'];
+  const cabecalho = () => `<div class="list-head" aria-hidden="true">${COLUNAS.map(c => `<span data-col>${c}</span>`).join('')}</div>`;
+  /** Dias em aberto: até 29 verde, 30 a 59 amarelo, 60 ou mais vermelho (as mesmas faixas do Painel da Execução). */
+  const tomDias = d => d == null ? '' : d >= 60 ? 'vermelho' : d >= 30 ? 'amarelo' : 'verde';
+  function linha(r) {
+    const situacao = r.concluido ? 'Concluído' : r.status || 'Em aberto';
+    return `<div class="list-row" role="button" tabindex="0" data-case="${ui.esc(r.protocolo)}" aria-label="${ui.esc(r.protocolo + ', ' + (r.nome || 'nome não informado') + ', ' + situacao)}">
+      <span class="c-prot">${ui.esc(r.protocolo)}</span><span class="c-nome">${ui.esc(r.nome || 'Nome não informado')}</span><span class="c-assunto">${ui.esc(r.assunto || '—')}</span>
+      <span class="c-sit"><i class="status-dot ${corStatus(r)}" aria-hidden="true"></i>${ui.esc(situacao)}</span><span class="c-com">${ui.esc(r.concluido ? '—' : r.area || '—')}</span>
+      <span class="c-dias"><b class="dias ${r.concluido ? '' : tomDias(r.dias)}">${r.dias == null ? '—' : ui.esc(String(r.dias))}</b></span><span class="c-prox">${ui.esc(!r.concluido && r.proximaAcao ? r.proximaAcao : '—')}</span></div>`;
   }
   async function carregar(mais = false) {
     const mine = ++ticket; if (!mais) casos = [];
@@ -46,7 +53,7 @@ window.CPTAtendimentos = (() => {
     try {
       const d = await ui.call('buscarAtendimentosCPT', {...filtro, pagina: mais ? pagina : 0}); if (mine !== ticket || ui.state.route !== 'atendimentos') return;
       casos.push(...d.itens); pagina = d.proximaPagina; $('caseCount').textContent = ui.num(d.total) + ' casos encontrados';
-      $('caseResults').innerHTML = casos.length ? casos.map(cartao).join('') : '<p class="muted">Nenhum atendimento encontrado. Altere a situação ou o termo da busca.</p>';
+      $('caseResults').innerHTML = casos.length ? cabecalho() + casos.map(linha).join('') : '<p class="muted">Nenhum atendimento encontrado. Altere a situação ou o termo da busca.</p>';
       $('moreCases').innerHTML = d.proximaPagina !== null ? '<button class="button secondary" data-case-mais>Carregar mais</button>' : '';
     } catch (e) { if (mine !== ticket) return; $('caseResults').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; $('moreCases').innerHTML = ''; $('caseCount').textContent = 'Consulta não concluída'; }
   }
@@ -83,7 +90,7 @@ window.CPTAtendimentos = (() => {
   async function abrir(protocolo) {
     const mine = ++abrirTicket; aberto = null; historico = {cursor: null, ocupado: false};
     $('detailType').textContent = 'ATENDIMENTO'; $('detailTitle').textContent = 'Abrindo ficha ' + protocolo; $('detailContent').innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo a ficha…</div>';
-    if (!$('detailDialog').open) $('detailDialog').showModal();
+    window.CPTDetalhe.abrir(document.querySelector('#caseResults .list-row[data-case="' + String(protocolo).replace(/"/g, '') + '"]'));
     try { const d = await ui.call('abrirAtendimentoCPT', protocolo); if (mine !== abrirTicket || !$('detailDialog').open) return; aberto = d; desenhar(); }
     catch (e) { if (mine === abrirTicket) $('detailContent').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
