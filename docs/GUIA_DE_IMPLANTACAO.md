@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.11 e Campo 4.0 (4.5)
+# Guia de instalação: Aplicação CPT 2.12 e Campo 4.0 (4.5)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,19 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.12 — Visão do mês e Painel numa página só (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**.
+2. Execute **`instalarAplicacaoCPT`**. Deve mostrar `versao: 2.12.0`.
+3. Publique uma **Nova versão**.
+
+**O que muda:**
+- Para Gestão e Administrativo, a **Visão do mês** ganha abas: **Resumo do mês · Contrato · Frentes de serviço · Relatos em resumo**. O "Painel da gestão" saiu do menu e virou essas abas.
+- A busca (Ctrl+K) leva direto a cada aba: digite "contrato", "frentes" ou "relatos".
+- As outras frentes continuam vendo a Visão do mês como antes, sem abas.
+
+---
 
 ## Atualização 2.11 — achar tudo mais fácil: menu em grupos e busca (≈ 5 min)
 

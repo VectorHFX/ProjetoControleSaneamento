@@ -11,7 +11,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.goto(url('?latencia=40'));await p.locator('.report-items').waitFor();
   // Proprietário: faixa da visão aparece e a lateral é a do Administrativo.
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Administrativo/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','painel','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','obras','contatos','equipe','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','obras','contatos','equipe','ajuda']);
   // Ver como Atendimento: cor, lateral, atalhos e auditoria.
   await p.selectOption('#viewSwitch','atendimento');await espaco();await irInicio();
   assert.equal(await p.getAttribute('html','data-visao'),'atendimento');
@@ -28,7 +28,10 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   assert.ok(!(await p.locator('.shortcuts').textContent()).includes('Auditoria'));
   // Gestão: painel com alertas, frentes, relatos.
   await p.selectOption('#viewSwitch','gestao');await p.locator('.shortcuts').waitFor();
-  await p.locator('.nav-item[data-route=painel]').click();await p.locator('.alert-list').waitFor();
+  // 2.11: o painel são abas da Visão do mês (Resumo · Contrato · Frentes · Relatos); o menu mantém a Visão do mês marcada.
+  await p.locator('.nav-item[data-route=inicio]').click();await p.locator('.mes-tabs [data-painel-aba=resumo][aria-selected=true]').waitFor();assert.equal(await p.locator('.nav-item[data-route=painel]').count(),0,'painel fora do menu');
+  await p.locator('[data-painel-aba=contrato]').click();await p.locator('.alert-list').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');
+  assert.equal(await p.locator('#pageLabel').textContent(),'Visão do mês');
   assert.match(await p.locator('.attention').textContent(),/3 pontos/);assert.equal(await p.locator('.mini-chart').count(),4);
   await p.locator('[role=tab][data-painel-aba=frentes]').click();await p.locator('.front-card').first().waitFor();
   assert.equal(await p.locator('.front-card.is-late').count(),1);
@@ -50,7 +53,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.locator('#ppPublicar').click();await p.waitForFunction(()=>/Publicado/.test(document.querySelector('#ppSituacao').textContent));
   await p.locator('#ppExportar').click();await p.waitForFunction(()=>/Baixar Excel/.test(document.querySelector('#ppResultado').textContent));
   // Alteração sem salvar fica guardada no navegador e volta ao reabrir.
-  await p.locator('[data-linha="10"]').fill('Oficinas e rodas de conversa');await p.locator('.nav-item[data-route=painel]').click();await p.locator('.painel-body').waitFor();
+  await p.locator('[data-linha="10"]').fill('Oficinas e rodas de conversa');await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=contrato]').click();await p.locator('.painel-body').waitFor();
   await p.locator('.nav-item[data-route=parceiros]').click();await p.locator('#ppForm').waitFor();
   assert.equal(await p.locator('[data-linha="10"]').inputValue(),'Oficinas e rodas de conversa');assert.match(await p.locator('#view').textContent(),/Recuperamos respostas/);
   // Conectores (Equipe → administração técnica).
@@ -59,7 +62,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   assert.match(await p.locator('#view').textContent(),/Período de testes: configuração travada/);assert.match(await p.locator('#view').textContent(),/Abrir e compartilhar/);
   // Celular: sem rolagem lateral no painel e no Programa Parceiros; troca de visão disponível na faixa.
   await p.setViewportSize({width:390,height:844});
-  for(const r of ['painel','parceiros']){await p.evaluate(r=>document.querySelector('.nav-item[data-route='+r+']').click(),r);await p.locator(r==='painel'?'.painel-body':'#ppForm').waitFor();
+  for(const r of ['painel','parceiros']){if(r==='painel'){await p.evaluate(()=>document.querySelector('.nav-item[data-route=inicio]').click());await p.locator('[data-painel-aba=contrato]').click();}else await p.evaluate(r=>document.querySelector('.nav-item[data-route='+r+']').click(),r);await p.locator(r==='painel'?'.painel-body':'#ppForm').waitFor();
     assert(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral: '+r);}
   assert(await p.locator('#viewSwitch').isVisible(),'troca de visão visível no celular');
   // Pessoa com um papel só: sem faixa de troca, sem páginas da gestão.

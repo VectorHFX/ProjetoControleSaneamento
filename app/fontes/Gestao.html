@@ -35,21 +35,24 @@ window.CPTGestao = (() => {
   }
 
   // ---------------- Painel da gestão ----------------
-  const INTRO = ['Painel da gestão', 'O contrato e cada frente de serviço no mês, começando pelo que pede atenção.'];
+  // 2.11: o painel vive dentro da Visão do mês, em abas (Resumo do mês · Contrato · Frentes · Relatos).
+  const INTRO = ['Visão do mês', 'Resumo, contrato, frentes de serviço e relatos do mês, começando pelo que pede atenção.'];
   async function renderPainel(atualizar = false) {
     const mine = ++ticket, mes = ui.state.mes;
-    if (!painel || painel.mes !== mes) { relatos = null; ui.view.innerHTML = ui.intro(...INTRO) + abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os números do mês…</div><div class="stat-row">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; }
+    if (!painel || painel.mes !== mes) { relatos = null; ui.view.innerHTML = abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os números do mês…</div><div class="stat-row">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; }
     try {
       const d = await ui.call('carregarPainelGestaoCPT', {mes, atualizar}); if (mine !== ticket || ui.state.route !== 'painel') return;
       painel = d; desenharPainel();
-    } catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+    } catch (e) { if (mine === ticket) ui.view.innerHTML = abas() + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
-  function abas() {
-    return `<div class="segmented painel-tabs" role="tablist" aria-label="Partes do painel">${[['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo']].map(([k, n]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
+  /** Abas da Visão do mês para a gestão. sel: aba marcada ('resumo' na própria Visão do mês). */
+  function abas(sel) {
+    const atual = sel || aba;
+    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo']].map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
   }
   function desenharPainel() {
     const corpo = aba === 'frentes' ? frentes() : aba === 'relatos' ? '<div id="relatosResumo"></div>' : contrato();
-    ui.view.innerHTML = ui.intro(...INTRO) + abas() + `<div class="painel-body">${corpo}</div><p class="small muted painel-foot">Atualizado às ${new Date(painel.atualizadoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'})}. Use o botão Atualizar no topo para recalcular.</p>`;
+    ui.view.innerHTML = abas() + `<div class="painel-body">${corpo}</div><p class="small muted painel-foot">Atualizado às ${new Date(painel.atualizadoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'})}. Use o botão Atualizar no topo para recalcular.</p>`;
     if (aba === 'relatos') carregarRelatos();
   }
   function contrato() {
@@ -247,7 +250,7 @@ window.CPTGestao = (() => {
   function init(api) {
     ui = api;
     document.addEventListener('click', e => {
-      const t = e.target.closest('[data-painel-aba]'); if (t) { aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
+      const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
       const na = e.target.closest('[data-pp-na]'); if (na) { preencher(na.dataset.ppNa, 'Não aplicada'); return; }
       const usar = e.target.closest('[data-pp-usar]'); if (usar && pp && pp.sugestoes[usar.dataset.ppUsar]) { preencher(usar.dataset.ppUsar, pp.sugestoes[usar.dataset.ppUsar].valor); return; }
@@ -280,6 +283,6 @@ window.CPTGestao = (() => {
     window.addEventListener('beforeunload', e => { if (ppSujo && ui.state.route === 'parceiros') { e.preventDefault(); e.returnValue = ''; } });
   }
   const sair = () => !ppSujo || ui.state.route !== 'parceiros' || confirm('Há respostas do Programa Parceiros sem salvar (elas ficam guardadas neste navegador). Sair mesmo assim?');
-  return {init, renderPainel, renderParceiros, renderConectores, sair, colunas, barrasH};
+  return {init, renderPainel, renderParceiros, renderConectores, sair, colunas, barrasH, abas, irPara: k => { aba = k; }};
 })();
 </script>

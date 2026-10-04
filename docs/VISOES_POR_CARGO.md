@@ -1,4 +1,4 @@
-# O que cada pessoa vê (Aplicação CPT 2.10)
+# O que cada pessoa vê (Aplicação CPT 2.12)
 
 A aplicação mostra a cada pessoa **a tela do seu trabalho**. A tela é escolhida pelo cargo cadastrado em **Equipe e acessos**.
 
@@ -47,7 +47,7 @@ Quem tem **um cargo só** não vê a faixa nem a troca. Para essa pessoa, aparec
 | Obras (consulta) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Socioambiental (mesa do relatório, relatos, diagnósticos) | | | ✓ | ✓ | ✓ | ✓ |
 | Fechamento do mês | | | ✓ | ✓ | ✓ | ✓ |
-| **Painel da gestão** (contrato, frentes, relatos em resumo) | | | | | ✓ | ✓ |
+| **Visão do mês: abas Contrato, Frentes e Relatos** (o antigo Painel da gestão) | | | | | ✓ | ✓ |
 | **Programa Parceiros** | | | | | ✓ | ✓ |
 | Equipe e acessos · Conectores e pastas | | | | | só você | só você |
 

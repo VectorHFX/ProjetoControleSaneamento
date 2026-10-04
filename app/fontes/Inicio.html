@@ -90,18 +90,20 @@ window.CPTInicio = (() => {
       socioambiental: [b('socioambiental', 'Mesa do relatório', 'Relatos e diagnósticos do mês'), b('lembretes', 'Lembretes', 'Ações e materiais com a Comunicação'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
       comunicacao: [b('comunicacao', 'Meu dia', 'O que fazer hoje', 'hoje'), b('comunicacao', 'Lembretes', 'Ações e materiais', 'lembretes'), b('comunicacao', 'Materiais e links', 'Prazos e publicações', 'materiais'), b('comunicacao', 'Galeria', 'Fotos do mês', 'galeria')],
       comercializacao: [b('obras', 'Obras e endereços', 'Onde estão as frentes'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('atendimentos', 'Consultar atendimentos', 'Casos e observações'), b('registros', 'Registros', 'O que a equipe registrou')],
-      gestao: [b('painel', 'Painel da gestão', 'Contrato e frentes de serviço'), b('parceiros', 'Programa Parceiros', 'Responder e publicar'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('fechamento', 'Fechamento do mês', 'Relatório e anexos')]
+      gestao: [b('socioambiental', 'Mesa do relatório', 'Relatos e diagnósticos do mês'), b('parceiros', 'Programa Parceiros', 'Responder e publicar'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('fechamento', 'Fechamento do mês', 'Relatório e anexos')]
     };
     mapa.administrativo = mapa.gestao;
     const lista = (mapa[v] || mapa.atendimento).filter(Boolean);
     return lista.length ? `<nav class="shortcuts" aria-label="Atalhos do seu trabalho">${lista.join('')}</nav>` : '';
   }
   function render(d) {
-    if (!d) { ui.view.innerHTML = '<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Buscando as informações do mês…</div><div class="skeleton hero-loading"></div><div class="kpis">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; return; }
+    // Gestão e Administrativo: abas do painel no topo da Visão do mês (Resumo · Contrato · Frentes · Relatos).
+    const abasMes = ui.podeVer('painel') && window.CPTGestao && window.CPTGestao.abas ? window.CPTGestao.abas('resumo') : '';
+    if (!d) { ui.view.innerHTML = abasMes + '<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Buscando as informações do mês…</div><div class="skeleton hero-loading"></div><div class="kpis">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; return; }
     const k = d.indicadores, s = d.satisfacao || {mes: 0, meta: 60, semana: null}, perfil = ui.state.perfil || d.perfil, nome = (perfil?.nome || '').split(' ')[0];
     const visao = ui.visao(), gerencia = ui.podeVer('socioambiental');
     if (agenda.mes !== d.mes) prefetchAgenda(d.mes);
-    ui.view.innerHTML = `<section class="home-hero"><div class="home-hero-art" aria-hidden="true">${window.CPTArte ? window.CPTArte.pagina('inicio') : ''}</div><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'} · TELA DE ${ui.esc((window.CPTAgenda.names[visao] || '').toUpperCase())}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
+    ui.view.innerHTML = abasMes + `<section class="home-hero"><div class="home-hero-art" aria-hidden="true">${window.CPTArte ? window.CPTArte.pagina('inicio') : ''}</div><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'} · TELA DE ${ui.esc((window.CPTAgenda.names[visao] || '').toUpperCase())}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
         <p class="home-phrase">${ui.esc(k.frase || 'Números pela data em que cada atividade foi realizada.')}</p>${k.relatosSemPublico ? `<p><button class="chip-alert" data-pending="publico">${ui.num(k.relatosSemPublico)} ${k.relatosSemPublico === 1 ? 'ação' : 'ações'} sem público informado · conferir</button></p>` : ''}</div>
         <div class="hero-actions">${ui.formLink().replace('button white', 'button')}${gerencia ? '<button class="button secondary" data-route="socioambiental">Mesa do relatório</button>' : ''}</div></section>
       ${atalhos(visao, d)}

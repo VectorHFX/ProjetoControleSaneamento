@@ -33,13 +33,16 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.match(await p.locator('#obraFiltros [name=busca]').inputValue(),/Viela/);
   // Esc fecha mesmo com texto digitado (o campo de busca não só apaga o texto).
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('obras');await p.keyboard.press('Escape');assert.equal(await p.locator('#searchDialog[open]').count(),0,'Esc fecha com texto');
+  // Busca: aba do painel (Visão do mês · Frentes de serviço).
+  await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('frentes');await p.locator('.search-item',{hasText:'Frentes de serviço'}).first().click();
+  await p.locator('.front-card').first().waitFor();assert.equal(await p.locator('[data-painel-aba=frentes]').getAttribute('aria-selected'),'true');assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');
   // Setas e Esc.
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('');await p.keyboard.press('ArrowDown');assert.equal(await p.locator('.search-item').nth(1).getAttribute('aria-selected'),'true');
   await p.keyboard.press('Escape');assert.equal(await p.locator('#searchDialog[open]').count(),0);
   // Registro único (ROTAS): toda página do menu abre, com o título do registro e sem erro (quem tem todos os cargos).
   for(const g of ['mes','consulta'])if(await fechado(g))await p.locator('.nav-group[data-grupo='+g+'] .nav-group-head').click();
   const rotas=await p.$$eval('#navigation .nav-item',l=>l.filter(x=>!x.hidden).map(x=>[x.dataset.route,x.querySelector('span').textContent]));
-  assert.ok(rotas.length>=15,'menu completo: '+rotas.length);
+  assert.equal(rotas.length,14,'menu completo da gestão (o painel virou abas da Visão do mês): '+rotas.length);
   for(const [r,titulo] of rotas){await p.locator('.nav-item[data-route='+r+']').click();await p.waitForFunction(r=>document.querySelector('.nav-item.active')?.dataset.route===r,r);
     assert.equal(await p.locator('#pageLabel').textContent(),titulo,'título de '+r);await p.waitForTimeout(250);}
   assert.deepEqual(errors,[],'nenhuma página com erro');

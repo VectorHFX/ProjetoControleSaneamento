@@ -28,7 +28,8 @@
   const ROTAS={
     meuespaco:{titulo:'Meu espaço',icone:'i-star',grupo:'dia',abrir:()=>window.CPTEspaco.render(),atualizar:()=>window.CPTEspaco.render(true),aoSair:()=>window.CPTEspaco.sair()},
     inicio:{titulo:'Visão do mês',icone:'i-home',grupo:'dia',abrir:()=>renderHome(),atualizar:()=>{window.CPTInicio.prefetchAgenda(state.mes);loadHome(true);}},
-    painel:{titulo:'Painel da gestão',icone:'i-chart',grupo:'dia',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderPainel(),atualizar:()=>window.CPTGestao.renderPainel(true),mes:()=>window.CPTGestao.renderPainel()},
+    // Painel da gestão: abas Contrato/Frentes/Relatos dentro da Visão do mês (fora do menu; o item marcado é a Visão do mês).
+    painel:{titulo:'Visão do mês',icone:'i-chart',menu:'inicio',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderPainel(),atualizar:()=>window.CPTGestao.renderPainel(true),mes:()=>window.CPTGestao.renderPainel()},
     atendimentos:{titulo:'Atendimentos',icone:'i-case',grupo:'dia',abrir:()=>window.CPTAtendimentos.render(),atualizar:()=>window.CPTAtendimentos.atualizar()},
     recados:{titulo:'Recados',icone:'i-message',grupo:'dia',abrir:()=>window.CPTRecados.render(),atualizar:()=>window.CPTRecados.render()},
     cronograma:{titulo:'Cronograma',icone:'i-calendar',grupo:'dia',abrir:()=>window.CPTAgenda.render(),atualizar:()=>window.CPTAgenda.render(),mes:()=>window.CPTAgenda.render()},
@@ -62,7 +63,9 @@
   // ---------- Busca geral (Ctrl+K): páginas, ações, protocolos, obras e contatos ----------
   const BUSCA={obras:null,contatos:null,casos:[],casosDe:'',timer:null,seq:0,sel:0,itens:[]};
   const ACOES=[{titulo:'Novo recado',rota:'recados',chave:'recado mensagem avisar escrever',alvo:'[data-rec-novo]'},{titulo:'Nova atividade no cronograma',rota:'cronograma',chave:'agenda evento atividade marcar',alvo:'[data-agenda-action="new"]'},
-    {titulo:'Novo contato',rota:'contatos',chave:'contato telefone cadastrar pessoa',alvo:'[data-con-novo]'}];
+    {titulo:'Novo contato',rota:'contatos',chave:'contato telefone cadastrar pessoa',alvo:'[data-con-novo]'},
+    {titulo:'Visão do mês · Contrato',rota:'painel',chave:'painel contrato gestao numeros',aba:'contrato'},{titulo:'Visão do mês · Frentes de serviço',rota:'painel',chave:'painel frentes obras servico',aba:'frentes'},
+    {titulo:'Visão do mês · Relatos em resumo',rota:'painel',chave:'painel relatos resumo',aba:'relatos'}];
   const normBusca=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   function abrirBusca(){const d=$('searchDialog');if(d.open)return;if(document.body.classList.contains('nav-open'))abrirMenu(false);d.showModal();$('searchInput').value='';BUSCA.sel=0;desenharBusca();$('searchInput').focus();
     if(!BUSCA.obras)call('listarObrasCPT').then(r=>{BUSCA.obras=(r&&r.obras)||[];desenharBusca();}).catch(()=>{BUSCA.obras=[];});
@@ -71,7 +74,7 @@
   /** Monta a lista de resultados para o texto digitado (sem texto: atalhos). Atendimentos vêm do servidor, com espera curta. */
   function resultadosBusca(q){const n=normBusca(q).trim(),out=[],tem=t=>!n||normBusca(t).includes(n);
     [...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden).forEach(b=>{const nome=b.querySelector('span').textContent;if(tem(nome))out.push({tipo:'Página',titulo:nome,icone:(b.querySelector('use')||{getAttribute:()=>'#i-arrow'}).getAttribute('href'),ir:()=>navigate(b.dataset.route)});});
-    ACOES.filter(a=>podeVer(a.rota)&&(tem(a.titulo)||(n&&normBusca(a.chave).includes(n)))).forEach(a=>out.push({tipo:'Ação',titulo:a.titulo,icone:'#i-plus',ir:()=>{navigate(a.rota);clicarQuandoAparecer(a.alvo);}}));
+    ACOES.filter(a=>podeVer(a.rota)&&(tem(a.titulo)||(n&&normBusca(a.chave).includes(n)))).forEach(a=>out.push({tipo:'Ação',titulo:a.titulo,icone:a.aba?'#i-chart':'#i-plus',ir:()=>{if(a.aba)window.CPTGestao.irPara(a.aba);navigate(a.rota);if(a.alvo)clicarQuandoAparecer(a.alvo);}}));
     if(n.length>=2){
       BUSCA.casos.forEach(c=>out.push({tipo:'Atendimento',titulo:c.protocolo+' · '+(c.nome||'Sem nome'),detalhe:[c.assunto,c.status].filter(Boolean).join(' · '),icone:'#i-case',ir:()=>{navigate('atendimentos');window.CPTAtendimentos.abrir(c.protocolo);}}));
       (BUSCA.obras||[]).filter(o=>normBusca([o.nome,(o.bairros||[]).join(' '),o.id].join(' ')).includes(n)).slice(0,5).forEach(o=>out.push({tipo:'Obra',titulo:o.nome,detalhe:[(o.bairros||[]).join(', '),o.situacao].filter(Boolean).join(' · '),icone:'#i-pin',ir:()=>{navigate('obras');preencherQuandoAparecer('#obraFiltros [name=busca]',o.nome);}}));
@@ -104,7 +107,7 @@
   document.addEventListener('click',e=>{const h=e.target.closest('.nav-group-head');if(!h)return;const g=h.closest('.nav-group');abrirGrupo(g.dataset.grupo,g.classList.contains('is-closed'),true);});
   // Barra de atalhos do celular: as 4 páginas mais usadas de cada cargo + Menu.
   const ATALHOS={atendimento:['meuespaco','atendimentos','cronograma','recados'],socioambiental:['meuespaco','socioambiental','cronograma','recados'],comunicacao:['meuespaco','comunicacao','cronograma','recados'],
-    comercializacao:['meuespaco','obras','cronograma','recados'],gestao:['inicio','painel','atendimentos','recados'],administrativo:['inicio','painel','atendimentos','recados']};
+    comercializacao:['meuespaco','obras','cronograma','recados'],gestao:['inicio','atendimentos','recados','cronograma'],administrativo:['inicio','atendimentos','recados','cronograma']};
   function montarTabbar(){const bar=$('tabbar');if(!bar)return;const vis=[...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden),por=new Map(vis.map(b=>[b.dataset.route,b]));
     const rotas=(ATALHOS[visao()]||[]).filter(r=>por.has(r));vis.forEach(b=>{if(rotas.length<4&&!rotas.includes(b.dataset.route))rotas.push(b.dataset.route);});
     bar.innerHTML=rotas.slice(0,4).map(r=>{const b=por.get(r),uso=b.querySelector('use'),nome=b.querySelector('span').textContent;return `<button class="tab-item${state.route===r?' active':''}" data-route="${esc(r)}"${state.route===r?' aria-current="page"':''}><svg class="icon" aria-hidden="true"><use href="${esc(uso?uso.getAttribute('href'):'#i-home')}"/></svg><span>${esc(nome)}</span></button>`;}).join('')+
@@ -174,7 +177,7 @@
     if(state.perfil&&!podeVer(route)){toast(permitido(route)?'Esta página não faz parte da tela de '+window.CPTAgenda.names[visao()]+'. Troque a visão para abri-la.':'Seu acesso não inclui esta página.');return;}
     const atual=ROTAS[state.route];if(atual&&state.route!==route){if(atual.podeSair&&!atual.podeSair())return;if(atual.aoSair)atual.aoSair();}clearTimeout(debounce);state.route=route;++state.listRequest;state.cursor=null;
     if(filter==='relatos')state.filters.procedimento='Relato de atividade';if(route==='comunicacao'&&filter)window.CPTComunicacao.irPara(filter);if(route==='atendimentos'&&filter)window.CPTAtendimentos.filtrar(filter);
-    document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===route;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);{const g=document.querySelector('.nav-item[data-route="'+route+'"]')?.closest('.nav-group');if(g&&g.classList.contains('is-closed'))abrirGrupo(g.dataset.grupo,true,false);}
+    const alvoMenu=ROTAS[route].menu||route;document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===alvoMenu;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);{const g=document.querySelector('.nav-item[data-route="'+alvoMenu+'"]')?.closest('.nav-group');if(g&&g.classList.contains('is-closed'))abrirGrupo(g.dataset.grupo,true,false);}
     $('pageLabel').textContent=ROTAS[route].titulo;ROTAS[route].abrir();window.scrollTo({top:0,behavior:'auto'});}
   // Aviso da prévia: aparece já no começo, para a tela não "pular" quando os dados chegam.
   const AVISO_PREVIA='Prévia visual com dados fictícios. Nenhuma informação desta tela foi lida ou gravada na sua planilha.';
