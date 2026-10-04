@@ -1,6 +1,6 @@
 // Visão geral e velocidade de abertura na prévia (latência simulada de 1 s por chamada).
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),path=require('path'),assert=require('node:assert/strict');
-(async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined});const page=await b.newPage({viewport:{width:1366,height:900}});const erros=[];page.on('pageerror',e=>erros.push(e.message));
+(async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined});const page=await b.newPage({viewport:{width:1366,height:900}});await page.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const erros=[];page.on('pageerror',e=>erros.push(e.message));
 const url='file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html');const t0=Date.now();
 await page.goto(url+'?inicial=1&latencia=1000');await page.locator('.stat-value').first().waitFor();await page.locator('#homeAgenda .peek-row').first().waitFor();const total=Date.now()-t0;
 const ch=await page.evaluate(()=>window.CPT_PREVIA.chamadas);assert(!ch.some(c=>c.nome==='carregarPerfilCPT'),'perfil já vem na página');

@@ -16,7 +16,7 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 
 | Pasta | O que é | Instalar? |
 |---|---|---|
-| `app/` | **Aplicação CPT** (web app, versão 2.10.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
+| `app/` | **Aplicação CPT** (web app, versão 2.11.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
 | `campo40/` | **Procedimentos de Campo 4.0** (4.2.0): formulário → Base, abertura de casos com protocolo e ligação com o formulário de Execução da engenharia. `src/` é permanente; `migracao_executada/` já rodou e fica só para rastreio. | Sim, no projeto do Campo 4.0 |
 | `atualizador/` | **CPT • Atualizador**: projeto pequeno que traz o código do GitHub para a Aplicação e o Campo 4.0, com versão de segurança | Sim, uma vez (ver ATUALIZACAO_AUTOMATICA.md) |
 | `docs/` | Diagnóstico, plano, guia de implantação e, em `referencia/`, os requisitos originais e os modelos oficiais (Orientador, relato ilustrado, layout da ficha). | — |
@@ -51,7 +51,7 @@ node campo40/testes/rdas.cjs         # RDAS pelo Campo 4.0, lido pelos painéis 
 node campo40/testes/execucao.cjs      # retorno da engenharia, lista de protocolos, avisos e corte do Controle antigo
 node campo40/testes/gatilhos.cjs      # conferir e reinstalar só os gatilhos necessários
 # Interface (precisa de Playwright e Chromium):
-python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs && node app/testes/inicio_ui.cjs && node app/testes/atendimentos_ui.cjs && node app/testes/socioambiental_ui.cjs && node app/testes/visoes_ui.cjs && node app/testes/comunicacao_ui.cjs && node app/testes/espaco_ui.cjs && node app/testes/desempenho_ui.cjs
+python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs && node app/testes/inicio_ui.cjs && node app/testes/atendimentos_ui.cjs && node app/testes/socioambiental_ui.cjs && node app/testes/visoes_ui.cjs && node app/testes/comunicacao_ui.cjs && node app/testes/espaco_ui.cjs && node app/testes/desempenho_ui.cjs && node app/testes/navegacao_ui.cjs
 ```
 Ao editar `app/fontes/*.html`, recompile para `app/src/` com `node app/testes/compilar.cjs` (requer Babel; veja o cabeçalho do arquivo).
 Teste local não substitui a validação com uma colaboradora real no Google.

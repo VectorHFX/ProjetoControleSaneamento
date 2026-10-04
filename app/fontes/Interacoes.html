@@ -24,6 +24,49 @@
   $('menuToggle').addEventListener('click',alternarMenu);$('menuClose').addEventListener('click',()=>abrirMenu(false));$('navScrim').addEventListener('click',()=>abrirMenu(false));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('nav-open'))abrirMenu(false);});
   document.addEventListener('click',e=>{if(e.target.closest('#tabMenu'))abrirMenu(true);});
+  // ---------- Busca geral (Ctrl+K): páginas, ações, protocolos, obras e contatos ----------
+  const BUSCA={obras:null,contatos:null,casos:[],casosDe:'',timer:null,seq:0,sel:0,itens:[]};
+  const ACOES=[{titulo:'Novo recado',rota:'recados',chave:'recado mensagem avisar escrever',alvo:'[data-rec-novo]'},{titulo:'Nova atividade no cronograma',rota:'cronograma',chave:'agenda evento atividade marcar',alvo:'[data-agenda-action="new"]'},
+    {titulo:'Novo contato',rota:'contatos',chave:'contato telefone cadastrar pessoa',alvo:'[data-con-novo]'}];
+  const normBusca=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  function abrirBusca(){const d=$('searchDialog');if(d.open)return;if(document.body.classList.contains('nav-open'))abrirMenu(false);d.showModal();$('searchInput').value='';BUSCA.sel=0;desenharBusca();$('searchInput').focus();
+    if(!BUSCA.obras)call('listarObrasCPT').then(r=>{BUSCA.obras=(r&&r.obras)||[];desenharBusca();}).catch(()=>{BUSCA.obras=[];});
+    if(!BUSCA.contatos)call('listarContatosCPT').then(r=>{BUSCA.contatos=(r&&r.itens)||[];desenharBusca();}).catch(()=>{BUSCA.contatos=[];});}
+  function fecharBusca(){const d=$('searchDialog');if(d.open)d.close();}
+  /** Monta a lista de resultados para o texto digitado (sem texto: atalhos). Atendimentos vêm do servidor, com espera curta. */
+  function resultadosBusca(q){const n=normBusca(q).trim(),out=[],tem=t=>!n||normBusca(t).includes(n);
+    [...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden).forEach(b=>{const nome=b.querySelector('span').textContent;if(tem(nome))out.push({tipo:'Página',titulo:nome,icone:(b.querySelector('use')||{getAttribute:()=>'#i-arrow'}).getAttribute('href'),ir:()=>navigate(b.dataset.route)});});
+    ACOES.filter(a=>podeVer(a.rota)&&(tem(a.titulo)||(n&&normBusca(a.chave).includes(n)))).forEach(a=>out.push({tipo:'Ação',titulo:a.titulo,icone:'#i-plus',ir:()=>{navigate(a.rota);clicarQuandoAparecer(a.alvo);}}));
+    if(n.length>=2){
+      BUSCA.casos.forEach(c=>out.push({tipo:'Atendimento',titulo:c.protocolo+' · '+(c.nome||'Sem nome'),detalhe:[c.assunto,c.status].filter(Boolean).join(' · '),icone:'#i-case',ir:()=>{navigate('atendimentos');window.CPTAtendimentos.abrir(c.protocolo);}}));
+      (BUSCA.obras||[]).filter(o=>normBusca([o.nome,(o.bairros||[]).join(' '),o.id].join(' ')).includes(n)).slice(0,5).forEach(o=>out.push({tipo:'Obra',titulo:o.nome,detalhe:[(o.bairros||[]).join(', '),o.situacao].filter(Boolean).join(' · '),icone:'#i-pin',ir:()=>{navigate('obras');preencherQuandoAparecer('#obraFiltros [name=busca]',o.nome);}}));
+      (BUSCA.contatos||[]).filter(c=>normBusca([c.nome,c.instituicao,c.bairro,c.etiquetas,c.telefone].join(' ')).includes(n)).slice(0,5).forEach(c=>out.push({tipo:'Contato',titulo:c.nome||c.instituicao,detalhe:[c.instituicao,c.bairro].filter(Boolean).join(' · '),icone:'#i-contact',ir:()=>{navigate('contatos');clicarQuandoAparecer('[data-con-abrir="'+String(c.id).replace(/"/g,'')+'"]');}}));}
+    return out.slice(0,14);}
+  function desenharBusca(){const q=$('searchInput').value,lista=resultadosBusca(q);BUSCA.itens=lista;BUSCA.sel=Math.min(BUSCA.sel,Math.max(0,lista.length-1));
+    $('searchResults').innerHTML=lista.length?lista.map((r,i)=>`<button type="button" class="search-item${i===BUSCA.sel?' is-sel':''}" role="option" aria-selected="${i===BUSCA.sel}" data-busca="${i}"><svg class="icon" aria-hidden="true"><use href="${esc(r.icone)}"/></svg><span class="search-text"><strong>${esc(r.titulo)}</strong>${r.detalhe?`<small>${esc(r.detalhe)}</small>`:''}</span><span class="search-kind">${esc(r.tipo)}</span></button>`).join('')
+      :`<p class="search-empty">${q.trim().length<2?'Digite para buscar.':'Nada encontrado para “'+esc(q.trim())+'”.'}</p>`;
+    const s=$('searchResults').querySelector('.is-sel');if(s)s.scrollIntoView({block:'nearest'});}
+  function buscarCasos(q){const n=q.trim();clearTimeout(BUSCA.timer);if(n.length<2){BUSCA.casos=[];BUSCA.casosDe='';return;}if(n===BUSCA.casosDe)return;
+    BUSCA.timer=setTimeout(async()=>{const meu=++BUSCA.seq;try{const r=await call('buscarAtendimentosCPT',{busca:n,estado:'',com:'',pagina:0});if(meu!==BUSCA.seq)return;BUSCA.casos=((r&&r.itens)||[]).slice(0,5);BUSCA.casosDe=n;if($('searchDialog').open)desenharBusca();}catch(_){}},300);}
+  function escolherBusca(i){const r=BUSCA.itens[i];if(!r)return;fecharBusca();r.ir();}
+  /** Depois de trocar de página, espera o elemento aparecer (até 6 s) e clica ou preenche. */
+  function quandoAparecer(sel,acao){const t0=Date.now(),tentar=()=>{const el=document.querySelector(sel);if(el){acao(el);return;}if(Date.now()-t0<6000)setTimeout(tentar,120);};tentar();}
+  function clicarQuandoAparecer(sel){quandoAparecer(sel,el=>el.click());}
+  function preencherQuandoAparecer(sel,valor){quandoAparecer(sel,el=>{el.value=valor;el.dispatchEvent(new Event('input',{bubbles:true}));});}
+  $('searchOpen').addEventListener('click',abrirBusca);$('searchClose').addEventListener('click',fecharBusca);
+  $('searchDialog').addEventListener('click',e=>{if(e.target.id==='searchDialog'){fecharBusca();return;}const b=e.target.closest('[data-busca]');if(b)escolherBusca(Number(b.dataset.busca));});
+  $('searchInput').addEventListener('input',e=>{BUSCA.sel=0;BUSCA.casos=e.target.value.trim()===BUSCA.casosDe?BUSCA.casos:[];desenharBusca();buscarCasos(e.target.value);});
+  $('searchInput').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();fecharBusca();return;}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const n=BUSCA.itens.length;if(!n)return;BUSCA.sel=(BUSCA.sel+(e.key==='ArrowDown'?1:n-1))%n;desenharBusca();}else if(e.key==='Enter'){e.preventDefault();escolherBusca(BUSCA.sel);}});
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==='k'){e.preventDefault();if(state.perfil)abrirBusca();}});
+  // ---------- Menu em grupos: "Dia a dia" sempre aberto; "Fechamento do mês" e "Consultas e cadastros" recolhíveis ----------
+  // Quem vê muitas páginas (gestão, administrativo) começa com os grupos recolhidos; a escolha de cada pessoa fica guardada.
+  function preferenciaMenu(){try{return JSON.parse(store.get('cpt.menu')||'{}')||{};}catch(_){return {};}}
+  function abrirGrupo(grupo,aberto,salvar){const g=document.querySelector('.nav-group[data-grupo="'+grupo+'"]');if(!g)return;g.classList.toggle('is-closed',!aberto);const h=g.querySelector('.nav-group-head');if(h)h.setAttribute('aria-expanded',String(aberto));
+    if(salvar){const p=preferenciaMenu();p[grupo]=aberto;store.set('cpt.menu',JSON.stringify(p));}}
+  function ajustarGrupos(){const vis=[...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden).length,pref=preferenciaMenu();
+    document.querySelectorAll('.nav-group').forEach(g=>{const itens=[...g.querySelectorAll('.nav-item')];g.hidden=!itens.some(b=>!b.hidden);const k=g.dataset.grupo;if(k==='dia')return;
+      const temAtual=itens.some(b=>b.dataset.route===state.route&&!b.hidden);abrirGrupo(k,temAtual||(k in pref?!!pref[k]:vis<=9),false);});}
+  document.addEventListener('click',e=>{const h=e.target.closest('.nav-group-head');if(!h)return;const g=h.closest('.nav-group');abrirGrupo(g.dataset.grupo,g.classList.contains('is-closed'),true);});
   // Barra de atalhos do celular: as 4 páginas mais usadas de cada cargo + Menu.
   const ATALHOS={atendimento:['meuespaco','atendimentos','cronograma','recados'],socioambiental:['meuespaco','socioambiental','cronograma','recados'],comunicacao:['meuespaco','comunicacao','cronograma','recados'],
     comercializacao:['meuespaco','obras','cronograma','recados'],gestao:['inicio','painel','atendimentos','recados'],administrativo:['inicio','painel','atendimentos','recados']};
@@ -52,7 +95,8 @@
   function notice(text){$('globalNotice').textContent=text;$('globalNotice').hidden=!text;}
   function empty(title,text,action=''){return `<div class="empty">${icon('records')}<h3>${esc(title)}</h3><p>${esc(text)}</p>${action}</div>`;}
   function skeleton(){return `<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Buscando as informações do mês…</div><div class="skeleton hero-loading"></div><div class="kpis">${'<div class="skeleton"></div>'.repeat(4)}</div>`;}
-  function intro(title,description){return `<div class="page-intro"><div class="intro-text"><div class="eyebrow muted">CAMPO E GESTÃO</div><h1>${esc(title)}</h1><p>${esc(description)}</p><span class="date-tag">${esc(monthLabel(state.mes))}</span></div><div class="intro-art" aria-hidden="true">${window.CPTArte?window.CPTArte.pagina(state.route):''}</div></div>`;}
+  /** Cabeçalho compacto: título numa linha; a explicação fica no ⓘ (abre e fecha), o mês ao lado. */
+  function intro(title,description){return `<div class="page-intro is-compact"><div class="intro-text"><h1>${esc(title)}</h1>${description?`<details class="intro-info"><summary title="Sobre esta página"><span class="sr-only">Sobre esta página</span><span aria-hidden="true">i</span></summary><p>${esc(description)}</p></details>`:''}</div><span class="date-tag">${esc(monthLabel(state.mes))}</span></div>`;}
   function safeURL(value){try{const u=new URL(value);return u.protocol==='https:'&&['drive.google.com','docs.google.com'].includes(u.hostname)?u.href:'';}catch(_){return '';}}
   function formLink(){const url=safeURL(state.home?.links?.formulario);return url?`<a class="button white" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${icon('plus')}Registrar procedimento</a>`:`<button class="button white" data-action="noform">${icon('plus')}Registrar procedimento</button>`;}
   // Visão geral: componente Inicio.html.
@@ -94,8 +138,8 @@
   function visao(){return $('roleView').value||'atendimento';}
   function podeVer(route){return permitido(route)&&(VISOES[visao()]||COMUNS).includes(route);}
   function aplicarVisao(){const v=visao(),varias=$('roleView').options.length>1;document.documentElement.dataset.visao=v;
-    document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=!podeVer(b.dataset.route);});montarTabbar();
-    const banner=$('viewBanner');if(banner){banner.hidden=!varias;banner.innerHTML=varias?'<span class="view-dot" aria-hidden="true"></span><span><strong>Tela de '+esc(window.CPTAgenda.names[v])+'</strong> · '+esc(RESUMO_VISAO[v]||'')+'</span><label class="view-switch">Ver como<select id="viewSwitch" aria-label="Ver a aplicação como">'+[...$('roleView').options].map(o=>'<option value="'+esc(o.value)+'" '+(o.value===v?'selected':'')+'>'+esc(o.textContent)+'</option>').join('')+'</select></label>':'';}}
+    document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=!podeVer(b.dataset.route);});ajustarGrupos();montarTabbar();
+    const banner=$('viewBanner');if(banner){banner.hidden=!varias;banner.innerHTML=varias?'<span class="view-dot" aria-hidden="true"></span><span title="'+esc(RESUMO_VISAO[v]||'')+'"><strong>Tela de '+esc(window.CPTAgenda.names[v])+'</strong></span><label class="view-switch">Ver como<select id="viewSwitch" aria-label="Ver a aplicação como">'+[...$('roleView').options].map(o=>'<option value="'+esc(o.value)+'" '+(o.value===v?'selected':'')+'>'+esc(o.textContent)+'</option>').join('')+'</select></label>':'';}}
   /** Página de entrada de cada visão: a Comunicação começa pelo "Hoje" (uma coisa de cada vez). */
   /** Gestão e Administrativo entram pelos números do mês; as demais frentes, pelo "Meu espaço" (mascote, checklist e caderno). */
   function entrada(){return ['gestao','administrativo'].includes(visao())?'inicio':'meuespaco';}
@@ -103,7 +147,7 @@
     if(state.perfil&&!podeVer(route)){toast(permitido(route)?'Esta página não faz parte da tela de '+window.CPTAgenda.names[visao()]+'. Troque a visão para abri-la.':'Seu acesso não inclui esta página.');return;}
     if(state.route==='parceiros'&&route!=='parceiros'&&!window.CPTGestao.sair())return;if(state.route==='meuespaco'&&route!=='meuespaco')window.CPTEspaco.sair();clearTimeout(debounce);state.route=route;++state.listRequest;state.cursor=null;
     if(filter==='relatos')state.filters.procedimento='Relato de atividade';if(route==='comunicacao'&&filter)window.CPTComunicacao.irPara(filter);if(route==='atendimentos'&&filter)window.CPTAtendimentos.filtrar(filter);
-    document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===route;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);
+    document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===route;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);{const g=document.querySelector('.nav-item[data-route="'+route+'"]')?.closest('.nav-group');if(g&&g.classList.contains('is-closed'))abrirGrupo(g.dataset.grupo,true,false);}
     $('pageLabel').textContent={inicio:'Visão do mês',registros:'Registros',atendimentos:'Atendimentos',ajuda:'Como usar',cronograma:'Cronograma',equipe:'Equipe e acessos',obras:'Obras',fechamento:'Fechamento do mês',socioambiental:'Socioambiental',painel:'Painel da gestão',parceiros:'Programa Parceiros',conectores:'Conectores e pastas',comunicacao:'Comunicação',lembretes:'Lembretes',recados:'Recados',contatos:'Contatos',meuespaco:'Meu espaço'}[route];
     ({inicio:renderHome,registros:renderRecords,atendimentos:window.CPTAtendimentos.render,ajuda:renderHelp,cronograma:window.CPTAgenda.render,equipe:window.CPTAgenda.team,obras:window.CPTObras.render,fechamento:window.CPTFechamento.render,socioambiental:window.CPTSocioambiental.render,painel:()=>window.CPTGestao.renderPainel(),parceiros:window.CPTGestao.renderParceiros,conectores:window.CPTGestao.renderConectores,comunicacao:window.CPTComunicacao.render,lembretes:window.CPTComunicacao.render,recados:window.CPTRecados.render,contatos:window.CPTRecados.renderContatos,meuespaco:()=>window.CPTEspaco.render()}[route])();window.scrollTo({top:0,behavior:'auto'});}
   // Aviso da prévia: aparece já no começo, para a tela não "pular" quando os dados chegam.

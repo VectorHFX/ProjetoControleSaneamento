@@ -2,7 +2,7 @@
 const {chromium}=require('playwright'),assert=require('assert'),path=require('path');
 (async()=>{
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
-  const p=await b.newPage({viewport:{width:1366,height:900}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
+  const p=await b.newPage({viewport:{width:1366,height:900}});await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const errors=[];p.on('pageerror',e=>errors.push(e.message));
   await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html'));
   // Visão do mês: números do relatório, sem "Registros de campo" nem "Por tipo de procedimento".
   await p.locator('.report-items').waitFor();

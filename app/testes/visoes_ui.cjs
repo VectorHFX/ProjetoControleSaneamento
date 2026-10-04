@@ -3,7 +3,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
 const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+(q||'');
 (async()=>{
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
-  const p=await b.newPage({viewport:{width:1366,height:900}});const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+  const p=await b.newPage({viewport:{width:1366,height:900}});await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
   const nav=async()=>p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route));
   // As frentes entram pelo Meu espaço; a Visão do mês fica a um clique.
   const espaco=async()=>{await p.locator('.welcome-pets, .mascot-stage').first().waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'meuespaco');};
@@ -11,12 +11,12 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.goto(url('?latencia=40'));await p.locator('.report-items').waitFor();
   // Proprietário: faixa da visão aparece e a lateral é a do Administrativo.
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Administrativo/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','comunicacao','recados','painel','parceiros','cronograma','registros','atendimentos','socioambiental','obras','contatos','fechamento','equipe','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','painel','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','obras','contatos','equipe','ajuda']);
   // Ver como Atendimento: cor, lateral, atalhos e auditoria.
   await p.selectOption('#viewSwitch','atendimento');await espaco();await irInicio();
   assert.equal(await p.getAttribute('html','data-visao'),'atendimento');
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Atendimento/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','recados','cronograma','registros','atendimentos','obras','contatos','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
   assert.match(await p.locator('.home-hero .eyebrow').textContent(),/TELA DE ATENDIMENTO/);
   await p.locator('.shortcut',{hasText:'Auditoria das fichas'}).click();await p.locator('.audit-item').first().waitFor();
   assert.match(await p.locator('#view').textContent(),/Recebidos sem nenhuma ação há mais de 3 dias/);assert.equal(await p.locator('.audit-item[open]').count(),2);
@@ -24,7 +24,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.locator('[data-atd-modo=casos]').click();await p.locator('#caseFilters').waitFor();
   // Ver como Comercialização: só ferramentas comuns.
   await p.selectOption('#viewSwitch','comercializacao');await espaco();await irInicio();
-  assert.deepEqual(await nav(),['meuespaco','inicio','recados','cronograma','registros','atendimentos','obras','contatos','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
   assert.ok(!(await p.locator('.shortcuts').textContent()).includes('Auditoria'));
   // Gestão: painel com alertas, frentes, relatos.
   await p.selectOption('#viewSwitch','gestao');await p.locator('.shortcuts').waitFor();
@@ -66,10 +66,10 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.setViewportSize({width:1366,height:900});const q=p;
   await q.goto(url('?perfil=comercializacao&latencia=20'));await espaco();await irInicio();
   assert.equal(await q.locator('#viewBanner').isHidden(),true);
-  assert.deepEqual(await q.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','recados','cronograma','registros','atendimentos','obras','contatos','ajuda']);
+  assert.deepEqual(await q.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
   const s=p;
   await s.goto(url('?perfil=socioambiental&latencia=20'));await espaco();await irInicio();
-  assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','recados','cronograma','registros','atendimentos','socioambiental','lembretes','obras','contatos','fechamento','ajuda']);
+  assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','lembretes','socioambiental','fechamento','registros','obras','contatos','ajuda']);
   assert.match(await s.locator('.shortcuts').textContent(),/Mesa do relatório/);
   assert.deepEqual(errors,[]);
   console.log('PASS: visões por cargo (faixa, cor, lateral e atalhos mudam; pessoa de um papel não troca), auditoria de atendimentos, painel (alertas, frentes com filtro e detalhe, relatos), Programa Parceiros (sugestão, não se aplica, conferido, salvar, publicar, exportar, rascunho recuperado), conectores e celular sem rolagem lateral.');

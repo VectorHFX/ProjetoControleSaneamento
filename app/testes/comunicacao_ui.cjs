@@ -4,13 +4,13 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
 const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==','base64'));
 (async()=>{
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
-  const p=await b.newPage({viewport:{width:1366,height:900},acceptDownloads:true});const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+  const p=await b.newPage({viewport:{width:1366,height:900},acceptDownloads:true});await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
   const toast=async re=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source);
   await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+'?perfil=comunicacao&latencia=30');
   // Entra direto no "Hoje", com aviso de recado na lateral.
   await p.locator('.welcome-pets').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'meuespaco');
   await p.locator('.nav-item[data-route=comunicacao]').click();await p.locator('.today-hello').waitFor();
-  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','comunicacao','recados','cronograma','registros','atendimentos','socioambiental','obras','contatos','fechamento','ajuda']);
+  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','registros','obras','contatos','ajuda']);
   await p.waitForFunction(()=>document.querySelector('.nav-item[data-route=recados] .nav-badge')?.textContent==='1');
   assert.match(await p.locator('.today-hello').textContent(),/coisas para olhar/);
   assert.equal(await p.locator('.today-block').count(),5);assert.equal(await p.locator('.today-step').first().textContent(),'1');
