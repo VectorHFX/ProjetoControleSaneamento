@@ -33,25 +33,23 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 
 ## Testes locais (Node 18+)
 
+Um comando roda tudo (servidor, atualizador, Campo 4.0 e telas) e mostra um resumo:
+
 ```bash
-node app/testes/cronograma.cjs        # acesso, perfis, agenda, observações (serviços Google simulados)
-node app/testes/entregas.cjs          # preparação de relatos
-node app/testes/obras_relatorio.cjs    # obras, fechamento, relatório, cache, ciclo do caso e ficha oficial
-node app/testes/inventario.cjs        # inventário do Drive (não move nada)
-node app/testes/socioambiental.cjs    # mesa do relatório, relato e diagnóstico
-node app/testes/gestao.cjs            # Programa Parceiros, painel da gestão, auditoria, conectores e trava
-node app/testes/comunicacao.cjs       # recados, contatos, lembretes, materiais, "Hoje" e galeria
-node app/testes/espaco.cjs            # Meu espaço: mascote, presentes, caderno, checklist e pontos
-node app/testes/desempenho.cjs        # planilha aberta uma vez por execução e cache comprimido (gzip)
-node atualizador/testes/atualizador.cjs # atualização a partir do GitHub (simulada)
-bash atualizador/testes/cloudshell.sh  # atualização pelo Cloud Shell (clasp simulado)
-node campo40/testes/processamento.cjs # vigência de obras/bairros e retomada de envios
-node campo40/testes/abertura.cjs      # ficha do formulário vira caso com protocolo
-node campo40/testes/rdas.cjs         # RDAS pelo Campo 4.0, lido pelos painéis reais (compatibilidade)
-node campo40/testes/execucao.cjs      # retorno da engenharia, lista de protocolos, avisos e corte do Controle antigo
-node campo40/testes/gatilhos.cjs      # conferir e reinstalar só os gatilhos necessários
-# Interface (precisa de Playwright e Chromium):
-python3 app/testes/gerar_previa.py && node app/testes/acesso_ui.cjs && node app/testes/modulos_ui.cjs && node app/testes/inicio_ui.cjs && node app/testes/atendimentos_ui.cjs && node app/testes/socioambiental_ui.cjs && node app/testes/visoes_ui.cjs && node app/testes/comunicacao_ui.cjs && node app/testes/espaco_ui.cjs && node app/testes/desempenho_ui.cjs && node app/testes/navegacao_ui.cjs
+bash app/testes/rodar_tudo.sh          # tudo
+bash app/testes/rodar_tudo.sh rapido   # sem as telas (não precisa de navegador)
 ```
+
+Os testes de tela usam o Chromium em `/tmp/cpt-chromium` e a prévia gerada por `app/testes/gerar_previa.py`. Para rodar um só: `node app/testes/<nome>.cjs`.
+
 Ao editar `app/fontes/*.html`, recompile para `app/src/` com `node app/testes/compilar.cjs` (requer Babel; veja o cabeçalho do arquivo).
-Teste local não substitui a validação com uma colaboradora real no Google.
+
+### Como criar, mudar ou tirar uma página da aplicação
+
+Tudo sai do registro **`ROTAS`**, em `app/fontes/Interacoes.html`. Cada página tem:
+
+- título, ícone e grupo do menu;
+- quem acessa (`acesso`) e em que telas de cargo aparece (`visoes`);
+- o que fazer ao abrir, no botão Atualizar e ao trocar o mês.
+
+O menu lateral, os títulos, as permissões da tela, a barra do celular e a busca se ajustam sozinhos. O servidor continua conferindo as permissões de cada ação.

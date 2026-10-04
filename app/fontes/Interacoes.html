@@ -14,6 +14,41 @@
   const store={get:k=>{try{return localStorage.getItem(k);}catch(_){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(_){}}};
   const savedTheme=store.get('cpt.theme');document.documentElement.dataset.theme=savedTheme==='dark'?'dark':'light';
   if(store.get('cpt.motion')==='reduce')document.documentElement.dataset.motion='reduce';
+  /*
+   * ROTAS — registro único das páginas (2.11). Para criar, mudar ou tirar uma página, mexa só aqui:
+   * o menu lateral, os títulos, as permissões, as telas por cargo, o botão Atualizar e a troca de mês saem deste registro.
+   * - grupo: 'dia' (sempre aberto), 'mes' (Fechamento do mês) ou 'consulta' (Consultas e cadastros); sem grupo = fora do menu.
+   * - acesso: papéis da conta que podem abrir (o servidor confere de novo). Sem acesso = todos.
+   * - visoes: telas por cargo em que a página aparece. Sem visoes = todas.
+   * - abrir / atualizar / mes: o que fazer ao entrar, no botão Atualizar e ao trocar a competência
+   *   (sem atualizar: recarrega os números do mês; sem mes: só recarrega os números do mês).
+   * - podeSair: devolve false para segurar a pessoa na página (alterações não salvas). aoSair: avisa o módulo.
+   */
+  const GESTAO=['gestao','administrativo'],MESA=['socioambiental','comunicacao','gestao','administrativo'];
+  const ROTAS={
+    meuespaco:{titulo:'Meu espaço',icone:'i-star',grupo:'dia',abrir:()=>window.CPTEspaco.render(),atualizar:()=>window.CPTEspaco.render(true),aoSair:()=>window.CPTEspaco.sair()},
+    inicio:{titulo:'Visão do mês',icone:'i-home',grupo:'dia',abrir:()=>renderHome(),atualizar:()=>{window.CPTInicio.prefetchAgenda(state.mes);loadHome(true);}},
+    painel:{titulo:'Painel da gestão',icone:'i-chart',grupo:'dia',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderPainel(),atualizar:()=>window.CPTGestao.renderPainel(true),mes:()=>window.CPTGestao.renderPainel()},
+    atendimentos:{titulo:'Atendimentos',icone:'i-case',grupo:'dia',abrir:()=>window.CPTAtendimentos.render(),atualizar:()=>window.CPTAtendimentos.atualizar()},
+    recados:{titulo:'Recados',icone:'i-message',grupo:'dia',abrir:()=>window.CPTRecados.render(),atualizar:()=>window.CPTRecados.render()},
+    cronograma:{titulo:'Cronograma',icone:'i-calendar',grupo:'dia',abrir:()=>window.CPTAgenda.render(),atualizar:()=>window.CPTAgenda.render(),mes:()=>window.CPTAgenda.render()},
+    comunicacao:{titulo:'Comunicação',icone:'i-megaphone',grupo:'dia',acesso:['administrador','administrativo','gestao','comunicacao'],visoes:['comunicacao',...GESTAO],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar(),mes:()=>window.CPTComunicacao.render()},
+    lembretes:{titulo:'Lembretes',icone:'i-bell',grupo:'dia',acesso:['administrador',...MESA],visoes:['socioambiental'],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar()},
+    socioambiental:{titulo:'Socioambiental',icone:'i-file',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTSocioambiental.render(),atualizar:()=>window.CPTSocioambiental.render(),mes:()=>window.CPTSocioambiental.render()},
+    fechamento:{titulo:'Fechamento do mês',icone:'i-check',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTFechamento.render(),atualizar:()=>window.CPTFechamento.render(),mes:()=>window.CPTFechamento.render()},
+    parceiros:{titulo:'Programa Parceiros',icone:'i-partner',grupo:'mes',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderParceiros(),atualizar:()=>{if(window.CPTGestao.sair())window.CPTGestao.renderParceiros();},mes:()=>window.CPTGestao.renderParceiros(),podeSair:()=>window.CPTGestao.sair()},
+    registros:{titulo:'Registros',icone:'i-records',grupo:'consulta',abrir:()=>renderRecords(),mes:()=>{$('view').innerHTML=skeleton();}},
+    obras:{titulo:'Obras',icone:'i-pin',grupo:'consulta',abrir:()=>window.CPTObras.render(),atualizar:()=>window.CPTObras.render()},
+    contatos:{titulo:'Contatos',icone:'i-contact',grupo:'consulta',abrir:()=>window.CPTRecados.renderContatos(),atualizar:()=>window.CPTRecados.renderContatos()},
+    equipe:{titulo:'Equipe e acessos',icone:'i-people',grupo:'consulta',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTAgenda.team(),atualizar:()=>window.CPTAgenda.team()},
+    ajuda:{titulo:'Como usar',icone:'i-help',grupo:'consulta',abrir:()=>renderHelp()},
+    conectores:{titulo:'Conectores e pastas',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderConectores(),atualizar:()=>window.CPTGestao.renderConectores()}
+  };
+  /** Monta o menu lateral a partir de ROTAS (na ordem do registro, separado por grupo). */
+  (function montarMenu(){const grupos=[['dia','Dia a dia',false],['mes','Fechamento do mês',true],['consulta','Consultas e cadastros',true]];
+    const item=(id,r)=>`<button class="nav-item" data-route="${id}" hidden><svg class="icon"><use href="#${r.icone}"/></svg><span>${esc(r.titulo)}</span></button>`;
+    $('navigation').innerHTML=grupos.map(([g,nome,recolhe])=>{const itens=Object.entries(ROTAS).filter(([,r])=>r.grupo===g).map(([id,r])=>item(id,r)).join('');const gid='grupo'+g[0].toUpperCase()+g.slice(1);
+      return `<div class="nav-group" data-grupo="${g}">${recolhe?`<button type="button" class="nav-group-head" aria-expanded="true" aria-controls="${gid}"><span>${esc(nome)}</span><svg class="icon chevron" aria-hidden="true"><use href="#i-arrow"/></svg></button><div class="nav-group-items" id="${gid}">${itens}</div>`:`<div class="nav-caption">${esc(nome.toUpperCase())}</div>${itens}`}</div>`;}).join('');})();
   // ---------- Menu (hambúrguer): no computador recolhe a lateral (só ícones); no celular abre a gaveta com todas as páginas ----------
   const celular=()=>window.matchMedia('(max-width:800px)').matches;
   function abrirMenu(abrir){document.body.classList.toggle('nav-open',abrir);$('navScrim').hidden=!abrir;$('menuToggle').setAttribute('aria-expanded',String(abrir));const tm=$('tabMenu');if(tm)tm.setAttribute('aria-expanded',String(abrir));
@@ -122,34 +157,25 @@
    * pessoa ver só o seu trabalho. É só a tela: a conta e as permissões continuam as mesmas e são conferidas no servidor.
    * Quem tem vários papéis (como o proprietário) troca a visão para ver exatamente o que cada colega vê.
    */
-  const COMUNS=['meuespaco','inicio','recados','contatos','cronograma','registros','atendimentos','obras','ajuda'];
-  const VISOES={atendimento:COMUNS,comercializacao:COMUNS,socioambiental:[...COMUNS,'lembretes','socioambiental','fechamento'],comunicacao:[...COMUNS,'comunicacao','socioambiental','fechamento'],
-    gestao:[...COMUNS,'comunicacao','painel','parceiros','socioambiental','fechamento','equipe','conectores'],administrativo:[...COMUNS,'comunicacao','painel','parceiros','socioambiental','fechamento','equipe','conectores']};
   const RESUMO_VISAO={atendimento:'Casos, auditoria das fichas e números do atendimento, mais as ferramentas comuns.',comercializacao:'Ferramentas comuns: obras e endereços, cronograma, registros e consulta de atendimentos.',
     socioambiental:'Mesa do relatório, lembretes com a Comunicação, preparo de relatos e diagnósticos, fechamento e as ferramentas comuns.',comunicacao:'Seu dia (recados, lembretes, materiais e galeria), mesa do relatório, fechamento e as ferramentas comuns.',
     gestao:'Tudo: painel do contrato e das frentes, Programa Parceiros, mesa do relatório, fechamento e auditoria.',administrativo:'Tudo: painel do contrato e das frentes, Programa Parceiros, mesa do relatório, fechamento e auditoria.'};
   /** Permissão real (papéis da conta). A visão só pode esconder; nunca mostra o que a conta não tem. */
-  function permitido(route){const p=state.perfil?.papeis||[],tem=l=>p.some(x=>l.includes(x));
-    if(route==='equipe'||route==='conectores')return p.includes('administrador');
-    if(['painel','parceiros'].includes(route))return tem(['administrador','administrativo','gestao']);
-    if(['socioambiental','fechamento','lembretes'].includes(route))return tem(['administrador','administrativo','gestao','socioambiental','comunicacao']);
-    if(route==='comunicacao')return tem(['administrador','administrativo','gestao','comunicacao']);
-    return true;}
+  function permitido(route){const r=ROTAS[route];if(!r)return false;const p=state.perfil?.papeis||[];return !r.acesso||p.some(x=>r.acesso.includes(x));}
   function visao(){return $('roleView').value||'atendimento';}
-  function podeVer(route){return permitido(route)&&(VISOES[visao()]||COMUNS).includes(route);}
+  function podeVer(route){const r=ROTAS[route];return permitido(route)&&(!r.visoes||r.visoes.includes(visao()));}
   function aplicarVisao(){const v=visao(),varias=$('roleView').options.length>1;document.documentElement.dataset.visao=v;
     document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=!podeVer(b.dataset.route);});ajustarGrupos();montarTabbar();
     const banner=$('viewBanner');if(banner){banner.hidden=!varias;banner.innerHTML=varias?'<span class="view-dot" aria-hidden="true"></span><span title="'+esc(RESUMO_VISAO[v]||'')+'"><strong>Tela de '+esc(window.CPTAgenda.names[v])+'</strong></span><label class="view-switch">Ver como<select id="viewSwitch" aria-label="Ver a aplicação como">'+[...$('roleView').options].map(o=>'<option value="'+esc(o.value)+'" '+(o.value===v?'selected':'')+'>'+esc(o.textContent)+'</option>').join('')+'</select></label>':'';}}
   /** Página de entrada de cada visão: a Comunicação começa pelo "Hoje" (uma coisa de cada vez). */
   /** Gestão e Administrativo entram pelos números do mês; as demais frentes, pelo "Meu espaço" (mascote, checklist e caderno). */
   function entrada(){return ['gestao','administrativo'].includes(visao())?'inicio':'meuespaco';}
-  function navigate(route,filter){if(!['inicio','registros','atendimentos','ajuda','cronograma','equipe','obras','fechamento','socioambiental','painel','parceiros','conectores','comunicacao','lembretes','recados','contatos','meuespaco'].includes(route))return;
+  function navigate(route,filter){if(!Object.prototype.hasOwnProperty.call(ROTAS,route))return;
     if(state.perfil&&!podeVer(route)){toast(permitido(route)?'Esta página não faz parte da tela de '+window.CPTAgenda.names[visao()]+'. Troque a visão para abri-la.':'Seu acesso não inclui esta página.');return;}
-    if(state.route==='parceiros'&&route!=='parceiros'&&!window.CPTGestao.sair())return;if(state.route==='meuespaco'&&route!=='meuespaco')window.CPTEspaco.sair();clearTimeout(debounce);state.route=route;++state.listRequest;state.cursor=null;
+    const atual=ROTAS[state.route];if(atual&&state.route!==route){if(atual.podeSair&&!atual.podeSair())return;if(atual.aoSair)atual.aoSair();}clearTimeout(debounce);state.route=route;++state.listRequest;state.cursor=null;
     if(filter==='relatos')state.filters.procedimento='Relato de atividade';if(route==='comunicacao'&&filter)window.CPTComunicacao.irPara(filter);if(route==='atendimentos'&&filter)window.CPTAtendimentos.filtrar(filter);
     document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===route;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);{const g=document.querySelector('.nav-item[data-route="'+route+'"]')?.closest('.nav-group');if(g&&g.classList.contains('is-closed'))abrirGrupo(g.dataset.grupo,true,false);}
-    $('pageLabel').textContent={inicio:'Visão do mês',registros:'Registros',atendimentos:'Atendimentos',ajuda:'Como usar',cronograma:'Cronograma',equipe:'Equipe e acessos',obras:'Obras',fechamento:'Fechamento do mês',socioambiental:'Socioambiental',painel:'Painel da gestão',parceiros:'Programa Parceiros',conectores:'Conectores e pastas',comunicacao:'Comunicação',lembretes:'Lembretes',recados:'Recados',contatos:'Contatos',meuespaco:'Meu espaço'}[route];
-    ({inicio:renderHome,registros:renderRecords,atendimentos:window.CPTAtendimentos.render,ajuda:renderHelp,cronograma:window.CPTAgenda.render,equipe:window.CPTAgenda.team,obras:window.CPTObras.render,fechamento:window.CPTFechamento.render,socioambiental:window.CPTSocioambiental.render,painel:()=>window.CPTGestao.renderPainel(),parceiros:window.CPTGestao.renderParceiros,conectores:window.CPTGestao.renderConectores,comunicacao:window.CPTComunicacao.render,lembretes:window.CPTComunicacao.render,recados:window.CPTRecados.render,contatos:window.CPTRecados.renderContatos,meuespaco:()=>window.CPTEspaco.render()}[route])();window.scrollTo({top:0,behavior:'auto'});}
+    $('pageLabel').textContent=ROTAS[route].titulo;ROTAS[route].abrir();window.scrollTo({top:0,behavior:'auto'});}
   // Aviso da prévia: aparece já no começo, para a tela não "pular" quando os dados chegam.
   const AVISO_PREVIA='Prévia visual com dados fictícios. Nenhuma informação desta tela foi lida ou gravada na sua planilha.';
   /** atualizar=true ignora o cache do servidor. Se já há dados do mês na tela, atualiza em segundo plano sem esqueleto. */
@@ -184,12 +210,12 @@
     const a=e.target.closest('[data-action]')?.dataset.action;if(a==='more-records')loadRecords(true);if(a==='retry-records')loadRecords();if(a==='retry-home')loadHome();if(a==='retry-boot')bootstrap();if(a==='noform')toast('O link do formulário ainda não está disponível. Confira a aba Início da base.');if(a==='clear'){state.filters={busca:'',procedimento:'',bairro:'',obra:'',pendencia:''};renderRecords();}});
   $('closeDialog').addEventListener('click',closeDetail);$('detailDialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
   $('theme').addEventListener('change',e=>{document.documentElement.dataset.theme=e.target.value;store.set('cpt.theme',e.target.value);toast('Aparência salva neste navegador.');});
-  $('month').addEventListener('change',()=>{if(!/^\d{4}-(0[1-9]|1[0-2])$/.test($('month').value)){toast('Selecione um mês válido.');return;}if(state.route==='parceiros'&&!window.CPTGestao.sair()){$('month').value=state.mes;return;}state.mes=$('month').value;state.home=null;++state.listRequest;if(state.route==='cronograma'){window.CPTAgenda.render();}if(state.route==='fechamento')window.CPTFechamento.render();if(state.route==='socioambiental')window.CPTSocioambiental.render();if(state.route==='painel')window.CPTGestao.renderPainel();if(state.route==='parceiros')window.CPTGestao.renderParceiros();if(state.route==='comunicacao')window.CPTComunicacao.render();if(state.route==='registros')$('view').innerHTML=skeleton();window.CPTInicio.prefetchAgenda(state.mes);loadHome();});
-  $('refresh').addEventListener('click',()=>{if(state.route==='cronograma'){window.CPTAgenda.render();}else if(state.route==='equipe'){window.CPTAgenda.team();}else if(state.route==='atendimentos'){window.CPTAtendimentos.atualizar();}else if(state.route==='painel'){window.CPTGestao.renderPainel(true);}else if(state.route==='parceiros'){if(window.CPTGestao.sair())window.CPTGestao.renderParceiros();}else if(state.route==='conectores'){window.CPTGestao.renderConectores();}else if(state.route==='comunicacao'||state.route==='lembretes'){window.CPTComunicacao.atualizar();}else if(state.route==='recados'){window.CPTRecados.render();}else if(state.route==='contatos'){window.CPTRecados.renderContatos();}else if(state.route==='meuespaco'){window.CPTEspaco.render(true);}else if(state.route==='obras'){window.CPTObras.render();}else if(state.route==='fechamento'){window.CPTFechamento.render();}else if(state.route==='socioambiental'){window.CPTSocioambiental.render();}else{if(state.route==='inicio')window.CPTInicio.prefetchAgenda(state.mes);loadHome(true);}});
+  $('month').addEventListener('change',()=>{if(!/^\d{4}-(0[1-9]|1[0-2])$/.test($('month').value)){toast('Selecione um mês válido.');return;}const r=ROTAS[state.route];if(r&&r.podeSair&&!r.podeSair()){$('month').value=state.mes;return;}state.mes=$('month').value;state.home=null;++state.listRequest;if(r&&r.mes)r.mes();window.CPTInicio.prefetchAgenda(state.mes);loadHome();});
+  $('refresh').addEventListener('click',()=>{const r=ROTAS[state.route];if(r&&r.atualizar){r.atualizar();return;}if(state.route==='inicio')window.CPTInicio.prefetchAgenda(state.mes);loadHome(true);});
   window.addEventListener('offline',()=>notice('Você está sem conexão. As consultas precisam de internet; os dados já exibidos continuam na tela.'));
   window.addEventListener('online',()=>{notice('');toast('Conexão restabelecida. Use Atualizar para consultar novamente.');});
   function configureProfile(p){if(!p)return;state.perfil=p;const select=$('roleView'),saved=store.get('cpt.view'),previous=select.value;const views=p.papeis.filter(x=>x!=='administrador');const list=views.length?views:p.papeis;select.innerHTML=list.map(role=>`<option value="${esc(role)}">${esc(window.CPTAgenda.names[role])}</option>`).join('');select.value=list.includes(previous)?previous:list.includes(saved)?saved:list[0];select.disabled=list.length<2;aplicarVisao();$('accountLabel').textContent=p.nome+' · '+p.email;$('accountLabel').title=p.email;}
-  function accessError(message){const r=$('roleView');r.innerHTML='<option value="">Sem acesso</option>';r.disabled=true;$('accountLabel').textContent='Acesso não confirmado';document.querySelectorAll('.nav-item').forEach(b=>{if(b.dataset.route!=='ajuda')b.hidden=true;});
+  function accessError(message){const r=$('roleView');r.innerHTML='<option value="">Sem acesso</option>';r.disabled=true;$('accountLabel').textContent='Acesso não confirmado';document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=b.dataset.route!=='ajuda';});ajustarGrupos();
     $('view').innerHTML=`<div class="page-intro"><div><div class="eyebrow muted">ACESSO</div><h1>Não conseguimos liberar sua entrada</h1><p>${esc(message)}</p></div></div><section class="panel"><p>Nada foi alterado. Você pode tentar de novo ou conferir em qual etapa o acesso parou e enviar o resultado para a administração técnica.</p><div class="dialog-actions"><button class="button" data-action="retry-boot">Tentar novamente</button><button class="button secondary" data-check-access>Conferir meu acesso</button></div><p id="accessResult" style="white-space:pre-line"></p></section>`;}
   async function bootstrap(){if(window.CPT_BOOT)window.CPT_BOOT.stage='verificando acesso';const r=$('roleView');r.innerHTML='<option value="">Verificando acesso…</option>';r.disabled=true;$('accountLabel').textContent='Verificando acesso…';$('view').innerHTML='<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Verificando seu acesso…</div>';
     // A página já chega com o perfil e, quando há cache, com a Visão do mês e a agenda (doGet). Sem isso, pergunta ao servidor.

@@ -36,6 +36,13 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Setas e Esc.
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('');await p.keyboard.press('ArrowDown');assert.equal(await p.locator('.search-item').nth(1).getAttribute('aria-selected'),'true');
   await p.keyboard.press('Escape');assert.equal(await p.locator('#searchDialog[open]').count(),0);
+  // Registro único (ROTAS): toda página do menu abre, com o título do registro e sem erro (quem tem todos os cargos).
+  for(const g of ['mes','consulta'])if(await fechado(g))await p.locator('.nav-group[data-grupo='+g+'] .nav-group-head').click();
+  const rotas=await p.$$eval('#navigation .nav-item',l=>l.filter(x=>!x.hidden).map(x=>[x.dataset.route,x.querySelector('span').textContent]));
+  assert.ok(rotas.length>=15,'menu completo: '+rotas.length);
+  for(const [r,titulo] of rotas){await p.locator('.nav-item[data-route='+r+']').click();await p.waitForFunction(r=>document.querySelector('.nav-item.active')?.dataset.route===r,r);
+    assert.equal(await p.locator('#pageLabel').textContent(),titulo,'título de '+r);await p.waitForTimeout(250);}
+  assert.deepEqual(errors,[],'nenhuma página com erro');
   // Pessoa com um cargo (poucas páginas): grupos abertos, sem nada escondido.
   await p.evaluate(()=>localStorage.removeItem('cpt.menu'));await p.goto(url('?perfil=atendimento&latencia=20'));await p.locator('.nav-item[data-route=obras]').waitFor();
   assert.equal(await fechado('consulta'),false);assert.equal(await p.locator('.nav-group[data-grupo=mes]').isHidden(),true,'grupo sem páginas some');
@@ -43,6 +50,6 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(300);assert(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral');
   await p.locator('#searchOpen').click();await p.locator('#searchDialog[open]').waitFor();await p.keyboard.press('Escape');
   assert.deepEqual(errors,[]);
-  console.log('PASS: navegação — grupos recolhidos para quem vê muitas páginas (e lembrados), abertos para quem tem um cargo; cabeçalho compacto com ⓘ; busca Ctrl+K acha página, protocolo, ação e obra; setas, Enter e Esc; celular sem rolagem lateral.');
+  console.log('PASS: navegação — todas as páginas do registro abrem com o título certo; grupos recolhidos para quem vê muitas páginas (e lembrados), abertos para quem tem um cargo; cabeçalho compacto com ⓘ; busca Ctrl+K acha página, protocolo, ação e obra; setas, Enter e Esc; celular sem rolagem lateral.');
   await b.close();
 })().catch(e=>{console.error(e);process.exit(1);});
