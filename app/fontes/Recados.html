@@ -35,7 +35,8 @@ window.CPTRecados = (() => {
     ultimaContagem = Date.now();
     try {
       const r = await ui.call('contarAvisosCPT'); avisos = r; marcar();
-      if (!silencioso && r.recados) ui.toast(r.recados === 1 ? 'Você tem 1 recado novo.' : 'Você tem ' + r.recados + ' recados novos.');
+      // Aviso de baixa prioridade: não apaga a mensagem de uma ação que a pessoa acabou de fazer.
+      if (!silencioso && r.recados && document.getElementById('toast').hidden) ui.toast(r.recados === 1 ? 'Você tem 1 recado novo.' : 'Você tem ' + r.recados + ' recados novos.');
     } catch (_) {}
   }
 
