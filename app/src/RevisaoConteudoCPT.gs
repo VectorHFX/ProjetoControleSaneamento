@@ -35,7 +35,20 @@ class RevisaoConteudoCPT {
     const msg = {aprovado: 'Aprovado.', suspenso: 'Suspenso: não aparece para ninguém.', pendente: 'Voltou para a revisão.'};
     return {resultado: msg[e.situacao], item: {id: x.id, situacao: e.situacao, nota: e.nota, versao: e.versao}};
   }
+  /**
+   * 2.26.7: aprova de uma vez tudo o que ainda está "a revisar" (o que foi suspenso continua suspenso).
+   * Decisão do proprietário: o conteúdo foi conferido. Cada item ganha uma revisão "aprovado", numa escrita só.
+   */
+  aprovarPendentes() {
+    const T = ConteudoSaneamentoCPT, dec = RevisaoConteudoCPT.decisoes(this.ctx);
+    const pendentes = T.curiosidades.concat(T.perguntas).filter(x => !dec[x.id] || dec[x.id].situacao === 'pendente');
+    this.col.gravarLote(pendentes.map(x => ({idFixo: 'REV-' + x.id, item: {item: x.id, situacao: 'aprovado', nota: 'Aprovado em bloco pelo proprietário (conteúdo conferido).'}})), 'OP-aprovar-tudo-' + Utilities.getUuid().slice(0, 8));
+    const conta = k => Object.values(dec).filter(d => d.situacao === k).length;
+    return {aprovados: pendentes.length, jaAprovados: conta('aprovado'), suspensos: conta('suspenso')};
+  }
 }
 
 function carregarRevisaoConteudoCPT() { return ColecaoCPT.executar('revisao.carregar', ctx => new RevisaoConteudoCPT(ctx).carregar()); }
+/** Execute no editor (conta proprietária): aprova todo o conteúdo ainda "a revisar". Pode repetir: o que já foi decidido não muda. */
+function aprovarTodoConteudoCPT() { return ColecaoCPT.executar('revisao.aprovarTudo', ctx => new RevisaoConteudoCPT(ctx).aprovarPendentes(), true); }
 function decidirConteudoCPT(p) { return ColecaoCPT.executar('revisao.decidir', ctx => new RevisaoConteudoCPT(ctx).decidir(p), true); }

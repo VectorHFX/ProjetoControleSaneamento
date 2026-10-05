@@ -66,5 +66,15 @@ class PerfisCPT {
 
 /** Execute no editor quando terminar os testes: Gestão e Administrativo voltam a editar obras e publicar entregas oficiais. Cadastros e papéis continuam só com o proprietário. */
 function liberarConfiguracaoCPT() { PropertiesService.getScriptProperties().setProperty('CPT_TRAVA_CONFIG', 'liberada'); return {resultado: 'Configuração liberada para Gestão e Administrativo (obras e publicações oficiais). Cadastros e papéis continuam só com você.'}; }
+/**
+ * 2.26.7: Execute no editor para liberar tudo para a equipe de uma vez: aprova o conteúdo do quiz ainda "a revisar"
+ * e desliga a trava de testes (visual novo, Álbum, Mapa, Organograma, quiz, loja e as ações da gerência).
+ * Cadastros e papéis continuam só com o proprietário. Para voltar: travarConfiguracaoCPT.
+ */
+function liberarParaEquipeCPT() {
+  const conteudo = aprovarTodoConteudoCPT(), trava = liberarConfiguracaoCPT();
+  return {resultado: 'Liberado para a equipe. Conteúdo: ' + conteudo.aprovados + ' aprovado(s) agora, ' + conteudo.jaAprovados + ' já aprovado(s), ' + conteudo.suspensos + ' suspenso(s). ' + trava.resultado,
+    conteudo};
+}
 /** Execute no editor para voltar a travar. */
 function travarConfiguracaoCPT() { PropertiesService.getScriptProperties().deleteProperty('CPT_TRAVA_CONFIG'); return {resultado: 'Configuração travada: só você altera cadastros, obras, conectores e publicações oficiais.'}; }

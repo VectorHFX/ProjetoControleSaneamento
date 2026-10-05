@@ -45,6 +45,21 @@ class ColecaoCPT {
     a.getRange(a.getLastRow() + 1, 1, 1, 6).setValues([[e.id, e.versao, operacaoId, agora, this.ctx.email, JSON.stringify(e)]]);
     this.cache = null; return e;
   }
+  /**
+   * 2.26.7: várias revisões numa escrita só (para ações em bloco feitas pelo proprietário no editor).
+   * lista: [{item, idFixo}] — cada um vira a versão seguinte do seu ID; nada é apagado.
+   */
+  gravarLote(lista, operacaoBase) {
+    if (!lista.length) return [];
+    const a = this.aba(), agora = new Date().toISOString(), linhas = [], out = [];
+    lista.forEach(({item, idFixo}, i) => {
+      const antigo = this.obter(idFixo), e = {...item, id: idFixo, versao: (antigo ? antigo.versao : 0) + 1,
+        criadoPor: antigo ? antigo.criadoPor : this.ctx.email, criadoEm: antigo ? antigo.criadoEm : agora, alteradoPor: this.ctx.email, alteradoEm: agora};
+      linhas.push([e.id, e.versao, operacaoBase + '-' + i, agora, this.ctx.email, JSON.stringify(e)]); out.push(e);
+    });
+    a.getRange(a.getLastRow() + 1, 1, linhas.length, 6).setValues(linhas);
+    this.cache = null; return out;
+  }
   /** O item gravado por esta operação, se ela já aconteceu (para repetir sem duplicar). */
   porOperacao(operacaoId) {
     const a = this.aba(), n = a.getLastRow() - 1; if (n < 1) return null;

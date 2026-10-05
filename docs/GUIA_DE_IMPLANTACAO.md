@@ -23,6 +23,18 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.7 — liberar para a equipe numa função só (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.7`) e publique uma **Nova versão**.
+2. **Antes de liberar**, confira em **Equipe e acessos** se cada pessoa está ativa e com o papel certo (cadastros e papéis continuam só com você depois da liberação).
+3. No editor do Apps Script, escolha a função **`liberarParaEquipeCPT`** (arquivo `PerfisCPT.gs`) e clique em **Executar**, com a conta proprietária. Ela faz duas coisas:
+   - **aprova de uma vez** todo o conteúdo do quiz que está "a revisar" (o que você tiver suspendido continua suspenso), com a observação "Aprovado em bloco pelo proprietário";
+   - **desliga a trava de testes**: visual novo, mascotes novos, loja, quiz, Álbum, Mapa e Organograma para todos; e as ações da gerência (obras, obras do dia, Programa Parceiros, Anexos, Entregue, planilha de controle, organograma) passam para Gestão e Administrativo.
+   O resultado mostra quantos itens foram aprovados. Pode executar de novo: o que já foi decidido não muda.
+4. A equipe vê tudo ao **recarregar a página**.
+5. Para voltar atrás na trava: **`travarConfiguracaoCPT`** (o conteúdo aprovado continua aprovado; dá para suspender item a item na Revisão do conteúdo).
+6. Também existem separadas: `aprovarTodoConteudoCPT` (só o conteúdo) e `liberarConfiguracaoCPT` (só a trava).
+
 ## Atualização 2.26.6 — número curto do caso ("Caso 17") (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.6`) e publique uma **Nova versão**. Nenhum arquivo novo; o Campo 4.0 não muda.

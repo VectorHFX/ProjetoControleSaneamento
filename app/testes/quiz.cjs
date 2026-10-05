@@ -121,5 +121,15 @@ email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.saber.
 email='victor@example.com';assert.ok(!run(`new QuizCPT(AplicacaoCPT.identidade()).banco().map(q=>q.id)`).includes(alvo),'suspenso some até para o proprietário');
 ctx.p={id:alvo,situacao:'pendente',versao:2,operacaoId:op()};assert.match(run('decidirConteudoCPT(p)').resultado,/Voltou/);
 assert.ok(run(`new QuizCPT(AplicacaoCPT.identidade()).banco().map(q=>q.id)`).includes(alvo),'pendente volta para o proprietário');
+// 2.26.7: aprovar em bloco (editor, conta proprietária): tudo que está "a revisar" vira aprovado numa escrita só; suspenso continua suspenso.
+ctx.p={id:'C02',situacao:'suspenso',versao:0,operacaoId:op()};run('decidirConteudoCPT(p)');
+email='com@example.com';assert.throws(()=>run('aprovarTodoConteudoCPT()'),/exclusiva da administração técnica/);
+email='victor@example.com';let ab=run('aprovarTodoConteudoCPT()');assert.deepEqual([ab.aprovados,ab.jaAprovados,ab.suspensos],[todos.length-8,7,1],'o item que voltou para revisão entra; o suspenso fica de fora');
+rv=run('carregarRevisaoConteudoCPT()');assert.equal(rv.resumo.aprovado,todos.length-1);assert.equal(rv.resumo.suspenso,1);assert.equal(rv.resumo.pendente,0);
+assert.ok(rv.itens.find(x=>x.id==='Q050').nota.includes('em bloco'));assert.equal(rv.itens.find(x=>x.id==='Q001').versao,1,'o que já estava aprovado não ganha revisão nova');
+assert.equal(run('aprovarTodoConteudoCPT()').aprovados,0,'repetir não muda nada');
+props.delete('CPT_TRAVA_CONFIG');assert.match(run('liberarParaEquipeCPT()').resultado,/Liberado para a equipe\. Conteúdo: 0 aprovado/);assert.equal(props.get('CPT_TRAVA_CONFIG'),'liberada');
+email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(d.saber&&d.saber.curiosidade,'equipe recebe o conteúdo depois de liberar');assert.equal(d.saber.curiosidade.revisar,false);
+email='victor@example.com';
 props.delete('CPT_TRAVA_CONFIG');
 console.log('PASS: revisão — só o proprietário abre e decide (item a item, com versão); suspenso some para todos; os outros só veem o aprovado depois de liberar.');
