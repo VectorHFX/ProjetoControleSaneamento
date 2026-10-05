@@ -1,0 +1,199 @@
+<!doctype html>
+<!--
+  PROTÓTIPO DESCARTÁVEL — não vai para o Apps Script.
+  Pergunta: qual estilo de desenho os mascotes v2 devem ter? (bloco D, issue #5)
+  Três estilos do urso e da águia, cada um com 5 expressões e o kit EPI inicial (capacete, luvas, colete laranja, bota preta).
+  Troque de estilo pela barra de baixo, pelas setas ← → ou por ?estilo=A|B|C na URL.
+  Depois da escolha, o estilo vencedor é reescrito de verdade em MeuEspaco.html e este arquivo sai do branch principal.
+-->
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mascotes v2 · protótipo</title>
+<style>
+:root{--bg:#f3f6f5;--surface:#fff;--ink:#17262f;--muted:#5d6f78;--line:#dde6e3;--blue:#0f6e66}
+:root[data-theme=dark]{--bg:#121a1e;--surface:#1b252a;--ink:#e8eef0;--muted:#9fb1b8;--line:#2b3a40;--blue:#5cc7b8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px 16px 110px}
+h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 16px;max-width:760px}
+.opts{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 18px;font-size:13px}.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.linha{margin:0 0 22px}.linha h2{font-size:15px;margin:0 0 8px;color:var(--muted);letter-spacing:.3px;text-transform:uppercase}
+.grade{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.cel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px 6px 10px;text-align:center}
+.cel svg{width:100%;height:auto;max-height:210px}.cel b{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.app{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;margin:0 0 22px;position:relative;overflow:hidden}
+.app .cena{border-radius:16px;background:linear-gradient(180deg,#dff1ee,#f6efe0);position:relative;height:250px;overflow:hidden}
+:root[data-theme=dark] .app .cena{background:linear-gradient(180deg,#1d3b3a,#2a2a22)}
+.app .cena svg.m{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:200px}
+.app .cena .chao{position:absolute;left:-10%;right:-10%;bottom:-40px;height:80px;border-radius:50%;background:#bfe0c9;opacity:.8}
+:root[data-theme=dark] .app .cena .chao{background:#2e4a3a}
+.app .fala{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;max-width:460px}
+.app .nome{font-weight:750;font-size:18px}.app small{color:var(--muted)}
+.barra{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:#101820;color:#fff;border-radius:999px;padding:8px 10px;box-shadow:0 10px 30px #0006;z-index:9;font-size:14px}
+.barra button{background:#ffffff1f;color:#fff;border:0;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}
+.barra span{min-width:220px;text-align:center;font-weight:650}
+@media (max-width:760px){.grade{grid-template-columns:repeat(3,minmax(0,1fr))}.app{grid-template-columns:1fr}.barra span{min-width:150px;font-size:12px}}
+.anima .m-all{animation:resp 3.2s ease-in-out infinite;transform-origin:50% 100%}@keyframes resp{50%{transform:scale(1.015,.985)}}
+@media (prefers-reduced-motion:reduce){.anima .m-all{animation:none}}
+</style></head><body>
+<h1>Mascotes v2 · escolha o estilo</h1>
+<p class="sub">Protótipo descartável. São três jeitos de desenhar o mesmo urso e a mesma águia. Compare as expressões e o quadro "no app". Dá para dizer "o traço do A com os olhos do B". A águia é branca e preta, um aceno discreto à sua chefe.</p>
+<div class="opts">
+  <label><input type="checkbox" id="epi" checked> Kit EPI inicial (capacete, luvas, colete, bota preta)</label>
+  <label><input type="checkbox" id="escuro"> Tema escuro</label>
+  <label><input type="checkbox" id="anima" checked> Respiração (animação leve)</label>
+</div>
+<section class="app" id="noApp"></section>
+<div class="linha"><h2>Urso</h2><div class="grade" id="urso"></div></div>
+<div class="linha"><h2>Águia</h2><div class="grade" id="aguia"></div></div>
+<div class="barra" role="toolbar" aria-label="Trocar estilo"><button id="ant" aria-label="Estilo anterior">‹</button><span id="rotulo"></span><button id="prox" aria-label="Próximo estilo">›</button></div>
+<script>
+'use strict';
+const ESTILOS = {
+  A: {nome: 'A · Traço firme', desc: 'Contorno escuro grosso, cores chapadas, cabeça grande. Lembra Animal Crossing, mais sóbrio.',
+      H: 60, traco: '#1f2b33', w: 4, adesivo: 0, sombra: false, olho: 'ponto', bochecha: false, corpoRy: 36},
+  B: {nome: 'B · Adesivo expressivo', desc: 'Borda branca de adesivo, olhos grandes com brilho, bochechas, cabeça maior. O mais "fofo" dos três, sem ficar infantil.',
+      H: 67, traco: null, w: 2.6, adesivo: 9, sombra: true, olho: 'grande', bochecha: true, corpoRy: 31},
+  C: {nome: 'C · Geométrico sóbrio', desc: 'Sem contorno, formas geométricas com sombra em dois tons, rosto mínimo. O mais adulto e "de empresa".',
+      H: 54, traco: null, w: 0, adesivo: 0, sombra: false, olho: 'capsula', bochecha: false, corpoRy: 42, doisTons: true}};
+const ORDEM = ['A', 'B', 'C'], EXPR = [['feliz', 'Feliz'], ['surpreso', 'Surpreso'], ['pensativo', 'Pensativo'], ['dormindo', 'Dormindo'], ['comemorando', 'Comemorando']];
+const COR = {urso: {pelo: '#9a6a43', claro: '#d8b48a', escuro: '#5e3f27'}, aguia: {pelo: '#2a2624', claro: '#f7f5f0', escuro: '#151312', bico: '#f0b43a'},
+  capacete: '#f5c242', colete: '#f07a1e', faixa: '#e9eef0', luva: '#7c8a93', bota: '#1b1e21', olho: '#1a1f24'};
+let est = new URLSearchParams(location.search).get('estilo') || 'A'; if (!ESTILOS[est]) est = 'A';
+let uid = 0;
+
+/** Contorno conforme o estilo: A = escuro; B = tom mais escuro da própria cor; C = nenhum. */
+function escurecer(hex, f) { const n = parseInt(hex.slice(1), 16), c = k => Math.max(0, Math.round(((n >> k) & 255) * f)); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); }
+function tr(S, fill) { if (S.traco) return `fill="${fill}" stroke="${S.traco}" stroke-width="${S.w}" stroke-linejoin="round" stroke-linecap="round"`; if (S.w) return `fill="${fill}" stroke="${escurecer(fill, .62)}" stroke-width="${S.w}" stroke-linejoin="round" stroke-linecap="round"`; return `fill="${fill}"`; }
+function linha(S, cor, w) { return `fill="none" stroke="${cor || S.traco || COR.olho}" stroke-width="${w || Math.max(3, S.w)}" stroke-linecap="round" stroke-linejoin="round"`; }
+
+function olhos(S, cx, cy, d, e, especie) {
+  const L = cx - d, R = cx + d, k = COR.olho;
+  if (e === 'dormindo') return `<path d="M${L - 8},${cy} q8,6 16,0" ${linha(S, k, 3.4)}/><path d="M${R - 8},${cy} q8,6 16,0" ${linha(S, k, 3.4)}/>`;
+  if (e === 'comemorando' || (e === 'feliz' && S.olho !== 'grande')) return `<path d="M${L - 8},${cy + 3} q8,-10 16,0" ${linha(S, k, 3.6)}/><path d="M${R - 8},${cy + 3} q8,-10 16,0" ${linha(S, k, 3.6)}/>`;
+  const grande = S.olho === 'grande', cap = S.olho === 'capsula', surpreso = e === 'surpreso';
+  const olhar = e === 'pensativo' ? {dx: 3, dy: -4} : {dx: 0, dy: 0};
+  const um = x => {
+    if (cap) return (especie === 'aguia' ? `<rect x="${x - 6 + olhar.dx}" y="${cy - (surpreso ? 12 : 10) + olhar.dy}" width="12" height="${surpreso ? 24 : 20}" rx="6" fill="#f2c94c"/>` : '') + `<rect x="${x - 3.5 + olhar.dx}" y="${cy - (surpreso ? 9 : 7) + olhar.dy}" width="7" height="${surpreso ? 18 : 14}" rx="3.5" fill="${k}"/>`;
+    const r = grande ? (surpreso ? 11 : 9.5) : (surpreso ? 7 : 5.5);
+    const iris = especie === 'aguia' ? `<circle cx="${x + olhar.dx}" cy="${cy + olhar.dy}" r="${r + 3.2}" fill="#f2c94c" stroke="${S.traco || '#b8862b'}" stroke-width="${S.traco ? 2 : 1.2}"/>` : '';
+    return iris + `<ellipse cx="${x + olhar.dx}" cy="${cy + olhar.dy}" rx="${r * (grande ? .86 : 1)}" ry="${r}" fill="${k}"/><circle cx="${x + olhar.dx + r * .35}" cy="${cy + olhar.dy - r * .38}" r="${r * .32}" fill="#fff"/>${grande ? `<circle cx="${x + olhar.dx - r * .35}" cy="${cy + olhar.dy + r * .35}" r="${r * .16}" fill="#fff"/>` : ''}`;
+  };
+  return um(L) + um(R);
+}
+function sobrancelhas(S, cx, cy, d, e, especie) {
+  const k = S.doisTons ? '#1a1f24aa' : COR.olho, w = 3.2;
+  if (especie === 'aguia') { // águia: sobrancelha marcante, a "cara séria" que muda com o humor
+    const inc = e === 'surpreso' ? -6 : e === 'pensativo' ? 3 : e === 'dormindo' ? 0 : e === 'comemorando' ? -3 : 4, y = cy - 13;
+    return `<path d="M${cx - d - 11},${y - inc} L${cx - d + 9},${y + inc * .6}" ${linha(S, k, w + .6)}/><path d="M${cx + d + 11},${y - (e === 'pensativo' ? inc + 7 : inc)} L${cx + d - 9},${y + inc * .6}" ${linha(S, k, w + .6)}/>`;
+  }
+  if (e === 'surpreso') return `<path d="M${cx - d - 7},${cy - 17} q7,-6 14,0" ${linha(S, k, w)}/><path d="M${cx + d - 7},${cy - 17} q7,-6 14,0" ${linha(S, k, w)}/>`;
+  if (e === 'pensativo') return `<path d="M${cx - d - 7},${cy - 13} l14,-2" ${linha(S, k, w)}/><path d="M${cx + d - 7},${cy - 19} q7,-5 14,1" ${linha(S, k, w)}/>`;
+  return '';
+}
+function boca(S, cx, cy, e, especie) {
+  if (especie === 'aguia') {
+    const aberto = ['surpreso', 'comemorando', 'feliz'].includes(e), b = COR.aguia.bico;
+    const baixo = aberto ? `<path d="M${cx - 9},${cy + 9} Q${cx},${cy + (e === 'feliz' ? 18 : 24)} ${cx + 9},${cy + 9} Z" ${tr(S, '#c9852a')}/>` : '';
+    return baixo + `<path d="M${cx - 19},${cy - 1} Q${cx},${cy - 15} ${cx + 19},${cy - 1} Q${cx + 16},${cy + 14} ${cx + 3},${cy + 25} Q${cx - 2},${cy + 27} ${cx - 4},${cy + 21} Q${cx - 15},${cy + 13} ${cx - 19},${cy - 1} Z" ${tr(S, b)}/><path d="M${cx - 2},${cy + 17} Q${cx + 4},${cy + 19} ${cx + 3},${cy + 25} Q${cx - 2},${cy + 27} ${cx - 4},${cy + 21} Z" fill="#b97a22"/>` +
+      (S.doisTons ? `<path d="M${cx},${cy - 6} Q${cx + 15},${cy - 1} ${cx},${cy + 19} Z" fill="#00000018"/>` : '') + `<path d="M${cx - 5},${cy + 1} q2,-2 4,0 M${cx + 1},${cy + 1} q2,-2 4,0" ${linha(S, '#7a4f12', 1.6)}/>`;
+  }
+  const k = COR.olho;
+  if (e === 'surpreso') return `<ellipse cx="${cx}" cy="${cy + 9}" rx="5" ry="6.5" fill="${k}"/>`;
+  if (e === 'dormindo') return `<path d="M${cx - 4},${cy + 8} q4,3 8,0" ${linha(S, k, 2.6)}/>`;
+  if (e === 'pensativo') return `<path d="M${cx - 6},${cy + 9} q6,-1 11,-3" ${linha(S, k, 2.8)}/>`;
+  if (e === 'comemorando') return `<path d="M${cx - 10},${cy + 4} Q${cx},${cy + 20} ${cx + 10},${cy + 4} Z" fill="${k}"/><path d="M${cx - 5},${cy + 12} q5,4 10,0" fill="#e66b6b"/>`;
+  return `<path d="M${cx - 9},${cy + 5} q4.5,6 9,0 q4.5,6 9,0" ${linha(S, k, 2.8)}/>`;
+}
+
+/** Um mascote inteiro. Coordenadas num quadro 200×240; a cabeça (raio H) varia por estilo. */
+function mascote(especie, e, epi, S) {
+  const id = 'm' + (++uid), H = S.H, hx = 100, hy = 92, c = COR[especie], ehAguia = especie === 'aguia';
+  const corpoY = 178, corpoRy = S.corpoRy, corpoRx = 40;
+  const bracos = e === 'comemorando' ? 'cima' : e === 'pensativo' ? 'queixo' : 'baixo';
+  let s = `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${especie} ${e}"><defs><clipPath id="${id}c"><ellipse cx="100" cy="${corpoY}" rx="${corpoRx}" ry="${corpoRy}"/></clipPath>
+    <filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-opacity=".22"/></filter></defs><g class="m-all" ${S.adesivo ? `filter="url(#${id}s)"` : ''}>`;
+  const desenho = [];
+  // Pernas e botas
+  [-15, 15].forEach(dx => {
+    desenho.push(`<rect x="${100 + dx - 10}" y="${corpoY + corpoRy - 14}" width="20" height="26" rx="8" ${tr(S, ehAguia ? '#f0b43a' : c.pelo)}/>`);
+    if (epi) desenho.push(`<path d="M${100 + dx - 12},${corpoY + corpoRy - 2} h22 a4,4 0 0 1 4,4 v8 h-28 v-8 a4,4 0 0 1 2,-4 Z" ${tr(S, COR.bota)}/><rect x="${100 + dx - 13}" y="${corpoY + corpoRy + 9}" width="27" height="4" rx="2" fill="#000a"/>`);
+  });
+  // Braços (asas na águia) e luvas
+  const braco = (lado, pose) => {
+    const sx = 100 + lado * (corpoRx - 4), sy = corpoY - corpoRy + 18;
+    let mx, my, rot;
+    if (pose === 'cima') { mx = sx + lado * 14; my = sy - 30; rot = lado * 25; }
+    else if (pose === 'queixo' && lado === 1) { mx = 120; my = hy + H * .62; rot = -40; }
+    else { mx = sx + lado * 8; my = sy + 24; rot = lado * -18; }
+    const corB = ehAguia ? c.pelo : c.pelo;
+    let b = ehAguia
+      ? `<path d="M${sx - lado * 6},${sy - 6} Q${(sx + mx) / 2 + lado * 26},${(sy + my) / 2 - 4} ${mx + lado * 4},${my + 2} l${-lado * 7},7 l${-lado * 3},-9 l${-lado * 7},6 l${-lado * 2},-9 Q${(sx + mx) / 2 + lado * 2},${(sy + my) / 2} ${sx - lado * 6},${sy + 14} Z" ${tr(S, corB)}/>`
+      : `<path d="M${sx},${sy} L${mx},${my}" stroke="${S.traco || escurecer(corB, .62)}" stroke-width="${S.w ? 22 + S.w * 2 : 22}" stroke-linecap="round" fill="none"/><path d="M${sx},${sy} L${mx},${my}" stroke="${corB}" stroke-width="22" stroke-linecap="round" fill="none"/>`;
+    b += epi ? `<circle cx="${mx}" cy="${my}" r="9.5" ${tr(S, COR.luva)}/><path d="M${mx - 4},${my - 3} v6 M${mx},${my - 4} v7 M${mx + 4},${my - 3} v6" ${linha(S, '#5b676f', 1.5)}/>`
+      : `<circle cx="${mx}" cy="${my}" r="8.5" ${tr(S, ehAguia ? '#f0b43a' : c.claro)}/>`;
+    return b;
+  };
+  desenho.push(braco(-1, bracos === 'cima' ? 'cima' : 'baixo'));
+  // Corpo e colete
+  desenho.push(`<ellipse cx="100" cy="${corpoY}" rx="${corpoRx}" ry="${corpoRy}" ${tr(S, c.pelo)}/>`);
+  if (!ehAguia) desenho.push(`<ellipse cx="100" cy="${corpoY + 6}" rx="${corpoRx * .55}" ry="${corpoRy * .6}" fill="${c.claro}"/>`);
+  else desenho.push(`<ellipse cx="100" cy="${corpoY - corpoRy * .55}" rx="${corpoRx * .55}" ry="${corpoRy * .4}" fill="${c.claro}"/>`);
+  if (epi) {
+    desenho.push(`<g clip-path="url(#${id}c)"><path d="M55,${corpoY - corpoRy} H145 V${corpoY + corpoRy * .55} Q100,${corpoY + corpoRy * .72} 55,${corpoY + corpoRy * .55} Z M100,${corpoY - corpoRy + 4} L86,${corpoY - corpoRy - 6} L114,${corpoY - corpoRy - 6} Z" fill="${COR.colete}" fill-rule="evenodd"/>
+      <path d="M100,${corpoY - corpoRy - 2} L88,${corpoY - 6} L112,${corpoY - 6} Z" fill="${ehAguia ? c.claro : c.claro}"/>
+      <rect x="55" y="${corpoY + 2}" width="90" height="7" fill="${COR.faixa}"/><rect x="55" y="${corpoY + 15}" width="90" height="7" fill="${COR.faixa}"/>
+      <rect x="99" y="${corpoY - 6}" width="2" height="${corpoRy + 8}" fill="#00000030"/></g>`);
+    if (S.traco || S.w) desenho.push(`<g clip-path="url(#${id}c)"><path d="M55,${corpoY + corpoRy * .55} Q100,${corpoY + corpoRy * .72} 145,${corpoY + corpoRy * .55}" fill="none" stroke="${S.traco || escurecer(COR.colete, .6)}" stroke-width="${S.w}"/></g><ellipse cx="100" cy="${corpoY}" rx="${corpoRx}" ry="${corpoRy}" fill="none" stroke="${S.traco || escurecer(c.pelo, .62)}" stroke-width="${S.w}"/>`);
+  }
+  if (S.doisTons) desenho.push(`<g clip-path="url(#${id}c)"><rect x="100" y="${corpoY - corpoRy}" width="45" height="${corpoRy * 2}" fill="#00000016"/></g>`);
+  desenho.push(braco(1, bracos));
+  // Cabeça
+  if (!ehAguia) {
+    [-1, 1].forEach(l => desenho.push(`<circle cx="${hx + l * H * .72}" cy="${hy - H * .7}" r="${H * .3}" ${tr(S, c.pelo)}/><circle cx="${hx + l * H * .72}" cy="${hy - H * .7}" r="${H * .16}" fill="${c.claro}"/>`));
+    desenho.push(`<circle cx="${hx}" cy="${hy}" r="${H}" ${tr(S, c.pelo)}/>`);
+    if (S.doisTons) desenho.push(`<path d="M${hx},${hy - H} A${H},${H} 0 0 1 ${hx},${hy + H} Z" fill="#00000014"/>`);
+    desenho.push(`<ellipse cx="${hx}" cy="${hy + H * .38}" rx="${H * .48}" ry="${H * .36}" fill="${c.claro}"/>`);
+    desenho.push(`<path d="M${hx - 9},${hy + H * .2} h18 q0,9 -9,11 q-9,-2 -9,-11 Z" fill="${c.escuro}"/>`);
+  } else {
+    // Topete e cabeça branca; pescoço de penas
+    desenho.push(`<path d="M${hx + H * .35},${hy - H * .9} l${H * .45},${-H * .18} l${-H * .12},${H * .3} l${H * .3},0 l${-H * .32},${H * .3} Z" ${tr(S, c.claro)}/>`);
+    desenho.push(`<circle cx="${hx}" cy="${hy}" r="${H}" ${tr(S, c.claro)}/>`);
+    if (S.doisTons) desenho.push(`<path d="M${hx},${hy - H} A${H},${H} 0 0 1 ${hx},${hy + H} Z" fill="#00000010"/>`);
+    desenho.push(`<path d="M${hx - H * .75},${hy + H * .62} q${H * .25},${H * .25} ${H * .5},${H * .1} q${H * .25},${H * .22} ${H * .5},0 q${H * .25},${H * .22} ${H * .5},-${H * .1}" fill="none" stroke="#d9d4ca" stroke-width="3" stroke-linecap="round"/>`);
+  }
+  if (S.bochecha && e !== 'dormindo') desenho.push(`<ellipse cx="${hx - H * .55}" cy="${hy + H * .22}" rx="${H * .14}" ry="${H * .09}" fill="#f29a9a" opacity=".7"/><ellipse cx="${hx + H * .55}" cy="${hy + H * .22}" rx="${H * .14}" ry="${H * .09}" fill="#f29a9a" opacity=".7"/>`);
+  const ey = ehAguia ? hy - H * .1 : hy - H * .05, d = H * (ehAguia ? .4 : .36);
+  desenho.push(olhos(S, hx, ey, d, e, especie), sobrancelhas(S, hx, ey, d, e, especie));
+  desenho.push(boca(S, hx, ehAguia ? hy + H * .18 : hy + H * .32, e, especie));
+  // Capacete
+  if (epi) {
+    const ty = hy - H * .5;
+    desenho.push(`<path d="M${hx - H * .86},${ty} A${H * .86},${H * .62} 0 0 1 ${hx + H * .86},${ty} Z" ${tr(S, COR.capacete)}/><rect x="${hx - 5}" y="${ty - H * .6}" width="10" height="${H * .58}" rx="4" fill="#00000018"/>
+      <rect x="${hx - H * .98}" y="${ty - 4}" width="${H * 1.96}" height="9" rx="4.5" ${tr(S, COR.capacete)}/>${S.doisTons ? `<path d="M${hx},${ty - H * .62} A${H * .86},${H * .62} 0 0 1 ${hx + H * .86},${ty} L${hx},${ty} Z" fill="#00000014"/>` : ''}`);
+  }
+  // Extras do humor
+  if (e === 'dormindo') desenho.push(`<text x="${hx + H * 1.02}" y="${hy - H * .05}" font-size="22" font-weight="800" fill="${COR.olho}" opacity=".55">z</text><text x="${hx + H * 1.2}" y="${hy - H * .42}" font-size="16" font-weight="800" fill="${COR.olho}" opacity=".4">z</text>`);
+  if (e === 'surpreso') desenho.push(`<text x="${hx + H * 1.05}" y="${hy - H * .1}" font-size="30" font-weight="900" fill="#e0632a">!</text>`);
+  if (e === 'pensativo') desenho.push(`<circle cx="${hx - H * .9}" cy="${hy - H * .8}" r="4" fill="${COR.olho}" opacity=".35"/><circle cx="${hx - H * 1.05}" cy="${hy - H * 1.02}" r="6" fill="${COR.olho}" opacity=".35"/>`);
+  if (e === 'comemorando') ['#f5c242', '#2e9e7d', '#e0632a', '#4b8fd6', '#d65b9b', '#f5c242'].forEach((cor, i) => desenho.push(`<rect x="${25 + i * 30}" y="${10 + (i % 3) * 14}" width="7" height="12" rx="2" fill="${cor}" transform="rotate(${i * 37} ${28 + i * 30} ${16 + (i % 3) * 14})"/>`));
+  if (S.adesivo) s += `<g stroke="#fff" stroke-width="${S.adesivo * 2}" stroke-linejoin="round" fill="#fff" opacity="1">${desenho.join('').replace(/fill="[^"]*"/g, 'fill="#fff"').replace(/stroke="(?!#fff)[^"]*"/g, 'stroke="#fff"').replace(/stroke-width="[^"]*"/g, `stroke-width="${S.adesivo * 2}"`)}</g>`;
+  return s + desenho.join('') + '</g></svg>';
+}
+
+const FALAS = {feliz: 'Bom dia! Hoje tem 2 frentes de obra e 1 relato para preparar.', surpreso: 'Opa! Chegou um comentário da gestão no seu relato.', pensativo: 'Você sabia? O Rio Tamanduateí nasce em Mauá e corta Santo André até São Paulo.',
+  dormindo: '… (anotou no caderno ontem? Mais 1 dia e ganha uma peça.)', comemorando: 'Missão cumprida! +10 pontos.'};
+function desenhar() {
+  const S = ESTILOS[est], epi = document.getElementById('epi').checked;
+  document.documentElement.dataset.theme = document.getElementById('escuro').checked ? 'dark' : 'light';
+  document.body.classList.toggle('anima', document.getElementById('anima').checked);
+  for (const especie of ['urso', 'aguia']) document.getElementById(especie).innerHTML = EXPR.map(([e, t]) => `<div class="cel">${mascote(especie, e, epi, S)}<b>${t}</b></div>`).join('');
+  const e = EXPR[(Date.now() / 1000 | 0) % EXPR.length][0];
+  document.getElementById('noApp').innerHTML = `<div class="cena"><div class="chao"></div><svg class="m" viewBox="0 0 200 240">${mascote('urso', 'feliz', epi, S).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg></div>
+    <div><div class="nome">Tonico <small>· urso da Equipe Socioambiental</small></div><p class="fala">${FALAS.feliz}</p><small>${S.desc}</small></div>`;
+  document.getElementById('rotulo').textContent = S.nome;
+  history.replaceState(null, '', '?estilo=' + est);
+}
+function mudar(passo) { est = ORDEM[(ORDEM.indexOf(est) + passo + ORDEM.length) % ORDEM.length]; desenhar(); }
+document.getElementById('ant').onclick = () => mudar(-1); document.getElementById('prox').onclick = () => mudar(1);
+document.addEventListener('keydown', ev => { if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if (ev.key === 'ArrowLeft') mudar(-1); if (ev.key === 'ArrowRight') mudar(1); });
+['epi', 'escuro', 'anima'].forEach(i => document.getElementById(i).onchange = desenhar);
+desenhar();
+</script></body></html>
