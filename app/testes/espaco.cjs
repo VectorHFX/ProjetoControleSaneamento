@@ -91,9 +91,9 @@ ctx.n={data:hoje,texto:'Anotação da Ana, só dela mesmo.',versao:0,operacaoId:
 email='com@example.com';assert.equal(run('carregarMeuEspacoCPT()').nota.texto,'Editando de novo a mesma anotação do dia','a nota da outra pessoa não aparece');
 // 2.18: elenco chibi e kit EPI — no período de testes, só o proprietário.
 email='com@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(d.especies.dinossauro&&!d.especies.urso,'quem não é o proprietário continua com o elenco anterior');assert.deepEqual(d.kit,[]);assert.deepEqual(d.classicos,{});
-assert.throws(()=>masc({acao:'comprarClassico',especie:'abelha',nome:'Mel',versao:d.perfil.versao}),/chegam junto com o elenco novo/);
+assert.throws(()=>masc({acao:'comprarClassico',especie:'abelha',nome:'Mel',versao:d.perfil.versao}),/chegam junto com o elenco novo/);assert.ok(!d.catalogo.some(x=>x.id==='camisa-veolia'),'camiseta Veolia só no elenco novo');
 assert.throws(()=>masc({acao:'vestir',slot:'luvas',item:'luvas',versao:d.perfil.versao}),/ainda não é sua/);
-email='victor@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(d.especies.urso&&d.especies.sapo&&d.especies.gota&&!d.especies.dinossauro);assert.deepEqual([...d.kit].sort(),['bota-preta','capacete-branco','colete','luvas']);
+email='victor@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(d.especies.urso&&d.especies.sapo&&d.especies.gota&&!d.especies.dinossauro);assert.deepEqual([...d.kit].sort(),['bota-preta','capacete-branco','colete','luvas']);assert.ok(d.catalogo.some(x=>x.id==='camisa-veolia'&&x.slot==='corpo'&&!x.preco),'camiseta Veolia: peça comum de roupa');
 r=masc({acao:'iniciar',especie:'urso',nome:'Tonico'});assert.deepEqual({...r.perfil.mascotes[0].equipado},{cabeca:'capacete-branco',corpo:'colete',luvas:'luvas',pes:'bota-preta'},'mascote novo já vem com o kit');
 r=masc({acao:'vestir',slot:'luvas',item:'',versao:r.perfil.versao});r=masc({acao:'vestir',slot:'luvas',item:'luvas',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[0].equipado.luvas,'luvas','kit é de todo mundo');
 assert.throws(()=>masc({acao:'comprarClassico',especie:'dinossauro',nome:'Rex',versao:r.perfil.versao}),/Faltam pontos/);

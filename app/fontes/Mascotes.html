@@ -41,8 +41,9 @@ window.CPTMascoteV2 = (() => {
     if (e === 'feliz') return linha(`M${L - 6},${cy + 2} q6,-8 12,0 M${R - 6},${cy + 2} q6,-8 12,0`);
     if (e === 'comemorando') return linha(`M${L - 6},${cy - 5} l10,5 l-10,5 M${R + 6},${cy - 5} l-10,5 l10,5`, 2.8);
     if (e === 'surpreso') return [L, R].map(x => `<circle cx="${x}" cy="${cy}" r="${o.grande ? 9 : 7.5}" fill="#fff" stroke="${OLHO}" stroke-width="2.2"/><circle cx="${x}" cy="${cy}" r="${o.grande ? 4.5 : 3.6}" fill="${OLHO}"/>`).join('');
-    const dx = e === 'pensativo' ? 3 : 0, dy = e === 'pensativo' ? -3 : 0, r = o.grande ? 7 : 4.6;
-    return `<g class="m-eyes">` + [L, R].map(x => (o.iris ? `<circle cx="${x + dx}" cy="${cy + dy}" r="${r + 2.6}" fill="${o.iris}"/>` : '') + `<ellipse cx="${x + dx}" cy="${cy + dy}" rx="${r * .9}" ry="${r * 1.08}" fill="${OLHO}"/><circle cx="${x + dx + r * .3}" cy="${cy + dy - r * .4}" r="${r * .32}" fill="#fff"/>`).join('') + '</g>';
+    const dx = e === 'pensativo' ? 3 : 0, dy = e === 'pensativo' ? -3 : 0, r = o.grande ? 7 : o.olho || 6.2;
+    // olho fofo: oval grande, brilho principal em cima e um brilhinho embaixo
+    return `<g class="m-eyes">` + [L, R].map(x => (o.iris ? `<circle cx="${x + dx}" cy="${cy + dy}" r="${r + 2.6}" fill="${o.iris}"/>` : '') + `<ellipse cx="${x + dx}" cy="${cy + dy}" rx="${r * .9}" ry="${r * 1.08}" fill="${OLHO}"/><circle cx="${x + dx + r * .3}" cy="${cy + dy - r * .4}" r="${r * .34}" fill="#fff"/>` + (r > 5 ? `<circle cx="${x + dx - r * .32}" cy="${cy + dy + r * .42}" r="${r * .15}" fill="#fff" opacity=".85"/>` : '')).join('') + '</g>';
   }
   const bochechas = (e, cx, cy, d) => e === 'dormindo' ? '' : `<ellipse cx="${cx - d - 4}" cy="${cy + 11}" rx="7" ry="4" fill="${BOCHECHA}" opacity=".75"/><ellipse cx="${cx + d + 4}" cy="${cy + 11}" rx="7" ry="4" fill="${BOCHECHA}" opacity=".75"/>`;
   function boquinha(e, cx, cy, tipo) {
@@ -71,7 +72,7 @@ window.CPTMascoteV2 = (() => {
       corpo: 'M66,128 C46,150 44,196 64,212 Q100,226 136,212 C156,196 154,150 134,128 Z', caixa: [48, 124, 152, 222], barriga: ell(100, 180, 30, 26), pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
       atras: c => f(circ(56, 46, 16), c.p) + f(circ(144, 46, 16), c.p) + `<circle cx="56" cy="46" r="8" fill="${c.cl}"/><circle cx="144" cy="46" r="8" fill="${c.cl}"/>`,
       focinho: (e, c) => f(ell(100, 104, 18, 12), c.cl, 1) + `<path d="${ell(100, 99, 6, 4)}" fill="${c.e}"/>` + boquinha(e, 100, 105)},
-    aguia: {c: ['#4a403b', '#fdfbf6'], corCab: '#fdfbf6', cab: ell(100, 84, 52, 46), rosto: {x: 100, y: 84, d: 24, iris: '#f6d36a', forte: true}, capacete: {x: 100, y: 50, r: 30}, pescoco: [100, 128],
+    aguia: {c: ['#4a403b', '#fdfbf6'], corCab: '#fdfbf6', cab: ell(100, 84, 52, 46), rosto: {x: 100, y: 84, d: 24, iris: '#f6d36a', forte: true, olho: 4.8}, capacete: {x: 100, y: 50, r: 30}, pescoco: [100, 128],
       corpo: 'M50,138 C48,128 152,128 150,138 C152,178 136,212 100,216 C64,212 48,178 50,138 Z', caixa: [48, 128, 152, 216], peito: 'M74,136 Q100,150 126,136 L100,178 Z', pes: [[84, 216, 12, 7, '#f4b94c'], [116, 216, 12, 7, '#f4b94c']], ombros: [[56, 146], [144, 146]], asa: 1.1, mao: 32,
       atras: () => f('M134,52 l20,-12 l-4,15 l14,2 l-16,12 Z', '#fdfbf6'),
       focinho: e => (['surpreso', 'comemorando', 'feliz'].includes(e) ? `<path d="M93,103 Q100,${e === 'feliz' ? 111 : 116} 107,103 Z" fill="#c9852a"/>` : '') + f('M88,94 Q100,86 112,94 Q110,106 101,112 Q99,113 98,111 Q90,104 88,94 Z', '#f4b94c')},
@@ -88,7 +89,7 @@ window.CPTMascoteV2 = (() => {
       corpo: 'M70,132 C40,170 46,212 84,218 Q100,222 116,218 C154,212 160,170 130,132 Z', caixa: [48, 132, 152, 220], pes: [[86, 220, 12, 6, '#f3a94a'], [114, 220, 12, 6, '#f3a94a']], ombros: [[70, 160], [130, 160]], asa: .7, mao: 22,
       atras: c => f('M96,62 q-3,-12 7,-14 q-5,7 1,12 Z', c.p),
       focinho: e => (['surpreso', 'comemorando'].includes(e) ? `<path d="M86,112 Q100,124 114,112 Z" fill="#d07a2a"/>` : '') + f('M82,104 Q100,96 118,104 Q118,114 100,115 Q82,114 82,104 Z', '#f3a94a')},
-    capivara: {c: ['#b58a63', '#8f6a4b'], cab: 'M52,76 C52,46 76,40 100,40 C124,40 148,46 148,76 L148,104 C148,126 128,132 100,132 C72,132 52,126 52,104 Z', rosto: {x: 100, y: 80, d: 26, calmo: true}, capacete: {x: 100, y: 46, r: 30}, pescoco: [100, 134],
+    capivara: {c: ['#b58a63', '#8f6a4b'], cab: 'M52,76 C52,46 76,40 100,40 C124,40 148,46 148,76 L148,104 C148,126 128,132 100,132 C72,132 52,126 52,104 Z', rosto: {x: 100, y: 80, d: 26, calmo: true, olho: 5}, capacete: {x: 100, y: 46, r: 30}, pescoco: [100, 134],
       corpo: 'M60,130 C46,150 46,200 64,212 Q100,224 136,212 C154,200 154,150 140,130 Z', caixa: [50, 128, 150, 220], pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
       atras: c => f(circ(66, 46, 9), c.e) + f(circ(134, 46, 9), c.e),
       // A laranjinha na cabeça (como na referência) aparece quando não há nada na cabeça.
@@ -131,6 +132,48 @@ window.CPTMascoteV2 = (() => {
     if (slot === 'corpo' || slot === 'costas') return `translate(${(x0 + x1) / 2},${(y0 + y1) / 2}) scale(${(x1 - x0) / 72},${(y1 - y0) / 76}) translate(-80,-128)`;
     return '';
   };
+  /**
+   * Peças do guarda-roupa redesenhadas no estilo chibi (luz e sombra), sob medida pelos pontos de encaixe de cada corpo.
+   * x: {S, c, k (cabeça: x, y da aba, r), R (olhos), n (pescoço [x,y]), m (mão direita [x,y])}.
+   */
+  const CAMISAS = {
+    'camisa-timao': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => Array.from({length: 7}, (_, i) => `<rect x="${x0 + 6 + i * (x1 - x0) / 7}" y="${y0}" width="${(x1 - x0) / 14}" height="${y1 - y0}" fill="#232323"/>`).join('')},
+    'camisa-verdao': {cor: '#1f8a4c', manga: '#1f8a4c', desenho: (x0, x1, y0) => linha(`M${(x0 + x1) / 2 - 12},${y0 + 4} L${(x0 + x1) / 2},${y0 + 16} L${(x0 + x1) / 2 + 12},${y0 + 4}`, 4, '#fff')},
+    'camisa-tricolor': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => { const y = y0 + (y1 - y0) * .42; return `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="7" fill="#d6252c"/><rect x="${x0}" y="${y + 7}" width="${x1 - x0}" height="4" fill="#fbfbf8"/><rect x="${x0}" y="${y + 11}" width="${x1 - x0}" height="7" fill="#232323"/>`; }},
+    'camisa-peixe': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => `<rect x="${x0 + 8}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/><rect x="${x1 - 13}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/>` + linha(`M${(x0 + x1) / 2 - 10},${y0 + 4} L${(x0 + x1) / 2},${y0 + 13} L${(x0 + x1) / 2 + 10},${y0 + 4}`, 3, '#232323')},
+    'camisa-cpt': {cor: '#2f7cbf', manga: '#2f7cbf', desenho: (x0, x1, y0, y1) => `<path d="M${(x0 + x1) / 2 - 22},${y0 + (y1 - y0) * .32 + 4} c0,0 5,-8 5,-11 a5,5 0 0 0 -10,0 c0,3 5,11 5,11 Z" fill="#9fd3f5" transform="translate(4,0)"/><text x="${(x0 + x1) / 2 + 6}" y="${y0 + (y1 - y0) * .32 + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Arial, sans-serif">CPT</text>`},
+    'camisa-veolia': {cor: '#e2231a', manga: '#e2231a', desenho: (x0, x1, y0, y1) => `<text x="${(x0 + x1) / 2}" y="${y0 + (y1 - y0) * .34 + 3}" text-anchor="middle" font-size="${Math.min(12, (x1 - x0) / 6.2)}" font-weight="800" letter-spacing=".6" fill="#fff" font-family="Arial, sans-serif">VEOLIA</text>` +
+      `<rect x="${x0}" y="${y1 - 7}" width="${x1 - x0}" height="3" fill="#ffffff55"/>`}};
+  /** Camisa: cobre a parte de cima do corpo (sem cobrir o "formato" de baixo), com gola em V. */
+  function camisa(id, S, c, ID) {
+    const t = CAMISAS[id]; if (!t) return '';
+    const [x0c, y0c, x1c, y1c] = S.caixa, y0 = S.semCorpo ? y0c : y0c - 6, y1 = S.semCorpo ? Math.min(y1c, y0 + 38) : y0c + (y1c - y0c) * .62;
+    return `<g clip-path="url(#${ID}t)"><path d="M20,${y0} H180 V${y1} Q100,${y1 + 8} 20,${y1} Z" fill="${t.cor}"/>${t.desenho(x0c, x1c, y0, y1)}${S.semCorpo ? '' : `<path d="M100,${y0c + 18} L90,${y0c - 2} L110,${y0c - 2} Z" fill="${S.corPeito || c.p}"/>`}<path d="M20,${y1} Q100,${y1 + 8} 180,${y1}" fill="none" stroke="#00000018" stroke-width="3"/></g>`;
+  }
+  const P2 = {
+    // cabeça (a aba fica em k.y; o alto da cabeça em k.y - k.r·0,8)
+    bone: x => { const {k} = x, cor = '#3f7fc4'; return f(`M${k.x + k.r * .6},${k.y} q${k.r * .9},-2 ${k.r * 1.05},5 q-${k.r * .5},5 -${k.r * 1.05},2 Z`, mix(cor, '#000000', .18)) + f(`M${k.x - k.r},${k.y + 2} A${k.r},${k.r * .8} 0 0 1 ${k.x + k.r},${k.y + 2} Z`, cor) + `<circle cx="${k.x}" cy="${k.y - k.r * .78}" r="3" fill="${mix(cor, '#000000', .25)}"/><path d="M${k.x - k.r * .55},${k.y - k.r * .35} q${k.r * .4},-${k.r * .25} ${k.r * .7},-${k.r * .32}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>`; },
+    laco: x => { const {k} = x, bx = k.x + k.r * .72, by = k.y - k.r * .42; return f(`M${bx},${by} l-13,-9 q-4,9 0,18 Z`, '#ef7fa6') + f(`M${bx},${by} l13,-9 q4,9 0,18 Z`, '#ef7fa6') + f(circ(bx, by, 4.2), '#d85d88'); },
+    abafador: x => { const {k} = x, w = k.r * 1.18; return linha(`M${k.x - w},${k.y + 10} Q${k.x - w},${k.y - k.r * 1.05} ${k.x},${k.y - k.r * 1.05} Q${k.x + w},${k.y - k.r * 1.05} ${k.x + w},${k.y + 10}`, 5, '#d6403a') + f(ell(k.x - w, k.y + 16, 8, 12), '#d6403a') + f(ell(k.x + w, k.y + 16, 8, 12), '#d6403a') + f(ell(k.x - w, k.y + 16, 4, 7), '#ef8a80', 1) + f(ell(k.x + w, k.y + 16, 4, 7), '#ef8a80', 1); },
+    fone: x => { const {k} = x, w = k.r * 1.16; return linha(`M${k.x - w},${k.y + 12} Q${k.x - w},${k.y - k.r * 1.05} ${k.x},${k.y - k.r * 1.05} Q${k.x + w},${k.y - k.r * 1.05} ${k.x + w},${k.y + 12}`, 4.5, '#3b3f46') + f(circ(k.x - w, k.y + 16, 10), '#3b3f46') + f(circ(k.x + w, k.y + 16, 10), '#3b3f46') + `<circle cx="${k.x - w}" cy="${k.y + 16}" r="4" fill="#7cc0ea"/><circle cx="${k.x + w}" cy="${k.y + 16}" r="4" fill="#7cc0ea"/>`; },
+    'coroa-folhas': x => { const {k} = x; return Array.from({length: 7}, (_, i) => { const a = Math.PI * (1.05 + i * .15), px = k.x + Math.cos(a) * k.r * 1.02, py = k.y - 2 + Math.sin(a) * k.r * .7; return `<g transform="rotate(${(a * 180 / Math.PI + 90).toFixed(1)} ${px.toFixed(1)} ${py.toFixed(1)})">${f(ell(px, py, 8, 4.5), i % 2 ? '#4ea65a' : '#73c06a')}</g>`; }).join(''); },
+    // rosto
+    'oculos-protecao': x => { const {R} = x, w = R.d + 14; return linha(`M${R.x - w - 6},${R.y} h6 M${R.x + w},${R.y} h6`, 3, '#3d7ea6') + `<rect x="${R.x - w}" y="${R.y - 10}" width="${w * 2}" height="20" rx="10" fill="#bfe6fb" fill-opacity=".5" stroke="#3d7ea6" stroke-width="2.6"/><path d="M${R.x - w + 6},${R.y - 5} h10" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>`; },
+    'oculos-sol': x => { const {R} = x; return [-1, 1].map(l => `<rect x="${R.x + l * R.d - 10}" y="${R.y - 8}" width="20" height="15" rx="6" fill="#26282c"/><path d="M${R.x + l * R.d - 6},${R.y - 4} l5,0" stroke="#fff" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>`).join('') + linha(`M${R.x - R.d + 10},${R.y - 2} Q${R.x},${R.y - 6} ${R.x + R.d - 10},${R.y - 2}`, 3, '#26282c'); },
+    // pescoço
+    cachecol: x => { const [nx, ny] = x.n; return f(`M${nx - 30},${ny - 6} Q${nx},${ny + 4} ${nx + 30},${ny - 6} L${nx + 30},${ny + 4} Q${nx},${ny + 14} ${nx - 30},${ny + 4} Z`, '#d6403a') + [-18, -6, 6, 18].map(dx => `<rect x="${nx + dx - 2}" y="${ny - 4}" width="4" height="12" fill="#fff" opacity=".9" transform="rotate(${dx * .6} ${nx + dx} ${ny})"/>`).join('') + f(`M${nx + 12},${ny + 4} l8,0 l2,24 l-10,0 Z`, '#d6403a') + `<path d="M${nx + 12},${ny + 26} h10" stroke="#fff" stroke-width="3"/>`; },
+    cracha: x => { const [nx, ny] = x.n; return linha(`M${nx - 14},${ny - 4} L${nx},${ny + 14} L${nx + 14},${ny - 4}`, 2.6, '#2f7cbf') + f(`M${nx - 10},${ny + 13} h20 a3,3 0 0 1 3,3 v18 a3,3 0 0 1 -3,3 h-20 a3,3 0 0 1 -3,-3 v-18 a3,3 0 0 1 3,-3 Z`, '#fff') + `<rect x="${nx - 13}" y="${ny + 13}" width="26" height="7" rx="3" fill="#2f7cbf"/><circle cx="${nx - 4}" cy="${ny + 27}" r="4" fill="#cfd8de"/><path d="M${nx + 2},${ny + 26} h7 M${nx + 2},${ny + 30} h5" stroke="#cfd8de" stroke-width="2" stroke-linecap="round"/>`; },
+    medalha: x => { const [nx, ny] = x.n; return f(`M${nx - 12},${ny - 4} L${nx - 2},${ny + 16} L${nx + 2},${ny + 16} L${nx + 12},${ny - 4} L${nx + 6},${ny - 4} L${nx},${ny + 8} L${nx - 6},${ny - 4} Z`, '#2f8f55') + f(circ(nx, ny + 23, 9), '#f2c94c') + `<path d="M${nx},${ny + 17} l1.8,3.8 4.2,.5 -3.1,2.9 .8,4.2 -3.7,-2.1 -3.7,2.1 .8,-4.2 -3.1,-2.9 4.2,-.5 Z" fill="#fff6c8"/>`; },
+    // costas
+    capa: x => { const [x0, y0, x1, y1] = x.S.caixa; return f(`M${x0 + 10},${y0 + 4} Q100,${y0 - 6} ${x1 - 10},${y0 + 4} L${x1 + 14},${y1 + 2} Q100,${y1 + 12} ${x0 - 14},${y1 + 2} Z`, '#d6403a') + `<path d="M${x0 + 10},${y0 + 4} L${x0 - 14},${y1 + 2} L${x0 + 2},${y1 + 4} Z" fill="#000" opacity=".12"/>`; },
+    // mão direita (a patinha é desenhada depois, por cima do cabo)
+    prancheta: x => { const [mx, my] = x.m; return f(`M${mx - 4},${my - 26} h24 a3,3 0 0 1 3,3 v30 a3,3 0 0 1 -3,3 h-24 a3,3 0 0 1 -3,-3 v-30 a3,3 0 0 1 3,-3 Z`, '#b9824d') + `<rect x="${mx - 2}" y="${my - 21}" width="20" height="26" rx="2" fill="#fff"/><rect x="${mx + 3}" y="${my - 29}" width="10" height="6" rx="2" fill="#8d969c"/><path d="M${mx + 1},${my - 14} h14 M${mx + 1},${my - 9} h14 M${mx + 1},${my - 4} h9" stroke="#aab5bb" stroke-width="1.8" stroke-linecap="round"/>`; },
+    trena: x => { const [mx, my] = x.m; return f(`M${mx - 2},${my - 22} h20 a5,5 0 0 1 5,5 v14 a5,5 0 0 1 -5,5 h-20 a5,5 0 0 1 -5,-5 v-14 a5,5 0 0 1 5,-5 Z`, '#f6c84c') + `<circle cx="${mx + 8}" cy="${my - 10}" r="5" fill="#5b6066"/><rect x="${mx + 21}" y="${my - 6}" width="14" height="4" fill="#d9dde0"/><path d="M${mx + 25},${my - 6} v4 M${mx + 29},${my - 6} v4" stroke="#8d969c" stroke-width="1"/>`; },
+    camera: x => { const [mx, my] = x.m; return f(`M${mx - 4},${my - 20} h28 a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-28 a4,4 0 0 1 -4,-4 v-16 a4,4 0 0 1 4,-4 Z`, '#3b3f46') + `<rect x="${mx}" y="${my - 25}" width="9" height="6" rx="2" fill="#3b3f46"/><circle cx="${mx + 11}" cy="${my - 8}" r="7" fill="#7cc0ea" stroke="#d9dde0" stroke-width="2.5"/><circle cx="${mx + 9}" cy="${my - 10}" r="2" fill="#fff" opacity=".8"/>`; },
+    megafone: x => { const [mx, my] = x.m; return f(`M${mx - 2},${my - 16} L${mx + 26},${my - 30} L${mx + 26},${my + 4} L${mx - 2},${my - 6} Z`, '#f28a3a') + f(ell(mx + 26, my - 13, 4, 17), '#e06f22') + `<rect x="${mx - 8}" y="${my - 15}" width="7" height="9" rx="2" fill="#f6f2ea"/>`; },
+    muda: x => { const [mx, my] = x.m; return f(`M${mx - 4},${my - 10} h24 l-3,16 h-18 Z`, '#c07a45') + linha(`M${mx + 8},${my - 10} Q${mx + 8},${my - 22} ${mx + 9},${my - 28}`, 2.6, '#3f8f45') + `<g transform="rotate(-25 ${mx + 2} ${my - 22})">${f(ell(mx + 2, my - 22, 7, 4), '#6cbf6a')}</g><g transform="rotate(25 ${mx + 15} ${my - 26})">${f(ell(mx + 15, my - 26, 7, 4), '#6cbf6a')}</g>`; },
+    chave: x => { const [mx, my] = x.m; return `<g transform="rotate(28 ${mx + 6} ${my - 10})"><rect x="${mx + 3}" y="${my - 34}" width="7" height="34" rx="3.5" fill="#9aa4ab"/><path d="M${mx - 2},${my - 40} a9,9 0 1 0 17,0 l-4,0 v6 h-9 v-6 Z" fill="#9aa4ab"/></g>`; },
+    trofeu: x => { const [mx, my] = x.m; return f(`M${mx - 4},${my - 30} h26 l-2,14 q-11,10 -22,0 Z`, '#f2c94c') + linha(`M${mx - 4},${my - 26} q-8,2 -4,9 M${mx + 22},${my - 26} q8,2 4,9`, 2.6, '#d9a520') + `<rect x="${mx + 6}" y="${my - 12}" width="6" height="7" fill="#d9a520"/><rect x="${mx}" y="${my - 6}" width="18" height="6" rx="2" fill="#a77a18"/><path d="M${mx + 2},${my - 26} l3,8" stroke="#fff6c8" stroke-width="2.4" stroke-linecap="round"/>`; }};
   function colete(S, ID, cor = EPI.colete, faixa = EPI.faixa) { // o colete da rodada aprovada, sob medida para cada corpo
     const [, y0c, , y1c] = S.caixa, y0 = S.semCorpo ? y0c : 120, y1 = S.semCorpo ? Math.min(y1c, y0 + 34) : 186;
     return `<g clip-path="url(#${ID}t)"><path d="M30,${y0} H170 V${y1} Q100,${y1 + 10} 30,${y1} Z" fill="${cor}"/>${S.semCorpo ? '' : `<path d="M100,160 L86,120 L114,120 Z" fill="${S.corPeito || S.c[0]}"/>`}<rect x="30" y="${S.semCorpo ? y0 + 14 : 166}" width="140" height="6" rx="3" fill="${faixa}"/></g>`;
@@ -148,16 +191,19 @@ window.CPTMascoteV2 = (() => {
     const S2 = {...S, corPeito: S.peito ? c.cl : c.p};
     P.push(`<defs><linearGradient id="${ID}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a2410" stop-opacity=".18"/></linearGradient>
       <clipPath id="${ID}t"><path d="${S.semCorpo ? S.cab : S.corpo}"/></clipPath></defs><ellipse cx="100" cy="226" rx="${especie === 'gota' ? 40 : 52}" ry="7" fill="#3a2410" opacity=".12"/>`);
-    const peca = (slot, tr) => { const id = q[slot]; if (!id || !V1) return ''; const svg = V1.peca(id); return svg ? `<g transform="${tr || encaixe(S, slot)}">${svg}</g>` : ''; };
+    const xp = {S, c, k: S.capacete, R, n: S.pescoco, m: null};
+    // Peça nova (chibi) quando existe; senão, a antiga reposicionada.
+    const peca = (slot, tr) => { const id = q[slot]; if (!id) return ''; if (P2[id]) return P2[id](xp); if (!V1) return ''; const svg = V1.peca(id); return svg ? `<g transform="${tr || encaixe(S, slot)}">${svg}</g>` : ''; };
     P.push(peca('costas'));
     if (S.atras) P.push(S.atras(c, e));
     // pezinhos: bota preta e botina mudam a cor do pé
     const corPe = q.pes === 'bota-preta' ? EPI.bota : q.pes === 'botina' ? EPI.botina : null;
-    S.pes.forEach(([x, y, rx, ry, cp]) => P.push(f(ell(x, y, rx, ry), corPe || cp || c.p)));
+    S.pes.forEach(([x, y, rx, ry, cp]) => P.push(f(ell(x, y, rx, ry), corPe || cp || c.p) + (corPe ? `<path d="M${x - rx + 2},${y + ry - 2} Q${x},${y + ry + 2} ${x + rx - 2},${y + ry - 2}" fill="none" stroke="#00000040" stroke-width="2.4" stroke-linecap="round"/><circle cx="${x}" cy="${y - ry * .35}" r="1.6" fill="#ffffff60"/>` : '')));
     // corpo, barriga, roupas
     if (!S.semCorpo) { P.push(f(S.corpo, c.p)); if (S.barriga) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) P.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
     if (S.listras) P.push(`<g clip-path="url(#${ID}t)"><rect x="30" y="160" width="140" height="11" fill="#3b302a"/><rect x="30" y="186" width="140" height="11" fill="#3b302a"/></g>`);
-    const roupa = () => q.corpo === 'colete' ? colete(S2, ID) : q.corpo === 'colete-mestre' ? colete(S2, ID, '#e6b422', '#3b3b3b') : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
+    const roupa = () => q.corpo === 'colete' ? colete(S2, ID) : q.corpo === 'colete-mestre' ? colete(S2, ID, '#e6b422', '#3b3b3b') : CAMISAS[q.corpo] ? camisa(q.corpo, S2, c, ID) : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
+    const manga = CAMISAS[q.corpo] ? CAMISAS[q.corpo].manga : null;
     if (!S.semCorpo) P.push(roupa());
     // cabeça
     P.push(f(S.cab, S.corCab || c.p));
@@ -182,10 +228,11 @@ window.CPTMascoteV2 = (() => {
     const braco = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1], [mx, my] = mao(lado), [cx, cy] = cotovelo(lado, sx, sy);
       if (S.asa) { const g = S.asa, penas = [-1, 0, 1].map(k => f(ell(mx + lado * 3 + k * 4 * lado, my + 6 - Math.abs(k) * 2, 4.2, 7.5), c.p)).join('');
         return penas + f(bracoCurvo(sx, sy, cx, cy, mx, my, 19 * g, 9 * g), c.p) + (luva ? patinha(lado, mx, my, 12) : ''); }
-      return f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12, S.braco * .86), c.p) + patinha(lado, mx, my, S.braco * .86); };
+      return f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12, S.braco * .86), c.p) + (manga ? f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12 + 3, S.braco * .86 + 3, .34), manga) : '') + (lado > 0 ? ferramenta() : '') + patinha(lado, mx, my, S.braco * .86); };
+    // ferramenta na mão direita, com a patinha por cima (segurando)
+    const ferramenta = () => { if (!q.mao) return ''; xp.m = mao(1); if (P2[q.mao]) return P2[q.mao](xp); const svg = V1 && V1.peca(q.mao); return svg ? `<g transform="translate(${xp.m[0]},${xp.m[1]}) scale(1.15) translate(-114,-124)">${svg}</g>` : ''; };
     P.push(braco(-1), braco(1));
-    // ferramenta na mão direita
-    if (q.mao && V1) { const [mx, my] = mao(1), svg = V1.peca(q.mao); if (svg) P.push(`<g transform="translate(${mx},${my}) scale(1.15) translate(-114,-124)">${svg}</g>`); }
+    if (S.asa && q.mao) P.push(ferramenta());
     // cabeça: capacete do kit (sob medida) ou peça do guarda-roupa
     const k = S.capacete;
     if (q.cabeca === 'capacete-branco' || q.cabeca === 'capacete-amarelo' || q.cabeca === 'capacete-dourado') {
@@ -209,7 +256,7 @@ window.CPTMascoteV2 = (() => {
   window.CPTMascote = {
     desenhar: (e, q, tam, rotulo, cor, expr) => v2() ? window.CPTMascoteV2.desenhar(e, q, tam, rotulo, cor, expr) : v1.desenhar(e, q, tam, rotulo, cor),
     amostra: k => v2() ? window.CPTMascoteV2.amostra(k) : v1.amostra(k),
-    temDesenho: id => v1.temDesenho(id) || ['luvas', 'bota-preta'].includes(id)
+    temDesenho: id => v1.temDesenho(id) || ['luvas', 'bota-preta', 'camisa-veolia'].includes(id)
   };
 })();
 </script>

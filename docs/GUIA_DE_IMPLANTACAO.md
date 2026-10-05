@@ -23,15 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
-## Atualização 2.18 — mascotes novos (elenco chibi) e kit EPI (≈ 5 min)
+## Atualização 2.18.1 — mascotes novos (elenco chibi), kit EPI e camiseta Veolia (≈ 5 min)
 
-1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.18.0`) e publique uma **Nova versão**. O atualizador traz o arquivo novo `Mascotes.html`.
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.18.1`) e publique uma **Nova versão**. O atualizador traz o arquivo novo `Mascotes.html`.
 
 **O que muda no Meu espaço:**
 - **Elenco chibi:** urso, águia, gato, cachorro, pato, capivara, sapinho e gota d'água. Cada um tem o seu corpo (urso gordinho, águia fortinha, gato esguio…).
 - **Clássicos:** dinossauro e abelha saem da escolha inicial e vão para a loja do guarda-roupa por **150 pontos**. Quem já tem continua com eles, no desenho novo.
 - **Kit EPI inicial:** capacete **branco**, colete, luvas e bota preta são de todo mundo (não precisa ganhar). Todo mascote novo já chega vestido com eles. Os mascotes que já existem continuam com a roupa que têm, e o kit fica disponível no guarda-roupa.
-- As **peças que as pessoas já ganharam ou compraram** continuam valendo e encaixam no corpo de cada bicho.
+- As **peças que as pessoas já ganharam ou compraram** continuam valendo, redesenhadas no estilo novo e sob medida para cada bicho: chapéus, óculos, cachecol, crachá, medalha, capa, camisas (com manguinha), ferramentas seguradas pela patinha e botas com sola.
+- **Camiseta Veolia** (vermelha, com VEOLIA em branco): peça comum de roupa, ganha no presente da semana ou do caderno.
+- **Olhos maiores e mais fofos** (a águia continua decidida, a capivara tranquila).
 - **Humor do mascote:** dorme depois das 21h, comemora quando uma tarefa do checklist vale pontos, fica surpreso quando chega comentário da gestão e feliz com o checklist completo.
 
 **Durante os testes, só você vê o elenco novo.** As demais pessoas continuam com os mascotes e a escolha de antes até `liberarConfiguracaoCPT`. Ao liberar, todos passam a ver o elenco novo, e quem tinha o mascote antigo vê o mesmo bicho no desenho novo.

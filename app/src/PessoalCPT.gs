@@ -21,6 +21,8 @@ class PessoalCPT {
   static get especiesNovas() { return {urso: 'Urso', aguia: 'Águia', gato: 'Gato', cachorro: 'Cachorro', pato: 'Pato', capivara: 'Capivara', sapo: 'Sapinho', gota: "Gota d'água"}; }
   static get classicos() { return {dinossauro: 'Dinossauro', abelha: 'Abelha'}; }
   static get precoClassico() { return 150; }
+  /** Peças que só existem no elenco novo (o desenho antigo não as tem). */
+  static get pecasNovas() { return ['luvas', 'bota-preta', 'camisa-veolia']; }
   /** Kit EPI inicial: de todo mundo (não precisa ganhar) e já vestido em cada mascote novo. */
   static get kit() { return {cabeca: 'capacete-branco', corpo: 'colete', luvas: 'luvas', pes: 'bota-preta'}; }
   /** Elenco novo: para todos depois de liberarConfiguracaoCPT; antes, só para o proprietário. */
@@ -43,7 +45,7 @@ class PessoalCPT {
       ['luvas', 'Luvas de proteção', 'luvas', 'EPI', 0], ['bota-preta', 'Bota preta', 'pes', 'EPI', 0],
       ['camisa-timao', 'Camisa alvinegra listrada (Timão)', 'corpo', 'Futebol', 0], ['camisa-verdao', 'Camisa verde (Verdão)', 'corpo', 'Futebol', 0],
       ['camisa-tricolor', 'Camisa tricolor (São Paulo)', 'corpo', 'Futebol', 0], ['camisa-peixe', 'Camisa branca (Peixe)', 'corpo', 'Futebol', 0],
-      ['camisa-cpt', 'Camiseta da equipe CPT', 'corpo', 'Roupas', 0],
+      ['camisa-cpt', 'Camiseta da equipe CPT', 'corpo', 'Roupas', 0], ['camisa-veolia', 'Camiseta Veolia', 'corpo', 'Roupas', 0],
       ['bone', 'Boné', 'cabeca', 'Acessórios', 0], ['laco', 'Laço', 'cabeca', 'Acessórios', 0], ['oculos-sol', 'Óculos escuros', 'rosto', 'Acessórios', 0],
       ['cachecol', 'Cachecol listrado', 'pescoco', 'Acessórios', 0], ['cracha', 'Crachá', 'pescoco', 'Acessórios', 0], ['fone', 'Fone de ouvido', 'cabeca', 'Acessórios', 0],
       ['prancheta', 'Prancheta', 'mao', 'Ferramentas', 0], ['trena', 'Trena', 'mao', 'Ferramentas', 0], ['camera', 'Câmera', 'mao', 'Ferramentas', 0],
@@ -94,7 +96,7 @@ class PessoalCPT {
     const dia = ColecaoCPT.data((p && p.data) || this.hoje, 'data', true), perfil = this.perfil(), notas = this.minhasNotas();
     const novoElenco = PessoalCPT.novo(this.ctx.perfil), kit = Object.values(PessoalCPT.kit);
     const out = {hoje: this.hoje, data: dia, perfil, novoElenco, kit: novoElenco ? kit : [], classicos: novoElenco ? PessoalCPT.classicos : {}, precoClassico: PessoalCPT.precoClassico,
-      catalogo: PessoalCPT.catalogo.filter(x => novoElenco || !['luvas', 'bota-preta'].includes(x.id)), especies: PessoalCPT.especiesPara(this.ctx.perfil), cores: PessoalCPT.cores, slots: PessoalCPT.slots,
+      catalogo: PessoalCPT.catalogo.filter(x => novoElenco || !PessoalCPT.pecasNovas.includes(x.id)), especies: PessoalCPT.especiesPara(this.ctx.perfil), cores: PessoalCPT.cores, slots: PessoalCPT.slots,
       pontos: this.pontos(perfil), pendentes: this.pendentes(perfil), nota: this.nota(dia), lista: this.lista(dia),
       caderno: {dias: this.diasEscritos(), porPeca: PessoalCPT.diasPorPeca, minimo: PessoalCPT.minimoCaderno,
         recentes: notas.filter(n => String(n.texto || '').trim()).map(n => ({data: n.id.slice(-10), trecho: String(n.texto).trim().slice(0, 90)})).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 12)},
@@ -131,7 +133,7 @@ class PessoalCPT {
           if (novo.mascotes.some(x => x.especie === p.especie)) throw new Error('Você já tem esse mascote. Escolha outro.');
           novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: this.kitInicial(), cor: PessoalCPT.cor(p.cor)}); novo.ativo = novo.mascotes.length - 1; resultado = 'Chegou ' + novo.mascotes[novo.ativo].nome + '!';
         } else {
-          const it = PessoalCPT.item(p.item); if (!it || it.preco) throw new Error('Escolha uma peça comum.');
+          const it = PessoalCPT.item(p.item); if (!it || it.preco || (PessoalCPT.pecasNovas.includes(it.id) && !PessoalCPT.novo(this.ctx.perfil))) throw new Error('Escolha uma peça comum.');
           if (novo.pecas.includes(it.id) || this.doKit(it.id)) throw new Error('Você já tem essa peça. Escolha outra.');
           novo.pecas.push(it.id); m.equipado[it.slot] = it.id; resultado = 'Peça nova: ' + it.nome + '!';
         }
