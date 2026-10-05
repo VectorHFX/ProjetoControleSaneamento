@@ -65,8 +65,10 @@ class EntregasDoMesCPT {
     this.exigirVer(); mes = EntregasDoMesCPT.mes(mes);
     const pessoas = PerfisCPT.lista(this.ctx.config).filter(p => p.ativo && EntregasDoMesCPT.pode(p)).map(p => ({email: p.email, nome: p.nome}));
     let podeAlterar = true; try { PerfisCPT.exigirConfiguracao(this.ctx.perfil, ''); } catch (_) { podeAlterar = false; }
+    // 2.26.1: o cartão dos Anexos (links e última atualização) vem junto; antes era um pedido à parte ao servidor.
+    let anexos = null; try { anexos = new AnexosRelatorioCPT(this.ctx).estado(mes); } catch (_) {}
     return {mes, cartoes: EntregasDoMesCPT.tipos.map(t => this.cartao(mes, t)), pessoas, nomes: EntregasDoMesCPT.nomesSituacao,
-      podeAlterar, podeEntregar: podeAlterar && PerfisCPT.gerencia(this.ctx.perfil)};
+      podeAlterar, podeEntregar: podeAlterar && PerfisCPT.gerencia(this.ctx.perfil), anexos};
   }
 
   salvar(p) {

@@ -22,6 +22,13 @@ await page.locator('[data-bairro="Vila Assunção"]').click();assert(await page.
 await page.locator('.bairro-row',{hasText:'Vila Assunção'}).locator('text=Fora do formulário').waitFor();
 if(out)await page.screenshot({path:out+'/obras.png',fullPage:true});
 await page.locator('.nav-item[data-route=fechamento]').click();await page.locator('.fechamento-item').first().waitFor();assert.equal(await page.locator('.fechamento-item').count(),4);
+// 2.26.1: a página pede só a conferência e as entregas (os Anexos vêm junto); ao voltar, aparece na hora e confere em segundo plano.
+await page.locator('#anexosEstado [data-anexos-conferir]').waitFor();
+assert.equal(await page.evaluate(()=>window.CPT_PREVIA.chamadas.filter(c=>c.nome==='estadoAnexosCPT').length),0,'Anexos sem pedido à parte');
+await page.locator('.nav-item[data-route=obras]').click();await page.locator('.bairro-row').first().waitFor();
+await page.evaluate(()=>window.CPT_PREVIA.chamadas.length=0);await page.locator('.nav-item[data-route=fechamento]').click();
+assert.equal(await page.locator('.fechamento-item').count(),4,'volta sem esqueleto');assert.equal(await page.locator('#view .skeleton').count(),0);assert.equal(await page.locator('.entrega-card').count(),4);
+await page.waitForFunction(()=>window.CPT_PREVIA.chamadas.filter(c=>/conferirFechamentoCPT|carregarEntregasDoMesCPT/.test(c.nome)).length===2);
 // Entregas do mês: 4 cartões; relatório já gerado começa "Em preparo"; atualizar, entregar (retrato) e .zip das fichas.
 await page.locator('.entrega-card').nth(3).waitFor();assert.equal(await page.locator('.entrega-card').count(),4);assert.equal(await page.locator('.page-intro h1').first().textContent().then(t=>t.trim()),'Entregas do mês');
 const rel=page.locator('.entrega-card[data-entrega=relatorio]');assert.match(await rel.locator('.badge').textContent(),/Em preparo/);assert.match(await page.locator('.entrega-card[data-entrega=anexos] .badge').textContent(),/A fazer/);

@@ -36,6 +36,9 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // 2.26: mascote maior em frente ao quadro da parede (paisagem sem foto no álbum) e caderno marrom que abre uma vez.
   assert.equal(await p.locator('.space-hero.com-quadro .hero-pet .pet-quadro .quadro-paisagem').count(),1,'quadro com paisagem');assert.match(await p.locator('.quadro-placa').textContent(),/Santo André/);
   assert.ok((await p.locator('.space-hero .hero-pet .mascot-svg').boundingBox()).width>=300,'mascote maior');
+  // 2.26.1: as missões chegam depois e redesenham o humor; o mascote continua grande (antes voltava para 220).
+  await p.waitForFunction(()=>window.CPT_PREVIA.chamadas.some(c=>c.nome==='missoesCPT'));await p.waitForTimeout(400);
+  assert.ok((await p.locator('.space-hero .hero-pet .mascot-svg').boundingBox()).width>=300,'mascote continua grande depois do humor');
   await p.waitForFunction(()=>document.querySelector('.home-notebook.caderno').classList.contains('is-aberto'),null,{timeout:4000});
   assert.equal(await p.locator('.home-notebook.caderno .caderno-folha textarea.notebook').count(),1);assert.match(await p.locator('.caderno-rodape').textContent(),/Cada dia fica guardado/);
   assert.match(await p.evaluate(()=>getComputedStyle(document.querySelector('.caderno textarea.notebook')).backgroundImage),/repeating-linear-gradient/,'folha pautada');

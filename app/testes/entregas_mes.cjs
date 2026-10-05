@@ -41,6 +41,8 @@ const op=()=>'OP-'+crypto.randomUUID();
 // Quem vê: a mesa do relatório. Atendimento não.
 email='atd@example.com';assert.throws(()=>run("carregarEntregasDoMesCPT('2026-10')"),/Socioambiental, Comunicação, Gestão e Administrativo/);
 email='social@example.com';let c=run("carregarEntregasDoMesCPT('2026-10')");
+// 2.26.1: o estado dos Anexos vem junto (um pedido a menos ao abrir a página).
+assert.match(c.anexos.links.planilha,/\/edit$/);assert.equal(c.anexos.mes,'2026-10');
 assert.deepEqual(c.cartoes.map(x=>x.tipo),['relatorio','anexos','parceiros','atendimentos']);assert(c.cartoes.every(x=>x.situacao==='afazer'&&x.prazo==='2026-11-05'));
 assert.equal(c.podeAlterar,false,'período de testes: só o proprietário altera');assert(c.pessoas.some(p=>p.email==='social@example.com')&&!c.pessoas.some(p=>p.email==='atd@example.com'));
 ctx.p={mes:'2026-10',tipo:'relatorio',situacao:'preparo',responsavel:'',prazo:'',operacaoId:op()};assert.throws(()=>run('salvarEntregaDoMesCPT(p)'),/período de testes/);

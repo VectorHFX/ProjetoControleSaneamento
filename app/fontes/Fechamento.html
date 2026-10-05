@@ -14,14 +14,36 @@ window.CPTFechamento = (() => {
   const rotulo = {ok: 'OK', atencao: 'Atenção', pendente: 'Pendente'};
   const cor = {ok: 'green', atencao: 'orange', pendente: 'orange'};
 
+  // 2.26.1: ao voltar para um mês já aberto nesta sessão, a tela aparece na hora com o que já se tinha e é conferida
+  // em segundo plano; só redesenha se algo mudou (sem esqueleto e sem piscar).
+  const guardado = {};
+  const assinatura = x => JSON.stringify(x, (k, v) => k === 'geradoEm' || k === 'hoje' ? undefined : v);
+  const digitando = () => { const a = document.activeElement; return !!(a && ui.view.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+  function mostrar(d, e, jaDesenhado) {
+    if (!jaDesenhado) draw(d); entregas = e; if (!e) return; desenharEntregas();
+    // 2.26.1: o estado dos Anexos chega junto com as entregas; só pergunta à parte se não veio.
+    if (e.anexos) { anexos = e.anexos; desenharAnexos(); } else carregarAnexos(d.mes);
+  }
   async function render() {
-    const mine = ++ticket, mes = ui.state.mes;
-    ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Conferindo a competência…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
-    // Os cartões das entregas vêm num pedido à parte: aparecem assim que chegam, sem esperar a conferência.
-    const pedidoEntregas = ui.call('carregarEntregasDoMesCPT', mes).then(r => { entregas = r; }, e => { entregas = {erro: e.message}; });
-    try { const d = await ui.call('conferirFechamentoCPT', mes); if (mine !== ticket || ui.state.route !== 'fechamento') return; draw(d); }
-    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; return; }
-    await pedidoEntregas; if (mine === ticket && ui.state.route === 'fechamento') desenharEntregas();
+    const mine = ++ticket, mes = ui.state.mes, antes = guardado[mes];
+    if (antes) mostrar(antes.d, antes.e);
+    else ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Conferindo a competência…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
+    // Os cartões das entregas vêm num pedido à parte (em paralelo com a conferência).
+    let e = null; const pedidoEntregas = ui.call('carregarEntregasDoMesCPT', mes).then(r => { e = r; }, err => { e = {erro: err.message}; });
+    let d;
+    try { d = await ui.call('conferirFechamentoCPT', mes); if (mine !== ticket || ui.state.route !== 'fechamento') return; }
+    catch (err) { if (mine === ticket && !antes) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(err.message)}</div>`; return; }
+    if (!antes) draw(d);
+    await pedidoEntregas; if (mine !== ticket || ui.state.route !== 'fechamento') return;
+    if (antes) {
+      if (e.erro) return; // mantém o que está na tela
+      guardado[mes] = {d, e};
+      if (assinatura(antes.d) === assinatura(d) && assinatura(antes.e) === assinatura(e)) return;
+      if (gerando || digitando()) return; // não troca a tela no meio de uma geração ou digitação; a próxima visita já vem atualizada
+      mostrar(d, e); return;
+    }
+    if (!e.erro) guardado[mes] = {d, e};
+    mostrar(d, e, true);
   }
   function numero(rot, valor, nota) { return `<div class="kpi" style="--accent:#12678f;--tint:#e6f1f7"><div class="kpi-top"><span>${rot}</span></div><div class="kpi-value">${ui.num(valor)}</div><div class="kpi-note">${nota}</div></div>`; }
   function draw(d) {
@@ -53,12 +75,12 @@ window.CPTFechamento = (() => {
       <section class="panel" id="anexosPlanilha"><div class="panel-head"><div><h2>Anexos do relatório (planilha oficial)</h2><p>Os casos do mês (os mesmos das fichas do ANEXO 4) entram no Controle de manifestações: atualiza o que já está lá e acrescenta os novos no fim. Nada é apagado; Matriz de Contatos e Indicadores 2026 continuam à mão.</p></div></div>
         <div id="anexosEstado"><div class="loading-label"><span class="spinner"></span>Planilha dos Anexos…</div></div><div id="anexosPlanilhaResultado" aria-live="polite"></div>
       </section>`;
-    carregarAnexos(d.mes);
     $('pacoteFichas').onclick = ev => pacote(d.mes, ev.currentTarget, false);
     $('gerarForm').onsubmit = ev => { ev.preventDefault(); gerar(d.mes, ev.target); };
   }
   // ---------- Entregas do mês: 4 cartões ----------
   function desenharEntregas() {
+    if (entregas && !entregas.erro && guardado[entregas.mes]) guardado[entregas.mes].e = entregas; // a próxima visita já mostra o que mudou aqui
     const box = $('entregasMes'); if (!box || !entregas) return;
     if (entregas.erro) { box.innerHTML = `<div class="notice">${ui.esc(entregas.erro)}</div>`; return; }
     const e = entregas, feitas = e.cartoes.filter(c => c.situacao === 'entregue').length;

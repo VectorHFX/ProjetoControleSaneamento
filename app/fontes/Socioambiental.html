@@ -14,11 +14,19 @@ window.CPTSocioambiental = (() => {
   const cor = {sem: '', rascunho: 'status-andamento', revisao: 'status-andamento', pronto: 'status-concluida'};
   const INTRO = ['Socioambiental', 'Mesa do relatório: cada atividade do mês no item em que entra, com texto, fotos e documento.'];
 
+  // 2.26.1: ao voltar para um mês já aberto nesta sessão, a mesa aparece na hora e é conferida em segundo plano;
+  // só redesenha se algo mudou (sem esqueleto e sem piscar).
+  const guardado = {}, assinatura = x => JSON.stringify(x, (k, v) => k === 'atualizadoEm' ? undefined : v);
   async function render() {
-    const mine = ++ticket, mes = ui.state.mes;
-    ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Organizando as atividades do mês…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
-    try { const d = await ui.call('carregarMesaSocioambientalCPT', mes); if (mine !== ticket || ui.state.route !== 'socioambiental') return; dados = d; draw(); }
-    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+    const mine = ++ticket, mes = ui.state.mes, antes = guardado[mes];
+    if (antes) { dados = antes; draw(); }
+    else ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Organizando as atividades do mês…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
+    try {
+      const d = await ui.call('carregarMesaSocioambientalCPT', mes); if (mine !== ticket || ui.state.route !== 'socioambiental') return;
+      guardado[mes] = d; if (antes && assinatura(antes) === assinatura(d)) return;
+      if (antes && $('gerarAnexos') && $('gerarAnexos').disabled) return; // geração em curso: não troca a tela; a próxima visita já vem atualizada
+      dados = d; draw();
+    } catch (e) { if (mine === ticket && !antes) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
   function numero(rot, valor, nota) { return `<div class="stat-tile"><span class="stat-label">${rot}</span><span class="stat-value">${ui.num(valor)}</span><span class="stat-note">${nota}</span></div>`; }
   function linha(x) {

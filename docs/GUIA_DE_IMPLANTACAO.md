@@ -23,6 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.1 — mascote do tamanho certo e páginas do fechamento mais leves (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.1`) e publique uma **Nova versão**. Nenhum arquivo novo.
+2. **Meu espaço**: o mascote não encolhe mais sozinho. A causa: quando as missões chegavam (logo depois da página), o humor do mascote era redesenhado no tamanho antigo; agora todo redesenho usa o mesmo tamanho.
+3. **Check-up de carregamento** (todas as páginas pedem uma única consulta ao servidor ao abrir; nenhuma repetida):
+   - **Entregas do mês**: o cartão dos Anexos chega junto com as entregas (um pedido a menos); a conferência lê a aba "Entregas mensais" uma vez (antes, duas) e só abre a ficha detalhada dos atendimentos do período (antes, lia três vezes cada caso de todo o histórico).
+   - **Socioambiental**: os documentos gerados são lidos de uma vez (antes, uma leitura por relato — com muitos relatos no mês, era o que mais pesava).
+   - **Programa Parceiros**: a linha dos meses da máscara oficial é lida uma vez por abertura.
+   - **Voltar para Entregas do mês ou Socioambiental** no mesmo mês mostra a tela **na hora**, com o que já estava aberto, e confere em segundo plano; só redesenha se algo mudou (sem esqueleto e sem piscar; não troca a tela durante uma geração ou digitação).
+   - Nada muda nos dados nem nas planilhas; números e conferências continuam calculados na hora (sem guardar resultado antigo no servidor).
+
 ## Atualização 2.26.0 — banco revisto, revisão do conteúdo, loja, Meu espaço, Anexos, planilha de controle e organograma (≈ 10 min + revisão do conteúdo)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.0`) e publique uma **Nova versão**. Chegam os arquivos novos `RevisaoConteudoCPT.gs`, `OrganogramaCPT.gs`, `ControleContratoCPT.gs`, `AnexosRelatorioCPT.gs` e `Organograma.html`.

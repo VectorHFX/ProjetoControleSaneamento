@@ -149,8 +149,8 @@ class ProgramaParceirosCPT {
     cab.forEach((v, i) => { const m = ProgramaParceirosCPT.mesDoCabecalho(v); if (m) out.push({mes: m, coluna: i + 3}); });
     return out;
   }
-  colunaDoMes(s, mes) {
-    const achados = ProgramaParceirosCPT.blocos(s).filter(b => b.mes === mes);
+  colunaDoMes(s, mes, blocos) {
+    const achados = (blocos || ProgramaParceirosCPT.blocos(s)).filter(b => b.mes === mes);
     if (achados.length > 1) throw new Error('O mês aparece duas vezes na linha 2 da máscara. Corrija a máscara antes de publicar.');
     return achados.length ? achados[0].coluna : 0;
   }
@@ -168,8 +168,9 @@ class ProgramaParceirosCPT {
     return col;
   }
   valoresDaMascara(m, mes) {
-    const col = this.colunaDoMes(m.s, mes); if (!col) return {coluna: 0, valores: {}};
-    const v = m.s.getRange(1, col, 92, 1).getValues(), f = m.s.getRange(1, col, 92, 1).getFormulas(), valores = {};
+    // 2.26.1: a linha 2 (meses) é lida uma vez por carregamento, mesmo quando também se busca o mês anterior.
+    const col = this.colunaDoMes(m.s, mes, m.blocos || (m.blocos = ProgramaParceirosCPT.blocos(m.s))); if (!col) return {coluna: 0, valores: {}};
+    const faixa = m.s.getRange(1, col, 92, 1), v = faixa.getValues(), f = faixa.getFormulas(), valores = {};
     ProgramaParceirosCPT.respondiveis().forEach(([l]) => { const x = v[l - 1][0]; if (x !== '' && x !== null) valores[l] = {valor: x instanceof Date ? x.toISOString().slice(0, 10) : x, formula: !!f[l - 1][0]}; });
     return {coluna: col, valores};
   }

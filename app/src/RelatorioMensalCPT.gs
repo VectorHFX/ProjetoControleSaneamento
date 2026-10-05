@@ -30,11 +30,7 @@ class RelatorioMensalCPT {
   static mesesEntre(a, b) { return (Number(b.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + Number(b.slice(5, 7)) - Number(a.slice(5, 7)); }
   numeroSugerido(mes) {
     let base = RelatorioMensalCPT.referenciaNumero;
-    try {
-      const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName('Entregas mensais');
-      if (a && a.getLastRow() > 1 && a.getLastColumn() >= 9) a.getRange(2, 1, a.getLastRow() - 1, 9).getValues()
-        .filter(r => Number(r[8]) > 0 && String(r[1]) <= mes).forEach(r => { if (String(r[1]) >= base.mes) base = {numero: Number(r[8]), mes: String(r[1])}; });
-    } catch (_) {}
+    this.entregasMensais().filter(r => r.length >= 9 && Number(r[8]) > 0 && String(r[1]) <= mes).forEach(r => { if (String(r[1]) >= base.mes) base = {numero: Number(r[8]), mes: String(r[1])}; });
     const n = base.numero + RelatorioMensalCPT.mesesEntre(base.mes, mes);
     return n > 0 ? n : '';
   }
@@ -98,10 +94,12 @@ class RelatorioMensalCPT {
     } catch (_) {}
     // Atendimentos que tocam o período: abertos até o fim do mês e não concluídos antes do início.
     const inicio = mes + '-01', fim = mes + '-31';
+    // 2.26.1: filtra o período antes de abrir o JSON de cada caso (antes, todo o histórico era lido três vezes).
     const casos = this.dados.ler(this.dados.atendimentos(), 20).filter(r => this.dados.principal(r))
-      .map(r => ({...this.dados.atendimento(r), tipo: RelatorioMensalCPT.buscarNoJson(r[19], /^tipo$|tipo de manifesta/), canal: RelatorioMensalCPT.buscarNoJson(r[19], /^canal|canal de (entrada|atendimento)|meio de contato|forma de contato/),
-        procedencia: RelatorioMensalCPT.buscarNoJson(r[19], /^procedencia$/)}))
-      .filter(c => (!c.abertura || c.abertura <= fim) && (!c.concluido || !c.conclusao || c.conclusao >= inicio));
+      .map(r => [r, this.dados.atendimento(r)])
+      .filter(([, c]) => (!c.abertura || c.abertura <= fim) && (!c.concluido || !c.conclusao || c.conclusao >= inicio))
+      .map(([r, c]) => ({...c, tipo: RelatorioMensalCPT.buscarNoJson(r[19], /^tipo$|tipo de manifesta/), canal: RelatorioMensalCPT.buscarNoJson(r[19], /^canal|canal de (entrada|atendimento)|meio de contato|forma de contato/),
+        procedencia: RelatorioMensalCPT.buscarNoJson(r[19], /^procedencia$/)}));
     let agenda = [];
     try { agenda = new CronogramaCPT(this.ctx).listar({mes: RelatorioMensalCPT.proximoMes(mes)}).itens.filter(e => e.status !== 'cancelada'); } catch (_) {}
     return {mes, obras, registros, atividades, entregas, casos, agenda};
@@ -150,10 +148,20 @@ class RelatorioMensalCPT {
       historico: this.historicoGeracoes(mes), numeroSugerido: this.numeroSugerido(mes)};
   }
 
+  /** Linhas de "Entregas mensais" (até 9 colunas), lidas uma vez por pedido: histórico e número sugerido usam a mesma leitura. */
+  entregasMensais() {
+    if (this._entregasMensais) return this._entregasMensais;
+    let out = [];
+    try {
+      const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName('Entregas mensais');
+      let largura = 8; try { if (a && a.getLastColumn() >= 9) largura = 9; } catch (_) {} // a 9ª coluna (número) é opcional
+      if (a && a.getLastRow() > 1) out = a.getRange(2, 1, a.getLastRow() - 1, largura).getValues();
+    } catch (_) {}
+    return (this._entregasMensais = out);
+  }
   historicoGeracoes(mes) {
     try {
-      const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName('Entregas mensais'); if (!a || a.getLastRow() < 2) return [];
-      return a.getRange(2, 1, a.getLastRow() - 1, 8).getValues().filter(r => String(r[1]) === mes).map(r => ({em: r[0] instanceof Date ? r[0].toISOString() : String(r[0]), versao: r[2], autor: String(r[4]), documento: String(r[5]), planilha: String(r[6]), avisos: String(r[7])})).reverse();
+      return this.entregasMensais().filter(r => String(r[1]) === mes).map(r => ({em: r[0] instanceof Date ? r[0].toISOString() : String(r[0]), versao: r[2], autor: String(r[4]), documento: String(r[5]), planilha: String(r[6]), avisos: String(r[7])})).reverse();
     } catch (_) { return []; }
   }
 

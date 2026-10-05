@@ -60,6 +60,7 @@ class SocioambientalCPT {
     } catch (_) {}
     return out;
   }
+  static arquivosDe(props, id) { try { return JSON.parse(props['CPT_DOC:' + id] || '{}'); } catch (_) { return {}; } }
   static arquivos(id) { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('CPT_DOC:' + id) || '{}'); } catch (_) { return {}; } }
   /** Frente pela obra de referência; "não se aplica" e vazio não contam como frente. */
   static frente(obra) { const s = String(obra || '').replace(/\s*\[OBR-\d+\]\s*$/, '').trim(); return !s || /nao se aplica|^atendimento$/.test(SocioambientalCPT.norm(s)) ? '' : s; }
@@ -69,6 +70,8 @@ class SocioambientalCPT {
     const linhas = this.dados.ler(this.dados.registros(), 21).filter(r => r[0] && this.dados.mesCelula(r[3]) === mes);
     const entregas = SocioambientalCPT.entregas(this.ctx), itens = [], frentes = new Map();
     let acoes = 0, pessoas = 0, semPublico = 0, pesquisas = 0;
+    // 2.26.1: os documentos gerados são lidos numa chamada só (antes era uma leitura de propriedade por relato).
+    let props = {}; try { props = PropertiesService.getScriptProperties().getProperties() || {}; } catch (_) {}
     linhas.forEach(r => {
       const reg = this.dados.registro(r), campos = RelatorioMensalCPT.campos(r[20]) || [];
       if (/satisfac/.test(SocioambientalCPT.norm(reg.procedimento))) pesquisas++;
@@ -82,7 +85,7 @@ class SocioambientalCPT {
         const f = frentes.get(frente || 'Atividades sem obra específica') || {frente: frente || 'Atividades sem obra específica', acoes: 0, pessoas: 0, bairros: new Set(), semObra: !frente};
         f.acoes++; f.pessoas += reg.publico || 0; if (reg.bairro) f.bairros.add(reg.bairro); frentes.set(f.frente, f);
       }
-      const arq = SocioambientalCPT.arquivos(reg.id);
+      const arq = SocioambientalCPT.arquivosDe(props, reg.id);
       itens.push({id: reg.id, data: reg.data, atividade: reg.atividade || reg.procedimento, procedimento: reg.procedimento, bairro: reg.bairro, frente, responsavel: reg.responsavel,
         publico: reg.publico, sugerido, destino, situacao: e ? e.situacao : 'sem', versao: e ? e.versao : 0, titulo: e ? e.titulo : '', alteradoPor: e ? e.alteradoPor : '',
         documento: (arq.relato || arq.ficha || {}).pdf || ''});

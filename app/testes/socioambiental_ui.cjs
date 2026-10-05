@@ -15,6 +15,12 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.nav-item[data-route=socioambiental]').click();await p.locator('.mesa-group').first().waitFor();
   const mesa=await p.locator('#view').textContent();
   assert(mesa.includes('ITEM 4.3')&&mesa.includes('Copiar parágrafo padrão'));assert(mesa.includes('Viela Sanitária x Carijós'));
+  // 2.26.1: voltar para a mesa do mesmo mês mostra na hora (sem esqueleto) e confere em segundo plano, um pedido só.
+  await p.locator('.nav-item[data-route=cronograma]').click();await p.waitForTimeout(300);await p.evaluate(()=>window.CPT_PREVIA.chamadas.length=0);
+  await p.evaluate(()=>document.querySelector('.nav-item[data-route=socioambiental]').click());
+  assert(await p.locator('.mesa-group').count()>0,'mesa na hora');assert.equal(await p.locator('#view .skeleton').count(),0);
+  await p.waitForFunction(()=>window.CPT_PREVIA.chamadas.some(c=>c.nome==='carregarMesaSocioambientalCPT'));
+  assert.equal(await p.evaluate(()=>window.CPT_PREVIA.chamadas.filter(c=>c.nome==='carregarMesaSocioambientalCPT').length),1);
   assert.equal(await p.locator('.mesa-index').count(),0,'2.26: sem a barra de atalhos 2, 4.1… 3 (pedido do Victor)');
   // Relato: destino sugerido, legenda padrão com data, até 6 fotos, salvar e gerar.
   await p.locator('#item-4-4 [data-prepare-relato]').click();await p.locator('#deliveryForm').waitFor();
