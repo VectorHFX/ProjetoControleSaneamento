@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.15 e Campo 4.0 (4.6)
+# Guia de instalação: Aplicação CPT 2.16 e Campo 4.0 (4.6)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,27 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.16 — qualidade dos relatos, comentário da gestão e missões por área (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.16.0`) e publique uma **Nova versão**.
+
+**Qualidade dos relatos (sem nota e sem ranking):** cada relato de atividade é conferido em 6 pontos: **O quê, Onde, Público, Resultado, Encaminhamento e Tamanho** (ao menos 5 linhas). Aparece como selinhos ✓/○ em Visão do mês → **Relatos em resumo**; passando o mouse, aparece a dica. A conferência usa palavras-chave simples, é uma ajuda para escrever e não avalia pessoas.
+
+**Guia "Como escrever um bom relato":** na Mesa do relatório, em Relatos em resumo e nas dicas. Traz os 6 pontos com exemplos e um relato completo de exemplo.
+
+**Comentário privado da gestão:** em Relatos em resumo, **Comentar** abre um texto já com as dicas do que faltou. Só quem escreveu e a gestão veem. A pessoa recebe como missão no Meu espaço, lê, pode responder e marca como visto. A gestão vê "Comentário enviado/visto" e a resposta no cartão. Quem escreveu é achado pelo nome do formulário. Sem nome igual na Equipe, o comentário fica guardado e o aviso pede para combinar pessoalmente.
+
+**Missões novas** (no checklist do Meu espaço):
+- **Quem escreveu um relato** nos últimos 7 dias com algo faltando recebe as dicas daquele relato ("Entendi" tira a missão).
+- **Atendimento:** casos abertos há 30 dias ou mais.
+- **Socioambiental:** relatos do mês ainda não preparados, a partir de 5 dias antes do prazo do relatório (o prazo do cartão Relatório em Entregas do mês).
+
+**Diagnóstico:** quem prepara manda para **Em revisão**; **aprovar (Pronto)** agora é só com Gestão ou Administrativo.
+
+**Durante os testes, tudo isso fica só com você:** só você recebe missões e só você comenta relatos. Os selinhos de qualidade e o guia já aparecem para quem tem acesso. Depois de `liberarConfiguracaoCPT`, as missões chegam a cada pessoa e Gestão e Administrativo podem comentar.
+
+---
 
 ## Atualização 2.15 — Entregas do mês (≈ 5 min)
 

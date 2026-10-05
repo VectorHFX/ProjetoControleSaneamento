@@ -218,7 +218,36 @@ window.CPTEspaco = (() => {
   /** Missões: tarefas automáticas do trabalho. Levam direto ao lugar certo e somem quando o trabalho é feito. */
   function desenharMissoes() {
     const box = $('espMissoes'); if (!box) return; const m = (d && d.missoes) || [];
-    box.innerHTML = m.length ? `<h3 class="peek-title">🎯 Missões de hoje</h3><ul class="missoes">${m.map(x => `<li class="missao" data-missao="${ui.esc(x.id)}"><span class="missao-alvo" aria-hidden="true"></span><span class="missao-texto"><strong>${ui.esc(x.titulo)}</strong><small>${ui.esc(x.texto)}</small></span><button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? `data-obra-ir="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button></li>`).join('')}</ul>` : '';
+    const vistas = dicasVistas(), lista = m.filter(x => !(x.tipo === 'dica' && vistas.includes(x.id)));
+    const botao = x => x.tipo === 'dica' ? `<button class="button secondary" data-missao-dica="${ui.esc(x.id)}">Ver dicas</button>`
+      : x.tipo === 'devolutiva' ? `<button class="button secondary" data-missao-devolutiva="${ui.esc(x.id)}">Ler comentário</button>`
+      : `<button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? `data-obra-ir="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button>`;
+    box.innerHTML = lista.length ? `<h3 class="peek-title">🎯 Missões de hoje</h3><ul class="missoes">${lista.map(x => `<li class="missao t-${ui.esc(x.tipo || 'rota')}" data-missao="${ui.esc(x.id)}"><span class="missao-alvo" aria-hidden="true"></span><span class="missao-texto"><strong>${ui.esc(x.titulo)}</strong><small>${ui.esc(x.texto)}</small></span>${botao(x)}</li>`).join('')}</ul>` : '';
+  }
+  // Dicas de relato já vistas ficam só neste navegador (conveniência; nada é gravado na base).
+  function dicasVistas() { try { return JSON.parse(localStorage.getItem('cpt.dicasVistas') || '[]'); } catch (_) { return []; } }
+  function marcarDicaVista(id) { try { localStorage.setItem('cpt.dicasVistas', JSON.stringify(dicasVistas().concat([id]).slice(-60))); } catch (_) {} }
+  function abrirDica(id) {
+    const x = (d.missoes || []).find(y => y.id === id); if (!x) return;
+    const faltam = x.qualidade.itens.filter(i => !i.ok).map(i => i.nome);
+    $('detailType').textContent = 'DICA DO RELATO'; $('detailTitle').textContent = x.titulo;
+    $('detailContent').innerHTML = `<ul class="qualidade-lista">${x.qualidade.itens.map(i => `<li class="${i.ok ? 'ok' : 'falta'}"><strong>${i.ok ? '✓' : '○'} ${ui.esc(i.nome)}</strong>${i.ok ? '' : `<span>${ui.esc(i.dica)}</span>`}</li>`).join('')}</ul>
+      <p class="small muted">O relato enviado não muda. Use as dicas no próximo; quem prepara o texto do relatório pode completar este.</p>
+      <div class="dialog-actions"><button class="button ghost" data-guia-relato="${ui.esc(faltam.join('|'))}">Ver o guia completo</button><button class="button" data-dica-entendi="${ui.esc(id)}">Entendi</button></div>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+  }
+  function abrirDevolutiva(id) {
+    const x = (d.missoes || []).find(y => y.id === id); if (!x) return; const dv = x.devolutiva;
+    $('detailType').textContent = 'COMENTÁRIO DA GESTÃO'; $('detailTitle').textContent = x.titulo;
+    $('detailContent').innerHTML = `<p class="small muted">${ui.esc(dv.atividade)} · só você e a gestão veem este comentário.</p><blockquote class="devolutiva-texto">${ui.esc(dv.comentario)}</blockquote>
+      <form id="devolutivaForm"><label class="field">Quer responder? (opcional)<textarea name="resposta" rows="3" maxlength="1000" placeholder="Ex.: Entendi, vou incluir o encaminhamento nos próximos."></textarea></label>
+      <div class="dialog-actions"><button class="button ghost" type="button" data-guia-relato>Guia do relato</button><button class="button" type="submit">Marcar como visto</button></div></form>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+    $('devolutivaForm').onsubmit = async ev => {
+      ev.preventDefault(); const b = ev.target.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Salvando…';
+      try { const r = await ui.call('responderDevolutivaCPT', {registroId: dv.registroId, resposta: ev.target.elements.resposta.value, versao: dv.versao, operacaoId: op()}); ui.toast(r.resultado); $('detailDialog').close(); window.CPTMissoes.feita(id); desenharMissoes(); }
+      catch (e) { ui.toast(e.message); b.disabled = false; b.textContent = 'Marcar como visto'; }
+    };
   }
   window.CPTMissoes = {feita(id) { if (d && d.missoes) d.missoes = d.missoes.filter(x => x.id !== id); }};
   /** Pedido à parte, depois que a tela aparece: as missões nunca atrasam o Meu espaço. */
@@ -291,6 +320,9 @@ window.CPTEspaco = (() => {
       const esp = t.closest('[data-esp-especie]'); if (esp) { boasVindas(esp.dataset.espEspecie); return; }
       const dd = t.closest('[data-esp-dia]'); if (dd) { const n = Number(dd.dataset.espDia); irPara(n ? somaDias(dia, n) : d.hoje); return; }
       const ir = t.closest('[data-esp-ir]'); if (ir) { fechar(); irPara(ir.dataset.espIr); return; }
+      const md = t.closest('[data-missao-dica]'); if (md) { abrirDica(md.dataset.missaoDica); return; }
+      const mv = t.closest('[data-missao-devolutiva]'); if (mv) { abrirDevolutiva(mv.dataset.missaoDevolutiva); return; }
+      const en = t.closest('[data-dica-entendi]'); if (en) { marcarDicaVista(en.dataset.dicaEntendi); $('detailDialog').close(); desenharMissoes(); ui.toast('Boa! Dica guardada.'); return; }
       const ck = t.closest('[data-esp-check]'); if (ck) { const x = d.lista.itens.find(y => y.id === ck.dataset.espCheck); x.feito = ck.checked; ck.closest('li').classList.toggle('is-done', ck.checked); salvarLista(); return; }
       const ap = t.closest('[data-esp-apagar]'); if (ap) { d.lista.itens = d.lista.itens.filter(y => y.id !== ap.dataset.espApagar); desenharLista(); salvarLista(); return; }
       if (t.closest('[data-esp-nomear]')) { const n = prompt('Novo nome para ' + M().nome + ':', M().nome); if (n && n.trim() && n.trim() !== M().nome && await mascote({acao: 'nomear', nome: n.trim()})) desenhar(); return; }

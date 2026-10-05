@@ -58,7 +58,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,MimeType:{GOOGLE_SHEET
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)}},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','ProgramaParceirosCPT','PaineisGestaoCPT','AuditoriaAtendimentosCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','ProgramaParceirosCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 
 // Máscara oficial: linha 2 com Junho (C:L), Julho (M:O), Agosto (P:R); perguntas na coluna B; fórmula em P9.

@@ -37,7 +37,7 @@ window.CPTSocioambiental = (() => {
     const grupos = ordem.map(i => d.grupos.find(g => g.item === i)).filter(Boolean);
     const pct = t.proprios ? Math.round(t.prontos / t.proprios * 100) : 0;
     ui.view.innerHTML = ui.intro(...INTRO) + `
-      <section class="panel mesa-hero"><p class="home-phrase">${ui.esc(t.frase)}</p>
+      <section class="panel mesa-hero"><p class="home-phrase">${ui.esc(t.frase)}</p><p class="small"><button type="button" class="link-button" data-guia-relato>📝 Como escrever um bom relato</button></p>
         <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${t.proprios}" aria-valuenow="${t.prontos}" aria-label="${t.prontos} de ${t.proprios} prontos"><span style="width:${pct}%"></span></div>
         <p class="small muted">${ui.num(t.prontos)} de ${ui.num(t.proprios)} relatos e diagnósticos prontos para o relatório.${t.semPublico ? ' ' + ui.num(t.semPublico) + ' ações sem público informado.' : ''}</p>
         <div class="dialog-actions"><button class="button secondary" id="gerarAnexos">${ui.icon('file')}Gerar anexos do mês</button>${d.anexos ? `<span class="small">Última geração: ${ui.esc(new Date(d.anexos.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'}))} · ${ui.num(d.anexos.relatos)} relatos · <a href="${ui.esc(d.anexos.doc)}" target="_blank" rel="noopener noreferrer">Documento</a> · <a href="${ui.esc(d.anexos.pdf)}" target="_blank" rel="noopener noreferrer">PDF</a></span>` : ''}</div>
@@ -69,5 +69,31 @@ window.CPTSocioambiental = (() => {
     });
   }
   return {init, render};
+})();
+
+/* Guia "Como escrever um bom relato": aberto pelas missões, pela Mesa e pelos relatos da gestão. */
+window.CPTGuiaRelato = (() => {
+  'use strict';
+  const PONTOS = [
+    ['O quê', 'A atividade e o tema.', 'Roda de conversa sobre descarte correto de óleo de cozinha.'],
+    ['Onde', 'Rua, escola, praça ou equipamento, além do bairro.', 'Na EMEF Jardim Ipanema, Rua das Flores, 120 (Vila Linda).'],
+    ['Público', 'Quem participou e quantas pessoas, em número.', '22 alunos do 5º ano e 2 professoras.'],
+    ['Resultado', 'O que aconteceu: dúvidas, o que entenderam, o que foi entregue.', 'As crianças perguntaram para onde vai o óleo e levaram folhetos para casa.'],
+    ['Encaminhamento', 'O que fica para depois. Se nada, escreva "sem encaminhamentos".', 'Ficou combinado o ponto de coleta na escola a partir de 10/11.'],
+    ['Tamanho', 'Pelo menos 5 linhas: o relato vira texto do relatório para a Sabesp.', '']];
+  function html(faltam) {
+    const f = new Set(faltam || []);
+    return `<div class="guia-relato"><p>Um bom relato responde a seis perguntas. Escreva como se contasse para alguém que não estava lá.</p>
+      <ol class="guia-pontos">${PONTOS.map(([t, d, ex]) => `<li class="${f.has(t) ? 'falta' : ''}"><strong>${t}${f.has(t) ? ' <span class="guia-falta">faltou aqui</span>' : ''}</strong><span>${d}</span>${ex ? `<em>Ex.: ${ex}</em>` : ''}</li>`).join('')}</ol>
+      <details><summary>Exemplo completo</summary><p class="guia-exemplo">Realizamos uma roda de conversa sobre descarte correto de óleo de cozinha na EMEF Jardim Ipanema (Rua das Flores, 120, Vila Linda), com 22 alunos do 5º ano e 2 professoras. As crianças perguntaram para onde vai o óleo depois da coleta e por que ele não pode ir para a pia; explicamos o entupimento da rede e a contaminação do córrego. Cada aluno levou um folheto para casa. Ficou combinado com a direção um ponto de coleta na escola a partir de 10/11, que a equipe vai acompanhar.</p></details>
+      <p class="small muted">A conferência automática é uma ajuda para escrever. Ninguém recebe nota e não existe ranking.</p></div>`;
+  }
+  function abrir(faltam) {
+    document.getElementById('detailType').textContent = 'GUIA'; document.getElementById('detailTitle').textContent = 'Como escrever um bom relato';
+    document.getElementById('detailContent').innerHTML = html(faltam);
+    const d = document.getElementById('detailDialog'); if (!d.open) d.showModal();
+  }
+  document.addEventListener('click', ev => { const g = ev.target.closest('[data-guia-relato]'); if (g) abrir((g.dataset.guiaRelato || '').split('|').filter(Boolean)); });
+  return {abrir, html};
 })();
 </script>

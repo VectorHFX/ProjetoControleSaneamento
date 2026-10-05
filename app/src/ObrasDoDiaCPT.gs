@@ -164,5 +164,4 @@ function vincularObraCPT(p) { return ColecaoCPT.executar('obras.vincular', ctx =
 function obrasDeHojeCPT(p) { return AplicacaoCPT.executar((d, ctx) => new ObrasDoDiaCPT(ctx).obrasDeHoje(p), 'obras.hoje'); }
 function confirmarObrasDoDiaCPT(p) { return ColecaoCPT.executar('obras.confirmarDia', ctx => new ObrasDoDiaCPT(ctx).confirmar(p), true); }
 function compararObrasDoMesCPT(mes) { return AplicacaoCPT.executar((d, ctx) => new ObrasDoDiaCPT(ctx).comparar(mes), 'obras.comparar'); }
-/** Pedido à parte, depois que o Meu espaço aparece: não atrasa a tela. Só abre a base para quem tem missão. */
-function missoesCPT() { return ColecaoCPT.executar('missoes', ctx => ({missoes: new ObrasDoDiaCPT(ctx).missoes()})); }
+// missoesCPT (todas as missões) fica em MissoesCPT.

@@ -1,5 +1,6 @@
 /**
- * EntregasCPT 2.6.0. Preparo de relatos de atividade e de diagnósticos para o relatório, com versões.
+ * EntregasCPT 2.16.0. (2.16: diagnóstico só vira Pronto com aprovação da Gestão ou do Administrativo.)
+ * Antes: 2.6.0. Preparo de relatos de atividade e de diagnósticos para o relatório, com versões.
  * A resposta original do formulário nunca é alterada: cada revisão é uma linha nova na aba Entregas.
  * - Relato: título, texto revisado, destino no relatório (item 3, 4.1–4.5, 7 ou 9), quadro do anexo (atividade, local,
  *   endereço, data e horário, mediação, público, objetivo) e até 8 imagens com legenda (fotos e listas de presença).
@@ -56,6 +57,8 @@ class EntregasCPT {
     if(p.fonteHash!==hash)throw new Error('O registro original mudou. Copie seu texto e reabra o relato para conferir a fonte antes de salvar.');
     const titulo=CronogramaCPT.texto(p.titulo,180,true),texto=CronogramaCPT.texto(p.texto,tipo==='diagnostico'?20000:12000,true);
     if(!EntregasCPT.situacoes[tipo].includes(p.situacao))throw new Error(tipo==='relato'?'Escolha Rascunho ou Pronto para entrega.':'Escolha Rascunho, Em revisão ou Pronto.');
+    // Diagnóstico: quem prepara manda para revisão; aprovar (Pronto) é com a Gestão ou o Administrativo.
+    if(tipo==='diagnostico'&&p.situacao==='pronto'&&(!atual||atual.situacao!=='pronto')&&!PerfisCPT.gerencia(this.ctx.perfil))throw new Error('Aprovar o diagnóstico é com a Gestão ou o Administrativo. Marque "Em revisão" para pedir a aprovação.');
     const max=EntregasCPT.limites[tipo];
     if(!Array.isArray(p.fotos)||p.fotos.length>max||new Set(p.fotos.map(f=>f.id)).size!==p.fotos.length)throw new Error('Selecione no máximo '+(max===8?'oito':'doze')+' imagens diferentes.');
     const anexos=new Set(fonte.anexos.map(x=>x.id));const fotos=p.fotos.map(f=>{if(!anexos.has(f.id))throw new Error('A foto não pertence a este registro.');return {id:f.id,legenda:CronogramaCPT.texto(f.legenda||'',300),lista:tipo==='relato'&&f.lista===true};});

@@ -129,10 +129,34 @@ window.CPTGestao = (() => {
     const box = $('relatosResumo'); if (!box) return;
     if (!relatos || relatos.mes !== ui.state.mes) {
       box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Lendo os relatos do mês…</div>';
-      try { const d = await ui.call('carregarRelatosResumoCPT', ui.state.mes); if (ui.state.route !== 'painel' || aba !== 'relatos') return; relatos = d; }
+      try {
+        const [d, dv] = await Promise.all([ui.call('carregarRelatosResumoCPT', ui.state.mes), ui.call('minhasDevolutivasCPT').catch(() => ({devolutivas: [], podeDevolver: false}))]);
+        if (ui.state.route !== 'painel' || aba !== 'relatos') return; relatos = d; devolutivas = dv;
+      }
       catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
     }
     desenharRelatos();
+  }
+  let devolutivas = {devolutivas: [], podeDevolver: false};
+  /** Qualidade: o que o relato já tem e o que falta. Sem nota e sem ranking. */
+  function qualidade(q) {
+    if (!q) return '';
+    return `<ul class="qualidade-chips" aria-label="Conferência do relato">${q.itens.map(i => `<li class="${i.ok ? 'ok' : 'falta'}" title="${ui.esc(i.ok ? i.nome + ': ok' : i.dica)}">${i.ok ? '✓' : '○'} ${ui.esc(i.nome)}</li>`).join('')}</ul>`;
+  }
+  function devolutivaDe(id) { return devolutivas.devolutivas.find(d => d.registroId === id); }
+  function abrirDevolver(id) {
+    const r = relatos.itens.find(x => x.id === id); if (!r) return;
+    const faltam = r.qualidade ? r.qualidade.itens.filter(i => !i.ok) : [];
+    $('detailType').textContent = 'COMENTÁRIO PRIVADO'; $('detailTitle').textContent = r.atividade;
+    $('detailContent').innerHTML = `<p class="small muted">Só ${ui.esc(r.responsavel || 'quem escreveu')} e a gestão veem. Aparece como missão no Meu espaço da pessoa.</p>
+      <form id="devolverForm"><label class="field">Comentário<textarea name="comentario" rows="5" maxlength="1500" required>${ui.esc(faltam.length ? 'Seu relato está bom, dá para completar:\n' + faltam.map(i => '• ' + i.nome + ': ' + i.dica).join('\n') : '')}</textarea></label>
+      <div class="dialog-actions"><button class="button" type="submit">Enviar comentário</button></div></form>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+    $('devolverForm').onsubmit = async ev => {
+      ev.preventDefault(); const b = ev.target.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Enviando…';
+      try { const x = await ui.call('devolverRelatoCPT', {registroId: id, comentario: ev.target.elements.comentario.value, operacaoId: 'OP-' + crypto.randomUUID()}); ui.toast(x.resultado); devolutivas.devolutivas = devolutivas.devolutivas.filter(d => d.registroId !== id).concat([x.devolutiva]); $('detailDialog').close(); desenharRelatos(); }
+      catch (e) { ui.toast(e.message); b.disabled = false; b.textContent = 'Enviar comentário'; }
+    };
   }
   function desenharRelatos() {
     const box = $('relatosResumo'); if (!box || !relatos) return;
@@ -142,11 +166,12 @@ window.CPTGestao = (() => {
     const rot = {pronto: 'Pronto', rascunho: 'Rascunho', revisao: 'Em revisão'};
     box.innerHTML = `<section class="panel filter-panel"><form id="relatoFiltro" class="filters"><label class="field">Procurar nos relatos<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroRelato.busca)}" placeholder="Atividade, bairro, pessoa ou palavra do relato" maxlength="100"></span></label>
       <label class="field">Item do relatório<select name="item"><option value="">Todos</option>${itens.map(i => `<option ${filtroRelato.item === i ? 'selected' : ''}>${ui.esc(i)}</option>`).join('')}</select></label></form></section>
-      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'relato' : 'relatos'} em ${dias.size} ${dias.size === 1 ? 'dia' : 'dias'}</span><span>Leitura rápida; o texto completo fica no registro</span></div>
+      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'relato' : 'relatos'} em ${dias.size} ${dias.size === 1 ? 'dia' : 'dias'}</span><span><button type="button" class="link-button" data-guia-relato>📝 Guia do bom relato</button></span></div>
       ${[...dias].map(([dia, rs]) => `<section class="relato-day"><h3 class="peek-title">${ui.date(dia)}</h3>${rs.map(r => `<article class="relato-card"><div class="card-top"><span class="badge">Item ${ui.esc(r.item)}</span>${r.situacao ? `<span class="badge ${r.situacao === 'pronto' ? 'status-concluida' : 'status-andamento'}">${rot[r.situacao] || ui.esc(r.situacao)}</span>` : ''}${r.fotos ? `<span class="small muted">${r.fotos} ${r.fotos === 1 ? 'foto' : 'fotos'}</span>` : '<span class="small late-text">sem foto</span>'}</div>
         <h4>${ui.esc(r.atividade)}</h4><p class="small muted">${ui.esc([r.frente || r.bairro, r.publico != null ? r.publico + ' pessoas' : 'público não informado', r.responsavel].filter(Boolean).join(' · '))}</p>
         ${r.resumo ? `<p class="relato-text">${ui.esc(r.resumo)}</p>` : '<p class="small late-text">Relato sem texto no registro.</p>'}${r.objetivo ? `<p class="small"><strong>Objetivo:</strong> ${ui.esc(r.objetivo)}</p>` : ''}
-        <div class="card-bottom"><span></span><span><button class="button ghost" data-record="${ui.esc(r.id)}">Registro completo</button> <button class="button secondary" data-prepare-relato="${ui.esc(r.id)}">Preparar</button></span></div></article>`).join('')}</section>`).join('') || '<p class="muted">Nenhum relato com esse filtro.</p>'}`;
+        ${qualidade(r.qualidade)}${(dv => dv ? `<p class="devolutiva-status small"><strong>${dv.situacao === 'vista' ? '✓ Comentário visto' : '✉ Comentário enviado'}</strong>${dv.resposta ? ' · resposta: ' + ui.esc(dv.resposta) : ''}</p>` : '')(devolutivaDe(r.id))}
+        <div class="card-bottom"><span>${r.qualidade && devolutivas.podeDevolver ? `<button class="button ghost" data-devolver="${ui.esc(r.id)}">${devolutivaDe(r.id) ? 'Novo comentário' : 'Comentar'}</button>` : ''}</span><span><button class="button ghost" data-record="${ui.esc(r.id)}">Registro completo</button> <button class="button secondary" data-prepare-relato="${ui.esc(r.id)}">Preparar</button></span></div></article>`).join('')}</section>`).join('') || '<p class="muted">Nenhum relato com esse filtro.</p>'}`;
   }
 
   // ---------------- Programa Parceiros ----------------
@@ -279,6 +304,7 @@ window.CPTGestao = (() => {
     document.addEventListener('click', e => {
       const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
+      const dv = e.target.closest('[data-devolver]'); if (dv) { abrirDevolver(dv.dataset.devolver); return; }
       const cd = e.target.closest('[data-cmp-dia]'); if (cd) { diaCmp = cd.dataset.cmpDia; desenharComparacao(); return; }
       const na = e.target.closest('[data-pp-na]'); if (na) { preencher(na.dataset.ppNa, 'Não aplicada'); return; }
       const usar = e.target.closest('[data-pp-usar]'); if (usar && pp && pp.sugestoes[usar.dataset.ppUsar]) { preencher(usar.dataset.ppUsar, pp.sugestoes[usar.dataset.ppUsar].valor); return; }

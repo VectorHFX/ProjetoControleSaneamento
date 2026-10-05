@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','EntregasDoMesCPT','MissoesCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -107,6 +107,32 @@ const cmp=run("compararObrasDoMesCPT('2026-10')"),d6=cmp.dias.find(x=>x.dia==='2
 assert.equal(cmp.dias.length,7);assert.equal(d5.informado,false);assert.equal(d6.informado,true);assert.equal(d6.ativas,1);assert.equal(d6.comAcao,2);
 assert.deepEqual(d6.ativasSemAcao,[]);assert.deepEqual(d6.acaoForaDasAtivas,['Coletor B']);assert.equal(cmp.mes.diasInformados,1);assert.equal(cmp.mes.diasNaoInformados,6);assert.equal(cmp.mes.acaoForaDasAtivas,1);
 registros.rows.pop();/* o fechamento abaixo conta os relatos de outubro sem este */
+// Qualidade dos relatos: conferência explicável, sem nota nem ranking.
+const Q=x=>run('RelatosCPT.conferir('+JSON.stringify(x)+')');
+let q=Q({atividade:'Oficina',complemento:'Descarte de óleo',texto:'Na EMEF Jardim, conversamos com 20 alunos sobre descarte de óleo. Eles tiraram dúvidas e receberam folhetos. Ficou combinado o retorno em novembro para recolher o óleo. '.repeat(3),bairro:'Vila Linda',endereco:'',publico:20,publicoAlvo:'Alunos'});
+assert.equal(q.faltam,0);q=Q({atividade:'Plantão',texto:'Fizemos plantão.',publico:null});assert.deepEqual(q.itens.filter(i=>!i.ok).map(i=>i.chave),['oque','onde','publico','resultado','encaminhamento','tamanho']);
+// Missões: dicas para quem escreveu (só os próprios relatos), comentário privado da gestão, casos antigos e preparo perto do prazo.
+props.set('CPT_PESSOA:social@example.com',JSON.stringify({email:'social@example.com',nome:'Social',papeis:['socioambiental'],ativo:true,versao:1}));
+const RELS='REG-'+'c'.repeat(24);registros.rows.push([RELS,'Relato de atividade',new Date('2026-10-06T12:00:00Z'),'2026-10','','4.0','','Vila Linda','BAI-001','','','Social','Social','Plantão social',3,'','','plantao social','','',JSON.stringify({campos:[{titulo:'Relato da atividade',valor:'Fizemos plantão na praça.'}]})]);
+props.set('CPT_ENTREGAS_VERSAO',String(Number(props.get('CPT_ENTREGAS_VERSAO')||0)+1));/* a linha removida acima repetiria a contagem de linhas do cache */
+atd.rows.push(['P9','P9','','Em andamento',new Date('2026-08-01T12:00:00Z'),'','Beltrano','Ligação','Rua Z','','Atd','Atd','Ligar','','','','CAC']);
+ctx.relogio('2026-10-07T13:00:00Z');email='social@example.com';
+props.set('CPT_TRAVA_CONFIG','travada');assert.deepEqual(run('missoesCPT()').missoes,[],'período de testes: ninguém além do proprietário recebe missão');props.set('CPT_TRAVA_CONFIG','liberada');
+let ms=run('missoesCPT()').missoes;const dica=ms.find(m=>m.tipo==='dica');assert(dica,'dica para quem escreveu');assert.equal(dica.registroId,RELS);assert.match(dica.texto,/encaminhamento/);assert(!ms.some(m=>m.id==='casos-antigos'),'Socioambiental não recebe casos');
+email='atd@example.com';ms=run('missoesCPT()').missoes;assert(ms.some(m=>m.id==='casos-antigos'));assert(!ms.some(m=>m.tipo==='dica'),'ninguém recebe dica do relato de outra pessoa');
+// Devolutiva: privada (autor e gerência), travada no período de testes, autor responde e some da lista de missões.
+email='social@example.com';ctx.v={registroId:RELS,comentario:'Faltou dizer o que ficou combinado.',operacaoId:'OP-devolutiva-0001'};assert.throws(()=>run('devolverRelatoCPT(v)'),/Gestão ou pelo Administrativo/);
+email='adm@example.com';props.set('CPT_TRAVA_CONFIG','travada');assert.throws(()=>run('devolverRelatoCPT(v)'),/período de testes/);props.set('CPT_TRAVA_CONFIG','liberada');
+r=run('devolverRelatoCPT(v)');assert.match(r.resultado,/só para Social/);
+ctx.v2={registroId:registros.rows[1][0],comentario:'Ok',operacaoId:'OP-devolutiva-0002'};assert.match(run('devolverRelatoCPT(v2)').resultado,/combine pessoalmente/);
+email='atd@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.length,0,'outras pessoas não veem');
+email='social@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.length,1,'autor vê só a sua');ms=run('missoesCPT()').missoes;const dev=ms.find(m=>m.tipo==='devolutiva');assert.match(dev.devolutiva.comentario,/combinado/);
+ctx.v={registroId:RELS,resposta:'Vou completar no próximo.',versao:dev.devolutiva.versao,operacaoId:'OP-devolutiva-0003'};assert.match(run('responderDevolutivaCPT(v)').resultado,/visto/);
+assert(!run('missoesCPT()').missoes.some(m=>m.tipo==='devolutiva'));email='adm@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.find(d=>d.registroId===RELS).resposta,'Vou completar no próximo.');
+// Preparo: a 5 dias do prazo (padrão dia 5 do mês seguinte), Socioambiental recebe a missão dos relatos não preparados.
+email='social@example.com';assert(!run('missoesCPT()').missoes.some(m=>m.id==='relatos-preparo'));ctx.relogio('2026-10-31T13:00:00Z');assert(run('missoesCPT()').missoes.some(m=>m.id==='relatos-preparo'));
+registros.rows.pop();atd.rows.pop();email='adm@example.com';
+console.log('PASS: qualidade dos relatos (6 critérios com dica), dicas só para quem escreveu, devolutiva privada e travada nos testes, casos de 30+ dias para o Atendimento, preparo a 5 dias do prazo para o Socioambiental.');
 console.log('PASS: "Outra obra" vinculada sem tocar no registro original; obras de hoje (missão às 7h, sugestão do cronograma e de ontem, confirmação da gerência) e comparação ativas × ações por dia e no mês.');
 console.log('PASS: nome de uso e apelidos das obras (únicos, oficial preservado) e bairros editáveis na aplicação, com histórico e marcação para o formulário.');
 console.log('PASS: obras consultáveis por todos, edição restrita (travada no período de testes), conflito de versão, bairros validados, nova obra com ID sequencial, revisão diária e marcação para o formulário.');

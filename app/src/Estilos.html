@@ -792,4 +792,20 @@ html[data-theme=dark] .entrega-card.s-entregue{border-color:#2f5a4b;background:l
 @keyframes entregaSelo{from{transform:scale(0) rotate(-30deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
 html[data-motion=reduce] .entrega-card,html[data-motion=reduce] .entrega-card::after,html[data-motion=reduce] .entregas-barra span{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){.entrega-card,.entrega-card::after,.entregas-barra span{animation:none!important;transition:none!important}}
+
+/* 2.16 · Qualidade dos relatos, devolutiva e guia. */
+.qualidade-chips{list-style:none;padding:0;margin:8px 0 2px;display:flex;flex-wrap:wrap;gap:4px}
+.qualidade-chips li{font-size:10px;font-weight:650;padding:3px 8px;border-radius:20px;border:1px solid var(--line);cursor:help}
+.qualidade-chips li.ok{background:#e4f5ec;color:#175747;border-color:#bfe5d1}.qualidade-chips li.falta{background:var(--surface);color:var(--muted);border-style:dashed}
+html[data-theme=dark] .qualidade-chips li.ok{background:#233c35;color:#99dcc5;border-color:#2f5a4b}
+.qualidade-lista{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px}.qualidade-lista li{display:grid;gap:2px;padding:8px 10px;border-radius:10px;border:1px solid var(--line)}
+.qualidade-lista li.ok{color:#175747}.qualidade-lista li.falta{background:var(--pale)}.qualidade-lista span{font-size:12px;color:var(--ink)}
+.devolutiva-texto{margin:10px 0 14px;padding:12px 14px;border-left:3px solid var(--blue);background:var(--pale);border-radius:0 10px 10px 0;white-space:pre-wrap;line-height:1.55}
+.devolutiva-status{color:var(--blue);margin:6px 0 0}
+.relato-card .card-bottom{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}.relato-card .card-bottom>span{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.guia-pontos{padding-left:20px;display:grid;gap:10px;margin:12px 0}.guia-pontos li{display:grid;gap:2px;line-height:1.45}.guia-pontos em{font-size:12px;color:var(--muted)}
+.guia-pontos li.falta{background:var(--pale);border-radius:8px;padding:6px 8px;margin-left:-8px}
+.guia-falta{font-size:10px;font-weight:700;color:var(--blue);border:1px dashed var(--blue);border-radius:20px;padding:1px 7px;margin-left:6px}
+.guia-exemplo{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;line-height:1.6;font-size:13px}
+.missao.t-devolutiva .missao-alvo{border-color:#c17a1f;box-shadow:inset 0 0 0 4px var(--surface),inset 0 0 0 11px #c17a1f}
 </style>
