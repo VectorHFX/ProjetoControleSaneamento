@@ -13,7 +13,7 @@ class QuizCPT {
   static get pontosPergunta() { return 10; }
   static get porSemana() { return 5; }
   static pode(perfil) { return PessoalCPT.novo(perfil); }
-  constructor(ctx) { this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.colecao = new ColecaoCPT(ctx, 'Quiz', 'QUI'); }
+  constructor(ctx) { this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.colecao = ColecaoCPT.de(ctx, 'Quiz', 'QUI'); }
   idDia(dia) { return 'QUI-' + this.email + '-D-' + dia; }
   idSemana(semana) { return 'QUI-' + this.email + '-S-' + semana; }
   meus() { const p = 'QUI-' + this.email + '-'; return this.colecao.itens().filter(x => x.id.startsWith(p)); }

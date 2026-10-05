@@ -12,7 +12,7 @@ class AlbumCPT {
   static pode(perfil) { return PessoalCPT.novo(perfil); }
   constructor(ctx) {
     if (!AlbumCPT.pode(ctx.perfil)) throw new Error('O álbum está reservado à administração técnica durante o período de testes.');
-    this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.col = new ColecaoCPT(ctx, 'Álbum', 'ALB');
+    this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.col = ColecaoCPT.de(ctx, 'Álbum', 'ALB');
   }
   id(fileId) { return 'ALB-' + this.email + '-' + fileId; }
   ativos() { return this.col.itens().filter(x => x.ativo); }

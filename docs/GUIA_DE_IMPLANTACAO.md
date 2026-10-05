@@ -23,6 +23,11 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.21.1 — revisão do Álbum e dos Joguinhos (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.21.1`) e publique uma **Nova versão**.
+2. O que mudou: o Meu espaço lê cada aba uma vez só por abertura (antes, Checklist e Álbum eram lidos duas vezes); o selo de versão do menu lateral voltou a acompanhar a versão (estava parado em 2.18).
+
 ## Atualização 2.21.0 — Joguinhos: forca do saneamento e quebra-cabeça (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.21.0`) e publique uma **Nova versão**. Chegam `JogosCPT.gs` e `Jogos.html`.

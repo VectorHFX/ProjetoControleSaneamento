@@ -12,3 +12,6 @@ for(const nome of ['Agenda','Interacoes','Entregas','Obras','Fechamento','Inicio
  fs.writeFileSync(path.join(root,'src',nome+'.html'),'<script>\n'+result+'\n</script>\n');
  console.log(nome+': sintaxe conferida; sem template literals, encadeamento opcional ou operador nulo.');
 }
+// O selo de versão do menu (Aplicacao.html) acompanha VERSAO_CPT (maior.menor).
+{const root=path.resolve(__dirname,'..'),v=fs.readFileSync(path.join(root,'src/AplicacaoCPT.gs'),'utf8').match(/VERSAO_CPT = '(\d+\.\d+)/)[1],selo=(fs.readFileSync(path.join(root,'src/Aplicacao.html'),'utf8').match(/class="version">([^<]+)</)||[])[1];
+ if(selo!==v)throw Error('Selo de versão do menu ('+selo+') diferente de VERSAO_CPT ('+v+'): atualize app/src/Aplicacao.html.');console.log('Selo de versão do menu: '+selo);}

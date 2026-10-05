@@ -39,15 +39,15 @@ class JogosCPT {
   static norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); }
   static de(ctx) { return ctx.jogosCPT || (ctx.jogosCPT = new JogosCPT(ctx)); }
   static pontos(ctx) { if (!JogosCPT.pode(ctx.perfil)) return 0; return JogosCPT.de(ctx).minhas().reduce((s, x) => s + (Number(x.pontos) || 0), 0); }
-  constructor(ctx) { this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.col = new ColecaoCPT(ctx, 'Jogos', 'JOG'); }
+  constructor(ctx) { this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.col = ColecaoCPT.de(ctx, 'Jogos', 'JOG'); }
   minhas() { const p = 'JOG-' + this.email + '-'; return this.col.itens().filter(x => x.id.startsWith(p)); }
   deHoje(jogo) { return this.minhas().filter(x => x.dia === this.hoje && x.jogo === jogo).sort((a, b) => a.n - b.n); }
   /** Metas: dias de checklist com tarefa pontuada (até hoje) e fotos já favoritadas no Álbum. */
   progresso() {
     if (this._prog) return this._prog;
     const pre = 'CHK-' + this.email + '-', alb = 'ALB-' + this.email + '-';
-    const dias = new ColecaoCPT(this.ctx, 'Checklist', 'CHK').itens().filter(l => l.id.startsWith(pre) && l.id.slice(-10) <= this.hoje && (l.itens || []).some(t => t.pontuado)).length;
-    const favoritas = new ColecaoCPT(this.ctx, 'Álbum', 'ALB').itens().filter(x => x.ativo && x.id.startsWith(alb)).length; // só as ativas: marcar e desmarcar não infla a meta
+    const dias = ColecaoCPT.de(this.ctx, 'Checklist', 'CHK').itens().filter(l => l.id.startsWith(pre) && l.id.slice(-10) <= this.hoje && (l.itens || []).some(t => t.pontuado)).length;
+    const favoritas = ColecaoCPT.de(this.ctx, 'Álbum', 'ALB').itens().filter(x => x.ativo && x.id.startsWith(alb)).length; // só as ativas: marcar e desmarcar não infla a meta
     return (this._prog = {forca: dias, quebra: favoritas});
   }
   estado() {
@@ -84,7 +84,7 @@ class JogosCPT {
   }
   /** Foto do álbum da equipe (favoritada por alguém); sem fotos, o quebra-cabeça usa o mascote da pessoa. */
   escolherFoto(semente) {
-    const fotos = new ColecaoCPT(this.ctx, 'Álbum', 'ALB').itens().filter(x => x.ativo && x.fileId), vistos = new Map();
+    const fotos = ColecaoCPT.de(this.ctx, 'Álbum', 'ALB').itens().filter(x => x.ativo && x.fileId), vistos = new Map();
     fotos.forEach(f => vistos.set(f.fileId, {fileId: f.fileId, legenda: f.legenda || f.atividade || ''}));
     const lista = [...vistos.values()].sort((a, b) => a.fileId.localeCompare(b.fileId));
     return lista.length ? lista[semente % lista.length] : null;

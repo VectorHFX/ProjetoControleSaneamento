@@ -6,6 +6,8 @@
  */
 class ColecaoCPT {
   static get cabecalho() { return ['ID', 'Versão', 'Operação ID', 'Alterado em', 'Alterado por', 'Conteúdo JSON']; }
+  /** Uma instância por aba em cada pedido (2.21): telas que juntam vários módulos (Meu espaço) leem cada aba uma vez só. */
+  static de(ctx, aba, prefixo) { const m = ctx.colecoesCPT || (ctx.colecoesCPT = {}); return m[aba] || (m[aba] = new ColecaoCPT(ctx, aba, prefixo)); }
   constructor(ctx, aba, prefixo) { this.ctx = ctx; this.nome = aba; this.prefixo = prefixo; this.cache = null; }
   aba() {
     if (!this.ctx.config.agendaId) throw new Error('Os dados da aplicação ainda não foram preparados. Avise a administração técnica.');

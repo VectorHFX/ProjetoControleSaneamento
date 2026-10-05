@@ -71,7 +71,7 @@ class PessoalCPT {
   }
   constructor(ctx) {
     this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje();
-    this.perfis = new ColecaoCPT(ctx, 'Meu espaço', 'PES'); this.cadernos = new ColecaoCPT(ctx, 'Caderno', 'CAD'); this.listas = new ColecaoCPT(ctx, 'Checklist', 'CHK');
+    this.perfis = ColecaoCPT.de(ctx, 'Meu espaço', 'PES'); this.cadernos = ColecaoCPT.de(ctx, 'Caderno', 'CAD'); this.listas = ColecaoCPT.de(ctx, 'Checklist', 'CHK');
   }
   get idPerfil() { return 'PES-' + this.email; }
   idDia(prefixo, dia) { return prefixo + '-' + this.email + '-' + dia; }
