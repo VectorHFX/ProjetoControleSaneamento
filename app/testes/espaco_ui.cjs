@@ -10,7 +10,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'meuespaco');assert.equal(await p.locator('.pet-option').count(),7,'seis mascotes + capivara');assert.equal(await p.locator('[data-esp-especie=capivara]').count(),1);
   await p.locator('[data-esp-especie=pato]').click();assert.equal(await p.locator('#espInicio [name=nome]').inputValue(),'Cleber');
   await p.locator('#espInicio [name=nome]').fill('Cleber Jr');await p.locator('#espInicio [type=submit]').click();await p.locator('.mascot-stage').waitFor();
-  assert.match(await p.locator('.mascot-name').textContent(),/Cleber Jr/);assert.match(await p.locator('.mascot-stage').textContent(),/Pato de Paula/);
+  assert.match(await p.locator('.mascot-name').textContent(),/Cleber Jr/);assert.equal(await p.locator('.missao').count(),0,'Atendimento não recebe missões de obras');assert.match(await p.locator('.mascot-stage').textContent(),/Pato de Paula/);
   // 2.13.1: o mascote vira o ícone da pessoa no topo (no lugar de "Minha visão"), e continua lá ao recarregar.
   await p.locator('#topAvatar .mascot-svg').waitFor();assert.match(await p.locator('#topAvatar').getAttribute('aria-label'),/Cleber Jr/);
   assert.equal(JSON.parse(await p.evaluate(()=>localStorage.getItem('cpt.avatar'))).especie,'pato','ícone guardado para aparecer já ao abrir');

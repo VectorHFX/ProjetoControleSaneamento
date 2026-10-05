@@ -173,7 +173,7 @@ window.CPTEspaco = (() => {
       <div class="home-cards">
         <section class="panel home-agenda"><div class="panel-head"><div><span class="card-kicker">📅 Agenda</span><h2>Hoje na agenda</h2></div>${ui.podeVer('cronograma') ? '<button class="button ghost" data-route="cronograma">Abrir cronograma ' + ui.icon('arrow') + '</button>' : ''}</div><div id="espAgenda" aria-live="polite"><div class="skel-list" aria-hidden="true"><div class="skeleton"></div></div></div></section>
         <section class="panel home-check"><div class="day-nav"><button class="icon-button" data-esp-dia="-1" aria-label="Dia anterior">‹</button><div><span class="eyebrow">${dia === d.hoje ? 'HOJE' : dia > d.hoje ? 'PLANEJAMENTO' : 'DIA ANTERIOR'}</span><h2>${ui.esc(dataLonga(dia))}</h2></div><button class="icon-button" data-esp-dia="1" aria-label="Próximo dia">›</button>${dia !== d.hoje ? '<button class="button ghost" data-esp-dia="0">Voltar para hoje</button>' : ''}</div>
-          <h3 class="peek-title">✅ Checklist</h3><div id="espLista"></div>
+          ${dia === d.hoje ? '<div id="espMissoes"></div>' : ''}<h3 class="peek-title">✅ Checklist</h3><div id="espLista"></div>
           <form id="espNova" class="inline-add"><input name="texto" maxlength="200" placeholder="${dia > d.hoje ? 'Planejar uma tarefa para este dia' : 'Nova tarefa para hoje'}" aria-label="Nova tarefa" autocomplete="off"><button class="button" type="submit">${ui.icon('plus')}Adicionar</button></form>
           <p class="small muted">Cada tarefa feita vale ${d.regras.pontosPorTarefa} pontos (até ${d.regras.tarefasPorDia} por dia).${d.proximos.length ? ' Planejado: ' + d.proximos.map(p => `<button class="link-button" data-esp-ir="${p.data}">${ui.date(p.data)} (${p.pendentes})</button>`).join(' ') : ''}</p></section>
         <section class="panel home-notebook"><div class="panel-head"><div><span class="card-kicker">📓 Só você lê</span><h2>Meu caderno</h2></div><span id="espNotaEstado" class="small muted" aria-live="polite"></span></div>
@@ -215,7 +215,14 @@ window.CPTEspaco = (() => {
     if (escolhido) { const i = $('espInicio').elements.nome; i.focus(); i.select(); $('espInicio').dataset.especie = escolhido; }
   }
   // ---------- Checklist ----------
+  /** Missões: tarefas automáticas do trabalho. Levam direto ao lugar certo e somem quando o trabalho é feito. */
+  function desenharMissoes() {
+    const box = $('espMissoes'); if (!box) return; const m = (d && d.missoes) || [];
+    box.innerHTML = m.length ? `<h3 class="peek-title">🎯 Missões de hoje</h3><ul class="missoes">${m.map(x => `<li class="missao" data-missao="${ui.esc(x.id)}"><span class="missao-alvo" aria-hidden="true"></span><span class="missao-texto"><strong>${ui.esc(x.titulo)}</strong><small>${ui.esc(x.texto)}</small></span><button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? `data-obra-ir="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button></li>`).join('')}</ul>` : '';
+  }
+  window.CPTMissoes = {feita(id) { if (d && d.missoes) d.missoes = d.missoes.filter(x => x.id !== id); }};
   function desenharLista() {
+    desenharMissoes();
     const box = $('espLista'); if (!box) return; const itens = d.lista.itens.filter(t => !t.removido);
     box.innerHTML = itens.length ? `<ul class="check-list">${itens.map(t => `<li class="${t.feito ? 'is-done' : ''}"><label><input type="checkbox" data-esp-check="${ui.esc(t.id)}" ${t.feito ? 'checked' : ''}><span>${ui.esc(t.texto)}</span></label>${t.pontuado ? '<span class="pts" title="Já pontuou">⭐</span>' : ''}<button class="icon-button small-x" data-esp-apagar="${ui.esc(t.id)}" aria-label="Apagar tarefa">×</button></li>`).join('')}</ul>` : `<p class="empty-line">${dia > d.hoje ? 'Nada planejado ainda.' : 'Nenhuma tarefa ainda. Que tal anotar a primeira?'}</p>`;
   }

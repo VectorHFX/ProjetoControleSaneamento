@@ -62,7 +62,7 @@ class ObrasCPT {
     obras.sort((a, b) => (ordem[a.situacao] ?? 3) - (ordem[b.situacao] ?? 3) || b.inicioObra.localeCompare(a.inicioObra) || a.exibir.localeCompare(b.exibir, 'pt-BR'));
     const cadastro = this.bairros().filter(b => !b.especial).map(({linha, especial, ...b}) => b).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     return {obras, bairros: cadastro.map(b => b.nome), bairrosCadastro: cadastro,
-      situacoes: ObrasCPT.situacoes, impactos: ObrasCPT.impactos, podeEditar: PerfisCPT.gerencia(this.ctx.perfil) && (this.ctx.perfil.papeis.includes('administrador') || !PerfisCPT.travada()), formulario: this.statusFormulario()};
+      situacoes: ObrasCPT.situacoes, impactos: ObrasCPT.impactos, podeEditar: PerfisCPT.gerencia(this.ctx.perfil) && (this.ctx.perfil.papeis.includes('administrador') || !PerfisCPT.travada()), gerencia: PerfisCPT.gerencia(this.ctx.perfil), formulario: this.statusFormulario()};
   }
   /** Mensagem do último salvamento das listas do formulário (área de controle AB5:AB6 do Campo 4.0). */
   statusFormulario() {

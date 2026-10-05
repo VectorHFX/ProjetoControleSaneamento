@@ -36,6 +36,7 @@ class AplicacaoCPT {
   static identidade() {
     const email = this.conta(), c = this.config();
     if (c.dominio && !email.endsWith('@' + c.dominio)) throw new Error('Esta aplicação é exclusiva para contas @' + c.dominio + '. Você entrou como ' + email + '.');
+    if (typeof ObrasDoDiaCPT !== 'undefined') ObrasDoDiaCPT.iniciar(c); // vínculos de "outra obra" são relidos uma vez nesta execução
     return {email: email, config: c, perfil: PerfisCPT.obter(email, c)};
   }
   static contexto() {
@@ -77,7 +78,7 @@ function instalarAplicacaoCPT() {
  */
 function doGet() {
   // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
-  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT]; }
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT]; }
   catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
   const t = HtmlService.createTemplateFromFile('Aplicacao');
   t.inicial = dadosIniciaisCPT_();

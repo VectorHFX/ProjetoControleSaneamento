@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -66,6 +66,35 @@ ctx.b={id:'BAI-002',nome:'Jardim Novo',noFormulario:false,apelidos:[]};assert.th
 ctx.b={id:'BAI-099',nome:'Múltiplos bairros',noFormulario:true,apelidos:[]};assert.throws(()=>run('salvarBairroCPT(b)'),/opção especial/);
 assert.match(obras.rows[5][27],/^PENDENTE/);
 email='social@example.com';ctx.b={nome:'Outro',noFormulario:true,apelidos:[]};assert.throws(()=>run('salvarBairroCPT(b)'),/Administrativo ou pela Gestão/);email='adm@example.com';
+// "Outra obra": o registro do Campo 4.0 não é alterado; o vínculo fica na aplicação e vale em todas as leituras.
+const OUTRA='REG-'+'f'.repeat(24);registros.rows.push([OUTRA,'Relato de atividade',new Date('2026-10-06T12:00:00Z'),'2026-10','','4.0','','Jardim','BAI-002','Obra ainda não cadastrada — identificar na observação final','','Resp','Social','Plantão na rua nova',4,'','','x','','',JSON.stringify({campos:[{titulo:'Observações finais',valor:'Obra na rua das Flores'}]})]);
+const linhaOutra=JSON.stringify(registros.rows.at(-1));
+email='social@example.com';assert.throws(()=>run('listarVinculosObraCPT()'),/Administrativo ou pela Gestão/);
+email='adm@example.com';let v=run('listarVinculosObraCPT()');assert.equal(v.pendentes.length,1);assert.equal(v.pendentes[0].id,OUTRA);assert.match(v.pendentes[0].observacao,/rua das Flores/);assert(v.obras.some(o=>o.id==='OBR-0002'));
+ctx.k={registroId:OUTRA,obraId:'OBR-9999',operacaoId:'OP-vinculo-0000001'};assert.throws(()=>run('vincularObraCPT(k)'),/Obra não encontrada/);
+ctx.k={registroId:OUTRA,obraId:'OBR-0002',operacaoId:'OP-vinculo-0000002'};r=run('vincularObraCPT(k)');assert.match(r.resultado,/vinculado/);
+assert.equal(JSON.stringify(registros.rows.at(-1)),linhaOutra,'registro original intacto');
+assert.equal(run('listarVinculosObraCPT()').pendentes.length,0);
+assert.equal(run("AplicacaoCPT.executar(d=>({obra:d.ler(d.registros(),11).find(r=>r[0]==='"+OUTRA+"')[10]}))").obra,'OBR-0002','vínculo aplicado na leitura');
+// Obras de hoje: missão a partir das 7h, sugestão pelo cronograma e pelo dia anterior, confirmação pela gerência.
+books.get('agenda').getSheetByName('Eventos').rows.push(['AG-1',1,'OP-x','','',JSON.stringify({id:'AG-1',versao:1,titulo:'Plantão',obra:'Coletor Linda',data:'2026-10-06',status:'confirmada',frentes:[],responsaveis:[]})]);
+ctx.relogio=t=>{ctx.ObrasDoDiaCPT_relogio=new Date(t);};vm.runInContext('ObrasDoDiaCPT.relogio=()=>ObrasDoDiaCPT_relogio',ctx);
+ctx.relogio('2026-10-06T08:00:00Z');assert(!run('missoesCPT()').missoes.some(m=>m.id==='obras-hoje'),'antes das 7h não há missão');
+ctx.relogio('2026-10-06T13:00:00Z');assert(run('missoesCPT()').missoes.some(m=>m.id==='obras-hoje'));
+let h=run('obrasDeHojeCPT()');assert.equal(h.dia,'2026-10-06');assert.deepEqual(h.sugestao,['OBR-0001']);assert.equal(h.confirmado,null);assert.equal(h.podeConfirmar,true);
+ctx.q={dia:'2026-10-06',obras:['OBR-0404'],nenhuma:false,operacaoId:'OP-obras-dia-00001'};assert.throws(()=>run('confirmarObrasDoDiaCPT(q)'),/não encontrada/);
+ctx.q={dia:'2026-10-09',obras:[],nenhuma:true,operacaoId:'OP-obras-dia-00002'};assert.throws(()=>run('confirmarObrasDoDiaCPT(q)'),/futuro/);
+ctx.q={dia:'2026-10-06',obras:['OBR-0001'],nenhuma:false,operacaoId:'OP-obras-dia-00003'};r=run('confirmarObrasDoDiaCPT(q)');assert.match(r.resultado,/1 obra/);
+assert(!run('missoesCPT()').missoes.some(m=>m.id==='obras-hoje'));
+ctx.relogio('2026-10-07T13:00:00Z');assert.deepEqual(run('obrasDeHojeCPT()').sugestao,['OBR-0001'],'sugere as de ontem');
+email='social@example.com';assert.equal(run('obrasDeHojeCPT()').podeConfirmar,false);assert.deepEqual(run('missoesCPT()').missoes,[]);
+ctx.q={dia:'2026-10-07',obras:[],nenhuma:true,operacaoId:'OP-obras-dia-00004'};assert.throws(()=>run('confirmarObrasDoDiaCPT(q)'),/Administrativo ou pela Gestão/);email='adm@example.com';
+// Comparação: dia informado com ação em obra não ativa; dia sem confirmação fica "não informado".
+const cmp=run("compararObrasDoMesCPT('2026-10')"),d6=cmp.dias.find(x=>x.dia==='2026-10-06'),d5=cmp.dias.find(x=>x.dia==='2026-10-05');
+assert.equal(cmp.dias.length,7);assert.equal(d5.informado,false);assert.equal(d6.informado,true);assert.equal(d6.ativas,1);assert.equal(d6.comAcao,2);
+assert.deepEqual(d6.ativasSemAcao,[]);assert.deepEqual(d6.acaoForaDasAtivas,['Coletor B']);assert.equal(cmp.mes.diasInformados,1);assert.equal(cmp.mes.diasNaoInformados,6);assert.equal(cmp.mes.acaoForaDasAtivas,1);
+registros.rows.pop();/* o fechamento abaixo conta os relatos de outubro sem este */
+console.log('PASS: "Outra obra" vinculada sem tocar no registro original; obras de hoje (missão às 7h, sugestão do cronograma e de ontem, confirmação da gerência) e comparação ativas × ações por dia e no mês.');
 console.log('PASS: nome de uso e apelidos das obras (únicos, oficial preservado) e bairros editáveis na aplicação, com histórico e marcação para o formulário.');
 console.log('PASS: obras consultáveis por todos, edição restrita (travada no período de testes), conflito de versão, bairros validados, nova obra com ID sequencial, revisão diária e marcação para o formulário.');
 // Fechamento: conferência e geração.

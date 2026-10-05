@@ -39,6 +39,7 @@ window.CPTGestao = (() => {
   const INTRO = ['Visão do mês', 'Resumo, contrato, frentes de serviço e relatos do mês, começando pelo que pede atenção.'];
   async function renderPainel(atualizar = false) {
     const mine = ++ticket, mes = ui.state.mes;
+    if (atualizar) comparacao = null;
     if (!painel || painel.mes !== mes) { relatos = null; ui.view.innerHTML = abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os números do mês…</div><div class="stat-row">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; }
     try {
       const d = await ui.call('carregarPainelGestaoCPT', {mes, atualizar}); if (mine !== ticket || ui.state.route !== 'painel') return;
@@ -54,6 +55,7 @@ window.CPTGestao = (() => {
     const corpo = aba === 'frentes' ? frentes() : aba === 'relatos' ? '<div id="relatosResumo"></div>' : contrato();
     ui.view.innerHTML = abas() + `<div class="painel-body">${corpo}</div><p class="small muted painel-foot">Atualizado às ${new Date(painel.atualizadoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'})}. Use o botão Atualizar no topo para recalcular.</p>`;
     if (aba === 'relatos') carregarRelatos();
+    if (aba === 'frentes') carregarComparacao();
   }
   function contrato() {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
@@ -87,6 +89,7 @@ window.CPTGestao = (() => {
         <button class="button ghost" data-frente="${i}">Ver a frente ${ui.icon('arrow')}</button></article>`;
     };
     return `<section class="panel filter-panel"><form id="frenteFiltro" class="filters"><label class="field">Localizar frente<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroFrente.busca)}" placeholder="Nome da obra ou bairro" maxlength="100"></span></label><label class="reduced"><input type="checkbox" name="andamento" ${filtroFrente.andamento ? 'checked' : ''}> Só frentes ativas no mês</label></form></section>
+      <section class="panel obras-cmp"><div class="panel-head"><div><h2>Obras ativas × ações</h2><p>Obras confirmadas a cada dia (Obras → Obras de hoje) comparadas com as ações registradas.</p></div></div><div id="obrasComparacao"><div class="skel-list" aria-hidden="true"><div class="skeleton"></div></div></div></section>
       <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'frente' : 'frentes'}</span><span>Em vermelho: em andamento e sem registro há mais de 14 dias</span></div>
       <div class="cards front-cards">${lista.map(f => card(f, painel.frentes.indexOf(f))).join('') || '<p class="muted">Nenhuma frente com esse filtro.</p>'}</div>`;
   }
@@ -97,6 +100,30 @@ window.CPTGestao = (() => {
       <h3 class="answers-head">Atividades do mês</h3>${f.atividades.length ? `<div class="mini-list">${f.atividades.map(a => `<button class="mini-row" data-record="${ui.esc(a.id)}"><strong>${ui.esc(a.atividade)}${a.diagnostico ? ' (diagnóstico)' : ''}</strong><small>${ui.date(a.data)} · ${ui.esc([a.bairro, a.publico != null ? a.publico + ' pessoas' : 'público não informado', a.responsavel].filter(Boolean).join(' · '))}</small></button>`).join('')}</div>` : '<p class="muted">Nenhuma atividade registrada nesta frente no mês.</p>'}
       <h3 class="answers-head">Atendimentos em aberto</h3>${f.casos.length ? `<div class="mini-list">${f.casos.map(c => `<button class="mini-row" data-case="${ui.esc(c.protocolo)}"><strong>${ui.esc(c.protocolo)} · ${ui.esc(c.assunto || 'Assunto não informado')}</strong><small>${ui.esc(c.status || 'Em aberto')}${c.dias != null ? ' · ' + c.dias + ' dias' : ''}</small></button>`).join('')}</div>` : '<p class="muted">Nenhum atendimento em aberto ligado a esta frente.</p>'}`;
     if (!$('detailDialog').open) $('detailDialog').showModal();
+  }
+  // ---------- Obras ativas × ações (por dia e no mês) ----------
+  let comparacao = null, diaCmp = '';
+  async function carregarComparacao() {
+    if (!$('obrasComparacao')) return;
+    if (!comparacao || comparacao.mesRef !== ui.state.mes) {
+      try { const r = await ui.call('compararObrasDoMesCPT', ui.state.mes); comparacao = {...r, mesRef: ui.state.mes}; }
+      catch (e) { const box = $('obrasComparacao'); if (box) box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    }
+    desenharComparacao();
+  }
+  function desenharComparacao() {
+    const box = $('obrasComparacao'); if (!box || !comparacao) return;
+    const m = comparacao.mes, dias = comparacao.dias;
+    const tom = x => !x.informado ? 'nd' : x.nenhuma && !x.comAcao ? 'zero' : x.ativasSemAcao.length || x.acaoForaDasAtivas.length ? 'aten' : 'ok';
+    const titulo = x => ui.date(x.dia) + ': ' + (!x.informado ? 'não informado' : x.nenhuma ? 'nenhuma obra' : x.ativas + ' ativas, ' + x.comAcao + ' com ação');
+    const sel = dias.find(x => x.dia === diaCmp) || dias.filter(x => x.informado).pop() || dias[dias.length - 1];
+    const lista = (t, l) => l.length ? `<p><strong>${t}:</strong> ${l.map(ui.esc).join('; ')}</p>` : '';
+    box.innerHTML = !dias.length ? '<p class="muted">O mês ainda não começou.</p>' : `<div class="cmp-kpis">
+        <div><strong>${ui.num(m.diasInformados)}</strong><span>dias informados</span></div><div class="${m.diasNaoInformados ? 'is-warn' : ''}"><strong>${ui.num(m.diasNaoInformados)}</strong><span>dias não informados</span></div>
+        <div class="${m.ativasSemAcao ? 'is-warn' : ''}"><strong>${ui.num(m.ativasSemAcao)}</strong><span>obra-dias ativos sem ação</span></div><div class="${m.acaoForaDasAtivas ? 'is-warn' : ''}"><strong>${ui.num(m.acaoForaDasAtivas)}</strong><span>ações em obra não ativa</span></div></div>
+      <div class="cmp-dias" role="list" aria-label="Dias do mês">${dias.map(x => `<button type="button" role="listitem" class="cmp-dia t-${tom(x)} ${sel && x.dia === sel.dia ? 'is-sel' : ''}" data-cmp-dia="${x.dia}" title="${ui.esc(titulo(x))}" aria-label="${ui.esc(titulo(x))}">${Number(x.dia.slice(8))}</button>`).join('')}</div>
+      <p class="cmp-legenda small muted"><span class="t-ok"></span>em dia <span class="t-aten"></span>pede atenção <span class="t-nd"></span>não informado</p>
+      ${sel ? `<div class="cmp-detalhe"><h3>${ui.esc(titulo(sel))}</h3>${!sel.informado ? '<p class="muted">Ninguém confirmou as obras deste dia. Confirme em Obras → Obras de hoje (dá para escolher um dia anterior).</p>' : lista('Ativas sem ação', sel.ativasSemAcao) + lista('Ação em obra não ativa', sel.acaoForaDasAtivas) || '<p class="muted">Tudo bate: cada obra ativa teve ação e não houve ação fora delas.</p>'}</div>` : ''}`;
   }
   async function carregarRelatos() {
     const box = $('relatosResumo'); if (!box) return;
@@ -252,6 +279,7 @@ window.CPTGestao = (() => {
     document.addEventListener('click', e => {
       const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
+      const cd = e.target.closest('[data-cmp-dia]'); if (cd) { diaCmp = cd.dataset.cmpDia; desenharComparacao(); return; }
       const na = e.target.closest('[data-pp-na]'); if (na) { preencher(na.dataset.ppNa, 'Não aplicada'); return; }
       const usar = e.target.closest('[data-pp-usar]'); if (usar && pp && pp.sugestoes[usar.dataset.ppUsar]) { preencher(usar.dataset.ppUsar, pp.sugestoes[usar.dataset.ppUsar].valor); return; }
       if (e.target.closest('[data-pp-print]') && pp) imprimirPP();

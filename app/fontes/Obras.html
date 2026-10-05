@@ -3,7 +3,8 @@
    Nome de uso em destaque (o oficial fica abaixo); apelidos entram na busca. */
 window.CPTObras = (() => {
   'use strict';
-  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'}, bairrosAberto = false;
+  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'}, bairrosAberto = false, aba = 'catalogo', hojeDados = null, vinculos = null;
+  const op = () => 'OP-' + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
   const dias = iso => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 864e5) : null;
@@ -33,11 +34,20 @@ window.CPTObras = (() => {
     try { dados = await ui.call('listarObrasCPT'); if (mine !== ticket || ui.state.route !== 'obras') return; draw(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Obras e frentes de serviço', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
+  /** Gerência: Catálogo · Obras de hoje · Para vincular. Demais perfis: só o catálogo. */
+  function abas() {
+    if (!dados.gerencia) return '';
+    const n = vinculos ? vinculos.pendentes.length : null;
+    return `<div class="segmented obra-tabs" role="tablist" aria-label="Partes de Obras">${[['catalogo', 'Catálogo'], ['hoje', 'Obras de hoje'], ['vincular', 'Para vincular' + (n ? ' (' + n + ')' : '')]].map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-obra-aba="${k}">${t}</button>`).join('')}</div>`;
+  }
   function draw() {
+    if (!dados.gerencia) aba = 'catalogo';
+    const topo = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') + statusFormulario(dados.formulario) + abas();
+    if (aba === 'hoje') { ui.view.innerHTML = topo + '<div id="obrasHoje"></div>'; carregarHoje(); return; }
+    if (aba === 'vincular') { ui.view.innerHTML = topo + '<div id="obrasVincular"></div>'; carregarVinculos(); return; }
     const lista = visiveis(), ativas = dados.obras.filter(o => ['Em andamento', 'Paralisada'].includes(o.situacao));
     const atrasadas = ativas.filter(o => (dias(o.atualizadoEm) ?? 99) > 7).length;
-    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') +
-      statusFormulario(dados.formulario) +
+    ui.view.innerHTML = topo +
       `<section class="panel filter-panel"><form id="obraFiltros" class="filters cases">
         <label class="field">Localizar obra<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Nome, bairro, endereço ou ID" maxlength="120"></span></label>
         <label class="field">Mostrar<select name="situacao">${[['ativas', 'Ativas e a confirmar'], ['Em andamento', 'Em andamento'], ['Paralisada', 'Paralisadas'], ['Finalizada', 'Finalizadas'], ['todas', 'Todas']].map(([v, t]) => `<option value="${v}" ${filtro.situacao === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
@@ -84,6 +94,67 @@ window.CPTObras = (() => {
       catch (err) { erro.textContent = err.message + ' Seus dados continuam no formulário.'; erro.hidden = false; b2.disabled = false; b2.textContent = novo ? 'Cadastrar bairro' : 'Salvar alterações'; }
     };
   }
+  // ---------- Obras de hoje ----------
+  async function carregarHoje(dia) {
+    const box = $('obrasHoje'); if (!box) return;
+    box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Buscando as obras do dia…</div>';
+    try { hojeDados = await ui.call('obrasDeHojeCPT', dia ? {dia} : {}); } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    if (ui.state.route === 'obras' && aba === 'hoje') desenharHoje();
+  }
+  function desenharHoje() {
+    const box = $('obrasHoje'), h = hojeDados; if (!box || !h) return;
+    const c = h.confirmado, marcadas = new Set(c ? c.obras : h.sugestao), sug = new Set(h.sugestao), ehHoje = h.dia === h.hoje;
+    const estado = c ? (c.nenhuma ? 'Registrado: nenhuma obra neste dia.' : 'Confirmado: ' + c.obras.length + (c.obras.length === 1 ? ' obra' : ' obras') + '.') + (c.por ? ' Por ' + ui.esc(c.por) + '.' : '') : 'Ainda não informado. Sem confirmação, o dia aparece como "não informado" no painel da gestão.';
+    box.innerHTML = `<section class="panel obras-hoje"><div class="panel-head"><div><span class="eyebrow">${ehHoje ? 'HOJE' : 'DIA ANTERIOR'}</span><h2>Obras com frente de serviço em ${ui.date(h.dia)}</h2>
+        <p class="small ${c ? 'muted' : 'text-warning'}">${estado}</p></div>
+        <label class="field compact">Outro dia<input type="date" id="obrasHojeDia" value="${ui.esc(h.dia)}" max="${ui.esc(h.hoje)}"></label></div>
+      ${h.antesDoHorario ? '<div class="notice">A confirmação de hoje abre às 7h, quando a engenharia avisa as frentes do dia.</div>' : ''}
+      <form id="obrasHojeForm"><div class="hoje-lista" role="group" aria-label="Obras ativas">${h.obras.map(o => `<label class="hoje-obra ${marcadas.has(o.id) && !(c && c.nenhuma) ? 'is-on' : ''}"><input type="checkbox" name="obra" value="${ui.esc(o.id)}" ${marcadas.has(o.id) && !(c && c.nenhuma) ? 'checked' : ''} ${h.podeConfirmar ? '' : 'disabled'}><span><strong>${ui.esc(o.exibir)}</strong><small>${ui.esc((o.bairros || []).join(' · ') || o.situacao)}</small></span>${sug.has(o.id) ? '<em class="hoje-sugerida" title="Pelo cronograma do dia ou pelo dia anterior">sugerida</em>' : ''}</label>`).join('') || '<p class="muted">Nenhuma obra ativa no catálogo.</p>'}</div>
+        <label class="check-inline hoje-nenhuma"><input type="checkbox" name="nenhuma" ${c && c.nenhuma ? 'checked' : ''} ${h.podeConfirmar ? '' : 'disabled'}> Nenhuma obra neste dia</label>
+        ${h.podeConfirmar ? `<div class="dialog-actions"><button class="button" type="submit">${c ? 'Atualizar confirmação' : 'Confirmar obras'}</button></div>` : ''}</form></section>`;
+    $('obrasHojeDia').addEventListener('change', e => { if (e.target.value) carregarHoje(e.target.value); });
+    const f = $('obrasHojeForm');
+    f.addEventListener('change', e => {
+      if (e.target.name === 'nenhuma' && e.target.checked) f.querySelectorAll('[name=obra]').forEach(x => { x.checked = false; });
+      if (e.target.name === 'obra' && e.target.checked) f.elements.nenhuma.checked = false;
+      f.querySelectorAll('.hoje-obra').forEach(l => l.classList.toggle('is-on', l.querySelector('input').checked));
+    });
+    f.addEventListener('submit', async ev => {
+      ev.preventDefault(); const b = f.querySelector('button[type=submit]');
+      const p = {dia: h.dia, obras: [...f.querySelectorAll('[name=obra]:checked')].map(x => x.value), nenhuma: f.elements.nenhuma.checked, versao: c ? c.versao : 0, operacaoId: op()};
+      b.disabled = true; b.textContent = 'Salvando…';
+      try { const r = await ui.call('confirmarObrasDoDiaCPT', p); hojeDados.confirmado = r.confirmado; ui.toast(r.resultado); desenharHoje(); window.CPTMissoes && window.CPTMissoes.feita('obras-hoje'); }
+      catch (e) { ui.toast(e.message); b.disabled = false; b.textContent = c ? 'Atualizar confirmação' : 'Confirmar obras'; }
+    });
+  }
+  // ---------- Para vincular ("outra obra") ----------
+  async function carregarVinculos() {
+    const box = $('obrasVincular'); if (!box) return;
+    box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Procurando registros de "outra obra"…</div>';
+    try { vinculos = await ui.call('listarVinculosObraCPT'); } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    if (ui.state.route === 'obras' && aba === 'vincular') desenharVinculos();
+  }
+  function desenharVinculos() {
+    const box = $('obrasVincular'); if (!box || !vinculos) return;
+    const t = document.querySelector('[data-obra-aba=vincular]'); if (t) t.textContent = 'Para vincular' + (vinculos.pendentes.length ? ' (' + vinculos.pendentes.length + ')' : '');
+    const opcoes = '<option value="">Escolha a obra…</option>' + vinculos.obras.map(o => `<option value="${ui.esc(o.id)}">${ui.esc(o.exibir)}${o.bairros && o.bairros.length ? ' — ' + ui.esc(o.bairros.join(' / ')) : ''}</option>`).join('');
+    box.innerHTML = `<div class="results-head"><span>${vinculos.pendentes.length ? ui.num(vinculos.pendentes.length) + (vinculos.pendentes.length === 1 ? ' registro' : ' registros') + ' com "obra ainda não cadastrada"' : 'Nenhum registro esperando vínculo.'}</span>${dados.podeEditar ? `<button type="button" class="button secondary" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra nova</button>` : ''}</div>
+      <p class="small muted">O registro original não muda. O vínculo vale nas telas, no painel e no relatório.</p>
+      <div class="vinculo-lista">${vinculos.pendentes.map(r => `<article class="entry-card vinculo-card" data-vinc="${ui.esc(r.id)}"><div class="card-top"><span class="badge orange">${ui.esc(r.procedimento)}</span><span class="date">${ui.date(r.data)}</span></div>
+        <h3>${ui.esc(r.atividade || 'Atividade sem título')}</h3><p class="small muted">${ui.esc([r.bairro, r.responsavel].filter(Boolean).join(' · '))}</p>
+        ${r.observacao ? `<blockquote class="vinculo-obs">${ui.esc(r.observacao)}</blockquote>` : '<p class="small muted">Sem observação final.</p>'}
+        <div class="vinculo-acao"><select aria-label="Obra deste registro" data-vinc-obra>${opcoes}</select><button type="button" class="button" data-vincular="${ui.esc(r.id)}">Vincular</button></div></article>`).join('')}</div>`;
+  }
+  async function vincular(id, botao) {
+    const sel = botao.closest('.vinculo-card').querySelector('[data-vinc-obra]');
+    if (!sel.value) { ui.toast('Escolha a obra deste registro.'); sel.focus(); return; }
+    botao.disabled = true; botao.textContent = 'Vinculando…';
+    try {
+      const r = await ui.call('vincularObraCPT', {registroId: id, obraId: sel.value, operacaoId: op()}); ui.toast(r.resultado);
+      vinculos.pendentes = vinculos.pendentes.filter(x => x.id !== id); desenharVinculos();
+      if (!vinculos.pendentes.length && window.CPTMissoes) window.CPTMissoes.feita('vincular-obra');
+    } catch (e) { ui.toast(e.message); botao.disabled = false; botao.textContent = 'Vincular'; }
+  }
   function campo(rotulo, html, largo) { return `<label class="${largo ? 'wide' : ''}">${rotulo}${html}</label>`; }
   function editor(o) {
     const novo = !o, e = o || {id: '', nome: '', nomeUso: '', apelidos: [], bairros: [], noFormulario: true, situacao: 'Em andamento', inicioObra: hoje(), inicioComunicacao: '', termino: '', publico: '', impacto: '', observacao: '', tipo: '', endereco: '', atualizadoEm: ''};
@@ -115,7 +186,7 @@ window.CPTObras = (() => {
       const p = {id: e.id, atualizadoEm: e.atualizadoEm, nome: f.get('nome'), nomeUso: f.get('nomeUso'), apelidos: separar(f.get('apelidos')), situacao: f.get('situacao'), noFormulario: f.has('noFormulario'), tipo: f.get('tipo'), endereco: f.get('endereco'),
         inicioObra: f.get('inicioObra'), termino: f.get('termino'), inicioComunicacao: f.get('inicioComunicacao'), publico: f.get('publico'), impacto: f.get('impacto'), bairros: f.getAll('bairros'), observacao: f.get('observacao')};
       b.disabled = true; b.textContent = 'Salvando…'; erro.hidden = true;
-      try { const r = await ui.call('salvarObraCPT', p); ui.toast(r.resultado); $('detailDialog').close(); render(); }
+      try { const r = await ui.call('salvarObraCPT', p); ui.toast(r.resultado); $('detailDialog').close(); vinculos = null; render(); }
       catch (err) { erro.textContent = err.message + ' Seus dados continuam no formulário.'; erro.hidden = false; erro.scrollIntoView({block: 'nearest'}); b.disabled = false; b.textContent = novo ? 'Cadastrar obra' : 'Salvar alterações'; }
     };
   }
@@ -127,14 +198,18 @@ window.CPTObras = (() => {
   }
   function init(api) {
     ui = api;
+    // Missões e atalhos levam direto a uma parte (antes da navegação desenhar a página).
+    document.addEventListener('click', ev => { const ir = ev.target.closest('[data-obra-ir]'); if (ir) aba = ir.dataset.obraIr; }, true);
     document.addEventListener('click', ev => {
       const abrir = ev.target.closest('[data-obra]'); if (abrir) { editor(dados.obras.find(o => o.id === abrir.dataset.obra)); return; }
       const ok = ev.target.closest('[data-obra-confirmar]'); if (ok) { confirmar(ok.dataset.obraConfirmar, ok); return; }
       if (ev.target.closest('[data-obra-acao="nova"]')) { editor(null); return; }
+      const t = ev.target.closest('[data-obra-aba]'); if (t) { aba = t.dataset.obraAba; draw(); return; }
+      const vi = ev.target.closest('[data-vincular]'); if (vi) { vincular(vi.dataset.vincular, vi); return; }
       const bairro = ev.target.closest('[data-bairro]'); if (bairro) { editorBairro(cadastroBairros().find(b => b.nome === bairro.dataset.bairro)); return; }
       if (ev.target.closest('[data-bairro-novo]')) editorBairro(null);
     });
   }
-  return {init, render};
+  return {init, render, irPara: a => { aba = a; }};
 })();
 </script>

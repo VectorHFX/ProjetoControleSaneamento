@@ -84,6 +84,8 @@ class PessoalCPT {
       proximos: this.minhasListas().filter(l => l.id.slice(-10) > this.hoje && (l.itens || []).some(t => !t.feito)).map(l => ({data: l.id.slice(-10), pendentes: l.itens.filter(t => !t.feito).length})).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 5),
       regras: {pontosPorTarefa: PessoalCPT.pontosPorTarefa, tarefasPorDia: PessoalCPT.tarefasPontuadasPorDia}};
     try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
+    // Missões: tarefas automáticas do trabalho (ex.: confirmar as obras de hoje). Somem quando o trabalho é feito.
+    try { out.missoes = new ObrasDoDiaCPT({...this.ctx}).missoes(); } catch (_) { out.missoes = []; }
     return out;
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }

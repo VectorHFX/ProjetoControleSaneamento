@@ -23,7 +23,9 @@ class DadosDaAplicacao {
   mesCelula(v) { return v instanceof Date ? Utilities.formatDate(v,this.fuso,'yyyy-MM') : String(v || ''); }
   data(v) { return v instanceof Date ? Utilities.formatDate(v,this.fuso,'yyyy-MM-dd') : String(v || '').slice(0,10); }
   texto(v) { return String(v == null ? '' : v); }
-  ler(a, largura) { const n = a.getLastRow()-1; return n > 0 ? a.getRange(2,1,n,largura).getValues() : []; }
+  ler(a, largura) { const n = a.getLastRow()-1, v = n > 0 ? a.getRange(2,1,n,largura).getValues() : []; return a === this._reg && largura >= 11 ? v.map(r => this.vincular(r)) : v; }
+  /** "Outra obra" vinculada pela gerência: a obra entra na leitura (J e K); a linha da base não é alterada. */
+  vincular(r) { if (typeof ObrasDoDiaCPT === 'undefined' || String(r[10] || '')) return r; const v = ObrasDoDiaCPT.mapaVinculos().get(String(r[0])); if (v) { r[9] = v.rotulo; r[10] = v.id; } return r; }
   registro(r) { return {id:this.texto(r[0]),procedimento:this.texto(r[1]),data:this.data(r[2]),mes:this.mesCelula(r[3]),origem:this.texto(r[5]),bairro:this.texto(r[7]),bairroId:this.texto(r[8]),obra:this.texto(r[9]),obraId:this.texto(r[10]),responsavel:this.texto(r[11]),area:this.texto(r[12]),atividade:this.texto(r[13]),publico:r[14] === '' ? null : /^\d+$/.test(String(r[14])) ? Number(r[14]) : null,protocolo:this.texto(r[15]),conferencia:this.texto(r[18])}; }
   encerrado(r) { return /conclu|encerrad|finaliz/.test(DadosDaAplicacao.norm(r[3])); }
   principal(r) { return !!r[0] && (!r[1] || r[1] === r[0]) && !/incorporad|mesclad/.test(DadosDaAplicacao.norm(r[2])); }
@@ -104,7 +106,7 @@ class DadosDaAplicacao {
       if(c.filtro!==assinatura||!Number.isInteger(c.linha)||!Number.isInteger(c.topo)||c.linha<1||c.linha>c.topo||c.topo>a.getLastRow())throw new Error('Os filtros mudaram. Reinicie a busca.');linha=c.linha;topo=c.topo;}
     const itens=[];let lidos=0;
     while(linha>1&&itens.length<limite&&lidos<2000){const n=Math.min(200,linha-1,2000-lidos),primeira=linha-n+1,bloco=a.getRange(primeira,1,n,19).getValues();
-      for(let i=bloco.length-1;i>=0;i--){const r=bloco[i];linha=primeira+i-1;lidos++;
+      for(let i=bloco.length-1;i>=0;i--){const r=this.vincular(bloco[i]);linha=primeira+i-1;lidos++;
         if(r[0]&&this.permitido(r)&&(!f.mes||this.mesCelula(r[3])===f.mes)&&(!f.procedimento||r[1]===f.procedimento)&&(!f.bairro||r[7]===f.bairro)&&(!f.obra||r[9]===f.obra)&&(!f.pendencia||(f.pendencia==='publico'&&DadosDaAplicacao.norm(r[1])==='relato de atividade'&&(r[14]===''||!/^\d+$/.test(String(r[14])))))&&
           (!f.busca||DadosDaAplicacao.norm(r[17]+' '+r[0]).includes(DadosDaAplicacao.norm(f.busca))))itens.push(this.registro(r));
         if(itens.length===limite)break;}}
@@ -136,7 +138,7 @@ class DadosDaAplicacao {
   }
   detalhe(id) {
     if(typeof id!=='string'||!/^REG-[a-f0-9]{24}$/.test(id))throw new Error('ID de registro inválido.');
-    const a=this.registros(),r=a.getRange(this.localizar(a,id),1,1,21).getValues()[0];if(!this.permitido(r))throw new Error('Seu perfil não permite consultar este registro.');const d=DadosDaAplicacao.lerDetalhes(r[20]);
+    const a=this.registros(),r=this.vincular(a.getRange(this.localizar(a,id),1,1,21).getValues()[0]);if(!this.permitido(r))throw new Error('Seu perfil não permite consultar este registro.');const d=DadosDaAplicacao.lerDetalhes(r[20]);
     const campos=[];
     if(Array.isArray(d.campos))d.campos.forEach(x=>{if(x.valor!==''&&x.valor!=null&&!(Array.isArray(x.valor)&&!x.valor.length))campos.push({titulo:x.titulo,valor:DadosDaAplicacao.json(x.valor),secao:x.secao||'',tipo:x.tipo||''});});
     // Compatibilidade com o JSON preservado da migração 1.0/2.0/3.0.

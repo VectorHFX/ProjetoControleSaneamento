@@ -37,6 +37,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 - Tudo entra no **Histórico de obras** e chega ao formulário em até 1 hora, como já acontecia com as obras.
 - Durante os testes, só você edita. Gestão e Administrativo passam a editar depois de `liberarConfiguracaoCPT`.
 
+**Missões (novo, no checklist do Meu espaço):** tarefas automáticas que levam direto ao lugar certo e somem quando o trabalho é feito. Por enquanto, só para Gestão e Administrativo:
+- **Confirmar as obras de hoje** (a partir das 7h). Em Obras → **Obras de hoje**, marque as obras com frente de serviço no dia. A tela já sugere as do cronograma do dia e as confirmadas ontem. Há a opção **Nenhuma obra neste dia**, e dá para corrigir um dia anterior.
+- **Vincular registros de "outra obra"**. Em Obras → **Para vincular**, escolha a obra de cada registro enviado como "Obra ainda não cadastrada" (a observação final aparece no cartão) ou cadastre a obra nova. **O registro original não muda.** O vínculo fica na planilha de dados da aplicação, aba **Vínculos de obra**, e vale nas telas, no painel e no relatório.
+
+**Painel da gestão → Frentes de serviço → Obras ativas × ações:** cada dia do mês com obras confirmadas, ações registradas, obras ativas sem ação e ações em obra não ativa. Dia sem confirmação aparece como **não informado**. As confirmações ficam na aba **Obras do dia** da planilha de dados da aplicação.
+
+Confirmar obras do dia e vincular registros são trabalho do dia a dia, por isso Gestão e Administrativo já podem fazer isso durante os testes. Alterar o catálogo (obras e bairros) continua só com você até `liberarConfiguracaoCPT`.
+
 **Na planilha da Base:** a aba Obras ganha as colunas **AJ (Nome de uso)** e **AK (Também chamada de)**. A aba Bairros ganha a coluna **L (Também chamado de)**. Elas são criadas no primeiro salvamento pela aplicação. Não edite essas colunas à mão.
 
 ---
