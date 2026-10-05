@@ -41,7 +41,8 @@ window.CPTVisual = (() => {
   /** Depois do esqueleto: sobe só o que acabou de entrar. */
   function entradaNovos(nos) {
     if (!ativo() || calmo() || !nos.length) return; let i = 0;
-    nos.forEach(n => { const alvos = n.matches(CASCATA) ? [n] : Array.from(n.querySelectorAll(CASCATA)); (alvos.length ? alvos : [n]).forEach(el => { el.style.setProperty('--i', Math.min(i++, 14)); el.classList.add('v3-novo'); }); });
+    // o título e as abas já estavam no esqueleto: não sobem de novo
+    nos.filter(n => !n.matches('.page-intro,.painel-tabs,.segmented,.loading-label')).forEach(n => { const alvos = n.matches(CASCATA) ? [n] : Array.from(n.querySelectorAll(CASCATA)); (alvos.length ? alvos : [n]).forEach(el => { el.style.setProperty('--i', Math.min(i++, 14)); el.classList.add('v3-novo'); }); });
     clearTimeout(novosTimer); novosTimer = setTimeout(() => document.querySelectorAll('#view .v3-novo').forEach(el => el.classList.remove('v3-novo')), 1400);
   }
   function parar(v) { clearTimeout(entradaTimer); v.removeAttribute('data-entrando'); }

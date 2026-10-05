@@ -7,9 +7,9 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.route(/fonts\.(googleapis|gstatic)\.com/,r=>r.abort());
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q,foto=async n=>{if(process.env.FOTOS)await p.screenshot({path:path.join(process.env.FOTOS,n+'.png'),fullPage:false});};
   const abrir=async()=>{await p.evaluate(()=>{const g=document.querySelector('.nav-group[data-grupo=consulta] .nav-group-head');if(g&&g.getAttribute('aria-expanded')==='false')g.click();});await p.locator('.nav-item[data-route=organograma]').click();await p.locator('#orgQuadro svg, .org-painel .empty').first().waitFor();};
-  // 1. Equipe: vê o organograma e baixa, mas não edita.
-  await p.goto(url('?perfil=atendimento&latencia=20'));await p.locator('#navigation .nav-item').first().waitFor({state:'attached'});await abrir();
-  assert.equal(await p.locator('[data-org-novo]').count(),0,'equipe não edita');assert.equal(await p.locator('[data-org-png]').count(),1,'equipe baixa');
+  // 1. Equipe: nos testes, a página é só do proprietário (como o Álbum e o Mapa).
+  await p.goto(url('?perfil=atendimento&latencia=20'));await p.locator('#navigation .nav-item').first().waitFor({state:'attached'});
+  assert.equal(await p.locator('.nav-item[data-route=organograma]').isHidden(),true,'equipe não vê a página nos testes');
   // 2. Proprietário: desenho completo com título, legenda e um cartão por pessoa; quem tem muita gente sem equipe abaixo vira coluna.
   await p.goto(url('?latencia=20'));await p.locator('#navigation .nav-item').first().waitFor({state:'attached'});await abrir();
   const svg=await p.locator('#orgQuadro svg').innerHTML();assert.ok(svg.includes('Organograma da equipe')&&svg.includes('Cada cor é uma área'),'título e explicação');
@@ -38,5 +38,5 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(300);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'rolagem lateral no celular');
   await foto('organograma-celular');
   assert.deepEqual(errors,[]);await b.close();
-  console.log('PASS: organograma — todos veem e baixam; só o proprietário edita nos testes; título, legenda por área e cartões sem sobrepor; PNG e SVG baixam; PDF imprime só o organograma; editar e trazer da equipe; celular sem rolagem lateral.');
+  console.log('PASS: organograma — só o proprietário nos testes (página e edição); título, legenda por área e cartões sem sobrepor; PNG e SVG baixam; PDF imprime só o organograma; editar e trazer da equipe; celular sem rolagem lateral.');
 })().catch(e=>{console.error(e);process.exit(1);});

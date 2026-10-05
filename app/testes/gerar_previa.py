@@ -163,7 +163,7 @@ if(!window.CPT_ORG)window.CPT_ORG={v:0,pessoas:[['o1','Rita Exemplo','Gerente de
   .map(([id,n,c,a,ch,de],i)=>({id,versao:1,nome:n,cargo:c,area:a,chefia:ch,desde:de,ordem:0,alteradoEm:'2026-09-30T12:00:00Z'})),fora:2};
 const ORGA={gestao:'Gestão',administrativo:'Administrativo',socioambiental:'Socioambiental',comunicacao:'Comunicação',atendimento:'Atendimento',comercializacao:'Comercialização',campo:'Campo e mobilização',parceiros:'Consórcio e parceiros'};
 const orgCarregar=()=>({pessoas:CPT_ORG.pessoas.slice(),areas:ORGA,podeEditar:ESPdono,atualizadoEm:'2026-09-30T12:00:00Z',foraDoOrganograma:ESPdono?CPT_ORG.fora:0});
-if(nome==='carregarOrganogramaCPT')return orgCarregar();
+if(nome==='carregarOrganogramaCPT'){if(!ESPdono)throw new Error('O organograma está reservado à administração técnica durante o período de testes.');return orgCarregar();}
 if(nome==='salvarOrganogramaCPT'){if(!ESPdono)throw new Error('Editar o organograma está reservado à administração técnica durante o período de testes.');if(!p.nome||!p.cargo)throw new Error('Preencha: nome.');
   if(p.chefia&&p.chefia===p.id)throw new Error('A pessoa não pode responder a ela mesma.');const a=CPT_ORG.pessoas.find(x=>x.id===p.id);
   if(p.ativo===false){if(CPT_ORG.pessoas.some(x=>x.chefia===p.id))throw new Error('Antes de tirar esta pessoa, mude quem responde a ela.');CPT_ORG.pessoas=CPT_ORG.pessoas.filter(x=>x.id!==p.id);return {resultado:'Pessoa tirada do organograma (fica no histórico).'};}

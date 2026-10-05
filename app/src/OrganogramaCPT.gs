@@ -1,7 +1,8 @@
 /**
  * OrganogramaCPT 2.26.0. Organograma da equipe (página "Organograma"): quem é quem, em que área, e a quem responde.
  * - Coleção "Organograma" (IDs ORG-…) na planilha de dados da aplicação: os nomes ficam lá, nunca no GitHub.
- * - Todos da equipe veem (serve para orientar quem chega). Editam: Gestão e Administrativo; nos testes, só o proprietário.
+ * - Todos da equipe veem (serve para orientar quem chega). Editam: Gestão e Administrativo.
+ *   Período de testes: a página inteira é só do proprietário (como o Álbum e o Mapa), até liberarConfiguracaoCPT.
  * - "Trazer da equipe": cria um cartão para cada pessoa ativa de Equipe e acessos que ainda não está no organograma.
  * - Os downloads (imagem PNG, SVG e PDF pela impressão) são feitos no navegador, a partir do mesmo desenho da tela.
  */
@@ -20,6 +21,7 @@ class OrganogramaCPT {
   itens() { return ColecaoCPT.existe(this.ctx, OrganogramaCPT.aba) ? this.col.itens() : []; }
   static publico(x) { return {id: x.id, versao: x.versao, nome: x.nome, cargo: x.cargo, area: x.area, chefia: x.chefia || '', desde: x.desde || '', ordem: Number(x.ordem) || 0, alteradoEm: x.alteradoEm}; }
   carregar() {
+    if (PerfisCPT.travada() && !this.ctx.perfil.papeis.includes('administrador')) throw new Error('O organograma está reservado à administração técnica durante o período de testes.');
     const todos = this.itens(), ativos = todos.filter(x => x.ativo !== false), emails = new Set(todos.map(x => x.email).filter(Boolean));
     const fora = this.podeEditar() ? PerfisCPT.lista(this.ctx.config).filter(p => p.ativo && !emails.has(p.email)).length : 0;
     const atualizado = ativos.map(x => x.alteradoEm || '').sort().pop() || '';

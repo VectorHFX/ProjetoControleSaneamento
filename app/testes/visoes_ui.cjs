@@ -74,10 +74,10 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.setViewportSize({width:1366,height:900});const q=p;
   await q.goto(url('?perfil=comercializacao&latencia=20'));await espaco();await irInicio();
   assert.equal(await q.locator('#viewBanner').isHidden(),true);
-  assert.deepEqual(await q.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','organograma','ajuda']);
+  assert.deepEqual(await q.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
   const s=p;
   await s.goto(url('?perfil=socioambiental&latencia=20'));await espaco();await irInicio();
-  assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','lembretes','socioambiental','fechamento','registros','obras','contatos','organograma','ajuda']);
+  assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','lembretes','socioambiental','fechamento','registros','obras','contatos','ajuda']);
   assert.match(await s.locator('.shortcuts').textContent(),/Mesa do relatório/);
   assert.deepEqual(errors,[]);
   console.log('PASS: visões por cargo (faixa, cor, lateral e atalhos mudam; pessoa de um papel não troca), auditoria de atendimentos, painel (alertas, frentes com filtro e detalhe, relatos), Programa Parceiros (sugestão, não se aplica, conferido, salvar, publicar, exportar, rascunho recuperado), conectores e celular sem rolagem lateral.');

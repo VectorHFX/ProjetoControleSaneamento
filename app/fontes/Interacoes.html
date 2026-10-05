@@ -47,7 +47,7 @@
     obras:{titulo:'Obras',icone:'i-pin',grupo:'consulta',abrir:()=>window.CPTObras.render(),atualizar:()=>window.CPTObras.render()},
     contatos:{titulo:'Contatos',icone:'i-contact',grupo:'consulta',abrir:()=>window.CPTRecados.renderContatos(),atualizar:()=>window.CPTRecados.renderContatos()},
     equipe:{titulo:'Equipe e acessos',icone:'i-people',grupo:'consulta',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTAgenda.team(),atualizar:()=>window.CPTAgenda.team()},
-    organograma:{titulo:'Organograma',busca:'organograma equipe quem e quem cargos areas baixar imagem pdf',icone:'i-people',grupo:'consulta',abrir:()=>window.CPTOrganograma.render(),atualizar:()=>window.CPTOrganograma.render()},
+    organograma:{titulo:'Organograma',busca:'organograma equipe quem e quem cargos areas baixar imagem pdf',icone:'i-people',grupo:'consulta',emTeste:true,abrir:()=>window.CPTOrganograma.render(),atualizar:()=>window.CPTOrganograma.render()},
     revisao:{titulo:'Revisão do conteúdo',busca:'revisao conteudo quiz curiosidades perguntas aprovar suspender',icone:'i-book',grupo:'consulta',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTSaber.revisao(),atualizar:()=>window.CPTSaber.revisao()},
     ajuda:{titulo:'Como usar',icone:'i-help',grupo:'consulta',abrir:()=>renderHelp()},
     conectores:{titulo:'Conectores e pastas',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderConectores(),atualizar:()=>window.CPTGestao.renderConectores()}

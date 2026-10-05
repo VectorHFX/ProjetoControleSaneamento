@@ -133,7 +133,8 @@ assert.equal(run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').f
 assert.ok(!abertas.includes('1pQJ5B8wRzsdlU8udlh9ZzcWXozT3BOh4'),'a planilha de controle nunca é aberta pela aplicação');ctx.SpreadsheetApp.openById=abrir0;
 console.log('PASS: planilha de controle — lembrete mensal com link na aba, prazo e números do mês; marcar respondida só pelo proprietário nos testes; missão some e volta; a planilha nunca é aberta.');
 // 2.26: organograma — todos veem; Gestão/Administrativo editam (só o proprietário nos testes); sem ciclos; trazer da equipe sem repetir.
-email='atd@example.com';let og=run('carregarOrganogramaCPT()');assert.deepEqual(og.pessoas,[]);assert.equal(og.podeEditar,false);assert.equal(books.get('agenda').getSheetByName('Organograma'),null,'ler não cria a aba');
+email='atd@example.com';assert.throws(()=>run('carregarOrganogramaCPT()'),/reservado à administração técnica/,'nos testes, a página é só do proprietário');
+props.set('CPT_TRAVA_CONFIG','liberada');let og=run('carregarOrganogramaCPT()');assert.deepEqual(og.pessoas,[]);assert.equal(og.podeEditar,false);assert.equal(books.get('agenda').getSheetByName('Organograma'),null,'ler não cria a aba');props.delete('CPT_TRAVA_CONFIG');
 ctx.o={nome:'X',cargo:'Y',area:'gestao',operacaoId:'OP-org-00000001'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/Gestão e pelo Administrativo/);
 email='gestao@example.com';assert.throws(()=>run('salvarOrganogramaCPT(o)'),/reservado à administração técnica/);
 email='victor@example.com';ctx.o={operacaoId:'OP-org-00000002'};og=run('importarOrganogramaCPT(o)');assert.match(og.resultado,/pessoas entraram/);const nEquipe=og.pessoas.length;assert.ok(nEquipe>=4);
@@ -145,8 +146,8 @@ ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'Gerente',area:'gestao
 ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'',area:'gestao',operacaoId:'OP-org-00000007'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/cargo/);
 ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'Gerente',area:'gestao',ativo:false,operacaoId:'OP-org-00000008'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/mude quem responde/);
 ctx.o={id:soc.id,versao:so.versao,nome:soc.nome,cargo:'Mobilizadora',area:'campo',chefia:gest.id,ativo:false,operacaoId:'OP-org-00000009'};run('salvarOrganogramaCPT(o)');
-email='atd@example.com';og=run('carregarOrganogramaCPT()');assert.equal(og.pessoas.length,nEquipe-1,'quem saiu não aparece (fica no histórico)');assert.ok(!og.pessoas.some(x=>'email' in x),'e-mail não vai para a tela');
-console.log('PASS: organograma — todos veem; só Gestão/Administrativo editam (proprietário nos testes); trazer da equipe sem repetir; sem ciclo nem chefia de si mesmo; tirar pede mudar quem responde; e-mail não vai à tela.');
+props.set('CPT_TRAVA_CONFIG','liberada');email='atd@example.com';og=run('carregarOrganogramaCPT()');props.delete('CPT_TRAVA_CONFIG');assert.equal(og.pessoas.length,nEquipe-1,'quem saiu não aparece (fica no histórico)');assert.ok(!og.pessoas.some(x=>'email' in x),'e-mail não vai para a tela');
+console.log('PASS: organograma — só o proprietário nos testes, depois todos veem; só Gestão/Administrativo editam (proprietário nos testes); trazer da equipe sem repetir; sem ciclo nem chefia de si mesmo; tirar pede mudar quem responde; e-mail não vai à tela.');
 
 // 5. Auditoria de atendimentos.
 email='social@example.com';assert.throws(()=>run('auditarAtendimentosCPT()'),/Atendimento, Administrativo e Gestão/);
