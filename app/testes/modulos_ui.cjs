@@ -9,6 +9,17 @@ await page.fill('#obraFiltros input[name=busca]','apia');await page.waitForTimeo
 await page.fill('#obraFiltros input[name=busca]','');await page.waitForTimeout(400);
 await page.locator('[data-obra-acao=nova]').click();await page.fill('#obraForm input[name=nome]','Rede Nova Teste');await page.locator('#obraForm input[value="Vila Linda"]').check();
 if(out)await page.screenshot({path:out+'/obra_editor.png'});await page.locator('#obraForm button[type=submit]').click();await page.getByText('Rede Nova Teste').first().waitFor();
+// Nome de uso em destaque, oficial abaixo; apelidos entram na busca.
+const viela=page.locator('.obra-card',{hasText:'OBR-0117'});assert.equal(await viela.locator('h3').textContent(),'Viela Carijós');assert.match(await viela.locator('.obra-oficial').textContent(),/Viela Sanitária x Carijós/);
+await page.fill('#obraFiltros input[name=busca]','grande');await page.waitForTimeout(400);assert.equal(await page.locator('.obra-card').count(),1);await page.fill('#obraFiltros input[name=busca]','');await page.waitForTimeout(400);
+await page.locator('[data-obra="OBR-0074"]').click();await page.fill('#obraForm input[name=nomeUso]','Orquídea');await page.fill('#obraForm input[name=apelidos]','Apiaí, Margem esquerda');
+await page.locator('#obraForm button[type=submit]').click();await page.locator('.obra-card h3',{hasText:/^Orquídea$/}).waitFor();
+// Bairros: cadastrar e tirar do formulário.
+await page.locator('#bairrosPainel summary').click();assert.equal(await page.locator('.bairro-row').count(),3);
+await page.locator('[data-bairro-novo]').click();await page.fill('#bairroForm input[name=nome]','Vila Nova');await page.fill('#bairroForm input[name=apelidos]','VN');await page.locator('#bairroForm button[type=submit]').click();
+await page.locator('.bairro-row',{hasText:'Vila Nova'}).waitFor();assert.equal(await page.locator('.bairro-row').count(),4);
+await page.locator('[data-bairro="Vila Assunção"]').click();assert(await page.locator('#bairroForm input[name=nome]').isDisabled(),'nome do bairro não muda');await page.locator('#bairroForm input[name=noFormulario]').uncheck();await page.locator('#bairroForm button[type=submit]').click();
+await page.locator('.bairro-row',{hasText:'Vila Assunção'}).locator('text=Fora do formulário').waitFor();
 if(out)await page.screenshot({path:out+'/obras.png',fullPage:true});
 await page.locator('.nav-item[data-route=fechamento]').click();await page.locator('.fechamento-item').first().waitFor();assert.equal(await page.locator('.fechamento-item').count(),4);
 assert.match(await page.locator('.simple-table').textContent(),/\(parcial\)/);await page.fill('#gerarForm input[name=numero]','15');await page.locator('#gerarForm button').click();
@@ -16,6 +27,6 @@ await page.getByText('Abrir documento').waitFor();if(out)await page.screenshot({
 await page.locator('[data-fechamento-ir]').nth(1).click();await page.locator('#recordFilters').waitFor();assert.equal(await page.locator('#recordFilters input[name=pendencia]').inputValue(),'publico');
 // Colaboradora de Comunicação: vê Obras sem editar e vê Fechamento; Atendimento não vê Fechamento.
 await page.goto(url+'?perfil=comunicacao');await page.locator('#roleView option[value=comunicacao]').waitFor({state:'attached'});assert(await page.locator('.nav-item[data-route=fechamento]').isVisible());
-await page.locator('.nav-item[data-route=obras]').click();await page.locator('.obra-card').first().waitFor();assert.equal(await page.locator('[data-obra-acao=nova]').count(),0);assert.equal(await page.locator('[data-obra-confirmar]').count(),0);
+await page.locator('.nav-item[data-route=obras]').click();await page.locator('.obra-card').first().waitFor();assert.equal(await page.locator('[data-obra-acao=nova]').count(),0);assert.equal(await page.locator('[data-obra-confirmar]').count(),0);assert.equal(await page.locator('[data-bairro-novo]').count(),0);
 await page.goto(url+'?perfil=atendimento');await page.locator('#roleView option[value=atendimento]').waitFor({state:'attached'});assert(await page.locator('.nav-item[data-route=fechamento]').isHidden());
 assert.deepEqual(erros,[]);await b.close();console.log('PASS: Obras (filtro mantém foco, revisão diária, cadastro) e Fechamento (pendências, satisfação semanal, geração e atalho para a pendência) por perfil.');})().catch(e=>{console.error(e);process.exit(1);});

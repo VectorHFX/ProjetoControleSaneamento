@@ -6,7 +6,7 @@
 class ConfiguracaoDaBase {
   static get valores() {
     return Object.freeze({
-      VERSAO: '4.5.0',
+      VERSAO: '4.6.0',
       // Obras e bairros padronizados (IDs) valem pela DATA DE REALIZAÇÃO a partir deste dia.
       // Registros anteriores mantêm os textos originais, sem reenquadramento automático.
       VIGENCIA_REFERENCIAS: '2026-10-01',

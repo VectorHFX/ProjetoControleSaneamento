@@ -61,14 +61,14 @@ class PaineisGestaoCPT {
     const porTipo = contar(acoes, x => String(x.r[13]).trim()).slice(0, 8);
 
     // Frentes: catálogo (exceto finalizadas) + o que apareceu no mês fora do catálogo.
-    const porId = new Map(e.obras.map(o => [o.id, o])), porNome = new Map(e.obras.map(o => [PaineisGestaoCPT.chaveObra(o.nome), o]));
+    const porId = new Map(e.obras.map(o => [o.id, o])), porNome = new Map(e.obras.flatMap(o => ObrasCPT.nomesConhecidos(o).map(n => [PaineisGestaoCPT.chaveObra(n), o])));
     const frentes = new Map(), frente = (id, nome) => {
       const o = (id && porId.get(id)) || porNome.get(PaineisGestaoCPT.chaveObra(nome)) || null, k = o ? o.id : 'X:' + PaineisGestaoCPT.chaveObra(nome);
-      if (!frentes.has(k)) frentes.set(k, {id: o ? o.id : '', nome: o ? o.nome : String(nome).replace(/\s*\[OBR-\d+\]\s*$/, ''), situacao: o ? o.situacao || 'A confirmar' : 'Fora do catálogo', bairros: o ? o.bairros : [],
+      if (!frentes.has(k)) frentes.set(k, {id: o ? o.id : '', nome: o ? o.exibir : String(nome).replace(/\s*\[OBR-\d+\]\s*$/, ''), situacao: o ? o.situacao || 'A confirmar' : 'Fora do catálogo', bairros: o ? o.bairros : [],
         endereco: o ? o.endereco || o.logradouroPAC16 : '', impacto: o ? o.impacto : '', acoes: 0, pessoas: 0, diagnosticos: 0, ultimo: '', casosAbertos: 0, casosMes: 0, atividades: [], casos: []});
       return frentes.get(k);
     };
-    e.obras.filter(o => o.situacao !== 'Finalizada').forEach(o => frente(o.id, o.nome));
+    e.obras.filter(o => o.situacao !== 'Finalizada').forEach(o => frente(o.id, o.exibir));
     linhas.forEach(x => {
       const nome = S.frente(x.r[9]); if (!nome || !x.destino) return;
       const id = String(x.r[10] || ''), ehCatalogo = (id && porId.has(id)) || porNome.has(PaineisGestaoCPT.chaveObra(nome));
@@ -80,7 +80,7 @@ class PaineisGestaoCPT {
     });
     fichas.forEach(c => {
       const k = PaineisGestaoCPT.chaveObra(c.obra); if (!k || /nao se aplica/.test(k)) return;
-      const o = porNome.get(k); const f = o ? frentes.get(o.id) || frente(o.id, o.nome) : (!c.concluido || c.abertura.startsWith(mes) ? frente('', c.obra) : null); if (!f) return;
+      const o = porNome.get(k); const f = o ? frentes.get(o.id) || frente(o.id, o.exibir) : (!c.concluido || c.abertura.startsWith(mes) ? frente('', c.obra) : null); if (!f) return;
       if (!c.concluido) { f.casosAbertos++; f.casos.push({protocolo: c.protocolo, assunto: c.assunto, dias: c.dias, status: c.status}); }
       if (c.abertura.startsWith(mes)) f.casosMes++;
     });

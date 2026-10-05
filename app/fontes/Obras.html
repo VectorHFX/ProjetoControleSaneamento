@@ -1,11 +1,15 @@
 <script>
-/* Obras 2.1.0 — consulta para todos; cadastro e revisão diária para Administrativo e Gestão. */
+/* Obras 2.14.0 — consulta para todos; cadastro, revisão diária e bairros para Administrativo e Gestão.
+   Nome de uso em destaque (o oficial fica abaixo); apelidos entram na busca. */
 window.CPTObras = (() => {
   'use strict';
-  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'};
+  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'}, bairrosAberto = false;
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
   const dias = iso => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 864e5) : null;
+  const exibir = o => o.exibir || o.nomeUso || o.nome;
+  const separar = v => String(v || '').split(',').map(x => x.trim()).filter(Boolean);
+  const cadastroBairros = () => dados.bairrosCadastro || dados.bairros.map(nome => ({id: '', nome, noFormulario: true, apelidos: []}));
   const corSituacao = s => ({'Em andamento': 'green', 'Paralisada': 'orange', 'Finalizada': '', 'A confirmar': 'orange'}[s] ?? 'orange');
 
   function revisao(o) {
@@ -16,7 +20,7 @@ window.CPTObras = (() => {
   function visiveis() {
     const b = ui.norm(filtro.busca);
     return dados.obras.filter(o => (filtro.situacao === 'todas' || (filtro.situacao === 'ativas' ? ['Em andamento', 'Paralisada', 'A confirmar', ''].includes(o.situacao) : o.situacao === filtro.situacao)) &&
-      (!b || ui.norm([o.id, o.nome, o.bairros.join(' '), o.endereco, o.logradouroPAC16].join(' ')).includes(b)));
+      (!b || ui.norm([o.id, o.nome, o.nomeUso, (o.apelidos || []).join(' '), o.bairros.join(' '), o.endereco, o.logradouroPAC16].join(' ')).includes(b)));
   }
   function statusFormulario(f) {
     if (!f || f.situacao === 'desconhecida') return '';
@@ -40,7 +44,9 @@ window.CPTObras = (() => {
         ${dados.podeEditar ? `<button type="button" class="button" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra</button>` : ''}
       </form></section>
       <div class="results-head"><span>${ui.num(lista.length)} obras exibidas · ${ui.num(ativas.length)} ativas</span>${dados.podeEditar && atrasadas ? `<span>${ui.num(atrasadas)} ativas sem revisão há mais de 7 dias</span>` : ''}</div>
-      <div class="obra-lista" role="list">${lista.map(linha).join('') || '<p class="muted">Nenhuma obra com estes filtros.</p>'}</div>`;
+      <div class="obra-lista" role="list">${lista.map(linha).join('') || '<p class="muted">Nenhuma obra com estes filtros.</p>'}</div>
+      ${painelBairros()}`;
+    $('bairrosPainel').addEventListener('toggle', e => { bairrosAberto = e.target.open; });
     const f = $('obraFiltros');
     f.addEventListener('change', () => { filtro = Object.fromEntries(new FormData(f)); draw(); });
     f.elements.busca.addEventListener('input', e => { filtro.busca = e.target.value; clearTimeout(f._t); f._t = setTimeout(() => { const pos = e.target.selectionStart; draw(); const i = $('obraFiltros').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }, 250); });
@@ -48,20 +54,46 @@ window.CPTObras = (() => {
   function linha(o) {
     const atraso = ['Em andamento', 'Paralisada'].includes(o.situacao) && (dias(o.atualizadoEm) ?? 99) > 7;
     return `<article class="entry-card obra-card" role="listitem"><div class="card-top"><span class="badge ${corSituacao(o.situacao)}">${ui.esc(o.situacao || 'Sem situação')}</span><span class="date">${ui.esc(o.id)}</span></div>
-      <h3>${ui.esc(o.nome)}</h3><p>${ui.esc(o.bairros.join(' · ') || 'Bairros não informados')}<br>${ui.esc(o.endereco || o.logradouroPAC16 || 'Endereço não informado')}</p>
+      <h3>${ui.esc(exibir(o))}</h3>${o.nomeUso && o.nomeUso !== o.nome ? `<p class="obra-oficial small muted">Nome oficial: ${ui.esc(o.nome)}</p>` : ''}<p>${ui.esc(o.bairros.join(' · ') || 'Bairros não informados')}<br>${ui.esc(o.endereco || o.logradouroPAC16 || 'Endereço não informado')}</p>
       <p class="small muted">${o.inicioObra ? 'Início ' + ui.date(o.inicioObra) : 'Início não informado'}${o.publico ? ' · Público ' + ui.esc(o.publico) : ''}${o.impacto ? ' · Impacto ' + ui.esc(o.impacto) : ''} · ${o.noFormularioAgora ? 'No formulário' : 'Fora do formulário'}</p>
       <div class="card-bottom"><span class="${atraso ? 'text-warning' : ''}">${revisao(o)}</span><span>
       ${dados.podeEditar && ['Em andamento', 'Paralisada'].includes(o.situacao) ? `<button class="button ghost" data-obra-confirmar="${ui.esc(o.id)}" title="Confirma que a situação continua a mesma hoje">Continua igual</button>` : ''}
       <button class="button ghost" data-obra="${ui.esc(o.id)}">${dados.podeEditar ? 'Abrir e editar' : 'Ver detalhes'} ${ui.icon('arrow')}</button></span></div></article>`;
   }
+  function painelBairros() {
+    const lista = cadastroBairros(), fora = lista.filter(b => !b.noFormulario).length;
+    return `<details id="bairrosPainel" class="panel bairros-panel" ${bairrosAberto ? 'open' : ''}><summary><strong>Bairros</strong> <span class="muted">${ui.num(lista.length)} cadastrados${fora ? ' · ' + ui.num(fora) + ' fora do formulário' : ''}</span></summary>
+      ${dados.podeEditar ? `<div class="bairros-acoes"><button type="button" class="button secondary" data-bairro-novo>${ui.icon('plus')}Cadastrar bairro</button></div>` : ''}
+      <div class="bairros-lista" role="list">${lista.map(b => `<div class="bairro-row" role="listitem"><span><strong>${ui.esc(b.nome)}</strong>${b.apelidos.length ? `<small class="muted"> · também chamado de ${ui.esc(b.apelidos.join(', '))}</small>` : ''}</span>
+        <span class="badge ${b.noFormulario ? 'green' : ''}">${b.noFormulario ? 'No formulário' : 'Fora do formulário'}</span>${dados.podeEditar && b.id ? `<button type="button" class="button ghost" data-bairro="${ui.esc(b.nome)}">Editar</button>` : ''}</div>`).join('')}</div></details>`;
+  }
+  function editorBairro(b) {
+    const novo = !b, e = b || {id: '', nome: '', noFormulario: true, apelidos: []};
+    $('detailType').textContent = novo ? 'NOVO BAIRRO' : 'BAIRRO ' + e.id; $('detailTitle').textContent = novo ? 'Cadastrar bairro' : e.nome;
+    $('detailContent').innerHTML = `<form id="bairroForm"><div id="bairroErro" class="notice" hidden></div><div class="editor-grid">
+      ${campo('Nome do bairro', `<input name="nome" required maxlength="80" value="${ui.esc(e.nome)}" ${novo ? '' : 'disabled'}>`, true)}
+      ${novo ? '' : '<p class="small muted wide">O nome não muda pela aplicação: obras e registros guardam o bairro pelo nome. Use "também chamado de" para outros nomes.</p>'}
+      ${campo('Também chamado de (separe por vírgula)', `<input name="apelidos" maxlength="400" value="${ui.esc(e.apelidos.join(', '))}">`, true)}
+      <label class="check-inline"><input type="checkbox" name="noFormulario" ${e.noFormulario ? 'checked' : ''}> Mostrar no formulário de campo</label>
+      </div><div class="dialog-actions"><button class="button" type="submit">${novo ? 'Cadastrar bairro' : 'Salvar alterações'}</button></div></form>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+    $('bairroForm').onsubmit = async ev => {
+      ev.preventDefault(); const f = new FormData(ev.target), b2 = ev.target.querySelector('button[type=submit]'), erro = $('bairroErro');
+      b2.disabled = true; b2.textContent = 'Salvando…'; erro.hidden = true;
+      try { const r = await ui.call('salvarBairroCPT', {id: e.id, nome: novo ? f.get('nome') : e.nome, noFormulario: f.has('noFormulario'), apelidos: separar(f.get('apelidos'))}); ui.toast(r.resultado); $('detailDialog').close(); bairrosAberto = true; render(); }
+      catch (err) { erro.textContent = err.message + ' Seus dados continuam no formulário.'; erro.hidden = false; b2.disabled = false; b2.textContent = novo ? 'Cadastrar bairro' : 'Salvar alterações'; }
+    };
+  }
   function campo(rotulo, html, largo) { return `<label class="${largo ? 'wide' : ''}">${rotulo}${html}</label>`; }
   function editor(o) {
-    const novo = !o, e = o || {id: '', nome: '', bairros: [], noFormulario: true, situacao: 'Em andamento', inicioObra: hoje(), inicioComunicacao: '', termino: '', publico: '', impacto: '', observacao: '', tipo: '', endereco: '', atualizadoEm: ''};
+    const novo = !o, e = o || {id: '', nome: '', nomeUso: '', apelidos: [], bairros: [], noFormulario: true, situacao: 'Em andamento', inicioObra: hoje(), inicioComunicacao: '', termino: '', publico: '', impacto: '', observacao: '', tipo: '', endereco: '', atualizadoEm: ''};
     const so = !dados.podeEditar, dis = so ? 'disabled' : '';
     const mapa = e.latitude != null ? `<a href="https://www.google.com/maps?q=${e.latitude},${e.longitude}" target="_blank" rel="noopener noreferrer">Abrir no mapa ↗</a>` : '';
-    $('detailType').textContent = novo ? 'NOVA OBRA' : 'OBRA ' + e.id; $('detailTitle').textContent = novo ? 'Cadastrar obra' : e.nome;
+    $('detailType').textContent = novo ? 'NOVA OBRA' : 'OBRA ' + e.id; $('detailTitle').textContent = novo ? 'Cadastrar obra' : exibir(e);
     $('detailContent').innerHTML = `<form id="obraForm"><div id="obraErro" class="notice" hidden></div><div class="editor-grid">
-      ${campo('Nome da obra / frente', `<input name="nome" required maxlength="200" value="${ui.esc(e.nome)}" ${dis}>`, true)}
+      ${campo('Nome oficial da obra / frente', `<input name="nome" required maxlength="200" value="${ui.esc(e.nome)}" ${dis}>`, true)}
+      ${campo('Nome de uso <small class="muted">(curto, aparece nas telas, no relatório e no formulário)</small>', `<input name="nomeUso" maxlength="80" placeholder="Opcional. Sem ele, vale o nome oficial" value="${ui.esc(e.nomeUso || '')}" ${dis}>`)}
+      ${campo('Também chamada de <small class="muted">(separe por vírgula; ajuda a busca)</small>', `<input name="apelidos" maxlength="400" value="${ui.esc((e.apelidos || []).join(', '))}" ${dis}>`)}
       ${campo('Situação atual', `<select name="situacao" ${dis}>${dados.situacoes.map(s => `<option ${s === e.situacao ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
       <label class="check-inline"><input type="checkbox" name="noFormulario" ${e.noFormulario ? 'checked' : ''} ${dis}> Mostrar no formulário (quando em andamento ou paralisada)</label>
       ${campo('Tipo de obra', `<input name="tipo" maxlength="120" placeholder="Ex.: Coletor tronco, rede coletora, MND" value="${ui.esc(e.tipo)}" ${dis}>`)}
@@ -80,7 +112,7 @@ window.CPTObras = (() => {
     if (so) return;
     $('obraForm').onsubmit = async ev => {
       ev.preventDefault(); const f = new FormData(ev.target), b = ev.target.querySelector('button[type=submit]'), erro = $('obraErro');
-      const p = {id: e.id, atualizadoEm: e.atualizadoEm, nome: f.get('nome'), situacao: f.get('situacao'), noFormulario: f.has('noFormulario'), tipo: f.get('tipo'), endereco: f.get('endereco'),
+      const p = {id: e.id, atualizadoEm: e.atualizadoEm, nome: f.get('nome'), nomeUso: f.get('nomeUso'), apelidos: separar(f.get('apelidos')), situacao: f.get('situacao'), noFormulario: f.has('noFormulario'), tipo: f.get('tipo'), endereco: f.get('endereco'),
         inicioObra: f.get('inicioObra'), termino: f.get('termino'), inicioComunicacao: f.get('inicioComunicacao'), publico: f.get('publico'), impacto: f.get('impacto'), bairros: f.getAll('bairros'), observacao: f.get('observacao')};
       b.disabled = true; b.textContent = 'Salvando…'; erro.hidden = true;
       try { const r = await ui.call('salvarObraCPT', p); ui.toast(r.resultado); $('detailDialog').close(); render(); }
@@ -98,7 +130,9 @@ window.CPTObras = (() => {
     document.addEventListener('click', ev => {
       const abrir = ev.target.closest('[data-obra]'); if (abrir) { editor(dados.obras.find(o => o.id === abrir.dataset.obra)); return; }
       const ok = ev.target.closest('[data-obra-confirmar]'); if (ok) { confirmar(ok.dataset.obraConfirmar, ok); return; }
-      if (ev.target.closest('[data-obra-acao="nova"]')) editor(null);
+      if (ev.target.closest('[data-obra-acao="nova"]')) { editor(null); return; }
+      const bairro = ev.target.closest('[data-bairro]'); if (bairro) { editorBairro(cadastroBairros().find(b => b.nome === bairro.dataset.bairro)); return; }
+      if (ev.target.closest('[data-bairro-novo]')) editorBairro(null);
     });
   }
   return {init, render};

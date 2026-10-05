@@ -51,6 +51,22 @@ ctx.n={nome:'Rede Nova',situacao:'Em andamento',bairros:['vila linda'],noFormula
 assert.throws(()=>run('salvarObraCPT(n)'),/mesmo nome|Já existe/);
 ctx.c={id:'OBR-0001',atualizadoEm:run('listarObrasCPT()').obras.find(o=>o.id==='OBR-0001').atualizadoEm};r=run('confirmarObraCPT(c)');assert.equal(r.obra.situacao,'Em andamento');
 assert.equal(books.get('agenda').getSheetByName('Histórico de obras').rows.length,4);assert.equal(locked,false);
+// Nome de uso e apelidos: a obra ganha um nome curto; o oficial continua guardado.
+let o1=run('listarObrasCPT()').obras.find(o=>o.id==='OBR-0001');assert.equal(o1.exibir,'Coletor A');
+ctx.u={...o1,nomeUso:'Coletor Linda',apelidos:['CT-A',' margem ','']};r=run('salvarObraCPT(u)');assert.equal(r.obra.exibir,'Coletor Linda');assert.equal(r.obra.nome,'Coletor A');
+assert.equal(obras.rows[1][35],'Coletor Linda');assert.equal(obras.rows[1][36],'CT-A; margem');assert.equal(obras.rows[0][35],'Nome de uso');assert.equal(obras.rows[0][36],'Também chamada de');
+ctx.u={...run('listarObrasCPT()').obras.find(o=>o.id==='OBR-0002'),nomeUso:'coletor linda'};assert.throws(()=>run('salvarObraCPT(u)'),/já usado/);
+ctx.u={...ctx.u,nomeUso:'Coletor A'};assert.throws(()=>run('salvarObraCPT(u)'),/já usado/);
+// Bairros: cadastrar, tirar do formulário e apelidos. Renomear não é permitido (as obras guardam o nome).
+assert.deepEqual(run('listarObrasCPT()').bairrosCadastro.map(b=>b.id),['BAI-002','BAI-001']);
+ctx.b={nome:'Vila Nova',noFormulario:true,apelidos:['VN']};r=run('salvarBairroCPT(b)');assert.equal(r.bairro.id,'BAI-100');assert.deepEqual(bairros.rows[4].slice(0,5),['BAI-100','Vila Nova',true,'Santo André','Bairro']);assert.equal(bairros.rows[4][11],'VN');assert.equal(bairros.rows[0][11],'Também chamado de');
+assert.throws(()=>run('salvarBairroCPT(b)'),/Já existe/);
+ctx.b={id:'BAI-002',nome:'Jardim',noFormulario:false,apelidos:['Jd.']};r=run('salvarBairroCPT(b)');assert.equal(bairros.rows[2][2],false);assert.equal(bairros.rows[2][11],'Jd.');
+ctx.b={id:'BAI-002',nome:'Jardim Novo',noFormulario:false,apelidos:[]};assert.throws(()=>run('salvarBairroCPT(b)'),/não muda/);
+ctx.b={id:'BAI-099',nome:'Múltiplos bairros',noFormulario:true,apelidos:[]};assert.throws(()=>run('salvarBairroCPT(b)'),/opção especial/);
+assert.match(obras.rows[5][27],/^PENDENTE/);
+email='social@example.com';ctx.b={nome:'Outro',noFormulario:true,apelidos:[]};assert.throws(()=>run('salvarBairroCPT(b)'),/Administrativo ou pela Gestão/);email='adm@example.com';
+console.log('PASS: nome de uso e apelidos das obras (únicos, oficial preservado) e bairros editáveis na aplicação, com histórico e marcação para o formulário.');
 console.log('PASS: obras consultáveis por todos, edição restrita (travada no período de testes), conflito de versão, bairros validados, nova obra com ID sequencial, revisão diária e marcação para o formulário.');
 // Fechamento: conferência e geração.
 email='atd@example.com';assert.throws(()=>run("conferirFechamentoCPT('2026-10')"),/fechamento do mês está disponível/);
@@ -60,7 +76,7 @@ assert.equal(f.satisfacao.semanas[0].de,'2026-10-01');assert.equal(f.satisfacao.
 assert.equal(f.verificacoes.find(v=>/Público/.test(v.nome)).situacao,'pendente');
 ctx.g={mes:'2026-10',numero:'15',operacaoId:'OP-geracao1234567890'};const g=run('gerarBaseRelatorioCPT(g)');assert.equal(g.versao,1);assert.match(g.documento,/document/);
 const d=docs[0],texto=d.partes.join('\n');for(const item of ['1. Áreas de Trabalho','3. Atividades desenvolvidas no período','4.1 Reuniões','10. Manifestações Locais e Sabesp','12. Atividades previstas','13. Anexos'])assert(texto.includes(item),item);
-assert(texto.includes('Relatório nº 15'));const t3=d.tabelas.find(t=>t[0][0]==='Frente de Serviço'&&t[0][1]==='Endereço da Frente');assert.equal(t3.length,6);assert(t3.slice(3,5).every(r=>r[3]==='*Não houve atividade'));assert.equal(t3[1][4],'Comunicado');assert.equal(t3[1][5],'Moradores');assert.match(t3[2][6],/COMPLETAR/);
+assert(texto.includes('Relatório nº 15'));assert(d.tabelas.some(t=>t.some(r=>r[0]==='Coletor Linda')),'relatório usa o nome de uso');assert(!d.tabelas.some(t=>t.some(r=>r[0]==='Coletor A')),'nome oficial fora das tabelas');const t3=d.tabelas.find(t=>t[0][0]==='Frente de Serviço'&&t[0][1]==='Endereço da Frente');assert.equal(t3.length,6);assert(t3.slice(3,5).every(r=>r[3]==='*Não houve atividade'));assert.equal(t3[1][4],'Comunicado');assert.equal(t3[1][5],'Moradores');assert.match(t3[2][6],/COMPLETAR/);
 assert.equal(t3[5][0],'Total');const t41=d.tabelas[d.tabelas.findIndex(t=>t[0][0]==='Data'&&t[0][2]==='Atividade')];assert.equal(t41.length,2);
 const man=d.tabelas.find(t=>t[0][0]==='Data'&&t[0][1]==='Nome');assert.equal(man.length,2);assert.equal(man[1][8],'Em andamento');assert.equal(man[1][3],'Atendimento itinerante');assert.equal(man[1][4],'Reclamação');
 assert.equal(run('gerarBaseRelatorioCPT(g)').versao,1);ctx.g.operacaoId='OP-geracao9999999999';assert.equal(run('gerarBaseRelatorioCPT(g)').versao,2);

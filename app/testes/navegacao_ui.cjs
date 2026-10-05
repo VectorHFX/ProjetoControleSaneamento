@@ -29,9 +29,9 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Busca: ação "Novo contato" → abre o formulário; obra → filtra a lista de obras.
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('novo contato');await p.locator('.search-item',{hasText:'Novo contato'}).waitFor();await p.keyboard.press('Enter');
   await p.locator('#conForm').waitFor();await p.locator('#closeDialog').click();
-  await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('viela');await p.locator('.search-item',{hasText:'Obra'}).first().waitFor();
+  await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('corrego grande');await p.locator('.search-item',{hasText:'Viela Carijós'}).first().waitFor();
   await p.locator('.search-item',{hasText:'Obra'}).first().click();await p.waitForFunction(()=>(document.querySelector('#obraFiltros [name=busca]')||{}).value);
-  assert.match(await p.locator('#obraFiltros [name=busca]').inputValue(),/Viela/);
+  assert.match(await p.locator('#obraFiltros [name=busca]').inputValue(),/^Viela Carijós$/);
   // Esc fecha mesmo com texto digitado (o campo de busca não só apaga o texto).
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('obras');await p.keyboard.press('Escape');assert.equal(await p.locator('#searchDialog[open]').count(),0,'Esc fecha com texto');
   // Busca: aba do painel (Visão do mês · Frentes de serviço).

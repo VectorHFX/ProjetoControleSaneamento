@@ -13,7 +13,7 @@ echo "Atualizador"
 roda atualizador node atualizador/testes/atualizador.cjs
 roda cloudshell bash atualizador/testes/cloudshell.sh
 echo "Campo 4.0"
-for t in processamento abertura rdas execucao gatilhos; do roda "campo40/$t" node "campo40/testes/$t.cjs"; done
+for t in processamento abertura rdas execucao gatilhos catalogos; do roda "campo40/$t" node "campo40/testes/$t.cjs"; done
 if [ "${1:-}" != "rapido" ]; then
   echo "Telas (prévia)"
   roda previa python3 app/testes/gerar_previa.py

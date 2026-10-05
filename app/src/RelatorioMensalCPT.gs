@@ -75,7 +75,7 @@ class RelatorioMensalCPT {
   coletar(mes) {
     this.dados.mes(mes);
     const obrasCtl = new ObrasCPT(this.ctx), obras = obrasCtl.ler().linhas.map(o => obrasCtl.publico(o));
-    const porId = new Map(obras.map(o => [o.id, o])), porNome = new Map(obras.map(o => [RelatorioMensalCPT.norm(o.nome), o]));
+    const porId = new Map(obras.map(o => [o.id, o])), porNome = new Map(obras.flatMap(o => ObrasCPT.nomesConhecidos(o).map(n => [RelatorioMensalCPT.norm(n), o])));
     const linhas = this.dados.ler(this.dados.registros(), 21).filter(r => r[0] && this.dados.mesCelula(r[3]) === mes);
     const registros = linhas.map(r => {
       const reg = this.dados.registro(r), campos = RelatorioMensalCPT.campos(r[20]);
@@ -83,7 +83,7 @@ class RelatorioMensalCPT {
       const tipo = RelatorioMensalCPT.norm(reg.procedimento);
       return {...reg, obraCadastro: obra, campos,
         satisfacao: /satisfac/.test(tipo), atendimento: /atendimento/.test(tipo) && !/satisfac/.test(tipo), relato: tipo === 'relato de atividade',
-        frente: obra ? obra.nome : (reg.obra && !/nao se aplica/i.test(RelatorioMensalCPT.norm(reg.obra)) ? reg.obra.replace(/\s*\[OBR-\d+\]\s*$/, '') : 'Atividades sem obra específica'),
+        frente: obra ? obra.exibir : (reg.obra && !/nao se aplica/i.test(RelatorioMensalCPT.norm(reg.obra)) ? reg.obra.replace(/\s*\[OBR-\d+\]\s*$/, '') : 'Atividades sem obra específica'),
         endereco: obra ? (obra.endereco || obra.logradouroPAC16 || reg.bairro) : reg.bairro,
         publicoAlvo: RelatorioMensalCPT.valor(campos, /publico[- ]?alvo|publico atendido|publico da atividade/),
         ferramenta: RelatorioMensalCPT.valor(campos, /ferramenta|material (de comunicacao|utilizado)|instrumento/),
@@ -143,7 +143,7 @@ class RelatorioMensalCPT {
         check('Público informado nos relatos', !semPublico, semPublico ? semPublico + ' relatos sem número de participantes.' : 'Todos os relatos têm público informado.', {route: 'registros', pendencia: 'publico'}),
         check('Obra informada nas atividades', !semObra, vigente ? (semObra ? semObra + ' atividades sem obra cadastrada (obrigatório desde 01/10/2026).' : 'Todas as atividades têm obra ou "não se aplica".') : 'Mês anterior à padronização de obras: textos originais preservados.', {route: 'registros'}),
         check('Pesquisas de satisfação (meta ' + sat.meta + ' no mês)', sat.total >= sat.meta, sat.total + ' de ' + sat.meta + '. Semanas: ' + sat.semanas.map(s => RelatorioMensalCPT.br(s.de).slice(0, 5) + '–' + RelatorioMensalCPT.br(s.ate).slice(0, 5) + ': ' + s.total + (s.parcial ? ' (parcial)' : '')).join(' · '), null, true),
-        check('Obras ativas com atividade no mês', !semAtividade.length, semAtividade.length ? semAtividade.length + ' obras sem atividade: ' + semAtividade.slice(0, 6).map(o => o.nome).join('; ') + (semAtividade.length > 6 ? '…' : '') + '. O relatório pede o motivo.' : 'Todas as obras ativas tiveram atividade.', {route: 'obras'}, true),
+        check('Obras ativas com atividade no mês', !semAtividade.length, semAtividade.length ? semAtividade.length + ' obras sem atividade: ' + semAtividade.slice(0, 6).map(o => o.exibir).join('; ') + (semAtividade.length > 6 ? '…' : '') + '. O relatório pede o motivo.' : 'Todas as obras ativas tiveram atividade.', {route: 'obras'}, true),
         check('Situação das obras revisada na última semana', !desatualizadas.length, desatualizadas.length ? desatualizadas.length + ' obras ativas sem revisão há mais de 7 dias.' : 'Obras revisadas.', {route: 'obras'}, true),
         check('Cronograma do mês seguinte', c.agenda.length > 0, c.agenda.length + ' atividades previstas para ' + RelatorioMensalCPT.mesExtenso(RelatorioMensalCPT.proximoMes(mes)) + ' (item 12 do relatório).', {route: 'cronograma'}, true)
       ],
@@ -321,7 +321,7 @@ class DocumentoRelatorioCPT {
     const ativas = c.obras.filter(o => ['Em andamento', 'Paralisada'].includes(o.situacao) || (o.situacao === 'Finalizada' && o.termino.startsWith(c.mes)))
       .sort((a, b) => b.inicioObra.localeCompare(a.inicioObra));
     this.quadro(['Frente de Serviço', 'Tipo de obra', 'Início', 'Término', 'Bairros', 'Tipo de público', 'Impacto', 'Início comunicação', 'Observação'],
-      ativas.map(o => [o.nome, o.tipo || o.metodoPAC16, br(o.inicioObra), br(o.termino) || (o.situacao === 'Paralisada' ? 'Paralisada' : 'Em andamento'), o.bairros.join(', '), o.publico, o.impacto, br(o.inicioComunicacao), o.observacao]), 'Nenhuma obra ativa cadastrada.');
+      ativas.map(o => [o.exibir, o.tipo || o.metodoPAC16, br(o.inicioObra), br(o.termino) || (o.situacao === 'Paralisada' ? 'Paralisada' : 'Em andamento'), o.bairros.join(', '), o.publico, o.impacto, br(o.inicioComunicacao), o.observacao]), 'Nenhuma obra ativa cadastrada.');
 
     this.titulo('2. Diagnóstico das áreas de trabalho');
     this.completar('Inserir somente diagnósticos novos ou atualizados no mês (quadro "Diagnóstico local"). Para os anteriores, citar o relatório em que foram atualizados. Incluir foto do pavimento atual.');
@@ -333,7 +333,7 @@ class DocumentoRelatorioCPT {
       .map(r => [r.frente, r.endereco, br(r.data), r.atividade || r.procedimento, r.ferramenta || 'Não se aplica', r.publicoAlvo || '[COMPLETAR]', r.publico == null ? '[COMPLETAR]' : String(r.publico)]);
     const comAtividade = new Set(c.atividades.filter(r => r.obraCadastro).map(r => r.obraCadastro.id));
     c.obras.filter(o => ['Em andamento', 'Paralisada'].includes(o.situacao) && !comAtividade.has(o.id))
-      .forEach(o => linhas3.push([o.nome, o.endereco || o.logradouroPAC16, 'Não se aplica', '*Não houve atividade', 'Não se aplica', 'Não se aplica', '[COMPLETAR motivo' + (o.situacao === 'Paralisada' ? ': obra paralisada' : '') + ']']));
+      .forEach(o => linhas3.push([o.exibir, o.endereco || o.logradouroPAC16, 'Não se aplica', '*Não houve atividade', 'Não se aplica', 'Não se aplica', '[COMPLETAR motivo' + (o.situacao === 'Paralisada' ? ': obra paralisada' : '') + ']']));
     linhas3.push(['Total', '', '', c.atividades.length + ' atividades', '', '', String(participantes)]);
     this.p('No período foram realizadas ' + c.atividades.length + ' atividades, com ' + participantes + ' participantes no total. Os números devem conferir com a Planilha de Indicadores (base do Programa Parceiros para o Impacto).');
     this.quadro(['Frente de Serviço', 'Endereço da Frente', 'Data', 'Atividade', 'Ferramenta', 'Público-alvo', 'Total de participantes'], linhas3);
@@ -372,7 +372,7 @@ class DocumentoRelatorioCPT {
     this.quadro(['Data', 'Local', 'Nº de pessoas', 'Material de comunicação', 'Público-alvo', 'Resultados'], ums.map(r => [br(r.data), r.endereco, r.publico == null ? '' : String(r.publico), r.ferramenta, r.publicoAlvo, '[COMPLETAR]']), 'Não houve atividade da UMS no período.');
     this.titulo('8. Obras concluídas');
     const concluidas = c.obras.filter(o => o.situacao === 'Finalizada' && o.termino && o.termino.startsWith(c.mes));
-    this.quadro(['Obra/Região', 'Conclusão apresentada'], concluidas.map(o => [o.nome + (o.bairros.length ? ' — ' + o.bairros.join(', ') : ''), br(o.termino)]), 'Nenhuma obra concluída no período.');
+    this.quadro(['Obra/Região', 'Conclusão apresentada'], concluidas.map(o => [o.exibir + (o.bairros.length ? ' — ' + o.bairros.join(', ') : ''), br(o.termino)]), 'Nenhuma obra concluída no período.');
     if (concluidas.length) this.completar('Inserir quadro comparativo de fotos antes/depois de cada obra concluída.');
     this.titulo('9. Atividades Complementares');
     const internas = c.atividades.filter(r => /dds|treinamento|interna|integracao|normas de conduta|violencia|diversidade|canal de denuncia|imprensa/.test(r.texto));

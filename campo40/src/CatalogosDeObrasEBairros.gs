@@ -1,7 +1,8 @@
 /**
- * CatalogosDeObrasEBairros — v4.0.5 (correção de avisos; base 4.0.4)
+ * CatalogosDeObrasEBairros — v4.0.6 (nome de uso na lista; base 4.0.5)
  * PERMANENTE: cadastro, listas do formulário, controles de salvar e revisões.
- * A:S = referência PAC16 preservada. T:Z = dados atuais. Nenhuma resposta é lida.
+ * A:S = referência PAC16 preservada. T:Z = dados atuais. AJ:AK = nome de uso e apelidos (gravados pela Aplicação CPT).
+ * A lista do formulário mostra o nome de uso (ou o oficial) e sempre o [ID], que é o que liga o envio à obra. Nenhuma resposta é lida.
  */
 class CatalogosDeObrasEBairros {
   static normalizar(v) {return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');}
@@ -13,7 +14,7 @@ class CatalogosDeObrasEBairros {
   static ler(base) {
     const o=base.getSheetByName('Obras'),b=base.getSheetByName('Bairros');
     if(!o||!b)throw new Error('As abas Obras e Bairros são obrigatórias.');
-    const largura=typeof o.getMaxColumns==='function'?Math.min(26,o.getMaxColumns()):19;
+    const largura=typeof o.getMaxColumns==='function'?Math.min(37,o.getMaxColumns()):19;
     return this.validarLinhas(this.lerLinhas(o,largura),this.lerLinhas(b,6));
   }
   static validarLinhas(oo,bb) {
@@ -46,16 +47,19 @@ class CatalogosDeObrasEBairros {
       return {id:id,nome:nome,bairros:vinculados.map(x=>x.nome),bairroIds:vinculados.map(x=>x.id),selecionada:r[3]===true,
         mostrar:r[3]===true&&(!situacao||CatalogosDeObrasEBairros.disponivel(situacao)),situacao:situacao,eap:String(r[4]||''),
         latitude:lat===''?null:Number(lat),longitude:lng===''?null:Number(lng),geojson:r[11]||null,pontoReferencia:String(r[12]||''),
+        nomeUso:String(r[35]||'').trim(),apelidos:String(r[36]||'').split(';').map(x=>x.trim()).filter(Boolean),
         inicioObra:data(r[20]),inicioComunicacao:data(r[21]),publico:String(r[22]||''),impacto:String(r[23]||''),observacao:String(r[24]||'')};
     });
     return {obras:obras,bairros:bairros};
   }
+  /** Rótulo da obra na lista do formulário: nome de uso (ou oficial) — bairros [ID]. */
+  static rotulo(x) {return (x.nomeUso||x.nome)+(x.bairros.length?' — '+x.bairros.join(' / '):'')+' ['+x.id+']';}
   static sincronizar(base,form,estado,dados) {
     dados=dados||this.ler(base);
     if(estado.catalogosAtuais&&dados.obras.some(x=>x.selecionada&&!x.situacao))throw new Error('Uma obra marcada está sem situação atual. Preencha a coluna T e salve novamente.');
-    const obras=dados.obras.filter(x=>x.mostrar).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')),bairros=dados.bairros.filter(x=>x.mostrar);
+    const obras=dados.obras.filter(x=>x.mostrar).sort((a,b)=>(a.nomeUso||a.nome).localeCompare(b.nomeUso||b.nome,'pt-BR')),bairros=dados.bairros.filter(x=>x.mostrar);
     if(!bairros.length)throw new Error('Selecione pelo menos um bairro no cadastro.');
-    const valores=obras.map(x=>x.nome+(x.bairros.length?' — '+x.bairros.join(' / '):'')+' ['+x.id+']');
+    const valores=obras.map(x=>CatalogosDeObrasEBairros.rotulo(x));
     valores.push(ConfiguracaoDaBase.valores.SEM_OBRA,ConfiguracaoDaBase.valores.OBRA_A_CADASTRAR);
     const obra=form.getItemById(Number(estado.obraItemId));
     // Após a primeira publicação, consulta o bairro pelo ID em vez de percorrer 150 perguntas.

@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.13 e Campo 4.0 (4.5)
+# Guia de instalação: Aplicação CPT 2.14 e Campo 4.0 (4.6)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,24 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.14 — nome de uso das obras, apelidos e bairros na aplicação (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**. Ele troca o código da Aplicação **e do Campo 4.0** (4.6.0).
+2. Execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.14.0`) e publique uma **Nova versão**.
+
+**Novo em Obras:**
+- **Nome de uso.** Cada obra pode ter um nome curto, o que a equipe usa no dia a dia. Ele aparece nas telas, no relatório e na lista do formulário de campo. O nome oficial continua guardado e aparece embaixo, em cinza. Sem nome de uso, vale o oficial.
+  - Dois nomes iguais não passam: o nome de uso não pode repetir o nome (oficial ou de uso) de outra obra.
+  - Envios antigos continuam ligados à obra certa, porque a ligação é pelo código `[OBR-…]`, que segue no fim de cada opção do formulário.
+- **Também chamada de.** Outros nomes da obra, separados por vírgula. Servem só para a busca (na página Obras e no Ctrl+K).
+- **Bairros.** No fim da página Obras, abra **Bairros** para cadastrar um bairro novo, tirá-lo ou devolvê-lo ao formulário e anotar outros nomes. O nome de um bairro existente não muda pela aplicação, porque as obras e os registros guardam o bairro pelo nome.
+- Tudo entra no **Histórico de obras** e chega ao formulário em até 1 hora, como já acontecia com as obras.
+- Durante os testes, só você edita. Gestão e Administrativo passam a editar depois de `liberarConfiguracaoCPT`.
+
+**Na planilha da Base:** a aba Obras ganha as colunas **AJ (Nome de uso)** e **AK (Também chamada de)**. A aba Bairros ganha a coluna **L (Também chamado de)**. Elas são criadas no primeiro salvamento pela aplicação. Não edite essas colunas à mão.
+
+---
 
 ## Atualização 2.13.1 — correções: galeria, fotos do relato, ícone do mascote (≈ 5 min)
 
