@@ -96,6 +96,8 @@ window.CPTInicio = (() => {
     const lista = (mapa[v] || mapa.atendimento).filter(Boolean);
     return lista.length ? `<nav class="shortcuts" aria-label="Atalhos do seu trabalho">${lista.join('')}</nav>` : '';
   }
+  /** Quem prepara o relatório vê "Para o relatório"; Atendimento e Comercialização não usam. */
+  const VISOES_RELATORIO = ['socioambiental', 'comunicacao', 'gestao', 'administrativo'];
   function render(d) {
     // Gestão e Administrativo: abas do painel no topo da Visão do mês (Resumo · Contrato · Frentes · Relatos).
     const abasMes = ui.podeVer('painel') && window.CPTGestao && window.CPTGestao.abas ? window.CPTGestao.abas('resumo') : '';
@@ -115,7 +117,7 @@ window.CPTInicio = (() => {
       </section>
       <div class="home-grid"><div class="home-main">
         <section class="panel panel-dias"><div class="panel-head"><div><h2>Ações por dia</h2><p>${ui.num(d.dias.length)} dias com ação em ${ui.esc(nomeMes(d.mes))}</p></div></div>${graficoDias(d)}</section>
-        <section class="panel panel-tipos"><div class="panel-head"><div><h2>Para o relatório</h2><p>${ui.num(k.frentes || 0)} frentes · ${ui.num(k.bairros || 0)} bairros · ${ui.num(k.diagnosticos || 0)} diagnósticos</p></div>${gerencia ? `<button class="button ghost" data-route="socioambiental">Preparar ${ui.icon('arrow')}</button>` : `<button class="button ghost" data-route="registros">Consultar ${ui.icon('arrow')}</button>`}</div>${painelRelatorio(d.destinos)}</section>
+        ${VISOES_RELATORIO.includes(visao) ? `<section class="panel panel-tipos"><div class="panel-head"><div><h2>Para o relatório</h2><p>${ui.num(k.frentes || 0)} frentes · ${ui.num(k.bairros || 0)} bairros · ${ui.num(k.diagnosticos || 0)} diagnósticos</p></div>${gerencia ? `<button class="button ghost" data-route="socioambiental">Preparar ${ui.icon('arrow')}</button>` : `<button class="button ghost" data-route="registros">Consultar ${ui.icon('arrow')}</button>`}</div>${painelRelatorio(d.destinos)}</section>` : ''}
       </div><aside class="home-side">
         <section class="panel panel-agenda"><div class="panel-head"><div><span class="eyebrow">EM EQUIPE</span><h2>Agenda</h2></div><button class="icon-button" data-route="cronograma" aria-label="Abrir cronograma">↗</button></div><div id="homeAgenda"></div></section>
         <section class="panel panel-recentes"><div class="panel-head"><div><h2>Últimos registros</h2></div><button class="button ghost" data-route="registros">Ver todos</button></div><div class="mini-list">${d.recentes.length ? d.recentes.map(r => `<button class="mini-row" data-record="${ui.esc(r.id)}"><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small>${ui.date(r.data)} · ${ui.esc(r.bairro || 'Bairro não informado')}</small></button>`).join('') : '<p class="muted">Os novos registros aparecem aqui depois do processamento.</p>'}</div></section>

@@ -18,6 +18,8 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Atendimento/);
   assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
   assert.match(await p.locator('.home-hero .eyebrow').textContent(),/TELA DE ATENDIMENTO/);
+  const semRelatorio=async v=>assert.equal(await p.locator('.report-items, .panel-tipos').count(),0,'"Para o relatório" fora da visão '+v);
+  await semRelatorio('atendimento');
   await p.locator('.shortcut',{hasText:'Auditoria das fichas'}).click();await p.locator('.audit-item').first().waitFor();
   assert.match(await p.locator('#view').textContent(),/Recebidos sem nenhuma ação há mais de 3 dias/);assert.equal(await p.locator('.audit-item[open]').count(),2);
   await p.locator('.audit-item[open] [data-case]').first().click();await p.waitForFunction(()=>/DEMO-10/.test(document.querySelector('#detailTitle').textContent));await p.locator('#closeDialog').click();
@@ -26,8 +28,11 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.selectOption('#viewSwitch','comercializacao');await espaco();await irInicio();
   assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
   assert.ok(!(await p.locator('.shortcuts').textContent()).includes('Auditoria'));
+  await semRelatorio('comercializacao');
+  // "Para o relatório" fica nas visões que preparam o relatório.
+  for(const v of ['socioambiental','comunicacao']){await p.selectOption('#viewSwitch',v);await espaco();await irInicio();await p.locator('.report-items').waitFor();}
   // Gestão: painel com alertas, frentes, relatos.
-  await p.selectOption('#viewSwitch','gestao');await p.locator('.shortcuts').waitFor();
+  await p.selectOption('#viewSwitch','gestao');await p.locator('.shortcuts').waitFor();await p.locator('.report-items').waitFor();
   // 2.11: o painel são abas da Visão do mês (Resumo · Contrato · Frentes · Relatos); o menu mantém a Visão do mês marcada.
   await p.locator('.nav-item[data-route=inicio]').click();await p.locator('.mes-tabs [data-painel-aba=resumo][aria-selected=true]').waitFor();assert.equal(await p.locator('.nav-item[data-route=painel]').count(),0,'painel fora do menu');
   await p.locator('[data-painel-aba=contrato]').click();await p.locator('.alert-list').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');
