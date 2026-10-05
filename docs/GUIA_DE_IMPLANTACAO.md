@@ -23,6 +23,11 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.24.1 — gota d'água azul no visual novo (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.24.1`) e publique uma **Nova versão**.
+2. No visual novo, a gota do logo e a plaquinha do Meu espaço passam a ser uma gota d'água azul com brilho (a vermelha parecia sangue).
+
 ## Atualização 2.24.0 — Visual novo "Veolia acolhedor" (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.24.0`) e publique uma **Nova versão**. Chega o arquivo novo `Visual.html`.

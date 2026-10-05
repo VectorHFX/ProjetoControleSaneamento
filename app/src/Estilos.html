@@ -974,7 +974,8 @@ html[data-visual=v3] :focus-visible{outline:3px solid color-mix(in srgb,var(--fo
 html[data-visual=v3] .sidebar{background:linear-gradient(180deg,#ffd9a024 0,transparent 120px),repeating-linear-gradient(90deg,var(--ripa-clara) 0 14px,var(--ripa-escura) 14px 16px),var(--parede);border-right:0;color:var(--parede-tinta);box-shadow:inset -1px 0 0 #0000002e,6px 0 24px -12px #0000003d;scrollbar-color:#ffffff40 transparent}
 html[data-visual=v3] .identity-name{color:#fffdf8}
 html[data-visual=v3] .identity>span:not(.identity-name){color:var(--parede-suave)}
-html[data-visual=v3] .brand-drop{background:var(--veolia);box-shadow:none}
+/* Gota d'água (azul, com brilho) — a vermelha parecia sangue */
+html[data-visual=v3] .brand-drop{background:radial-gradient(circle at 36% 62%,#ffffffcc 0 11%,transparent 12%),linear-gradient(165deg,#bfeaf7 0%,#5bb6dc 45%,#2a86b8 100%);box-shadow:none}
 html[data-visual=v3] .version{background:#ffffff1f;color:#f7efe0}
 html[data-visual=v3] .nav-group-head,html[data-visual=v3] .nav-caption{color:color-mix(in srgb,var(--parede-tinta) 70%,transparent)}
 html[data-visual=v3] .nav-group-head:hover{background:#ffffff12;color:#fff}
@@ -1079,7 +1080,7 @@ html[data-visual=v3] .space-hero .pet-plate{background:color-mix(in srgb,var(--s
 html[data-visual=v3] .space-hero .hero-pet .mascot-art{filter:drop-shadow(0 14px 14px #00000040)}
 html[data-visual=v3] .v3-camada{transform:translate(calc(var(--px,0) * var(--k,0) * 1px),calc(var(--py,0) * var(--k,0) * .5px));transition:transform .5s var(--ease)}
 html[data-visual=v3] .v3-cena-host .hero-pet{transform:translate(calc(var(--px,0) * 10px),calc(var(--py,0) * 4px));transition:transform .5s var(--ease)}
-html[data-visual=v3] .v3-placa circle{fill:var(--veolia)}html[data-visual=v3] .v3-placa path{fill:#fff}
+html[data-visual=v3] .v3-placa circle{fill:#fffdf8;stroke:var(--madeira2);stroke-width:3}html[data-visual=v3] .v3-placa path{fill:#3d9cc9}
 html[data-visual=v3] .v3-brisa{transform-box:fill-box;transform-origin:50% 100%}
 html[data-visual=v3] .v3-brisa-1{animation:v3-brisa-folhas 13s ease-in-out infinite}html[data-visual=v3] .v3-brisa-2{animation:v3-brisa-folhas 10s ease-in-out infinite reverse}html[data-visual=v3] .v3-brisa-3{animation:v3-brisa-frente 7.5s ease-in-out infinite}
 html[data-visual=v3] .v3-lumi{animation:v3-pendulo 7s ease-in-out infinite}html[data-visual=v3] .v3-lumi:nth-of-type(2){animation-duration:8.5s;animation-delay:-2s}
