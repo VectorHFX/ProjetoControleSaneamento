@@ -1,7 +1,9 @@
 <!doctype html>
 <!--
   PROTÓTIPO DESCARTÁVEL — não vai para o Apps Script.
-  Rodada 3 (bloco D, issue #5). O Victor mandou referências chibi (elenco com contorno marrom, personagens estilo
+  Rodada 4, a última (bloco D, issue #5). Escolhida a versão B (pintada). Bracinhos refeitos (curvos, gordinhos, patinha e luvinha com polegar)
+  e uma ideia nova na mesma linha: C = B + uniforme da equipe (camiseta na cor da área, manguinha, crachá) e um acessório por bicho.
+  Rodada 3: O Victor mandou referências chibi (elenco com contorno marrom, personagens estilo
   Animal Crossing, panda-vermelho POM, figurinhas do sapinho) e pediu "um chibizinho assim", mantendo a personalidade
   de corpo de cada bicho. Duas versões chibi: A (traço marrom) e B (pintado, luz e sombra suaves).
   Barra de baixo (ou ← →): troca a versão. Botões de cima: expressão do elenco inteiro. ?v=A|B&expr=...
@@ -27,8 +29,8 @@ h2{font-size:14px;margin:18px 0 8px;color:var(--muted);letter-spacing:.3px;text-
 .anima .m-all{animation:resp 3.2s ease-in-out infinite;transform-origin:50% 92%}@keyframes resp{50%{transform:scale(1.02,.98)}}
 @media (prefers-reduced-motion:reduce){.anima .m-all{animation:none}}
 </style></head><body>
-<h1>Mascotes v2 · chibi</h1>
-<p class="sub">Protótipo descartável, rodada 3. Os mesmos bichos, cada um com o seu corpo, agora em chibi: cabeça grande, corpinho de feijão, olhinhos de ponto e cores suaves. A barra de baixo troca entre o <b>traço marrom</b> e o <b>pintado</b>. Os botões abaixo trocam a expressão de todos.</p>
+<h1>Mascotes v2 · chibi (última rodada)</h1>
+<p class="sub">Protótipo descartável, rodada 3. Os mesmos bichos, cada um com o seu corpo, agora em chibi: cabeça grande, corpinho de feijão, olhinhos de ponto e cores suaves. A barra de baixo troca entre o <b>pintado (B, escolhido)</b>, a ideia nova <b>C (B com o uniforme da equipe)</b> e o traço marrom, só para comparar. Os botões abaixo trocam a expressão de todos.</p>
 <div class="opts" id="opts"></div>
 <div class="elenco" id="elenco"></div>
 <h2>Urso · todas as expressões</h2><div class="dupla" id="urso"></div>
@@ -37,7 +39,10 @@ h2{font-size:14px;margin:18px 0 8px;color:var(--muted);letter-spacing:.3px;text-
 <div class="barra"><button id="ant" aria-label="Versão anterior">‹</button><span id="rotulo"></span><button id="prox" aria-label="Próxima versão">›</button></div>
 <script>
 'use strict';
-const VERSOES = {A: {nome: 'A · Chibi com traço marrom', traco: '#5b3f2c', w: 3.2}, B: {nome: 'B · Chibi pintado (luz e sombra)', traco: null, w: 0}};
+const VERSOES = {B: {nome: 'B · Chibi pintado (escolhido)', traco: null, w: 0}, C: {nome: 'C · Pintado + uniforme da equipe', traco: null, w: 0, uniforme: true}, A: {nome: 'A · Traço marrom (para comparar)', traco: '#5b3f2c', w: 3.2}};
+/** Versão C: cada bicho na camiseta da sua área (exemplo de distribuição; na aplicação, a cor vem do cargo da pessoa). */
+const AREA = {urso: ['Socioambiental', '#7fb58f'], aguia: ['Gestão', '#5f7ea8'], gato: ['Comunicação', '#a98fd0'], cachorro: ['Atendimento', '#69a9d8'],
+  pato: ['Comercialização', '#e2b65a'], capivara: ['Administrativo', '#cf8a68'], sapo: ['Socioambiental', '#7fb58f'], gota: ['Comunicação', '#a98fd0']};
 const EXPR = [['feliz', 'Feliz'], ['surpreso', 'Surpreso'], ['pensativo', 'Pensativo'], ['dormindo', 'Dormindo'], ['comemorando', 'Comemorando']];
 const EPI = {capacete: '#f6c84c', colete: '#f28a3a', faixa: '#fff4dc', luva: '#9aa6ad', bota: '#3a3431'}, OLHO = '#3a2a20', BOCHECHA = '#f4a6a0';
 let V = VERSOES.A, ID = '', uid = 0;
@@ -46,6 +51,17 @@ const ell = (x, y, rx, ry) => `M${x - rx},${y} a${rx},${ry} 0 1,0 ${2 * rx},0 a$
 const circ = (x, y, r) => ell(x, y, r, r);
 function capsula(x1, y1, x2, y2, w) { const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, r = w / 2, nx = -dy / L * r, ny = dx / L * r;
   return `M${x1 + nx},${y1 + ny} L${x2 + nx},${y2 + ny} A${r},${r} 0 0 1 ${x2 - nx},${y2 - ny} L${x1 - nx},${y1 - ny} A${r},${r} 0 0 1 ${x1 + nx},${y1 + ny} Z`; }
+/** Braço curvo (curva de Bézier) que afina do ombro até o punho: dá o "bracinho gordinho" das referências. */
+function bracoCurvo(sx, sy, cx, cy, mx, my, w0, w1, t1 = 1) {
+  const n = 14, esq = [], dir = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n * t1, u = 1 - t, x = u * u * sx + 2 * u * t * cx + t * t * mx, y = u * u * sy + 2 * u * t * cy + t * t * my;
+    const tx = 2 * u * (cx - sx) + 2 * t * (mx - cx), ty = 2 * u * (cy - sy) + 2 * t * (my - cy), L = Math.hypot(tx, ty) || 1, w = (w0 + (w1 - w0) * t) / 2;
+    esq.push([x - ty / L * w, y + tx / L * w]); dir.push([x + ty / L * w, y - tx / L * w]);
+  }
+  const p = ([x, y]) => x.toFixed(1) + ',' + y.toFixed(1), wf = (w0 + (w1 - w0) * t1) / 2;
+  return 'M' + esq.map(p).join(' L') + ` A${wf},${wf} 0 0 0 ${p(dir[n])} L` + dir.reverse().map(p).join(' L') + ` A${w0 / 2},${w0 / 2} 0 0 0 ${p(esq[0])} Z`;
+}
 /** Uma forma: no A, com contorno marrom; no B, sem contorno e com luz em cima e sombra embaixo. */
 function f(d, cor, o = {}) {
   if (V.traco) return `<path d="${d}" fill="${cor}" stroke="${V.traco}" stroke-width="${o.w || V.w}" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -135,6 +151,19 @@ const ELENCO = {
     depoisCab(c) { return `<path d="${ell(74, 118, 8, 15)}" fill="#fff" opacity=".55"/><path d="${circ(80, 98, 3.5)}" fill="#fff" opacity=".6"/>`; },
     focinho(e) { return boquinha(e, 100, 166); }}};
 
+/** Versão C: um acessório que é a cara de cada bicho (como os lencinhos e laços das referências). */
+function acessorio(k, c, epi) {
+  const lenco = (y, cor) => f(`M76,${y} Q100,${y + 10} 124,${y} L106,${y + 14} Q100,${y + 22} 94,${y + 14} Z`, cor);
+  if (k === 'urso') return lenco(126, '#e9765f');
+  if (k === 'aguia') return f('M96,128 L104,128 L108,150 L100,158 L92,150 Z', '#d94f4f') + f('M94,124 h12 v7 h-12 Z', '#b83d3d');
+  if (k === 'gato') return f('M100,128 l-14,-8 v16 Z', '#f08aa8') + f('M100,128 l14,-8 v16 Z', '#f08aa8') + f(circ(100, 128, 4), '#d96a8c');
+  if (k === 'cachorro') return lenco(128, '#4f8fd1') + `<circle cx="96" cy="134" r="1.6" fill="#fff"/><circle cx="104" cy="136" r="1.6" fill="#fff"/><circle cx="100" cy="132" r="1.6" fill="#fff"/>`;
+  if (k === 'pato') { const x = epi ? 132 : 120, y = epi ? 72 : 62; return [0, 72, 144, 216, 288].map(a => f(circ(x + Math.cos(a * Math.PI / 180) * 5, y + Math.sin(a * Math.PI / 180) * 5, 4), '#f3a6c0', {liso: 1})).join('') + `<circle cx="${x}" cy="${y}" r="3" fill="#f7d354"/>`; }
+  if (k === 'capivara') { const y = epi ? 16 : 34; return f(circ(100, y, 9), '#f29b3a') + f(`M100,${y - 9} q5,-7 11,-3 q-5,5 -11,3 Z`, '#6fae5a'); } // a laranjinha na cabeça, como na referência
+  if (k === 'sapo') return f(`M${epi ? 112 : 104},${epi ? 50 : 58} q10,-10 20,-2 q-9,8 -20,2 Z`, '#6fae5a');
+  if (k === 'gota') return `<path d="M128,112 l3,-7 l3,7 l7,3 l-7,3 l-3,7 l-3,-7 l-7,-3 Z" fill="#fff" opacity=".9"/>`;
+  return '';
+}
 function mascote(chave, e, epi) {
   const S = ELENCO[chave], c = S.c, R = S.rosto; ID = 'm' + (++uid);
   const pose = e === 'comemorando' ? 'cima' : e === 'pensativo' ? 'queixo' : 'baixo', P = [];
@@ -145,21 +174,43 @@ function mascote(chave, e, epi) {
   // pezinhos (ou botas)
   S.pes.forEach(([x, y, rx, ry, cor]) => P.push(f(ell(x, y, rx, ry), epi ? EPI.bota : (cor || c.p))));
   // braços
+  /** Cotovelo (ponto de controle da curva) conforme a pose: em repouso o braço faz uma curvinha para fora e a mão volta para o corpo. */
+  const cotovelo = (lado, sx, sy, mx, my) => pose === 'cima' ? [sx + lado * 26, sy - S.mao * .15] : pose === 'queixo' && lado > 0 ? [sx + 26, sy + 16] : [sx + lado * 15, sy + S.mao * .38];
   const mao = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1];
-    if (pose === 'cima') return [sx + lado * 14, sy - S.mao]; if (pose === 'queixo' && lado > 0) return [R.x + 16, R.y + (S.boca ? S.boca - R.y - 4 : 22)]; return [sx + lado * 8, sy + S.mao * .8]; };
-  const braco = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1], [mx, my] = mao(lado);
-    if (S.asa) { const g = S.asa; return f(`M${sx - lado * 6},${sy - 8} Q${(sx + mx) / 2 + lado * 22 * g},${(sy + my) / 2 - 6} ${mx},${my} l${-lado * 6},5 l${-lado * 2},-8 l${-lado * 6},4 Q${(sx + mx) / 2 + lado * 2},${(sy + my) / 2 + 2} ${sx - lado * 6},${sy + 14 * g} Z`, c.p) + (epi ? f(circ(mx, my, 6.5), EPI.luva) : ''); }
-    return f(capsula(sx, sy, mx, my, S.braco), c.p) + (epi ? f(circ(mx, my, S.braco * .52), EPI.luva) : ''); };
+    if (pose === 'cima') return [sx + lado * 20, sy - S.mao * .9]; if (pose === 'queixo' && lado > 0) return [R.x + 18, R.y + (S.boca ? S.boca - R.y - 2 : 24)]; return [sx + lado * 4, sy + S.mao * .92]; };
+  const patinha = (lado, mx, my, w, cor) => {
+    const r = w * .66;
+    if (!epi) return f(ell(mx, my, r, r * .92), cor);
+    // luvinha: mão arredondada e fofa, polegar para o lado do corpo e um brilho de borracha
+    return f(ell(mx - lado * r * .82, my - r * .15, r * .45, r * .4), EPI.luva) + f(ell(mx, my + r * .05, r * 1.1, r), EPI.luva) + `<path d="${ell(mx + lado * r * .3, my - r * .35, r * .32, r * .2)}" fill="#fff" opacity=".35"/>`;
+  };
+  const braco = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1], [mx, my] = mao(lado), [cx, cy] = cotovelo(lado, sx, sy, mx, my), cam = V.uniforme ? AREA[chave][1] : null;
+    if (S.asa) { // asa: larga no meio, com três penas na ponta
+      const g = S.asa, w0 = 12 * g, w1 = 9 * g, corpoAsa = bracoCurvo(sx, sy, cx, cy, mx, my, w0 * 1.6, w1, 1);
+      const penas = [-1, 0, 1].map(k => f(ell(mx + lado * 3 + k * 4 * lado, my + 6 + Math.abs(k) * -2, 4.2, 7.5), c.p)).join('');
+      return (cam ? f(bracoCurvo(sx, sy, cx, cy, mx, my, w0 * 1.6 + 3, w1, .35), cam) : '') + penas + f(corpoAsa, c.p) + (cam ? f(bracoCurvo(sx, sy, cx, cy, mx, my, w0 * 1.6 + 3, w1 + 3, .32), cam) : '') + (epi ? patinha(lado, mx, my, 12, c.p) : '');
+    }
+    const w0 = S.braco * 1.12, w1 = S.braco * .86;
+    return f(bracoCurvo(sx, sy, cx, cy, mx, my, w0, w1), c.p) + (cam ? f(bracoCurvo(sx, sy, cx, cy, mx, my, w0 + 3, w1 + 3, .36), cam) : '') + patinha(lado, mx, my, w1, c.cl || c.p); };
   // corpo
   if (!S.semCorpo) { P.push(f(S.corpo, c.p)); if (S.barriga) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) P.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
+  // Versão C: camiseta da área (pescoço em V), crachá com a gotinha do CPT
+  const camiseta = () => { const cor = AREA[chave][1], y0 = S.semCorpo ? (S.colete || 138) - 6 : 118, y1 = S.semCorpo ? y0 + 46 : 194;
+    return `<g clip-path="url(#${ID}t)"><path d="M30,${y0} H170 V${y1} Q100,${y1 + 8} 30,${y1} Z" fill="${cor}"/>${S.semCorpo ? '' : `<path d="M100,148 L88,118 L112,118 Z" fill="${S.peito ? c.cl : c.p}"/>`}<path d="M30,${y1} Q100,${y1 + 8} 170,${y1}" fill="none" stroke="#00000018" stroke-width="3"/></g>`; };
+  const cracha = () => { const x = S.semCorpo ? 116 : 112, y = S.semCorpo ? (S.colete || 138) + 4 : 150;
+    return linha(`M${x - 12},${y - 22} L${x},${y} L${x + 10},${y - 24}`, 1.6, '#2f4a5a') + `<rect x="${x - 8}" y="${y}" width="16" height="20" rx="3" fill="#fff"/><path d="M${x},${y + 4} C${x},${y + 4} ${x + 5},${y + 10} ${x + 5},${y + 13} A5,5 0 0 1 ${x - 5},${y + 13} C${x - 5},${y + 10} ${x},${y + 4} ${x},${y + 4} Z" fill="#4aa3df"/>`; };
   const colete = () => { const y0 = S.semCorpo ? (S.colete || 138) : 120, y1 = S.semCorpo ? y0 + 34 : 186;
     return `<g clip-path="url(#${ID}t)"><path d="M30,${y0} H170 V${y1} Q100,${y1 + 10} 30,${y1} Z" fill="${EPI.colete}"/>${S.semCorpo ? '' : `<path d="M100,160 L86,120 L114,120 Z" fill="${S.peito ? c.cl : c.p}"/>`}
       <rect x="30" y="${S.semCorpo ? y0 + 14 : 166}" width="140" height="6" rx="3" fill="${EPI.faixa}"/>${V.traco ? `<path d="M30,${y1} Q100,${y1 + 10} 170,${y1}" fill="none" stroke="${V.traco}" stroke-width="2.4"/>` : ''}</g>`; };
+  if (V.uniforme && !S.semCorpo) P.push(camiseta());
   if (epi && !S.semCorpo) P.push(colete());
+  if (V.uniforme && !S.semCorpo) P.push(cracha());
   // cabeça
   P.push(f(S.cab, S.corCab ? c[S.corCab] : c.p));
   if (S.barriga && S.semCorpo) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`);
+  if (V.uniforme && S.semCorpo) P.push(camiseta());
   if (epi && S.semCorpo) P.push(colete());
+  if (V.uniforme && S.semCorpo) P.push(cracha());
   if (S.depoisCab) P.push(S.depoisCab(c, e));
   if (chave === 'sapo') { // olhos do sapinho nos calombos de cima
     if (!['feliz', 'comemorando', 'dormindo'].includes(e)) P.push(`<circle cx="70" cy="80" r="11" fill="#fff"/><circle cx="130" cy="80" r="11" fill="#fff"/>`);
@@ -172,12 +223,13 @@ function mascote(chave, e, epi) {
   P.push(braco(-1), braco(1));
   // capacete pequeno, como os chapeuzinhos das referências
   if (epi) { const k = S.capacete; P.push(f(`M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z`, EPI.capacete) + f(`M${k.x - k.r * 1.25},${k.y} h${k.r * 2.5} a3,3 0 0 1 0,6 h${-k.r * 2.5} a3,3 0 0 1 0,-6 Z`, EPI.capacete) + `<rect x="${k.x - 3}" y="${k.y - k.r * .72}" width="6" height="${k.r * .7}" rx="3" fill="#00000016"/>`); }
+  if (V.uniforme) P.push(acessorio(chave, c, epi));
   P.push(extras(e, R.x, S.capacete.y - 14, R.x + 58));
   return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${S.nome} ${e}"><g class="m-all">${P.join('')}</g></svg>`;
 }
 
 const q = new URLSearchParams(location.search);
-let versao = VERSOES[q.get('v')] ? q.get('v') : 'A', expr = EXPR.some(x => x[0] === q.get('expr')) ? q.get('expr') : 'feliz', epi = true, escuro = false, anima = true;
+let versao = VERSOES[q.get('v')] ? q.get('v') : 'B', expr = EXPR.some(x => x[0] === q.get('expr')) ? q.get('expr') : 'feliz', epi = true, escuro = false, anima = true;
 function opcoes() {
   document.getElementById('opts').innerHTML = EXPR.map(([k, t]) => `<button data-expr="${k}" class="${k === expr ? 'on' : ''}">${t}</button>`).join('') +
     `<span style="width:12px"></span><label><input type="checkbox" data-op="epi" ${epi ? 'checked' : ''}> Kit EPI</label><label><input type="checkbox" data-op="escuro" ${escuro ? 'checked' : ''}> Tema escuro</label><label><input type="checkbox" data-op="anima" ${anima ? 'checked' : ''}> Respiração</label>`;
@@ -185,7 +237,7 @@ function opcoes() {
 function desenhar() {
   V = VERSOES[versao]; opcoes();
   document.documentElement.dataset.theme = escuro ? 'dark' : 'light'; document.body.classList.toggle('anima', anima);
-  document.getElementById('elenco').innerHTML = Object.keys(ELENCO).map(k => `<div class="cel">${mascote(k, expr, epi)}<b>${ELENCO[k].nome}</b><small>${ELENCO[k].jeito}</small></div>`).join('');
+  document.getElementById('elenco').innerHTML = Object.keys(ELENCO).map(k => `<div class="cel">${mascote(k, expr, epi)}<b>${ELENCO[k].nome}${V.uniforme ? ' · <span style="color:' + AREA[k][1] + '">' + AREA[k][0] + '</span>' : ''}</b><small>${ELENCO[k].jeito}</small></div>`).join('');
   for (const k of ['urso', 'aguia', 'sapo']) document.getElementById(k).innerHTML = EXPR.map(([e, t]) => `<div class="cel">${mascote(k, e, epi)}<small>${t}</small></div>`).join('');
   document.getElementById('rotulo').textContent = V.nome;
   history.replaceState(null, '', '?v=' + versao + '&expr=' + expr);
