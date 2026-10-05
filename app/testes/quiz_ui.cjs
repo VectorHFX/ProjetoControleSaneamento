@@ -11,7 +11,8 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Proprietário.
   await p.evaluate(()=>{delete window.CPT_ESP;});await p.goto(url('?latencia=20'));await p.locator('.nav-item[data-route=meuespaco]').first().click();
   await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=urso]').click();await p.locator('#espInicio [type=submit]').click();await p.locator('.mascot-stage').waitFor();
-  await p.locator('.saber-balao').waitFor();assert.match(await p.locator('.saber-balao').textContent(),/Você sabia\?[\s\S]*Fonte:/);assert.equal(await p.locator('.saber-balao a[target=_blank][rel=noopener]').count(),1);
+  await p.locator('.saber-balao').waitFor();const balao=await p.locator('.saber-balao').textContent();assert.match(balao,/Você sabia\?[\s\S]*Por que importa:[\s\S]*(Fonte:|Prática da equipe)/);
+  assert.equal(await p.locator('.saber-balao a[target=_blank][rel=noopener]').count(),balao.includes('Fonte:')?1:0);
   assert.equal(await p.locator('.saber-balao .saber-revisar').count(),1,'marca "a revisar" para o proprietário');
   assert.match(await p.locator('.home-saber .saber-mes').textContent(),/(Janeiro|Fevereiro|Março|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)/);
   assert.equal(await p.locator('#quizDia .quiz-opcao').count(),4);assert.match(await p.locator('.space-hero .mascot-art').innerHTML(),/pensativo|class="[^"]*chibi/,'mascote presente');

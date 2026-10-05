@@ -1,5 +1,5 @@
 /**
- * QuizCPT 2.19.0. Pergunta do dia e quiz da semana sobre saneamento (perguntas em ConteudoSaneamentoCPT).
+ * QuizCPT 2.26.0. Pergunta do dia e quiz da semana sobre saneamento (perguntas em ConteudoSaneamentoCPT).
  * - Pergunta do dia: 1 pergunta, 2 pontos se acertar. Só hoje e uma vez.
  * - Quiz da semana (segunda a domingo): 5 perguntas, 10 pontos por acerto. Uma tentativa por pergunta.
  * - A resposta certa só sai do servidor depois que a pessoa responde.
@@ -7,6 +7,7 @@
  *   já respondeu e a pergunta do dia nunca repete uma do quiz da semana.
  * Privacidade: cada pessoa só lê e grava as próprias respostas (coleção "Quiz", IDs QUI-email-...). Sem ranking.
  * Período de testes: só o proprietário (PessoalCPT.novo).
+ * 2.26: só entram perguntas disponíveis na revisão (RevisaoConteudoCPT); suspensas saem até do que já foi sorteado.
  */
 class QuizCPT {
   static get pontosDia() { return 2; }
@@ -22,12 +23,17 @@ class QuizCPT {
   /** Uma instância por pedido: pontos e estado leem a coleção uma vez só. */
   static de(ctx) { return ctx.quizCPT || (ctx.quizCPT = new QuizCPT(ctx)); }
   static segunda(dia) { const d = new Date(dia + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7); return d.toISOString().slice(0, 10); }
-  banco() { return ConteudoSaneamentoCPT.visiveis(ConteudoSaneamentoCPT.perguntas, this.ctx.perfil); }
+  banco() { return ConteudoSaneamentoCPT.visiveis(ConteudoSaneamentoCPT.perguntas, this.ctx); }
+  /** Lista guardada da semana: as já respondidas ficam; as que faltam saem se foram retiradas ou suspensas na revisão. */
+  vivas(ids, feitas) {
+    const ja = (feitas || []).map(r => r.id), feito = new Set(ja), T = ConteudoSaneamentoCPT;
+    return ja.concat((ids || []).filter(id => !feito.has(id) && T.pergunta(id) && T.disponivel(this.ctx, id)));
+  }
   /** IDs respondidos antes de uma data (pelo dia da resposta). */
   respondidasAntes(dia) { const s = new Set(); this.meus().forEach(x => (x.respostas || []).forEach(r => { if (r.dia < dia) s.add(r.id); })); return s; }
   /** As 5 do quiz da semana: guardadas na primeira resposta; antes disso, sorteadas sem repetir semanas anteriores. */
   perguntasDaSemana(semana, segunda) {
-    const r = this.colecao.obter(this.idSemana(semana)); if (r) return r.perguntas;
+    const r = this.colecao.obter(this.idSemana(semana)); if (r) return this.vivas(r.perguntas, r.respostas);
     const banco = this.banco(), ja = this.respondidasAntes(segunda), novas = banco.filter(q => !ja.has(q.id));
     const ordem = ConteudoSaneamentoCPT.embaralhar(novas.length >= QuizCPT.porSemana ? novas : banco, this.email + ':' + semana);
     return ordem.slice(0, QuizCPT.porSemana).map(q => q.id);
@@ -42,7 +48,7 @@ class QuizCPT {
   /** Resultado de uma resposta para a tela (com a certa e a explicação). */
   resultado(r) {
     const q = ConteudoSaneamentoCPT.pergunta(r.id); if (!q) return null;
-    return {...ConteudoSaneamentoCPT.semResposta(q, this.ctx.perfil), escolha: r.escolha, acertou: r.acertou, certa: q.certa, explica: q.explica, fonte: ConteudoSaneamentoCPT.fonte(q.fonte)};
+    return {...ConteudoSaneamentoCPT.semResposta(q, this.ctx), escolha: r.escolha, acertou: r.acertou, certa: q.certa, explica: q.explica, fonte: ConteudoSaneamentoCPT.fonte(q.fonte)};
   }
   /** Estado para o Meu espaço: pergunta do dia e quiz da semana (sem as respostas certas do que falta responder). */
   estado() {
@@ -52,9 +58,9 @@ class QuizCPT {
     const proxima = feitas.length < ids.length ? ConteudoSaneamentoCPT.pergunta(ids[feitas.length]) : null;
     return {
       regras: {pontosDia: QuizCPT.pontosDia, pontosPergunta: QuizCPT.pontosPergunta, porSemana: QuizCPT.porSemana},
-      dia: qd ? {data: dia, versao: rd ? rd.versao : 0, pergunta: rd ? null : ConteudoSaneamentoCPT.semResposta(qd, this.ctx.perfil), resposta: rd ? this.resultado(rd.respostas[0]) : null} : null,
+      dia: qd ? {data: dia, versao: rd ? rd.versao : 0, pergunta: rd ? null : ConteudoSaneamentoCPT.semResposta(qd, this.ctx), resposta: rd ? this.resultado(rd.respostas[0]) : null} : null,
       semana: ids.length ? {semana, versao: rs ? rs.versao : 0, total: ids.length, respondidas: feitas.length, acertos: feitas.filter(r => r.acertou).length, pontos: rs ? rs.pontos : 0,
-        indice: feitas.length, proxima: proxima ? ConteudoSaneamentoCPT.semResposta(proxima, this.ctx.perfil) : null, respostas: feitas.map(r => this.resultado(r)).filter(Boolean)} : null
+        indice: feitas.length, proxima: proxima ? ConteudoSaneamentoCPT.semResposta(proxima, this.ctx) : null, respostas: feitas.map(r => this.resultado(r)).filter(Boolean)} : null
     };
   }
   /** Responde a pergunta do dia (tipo 'dia') ou a próxima do quiz da semana (tipo 'semana'). */

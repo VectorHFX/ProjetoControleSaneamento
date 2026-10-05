@@ -1,790 +1,1234 @@
 # Conteúdo de saneamento — para revisão
 
-Gerado de `app/src/ConteudoSaneamentoCPT.gs` por `node app/testes/quiz.cjs --atualizar`. Não edite à mão: anote as correções e os IDs aprovados.
+Gerado de `app/src/ConteudoSaneamentoCPT.gs` por `node app/testes/quiz.cjs --atualizar`. Não edite à mão.
+
+A decisão de cada item (Aprovar, Suspender, Voltar) é feita na aplicação, em **Revisão do conteúdo** (só o proprietário). Enquanto um item não for aprovado, só o proprietário o vê, com a marca "a revisar".
+
+Eixos: Na prática 88 · Para entender 39 · Fato curioso 23 (de 150).
+
+## Curiosidades (50)
+
+- **C01** · Leis e metas · Para entender — O ODS 6 da ONU é garantir água e saneamento para todas e todos, com gestão sustentável, até 2030. **Por que importa:** É a meta global que dá sentido ao trabalho no bairro: cada casa ligada à rede conta. ([ONU Brasil — Objetivo de Desenvolvimento Sustentável 6](https://brasil.un.org/pt-br/sdgs/6))
+- **C02** · Leis e metas · Para entender — O marco legal do saneamento (Lei 14.026/2020) fixou a meta: até 31/12/2033, 99% da população com água potável e 90% com coleta e tratamento de esgoto. **Por que importa:** As obras que acompanhamos são parte do caminho até essa meta. ([Planalto — Lei 14.026/2020 (marco legal do saneamento)](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14026.htm))
+- **C03** · Leis e metas · Para entender — Pela Lei 11.445, saneamento básico é mais que água e esgoto: inclui limpeza urbana e resíduos sólidos e a drenagem da água da chuva. **Por que importa:** Ajuda a explicar ao morador quem cuida de cada problema: nem tudo é da obra de esgoto. ([Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)) _Corrigido: Sai o número da lei; entram os 4 serviços do saneamento._
+- **C04** · Nosso território · Fato curioso — O Rio Tamanduateí nasce no Parque Municipal da Gruta de Santa Luzia, em Mauá, e corre cerca de 35 km até o Rio Tietê. **Por que importa:** O esgoto que deixa de ir para os córregos de Santo André deixa de chegar a ele. ([Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD))
+- **C05** · Trabalho social · Na prática — Linguagem simples aproxima: em vez de "PV" e "interceptor", diga "tampa de inspeção da rede" e "cano grande que leva o esgoto para o tratamento". **Por que importa:** Morador que entende a obra confia mais, colabora e reclama com informação útil. (_prática da equipe_) _Corrigido: Novo: linguagem simples com o morador._
+- **C06** · Chuva e drenagem · Na prática — O lixo jogado na rua desce com a chuva pelas bocas de lobo e vai parar nos córregos e rios da cidade. **Por que importa:** Descarte na rua vira enchente e rio sujo: é um bom gancho para conversar com o bairro. (_prática da equipe_) _Corrigido: Novo: o lixo da rua chega aos rios (sai a área da bacia)._
+- **C07** · Nosso território · Para entender — Cerca de 55% do território de Santo André fica em área de proteção aos mananciais, na região da Represa Billings. **Por que importa:** Cuidar do esgoto e do lixo nessas áreas é proteger a água que depois é tratada para beber. ([Semasa — 25 anos da Gestão Ambiental em Santo André (2024)](https://portais.santoandre.sp.gov.br/semasa/wp-content/uploads/sites/13/2024/12/Livro-25-Anos-da-Gestao-Ambiental-DGA-2024.pdf)) _Corrigido: Fonte trocada para o Semasa (55% mantido)._
+- **C08** · Nosso território · Fato curioso — O Rio Grande, que nasce na região de Paranapiacaba, é o principal formador da Represa Billings. **Por que importa:** Liga a serra de Santo André à água da região: o que acontece lá em cima chega à represa. ([Wikipédia — Represa Billings](https://pt.wikipedia.org/wiki/Represa_Billings))
+- **C09** · Nosso território · Para entender — Santo André e a Sabesp assinaram o contrato em julho de 2019; a Sabesp opera a água e o esgoto da cidade desde 11/09/2019, num contrato previsto para 40 anos. **Por que importa:** Orienta o atendimento: problemas de água e de esgoto vão para a Sabesp. ([Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua)) _Corrigido: Contrato em julho/2019, operação desde 11/09/2019, 40 anos previstos no contrato._
+- **C10** · Descarte correto · Fato curioso — Segundo estimativa divulgada pela Sabesp, 1 litro de óleo de cozinha pode poluir até 25 mil litros de água. **Por que importa:** Uma garrafa PET de óleo levada ao ponto de coleta evita esse estrago e entupimentos na rua. ([SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400))
+- **C11** · Descarte correto · Na prática — Óleo usado não vai na pia: espere esfriar, guarde numa garrafa PET fechada e leve a um ponto de coleta. **Por que importa:** Na rede, o óleo gruda nos canos, entope e faz o esgoto voltar nas casas. ([SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400))
+- **C12** · Tratamento · Para entender — No tratamento por lodo ativado, micro-organismos que precisam de oxigênio consomem a matéria orgânica do esgoto. **Por que importa:** É a natureza trabalhando dentro da estação, só que acelerada e controlada. ([BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/))
+- **C13** · Tratamento · Para entender — A primeira etapa numa estação de esgoto costuma ser o gradeamento: grades seguram plásticos, panos e outros objetos. **Por que importa:** Tudo o que vai pelo vaso e não é esgoto chega até lá, ou entope a rede no caminho. ([BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/))
+- **C14** · Tratamento · Para entender — Na estação de água, a coagulação desestabiliza a sujeira, a floculação junta tudo em flocos e a decantação deixa os flocos assentarem. **Por que importa:** A água do manancial sai limpa porque passa por várias etapas, não por um filtro só. ([Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/))
+- **C15** · Água no dia a dia · Na prática — A água sai tratada da estação, mas uma caixa d’água suja ou destampada pode contaminá-la de novo dentro de casa. **Por que importa:** Vale lembrar o morador: caixa tampada e limpa (a orientação mais comum é a cada 6 meses). (_prática da equipe_) _Corrigido: Novo: caixa d’água limpa e tampada._
+- **C16** · Tratamento · Fato curioso — O flúor colocado na água tratada ajuda a prevenir cáries. **Por que importa:** É saúde pública que chega pela torneira, sem ninguém precisar lembrar. ([Sabesp — Tratamento de água (folheto)](https://www.sabesp.com.br/assets/pdf/sabesp-tratamento-agua-1.pdf))
+- **C17** · Saúde · Para entender — Cólera, hepatite A, diarreias, esquistossomose e leptospirose estão entre as doenças ligadas à falta de saneamento. **Por que importa:** Coletar e tratar esgoto é também prevenir doença: um argumento forte para a ligação. ([Revista Caminhos de Geografia (UFU) — Doenças de veiculação hídrica](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144))
+- **C18** · Saúde · Na prática — A leptospirose é pega no contato com água ou lama de enchente contaminadas pela urina de ratos, sobretudo com feridas na pele ou muito tempo na água. **Por que importa:** Na limpeza depois da enchente: luvas e botas de borracha, e crianças longe da água e da lama. ([Ministério da Saúde — Leptospirose](https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/l/leptospirose)) _Corrigido: Contato com água ou lama contaminadas por urina de rato._
+- **C19** · Saúde · Na prática — A hepatite A passa por água e alimentos contaminados por fezes. Água tratada, saneamento, mãos lavadas e vacina previnem. **Por que importa:** Julho Amarelo é um bom mês para levar o tema às ações com o bairro. ([Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais))
+- **C20** · Saúde · Na prática — Os ovos do Aedes aegypti podem sobreviver até 1 ano no seco, grudados na parede dos recipientes. **Por que importa:** Não basta esvaziar: é preciso esfregar as bordas de vasos, baldes e pratinhos. ([Ministério da Saúde — Aedes aegypti: um perigo mesmo na seca](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca))
+- **C21** · Saúde · Na prática — Pesquisa do IOC/Fiocruz: cerca de 15 horas depois de postos, os ovos do Aedes já ficam resistentes à seca. **Por que importa:** Por isso a eliminação de criadouros precisa ser toda semana, não só quando chove. ([IOC/Fiocruz — Mecanismos da impermeabilidade dos ovos do Aedes aegypti](https://www.ioc.fiocruz.br/noticias/descobertos-mecanismos-ligados-impermeabilidade-de-ovos-do-aegypti)) _Corrigido: Fonte original do IOC/Fiocruz._
+- **C22** · Resíduos · Na prática — As cores das lixeiras seguem a Resolução Conama 275: azul papel, vermelho plástico, verde vidro e amarelo metal. **Por que importa:** Em casa não precisa de quatro lixeiras: separar recicláveis limpos e secos do resto já ajuda muito. ([Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)) _Corrigido: As 8 cores viraram uma dica prática._
+- **C23** · Resíduos · Na prática — Embalagem com resto de comida suja o saco de recicláveis e pode acabar descartada na triagem. **Por que importa:** Uma passada rápida de água (pode ser de reuso) faz a separação valer. (_prática da equipe_) _Corrigido: Novo: embalagem limpa na reciclagem._
+- **C24** · Resíduos · Para entender — A Política Nacional de Resíduos Sólidos põe uma ordem: não gerar, reduzir, reutilizar, reciclar, tratar e só então dispor o rejeito. **Por que importa:** Reciclar é bom, mas o melhor resíduo é o que nem chega a existir. ([Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html))
+- **C25** · Resíduos · Fato curioso — Em 2024 o Brasil reciclou 97,3% das latas de alumínio de bebidas, o 16º ano seguido acima de 95%. **Por que importa:** Mostra que, com valor de mercado e coleta organizada, a reciclagem funciona. ([Recicla Latas — Brasil recicla 97,3% das latas de alumínio (2024)](https://reciclalatas.com.br/em-ano-de-cop30-brasil-reforca-sustentabilidade-ao-reciclar-973-das-latas-de-aluminio/)) _Corrigido: Fonte original: Recicla Latas._
+- **C26** · Descarte correto · Na prática — Remédio vencido ou que sobrou não vai na pia, no vaso nem no lixo comum: leve a um ponto de coleta habilitado, como uma farmácia participante. **Por que importa:** Remédio no esgoto contamina a água; a coleta tem regra própria (Decreto 10.388/2020). ([Planalto — Decreto 10.388/2020 (logística reversa de medicamentos)](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/decreto/d10388.htm)) _Corrigido: Ponto de coleta habilitado, como uma farmácia participante._
+- **C27** · Água no dia a dia · Para entender — A ONU estima que cada pessoa precisa de 50 a 100 litros de água por dia para beber, cozinhar e a higiene básica. **Por que importa:** Ajuda a dimensionar o desperdício: um vazamento pode gastar o que uma pessoa usa no dia. ([ONU (UNRIC) — Água e o direito humano à água](https://unric.org/pt/agua/)) _Corrigido: ONU: 50 a 100 litros (saem o 110 e a média de 166,3)._
+- **C28** · Água no dia a dia · Na prática — Estimativa divulgada pela Sabesp: banho de 15 minutos com o registro meio aberto pode gastar cerca de 135 litros; em 5 minutos, cerca de 45. Varia com o chuveiro e a pressão. **Por que importa:** É um exemplo concreto para falar de consumo, sem prometer número exato. ([Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)) _Corrigido: Estimativa, com as condições._
+- **C29** · Água no dia a dia · Na prática — Estimativa divulgada pela Sabesp: escovar os dentes com a torneira aberta pode gastar cerca de 12 litros; fechando enquanto escova, cerca de meio litro. **Por que importa:** Hábito simples, fácil de ensinar às crianças nas ações. ([Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)) _Corrigido: Estimativa, com as condições._
+- **C30** · Água no dia a dia · Na prática — Estimativa divulgada pela Sabesp: uma torneira pingando pode desperdiçar cerca de 46 litros por dia, conforme o ritmo das gotas. **Por que importa:** Trocar a vedação custa pouco e o morador sente na conta. ([Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)) _Corrigido: Estimativa, com as condições._
+- **C31** · Leis e metas · Para entender — Ranking do Saneamento 2026 (Trata Brasil): mais de 30 milhões de brasileiros sem água potável e cerca de 90 milhões (43,3%) sem coleta de esgoto. **Por que importa:** O desafio é grande, e a obra no bairro é parte da resposta. ([Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)) _Corrigido: Números do Ranking 2026 corrigidos._
+- **C32** · Água no dia a dia · Fato curioso — O Dia Mundial da Água, 22 de março, foi proposto na Rio-92, a conferência da ONU no Rio de Janeiro. **Por que importa:** É uma data boa para ações com escolas e lideranças do bairro. ([WWF-Brasil — 22 de março, Dia Mundial da Água](https://www.wwf.org.br/?51682%2F22-de-maro-Dia-Mundial-da-gua=))
+- **C33** · Esgoto · Fato curioso — Segundo OMS e UNICEF (2025), em 2024 3,4 bilhões de pessoas ainda não tinham saneamento gerido com segurança, e 354 milhões faziam as necessidades a céu aberto. **Por que importa:** Banheiro ligado à rede, com esgoto tratado, ainda é privilégio no mundo. ([OMS/UNICEF — Relatório JMP 2025 (dados de 2024)](https://data.unicef.org/resources/jmp-report-2025/)) _Corrigido: Dado do relatório OMS/UNICEF 2025._
+- **C34** · Segurança · Fato curioso — O 28 de abril é o Dia Mundial da Segurança e Saúde no Trabalho; por isso abril virou o Abril Verde. **Por que importa:** Bom momento para revisar com a equipe os cuidados perto das frentes de obra. ([Câmara Municipal de São Paulo — Abril Verde](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/))
+- **C35** · Segurança · Na prática — Perto da obra, a equipe socioambiental também segue a sinalização e usa o EPI exigido no local, como capacete, colete e botina. **Por que importa:** Dá o exemplo ao morador e evita acidentes com valas e máquinas. (_prática da equipe_) _Corrigido: Novo: EPI perto da obra (sai o número da lei)._
+- **C36** · Atendimento ao morador · Na prática — Em Santo André, a Sabesp cuida da água e do esgoto; o Semasa continua com a gestão ambiental, a drenagem urbana e os resíduos sólidos. **Por que importa:** Vazamento de esgoto é com a Sabesp; boca de lobo entupida e coleta de lixo, com o Semasa. ([Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua))
+- **C37** · Esgoto · Para entender — Coletar, afastar e tratar são etapas diferentes: o esgoto pode ser coletado na rua e ainda não chegar a uma estação de tratamento. **Por que importa:** Rede nova não significa córrego limpo no dia seguinte: o sistema precisa estar completo. ([Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html))
+- **C38** · Chuva e drenagem · Na prática — Rede de esgoto e galeria de águas da chuva são sistemas separados: uma leva o esgoto para tratamento, a outra leva a chuva para os córregos. **Por que importa:** Calha no esgoto faz a rede transbordar na chuva; esgoto na galeria polui o córrego. ([Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html))
+- **C39** · Obra e comunidade · Na prática — Obra concluída não é o mesmo que sistema operando: depois da rede pronta ainda vêm as ligações dos imóveis, os testes e a conexão com coletores e estação. **Por que importa:** Evita prometer ao morador um benefício com data que não depende da equipe. (_prática da equipe_)
+- **C40** · Trabalho social · Na prática — Pela Portaria MCID 75/2025, o trabalho social em saneamento acontece antes, durante e depois da obra. **Por que importa:** Diagnóstico e comunicação prévia preparam o bairro; o acompanhamento depois mostra se a mudança chegou. ([Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf))
+- **C41** · Trabalho social · Na prática — O diagnóstico do território é feito com a comunidade: quem mora ali, o que já existe, o que preocupa e quem são as lideranças. **Por que importa:** Ação planejada a partir do que o bairro vive tem mais adesão e menos conflito. ([Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf))
+- **C42** · Atendimento ao morador · Na prática — Uma reclamação bem registrada responde: o quê, onde (rua, número e referência), desde quando, quem é afetado e como dar retorno. **Por que importa:** Sem endereço exato e contato, a Execução não acha o problema e o caso volta. (_prática da equipe_)
+- **C43** · Atendimento ao morador · Na prática — A central da Sabesp atende 24 horas no 0800 055 0195; pessoas com deficiência auditiva ou de fala usam o 0800 016 0195. **Por que importa:** Com o canal certo, o morador não fica sem resposta fora do horário da equipe. ([Sabesp — Canais de atendimento (folheto)](https://www.sabesp.com.br/assets/images/folhetos/sabesp-canais-atendimento.pdf))
+- **C44** · Esgoto · Na prática — Onde há rede pública de esgoto disponível, a ligação do imóvel é obrigatória (Lei 11.445, art. 45). **Por que importa:** Rede pronta sem ligação não tira o esgoto do córrego: por isso a mobilização importa. ([Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html))
+- **C45** · Esgoto · Na prática — A caixa de gordura segura a gordura da pia antes da rede e precisa ser limpa de tempos em tempos. **Por que importa:** Caixa cheia deixa a gordura passar para a rede, entupir e causar mau cheiro. (_prática da equipe_)
+- **C46** · Obra e comunidade · Na prática — Aviso de obra bom diz o que vai acontecer, quando, por quanto tempo e a quem recorrer, e chega antes da máquina. **Por que importa:** Comunicação prévia reduz conflito e reclamação depois. (_prática da equipe_)
+- **C47** · Atendimento ao morador · Na prática — Quando o morador diz que a obra "só trouxe transtorno", ouvir até o fim e reconhecer o incômodo vem antes de explicar o benefício. **Por que importa:** Quem se sente ouvido aceita melhor a informação e conta o que realmente precisa ser resolvido. (_prática da equipe_)
+- **C48** · Resíduos · Fato curioso — Uma lata de alumínio reciclada pode voltar às prateleiras em cerca de 60 dias. **Por que importa:** Material que volta rápido para a indústria é material que não vai para o aterro. ([Recicla Latas — Brasil recicla 97,3% das latas de alumínio (2024)](https://reciclalatas.com.br/em-ano-de-cop30-brasil-reforca-sustentabilidade-ao-reciclar-973-das-latas-de-aluminio/))
+- **C49** · Esgoto · Fato curioso — Entre 2015 e 2024, 1,2 bilhão de pessoas passaram a ter saneamento gerido com segurança; no mundo, a cobertura foi de 48% para 58%. **Por que importa:** Avançar é possível; o ritmo depende das obras e de cada casa ligada à rede. ([OMS/UNICEF — Relatório JMP 2025 (dados de 2024)](https://data.unicef.org/resources/jmp-report-2025/))
+- **C50** · Leis e metas · Para entender — Segundo o Ranking do Saneamento 2026, só 11 dos 100 municípios mais populosos do Brasil universalizaram água e esgoto. **Por que importa:** Mostra o tamanho do desafio até 2033 e por que cada bairro atendido conta. ([Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf))
 
-Enquanto um ID não estiver em `ConteudoSaneamentoCPT.aprovadas`, só o proprietário vê esse item (com a marca "a revisar").
+## Perguntas do quiz (100)
 
-## Curiosidades (35)
+### Q066 · Atendimento ao morador · Na prática
 
-- **C01** · Leis e metas — O ODS 6 da ONU é "assegurar a disponibilidade e a gestão sustentável da água e saneamento para todas e todos". ([fonte](https://brasil.un.org/pt-br/sdgs/6))
-- **C02** · Leis e metas — O novo marco legal do saneamento (Lei 14.026/2020) fixou a meta: até 31/12/2033, 99% da população com água potável e 90% com coleta e tratamento de esgoto. ([fonte](https://www.camara.leg.br/noticias/676791-marco-legal-do-saneamento-entra-em-vigor-hoje-lei-teve-18-vetos-presidenciais/))
-- **C03** · Leis e metas — A Lei 14.026/2020 atualizou a Lei 11.445/2007, que traz as diretrizes nacionais do saneamento básico. ([fonte](https://jornal.usp.br/campus-ribeirao-preto/brasil-estabelece-meta-ambiciosa-para-universalizar-saneamento-basico-ate-2033/))
-- **C04** · Nosso território — O Rio Tamanduateí tem cerca de 35 km e nasce no Parque Municipal da Gruta de Santa Luzia, em Mauá. ([fonte](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD))
-- **C05** · Nosso território — O Tamanduateí passa por Mauá, Santo André e São Caetano do Sul e deságua no Rio Tietê, no bairro do Bom Retiro, em São Paulo. ([fonte](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD))
-- **C06** · Nosso território — A bacia do Rio Tamanduateí tem cerca de 320 km². ([fonte](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD))
-- **C07** · Nosso território — Cerca de 55% do território de Santo André fica em área de proteção aos mananciais. ([fonte](https://pt.wikipedia.org/wiki/Represa_Billings))
-- **C08** · Nosso território — O Rio Grande, que nasce na região de Paranapiacaba, é o principal formador da Represa Billings. ([fonte](https://pt.wikipedia.org/wiki/Represa_Billings))
-- **C09** · Nosso território — Em 2019 a Sabesp assumiu os serviços de água e esgoto de Santo André, que antes eram do Semasa, com contrato de 40 anos. ([fonte](https://www.dgabc.com.br/Noticia/3102857/sabesp-chega-a-sto-andre-com-desafio-de-findar-falta-d-agua-e-universalizar-esgoto))
-- **C10** · Descarte correto — Segundo a Sabesp, 1 litro de óleo de cozinha pode poluir até 25 mil litros de água. ([fonte](https://samaetimbo.com.br/detalhe/mostra/400))
-- **C11** · Descarte correto — Óleo de cozinha usado não vai na pia: guarde frio numa garrafa PET fechada e leve a um ponto de coleta. ([fonte](https://samaetimbo.com.br/detalhe/mostra/400))
-- **C12** · Tratamento — No tratamento por lodo ativado, micro-organismos que precisam de oxigênio "comem" a matéria orgânica do esgoto. ([fonte](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/))
-- **C13** · Tratamento — A primeira etapa numa estação de esgoto é o gradeamento: grades seguram plásticos, panos e outros objetos grandes. ([fonte](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/))
-- **C14** · Tratamento — Na estação de água, a coagulação desestabiliza a sujeira, a floculação junta tudo em flocos e a decantação deixa os flocos irem para o fundo. ([fonte](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/))
-- **C15** · Tratamento — Na filtração da água tratada, ela atravessa camadas de pedras, areia e carvão antracito. ([fonte](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/))
-- **C16** · Tratamento — O flúor colocado na água tratada ajuda a proteger os dentes. ([fonte](https://www.sabesp.com.br/assets/pdf/sabesp-tratamento-agua-1.pdf))
-- **C17** · Saúde — Cólera, hepatite A, diarreia, esquistossomose e leptospirose estão entre as doenças ligadas à falta de saneamento. ([fonte](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144))
-- **C18** · Saúde — A leptospirose é transmitida pela urina de animais infectados, como ratos — por isso enchentes e esgoto a céu aberto são um risco. ([fonte](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144))
-- **C19** · Saúde — A hepatite A passa por água e alimentos contaminados por fezes. Água tratada, saneamento, higiene das mãos e vacina previnem. ([fonte](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais))
-- **C20** · Saúde — Os ovos do Aedes aegypti podem sobreviver até 1 ano no seco, esperando a água para eclodir. ([fonte](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca))
-- **C21** · Saúde — Pesquisa do Instituto Oswaldo Cruz: 15 horas depois de postos, os ovos do Aedes já têm uma camada que resiste à seca. ([fonte](https://www.em.com.br/app/noticia/saude-e-bem-viver/2023/10/28/interna_bem_viver,1583493/aedes-aegypti-ovo-do-mosquito-sobrevive-sem-agua-comprova-pesquisa.shtml))
-- **C22** · Resíduos sólidos — Cores da coleta seletiva (Conama 275/2001): azul papel, vermelho plástico, verde vidro e amarelo metal. ([fonte](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf))
-- **C23** · Resíduos sólidos — Mais cores da Conama 275/2001: preto madeira, laranja resíduos perigosos, marrom orgânicos e cinza o que não é reciclável. ([fonte](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf))
-- **C24** · Resíduos sólidos — A Política Nacional de Resíduos Sólidos põe uma ordem: não gerar, reduzir, reutilizar, reciclar, tratar e só então dispor o rejeito. ([fonte](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html))
-- **C25** · Resíduos sólidos — O Brasil reciclou 97,3% das latas de alumínio de bebidas em 2024. ([fonte](https://ciclovivo.com.br/planeta/desenvolvimento/em-2024-brasil-reciclou-973-das-latas-de-aluminio/))
-- **C26** · Descarte correto — Remédio vencido não vai na pia nem no vaso: leve a um ponto de coleta (farmácias e unidades de saúde). A regra é do Decreto 10.388/2020. ([fonte](https://www.gov.br/pt-br/noticias/meio-ambiente-e-clima/2022/12/o-descarte-adequado-de-medicamentos-em-desuso-contribui-para-a-qualidade-do-meio-ambiente))
-- **C27** · Águas — A ONU indica 110 litros de água por pessoa por dia; a média no Brasil é de 166,3 litros. ([fonte](https://news.ama.eco/brasileiros-usam-51-a-mais-de-agua-do-que-a-quantidade-diaria-recomendada/))
-- **C28** · Águas — Um banho de 15 minutos com o registro meio aberto gasta cerca de 135 litros; em 5 minutos, 45 litros. ([fonte](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/))
-- **C29** · Águas — Escovar os dentes com a torneira aberta pode gastar 12 litros; fechando a torneira, dá para economizar 11,5 litros. ([fonte](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/))
-- **C30** · Águas — Uma torneira pingando pode desperdiçar 46 litros de água por dia. ([fonte](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/))
-- **C31** · Leis e metas — Segundo o Ranking do Saneamento 2026 do Trata Brasil, 16,9% dos brasileiros ainda não têm água potável e 44,8% não têm coleta de esgoto. ([fonte](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf))
-- **C32** · Águas — O Dia Mundial da Água, 22 de março, nasceu na Rio-92, a conferência da ONU no Rio de Janeiro. ([fonte](https://www.wwf.org.br/?51682%2F22-de-maro-Dia-Mundial-da-gua=))
-- **C33** · Esgoto — O 19 de novembro é o Dia Mundial do Banheiro (ONU, 2013): cerca de 3,5 bilhões de pessoas vivem sem banheiro seguro. ([fonte](https://aesbe.org.br/19-de-novembro-dia-mundial-do-saneamento-reforca-a-importancia-do-acesso-universal-ao-saneamento-basico/))
-- **C34** · Segurança no trabalho — O 28 de abril é o Dia Mundial da Segurança e Saúde no Trabalho (OIT, 2003); por isso abril é o Abril Verde. ([fonte](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/))
-- **C35** · Segurança no trabalho — No Brasil, o 28 de abril também é o Dia Nacional em Memória das Vítimas de Acidentes e Doenças do Trabalho (Lei 11.121/2005). ([fonte](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/))
+Um morador liga dizendo que o esgoto está voltando pelo ralo. O que é mais importante anotar primeiro?
 
-## Perguntas do quiz (65)
+- **✔ Endereço completo, ponto de referência e telefone para retorno**
+- O nome dos vizinhos que também reclamaram
+- A opinião dele sobre a empresa da obra
+- Só o bairro, para agilizar o registro
 
-### Q001 · Leis e metas
+> Sem endereço exato e um contato, a Execução não localiza o problema e o caso não fecha. — _prática da equipe_
 
-Qual é o número do Objetivo de Desenvolvimento Sustentável da ONU sobre água potável e saneamento?
+### Q067 · Atendimento ao morador · Na prática
 
-- ODS 3
-- **✔ ODS 6**
-- ODS 11
-- ODS 14
+Qual destes registros de reclamação ajuda mais a resolver o caso?
 
-> O ODS 6 trata de assegurar água e saneamento para todas e todos. — [ONU Brasil — Objetivo de Desenvolvimento Sustentável 6](https://brasil.un.org/pt-br/sdgs/6)
+- "Morador muito bravo com a obra"
+- "Problema de esgoto na rua"
+- "Urgente!!! Resolver hoje"
+- **✔ "Desde segunda, água suja sai da calçada em frente ao nº 120; uma idosa não consegue passar"**
 
-### Q002 · Leis e metas
+> Registro útil diz o quê, onde, desde quando e quem é afetado, sem adjetivos. — _prática da equipe_
 
-Até quando o novo marco legal quer 99% da população com água potável?
+### Q068 · Atendimento ao morador · Na prática
 
-- 2025
-- 2030
-- **✔ 2033**
-- 2040
+O morador pede um prazo exato para o conserto, mas você não tem essa informação. O melhor é:
 
-> A meta da Lei 14.026/2020 vence em 31/12/2033. — [Câmara dos Deputados — Marco legal do saneamento entra em vigor (Lei 14.026/2020)](https://www.camara.leg.br/noticias/676791-marco-legal-do-saneamento-entra-em-vigor-hoje-lei-teve-18-vetos-presidenciais/)
+- Dar um prazo curto para acalmar
+- Dizer que não é problema da sua equipe
+- **✔ Registrar, dizer quem dará o retorno e combinar como avisá-lo**
+- Pedir que ele ligue de novo em outro dia
 
-### Q003 · Leis e metas
+> Prazo que não depende de você vira nova reclamação. Registre e combine o retorno. — _prática da equipe_
 
-Pelo novo marco legal, qual a meta de coleta e tratamento de esgoto até 2033?
+### Q069 · Atendimento ao morador · Na prática
 
-- 50% da população
-- 75% da população
-- **✔ 90% da população**
-- 100% da população
+Fora do horário da equipe, para onde orientar um morador com vazamento de esgoto na rua?
 
-> A meta é 90% com coleta e tratamento de esgoto (e 99% com água potável). — [Câmara dos Deputados — Marco legal do saneamento entra em vigor (Lei 14.026/2020)](https://www.camara.leg.br/noticias/676791-marco-legal-do-saneamento-entra-em-vigor-hoje-lei-teve-18-vetos-presidenciais/)
+- Para esperar a equipe no dia seguinte
+- **✔ Para a central da Sabesp, 0800 055 0195, que atende 24 horas**
+- Para o Corpo de Bombeiros
+- Para a Defesa Civil, em qualquer caso
 
-### Q004 · Leis e metas
+> A central da Sabesp atende 24 h. Peça ao morador para anotar o protocolo. — [Sabesp — Canais de atendimento (folheto)](https://www.sabesp.com.br/assets/images/folhetos/sabesp-canais-atendimento.pdf)
 
-Qual lei é o novo marco legal do saneamento?
+### Q070 · Atendimento ao morador · Na prática
 
-- **✔ Lei 14.026/2020**
-- Lei 12.305/2010
-- Lei 9.433/1997
-- Lei 8.080/1990
+Uma moradora com deficiência auditiva precisa falar com a Sabesp. Qual canal indicar?
 
-> A Lei 14.026/2020 atualizou o marco do saneamento. — [Câmara dos Deputados — Marco legal do saneamento entra em vigor (Lei 14.026/2020)](https://www.camara.leg.br/noticias/676791-marco-legal-do-saneamento-entra-em-vigor-hoje-lei-teve-18-vetos-presidenciais/)
+- 0800 055 0195, só por voz
+- Ir pessoalmente à estação de tratamento
+- O telefone da prefeitura
+- **✔ 0800 016 0195, para pessoas com deficiência auditiva ou de fala**
 
-### Q005 · Leis e metas
+> Há canal próprio, além da agência virtual e do chat. — [Sabesp — Canais de atendimento (folheto)](https://www.sabesp.com.br/assets/images/folhetos/sabesp-canais-atendimento.pdf)
 
-O novo marco do saneamento atualizou qual lei de diretrizes nacionais?
+### Q071 · Atendimento ao morador · Na prática
 
-- **✔ Lei 11.445/2007**
-- Lei 12.305/2010
-- Lei 6.938/1981
-- Lei 10.257/2001
+O que fazer com o número de protocolo que o morador recebeu da Sabesp?
 
-> A Lei 11.445/2007 traz as diretrizes nacionais do saneamento básico. — [Jornal da USP — Brasil estabelece meta para universalizar o saneamento até 2033](https://jornal.usp.br/campus-ribeirao-preto/brasil-estabelece-meta-ambiciosa-para-universalizar-saneamento-basico-ate-2033/)
+- **✔ Anotar no registro do atendimento, para acompanhar e cobrar o retorno**
+- Descartar: ele só serve para a Sabesp
+- Pedir que o morador não repasse a ninguém
+- Abrir outro protocolo igual, por garantia
 
-### Q006 · Resíduos sólidos
+> O protocolo liga o caso da equipe ao da Sabesp e evita duplicidade. — _prática da equipe_
 
-Qual lei criou a Política Nacional de Resíduos Sólidos?
+### Q072 · Atendimento ao morador · Na prática
 
-- Lei 14.026/2020
-- **✔ Lei 12.305/2010**
-- Lei 11.445/2007
-- Lei 9.605/1998
+Um morador mostra uma rachadura que apareceu na parede depois da obra. Qual a primeira atitude?
 
-> A PNRS é a Lei 12.305/2010. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+- Dizer que a obra não causou
+- **✔ Registrar com fotos, endereço e data em que notou, e encaminhar para análise**
+- Prometer que a empresa vai pagar o conserto
+- Esperar a engenharia passar para registrar
 
-### Q007 · Resíduos sólidos
+> Quem conclui a causa é a análise técnica. O papel da equipe é registrar bem e encaminhar. — _prática da equipe_
 
-Pela PNRS, qual vem PRIMEIRO na ordem de prioridade?
+### Q073 · Atendimento ao morador · Na prática
 
-- Reciclar
-- Reutilizar
-- **✔ Não gerar**
-- Tratar
+Um morador chega muito irritado. O que ajuda mais no começo da conversa?
 
-> A ordem é: não gerar, reduzir, reutilizar, reciclar, tratar e dispor o rejeito. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+- Explicar logo o cronograma da obra
+- Pedir que ele se acalme primeiro
+- **✔ Ouvir até o fim e repetir o que entendeu**
+- Dizer que os vizinhos não reclamaram
 
-### Q008 · Resíduos sólidos
+> Mostrar que entendeu baixa a tensão e evita registrar o problema errado. — _prática da equipe_
 
-Pela PNRS, o que vem logo depois de "reutilizar"?
+### Q074 · Atendimento ao morador · Na prática
 
-- **✔ Reciclar**
-- Reduzir
-- Não gerar
-- Disposição final
+Em Santo André, boca de lobo entupida na rua é assunto de quem?
 
-> Não gerar → reduzir → reutilizar → reciclar → tratar → disposição final. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+- Da Sabesp, que cuida da água e do esgoto
+- Do morador da casa em frente
+- Da Cetesb
+- **✔ Do Semasa, que cuida da drenagem urbana**
 
-### Q009 · Resíduos sólidos
+> Desde 2019 a Sabesp opera água e esgoto; o Semasa seguiu com drenagem, resíduos e gestão ambiental. — [Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua)
 
-Na coleta seletiva, qual cor é a do PAPEL?
+### Q075 · Atendimento ao morador · Na prática
 
-- Verde
-- Vermelho
-- Amarelo
-- **✔ Azul**
+Esgoto saindo pela tampa de um poço de visita na rua deve ser comunicado a quem?
 
-> Conama 275: azul papel, vermelho plástico, verde vidro, amarelo metal. — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- **✔ À Sabesp, responsável pela rede de esgoto**
+- Ao Semasa, responsável pela drenagem
+- À Defesa Civil
+- Ao síndico do prédio mais próximo
 
-### Q010 · Resíduos sólidos
+> O poço de visita faz parte da rede de esgoto, operada pela Sabesp na cidade. — [Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua)
 
-Na coleta seletiva, qual cor é a do PLÁSTICO?
+### Q076 · Atendimento ao morador · Na prática
 
-- **✔ Vermelho**
-- Azul
-- Marrom
-- Verde
+Entupimento no encanamento dentro do terreno, antes da caixa de inspeção, normalmente é responsabilidade de quem?
 
-> Vermelho é plástico (Conama 275/2001). — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- Da Sabesp
+- **✔ Do morador ou proprietário do imóvel**
+- Da construtora da obra
+- Da prefeitura
 
-### Q011 · Resíduos sólidos
+> Em geral, a parte interna do imóvel é do morador; da caixa de inspeção para a rua, da Sabesp. Na dúvida, oriente a ligar na central. — _prática da equipe_
 
-Na coleta seletiva, qual cor é a do VIDRO?
+### Q077 · Obra e comunidade · Na prática
 
-- Amarelo
-- Laranja
-- **✔ Verde**
-- Preto
+Uma rua vai ser interditada para a obra. Quando o morador deve ser avisado?
 
-> Verde é vidro (Conama 275/2001). — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- No dia, quando as máquinas chegarem
+- Só se ele perguntar
+- **✔ Antes da interdição, com data, duração e um canal para dúvidas**
+- Depois, no balanço da obra
 
-### Q012 · Resíduos sólidos
+> Comunicação prévia é parte do trabalho social e reduz conflito. — _prática da equipe_
 
-Na coleta seletiva, qual cor é a do METAL?
+### Q078 · Obra e comunidade · Na prática
 
-- **✔ Amarelo**
-- Azul
-- Cinza
-- Vermelho
+O que um bom aviso de obra precisa dizer?
 
-> Amarelo é metal (Conama 275/2001). — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- Só o nome da empresa
+- Os detalhes técnicos da tubulação
+- O valor do contrato
+- **✔ O que vai acontecer, quando, por quanto tempo e a quem recorrer**
 
-### Q013 · Resíduos sólidos
+> Com essas quatro respostas o morador se organiza e sabe onde perguntar. — _prática da equipe_
 
-Na coleta seletiva, o marrom é para:
+### Q079 · Obra e comunidade · Na prática
 
-- Madeira
-- Papel
-- Resíduos perigosos
-- **✔ Resíduos orgânicos**
+A rede foi concluída na rua, mas o morador diz que nada mudou. Qual explicação é correta?
 
-> Marrom é orgânico; preto é madeira (Conama 275/2001). — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- **✔ Obra concluída não é sistema operando: faltam ligações, testes e a conexão com os coletores**
+- A rede nova não funciona
+- O benefício é só para os vizinhos
+- O esgoto já está tratado desde o primeiro dia
 
-### Q014 · Resíduos sólidos
+> Rede pronta é uma etapa; o benefício vem quando o sistema todo opera. — _prática da equipe_
 
-Na coleta seletiva, o laranja é para:
+### Q080 · Obra e comunidade · Na prática
 
-- Plástico
-- Madeira
-- **✔ Resíduos perigosos**
-- Vidro
+Como falar do benefício da obra sem prometer o que não depende da equipe?
 
-> Laranja é resíduo perigoso (Conama 275/2001). — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- **✔ "Quando o sistema estiver operando, o esgoto deixa de ir para o córrego; ainda há etapas"**
+- "Mês que vem o rio fica limpo"
+- "Amanhã acaba o mau cheiro"
+- "Não posso falar nada sobre isso"
 
-### Q015 · Resíduos sólidos
+> Benefício com condição é honesto; data que a equipe não controla vira cobrança. — _prática da equipe_
 
-Na coleta seletiva, o preto é para:
+### Q081 · Obra e comunidade · Na prática
 
-- **✔ Madeira**
-- Metal
-- Orgânicos
-- Não recicláveis
+Um morador diz: "essa obra só me trouxe poeira, não vejo benefício nenhum". Boa resposta inicial:
 
-> Preto é madeira; cinza é o que não é reciclável. — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- Dizer que ele está enganado
+- Listar os números do contrato
+- Encerrar a conversa com educação
+- **✔ Reconhecer o incômodo e perguntar o que mais o afeta no dia a dia**
 
-### Q016 · Resíduos sólidos
+> Ouvir primeiro abre espaço para explicar depois, e às vezes revela um problema a resolver. — _prática da equipe_
 
-Na coleta seletiva, o cinza é para:
+### Q082 · Obra e comunidade · Na prática
 
-- Vidro
-- Madeira
-- Papel
-- **✔ Resíduo não reciclável**
+Qual informação NÃO deve ser passada ao morador como certa?
 
-> Cinza é resíduo geral não reciclável (Conama 275/2001). — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+- O canal de atendimento da Sabesp
+- O horário da frente de obra informado no aviso
+- **✔ Data de fim de obra que ainda não foi confirmada**
+- Como registrar uma reclamação
 
-### Q017 · Resíduos sólidos
+> Data não confirmada vira promessa quebrada. Diga o que está confirmado e quando haverá novidade. — _prática da equipe_
 
-Quanto das latas de alumínio de bebidas o Brasil reciclou em 2024?
+### Q083 · Obra e comunidade · Na prática
 
-- Cerca de 30%
-- Cerca de 55%
-- Cerca de 75%
-- **✔ Cerca de 97%**
+A calçada em frente a uma casa ficou sem passagem segura por causa da obra. O que fazer?
 
-> Foram 97,3% em 2024 — o Brasil é referência mundial. — [CicloVivo — Em 2024, Brasil reciclou 97,3% das latas de alumínio](https://ciclovivo.com.br/planeta/desenvolvimento/em-2024-brasil-reciclou-973-das-latas-de-aluminio/)
+- Orientar o morador a pular a vala
+- **✔ Registrar e acionar a frente de obra para garantir a passagem**
+- Esperar o fim da obra
+- Tirar uma foto e seguir o roteiro
 
-### Q018 · Descarte correto
+> Passagem segura é prioridade, sobretudo para idosos, crianças e pessoas com deficiência. — _prática da equipe_
 
-Segundo a Sabesp, 1 litro de óleo de cozinha pode poluir até quantos litros de água?
+### Q084 · Obra e comunidade · Na prática
 
-- 250 litros
-- 2,5 mil litros
-- **✔ 25 mil litros**
-- 250 mil litros
+Por que a ligação do imóvel à rede de esgoto é tão importante?
 
-> Até 25 mil litros de água. — [SAMAE Timbó — Óleo de cozinha (dado da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
+- **✔ Sem ela, o esgoto da casa continua indo para fossa ou córrego**
+- Ela serve só para a cobrança
+- Ela substitui a caixa de gordura
+- Ela aumenta a pressão da água
 
-### Q019 · Descarte correto
+> A rede só cumpre o papel quando as casas estão ligadas a ela. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
+
+### Q085 · Obra e comunidade · Na prática
+
+Uma família diz que não vai ligar a casa na rede porque "a fossa funciona". O melhor argumento:
+
+- A fossa é proibida em qualquer lugar
+- Sem a ligação a água é cortada no dia seguinte
+- A ligação só vale para quem tem escritura
+- **✔ A ligação leva o esgoto para tratamento, e a lei a exige onde há rede**
+
+> Lei 11.445, art. 45: onde a rede está disponível, a ligação é obrigatória. Use o argumento com calma e informação. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
+
+### Q086 · Trabalho social · Para entender
+
+Em obras de saneamento, o trabalho social acontece em quais fases?
+
+- Só na inauguração
+- Só quando há reclamação
+- **✔ Antes, durante e depois da obra**
+- Só antes de a obra começar
+
+> A Portaria MCID 75/2025 prevê pré-obra, obra e pós-obra. — [Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf)
+
+### Q087 · Trabalho social · Na prática
+
+Para que serve o diagnóstico participativo antes das ações?
+
+- Escolher fotos para o relatório
+- **✔ Conhecer o território e o que a comunidade vive, para planejar com ela**
+- Substituir a comunicação da obra
+- Avaliar cada pessoa da equipe
+
+> O trabalho social parte de estudos do território feitos com participação. — [Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf)
+
+### Q088 · Trabalho social · Na prática
+
+Qual destas é uma forma de acompanhamento socioambiental depois da obra?
+
+- **✔ Voltar ao bairro para ouvir se a mudança chegou e orientar sobre a ligação**
+- Encerrar o contato com a comunidade
+- Divulgar só os números do contrato
+- Esperar novas reclamações
+
+> O pós-obra avalia se a intervenção trouxe o resultado esperado. — [Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf)
+
+### Q089 · Trabalho social · Para entender
+
+Mobilização, comunicação e participação social são:
+
+- Tarefas só da assessoria de imprensa
+- Etapas da estação de tratamento
+- Exigências só de obras de habitação
+- **✔ Um dos eixos do trabalho social do Ministério das Cidades**
+
+> Os outros eixos tratam da sustentabilidade da intervenção e de meio ambiente e saúde. — [Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf)
+
+### Q090 · Trabalho social · Na prática
+
+Numa reunião com moradores, qual atitude fortalece a participação?
+
+- Falar a reunião inteira sem abrir para perguntas
+- **✔ Anotar as dúvidas e combinar quando e como virá a resposta**
+- Prometer tudo o que for pedido
+- Evitar anotar as críticas
+
+> Participação de verdade tem escuta, registro e devolutiva. — _prática da equipe_
+
+### Q091 · Trabalho social · Na prática
+
+Ao convidar a comunidade para uma ação, o que aumenta a presença?
+
+- Aviso no mesmo dia
+- Convite só por e-mail
+- **✔ Convite com antecedência, em local conhecido e horário que combine com a rotina do bairro**
+- Local distante, mas mais bonito
+
+> Quem conhece a rotina do bairro escolhe a hora e o lugar em que as pessoas podem ir. — _prática da equipe_
+
+### Q092 · Trabalho social · Na prática
+
+Lideranças locais (associação, igreja, escola) ajudam o trabalho social porque:
+
+- Decidem a obra no lugar da Sabesp
+- Substituem o atendimento
+- Autorizam as ligações de esgoto
+- **✔ Conhecem o bairro e têm a confiança dos moradores**
+
+> Elas abrem portas e ajudam a informação chegar a quem precisa. — _prática da equipe_
+
+### Q093 · Trabalho social · Na prática
+
+Num relato de atividade, o que é mais útil para o relatório?
+
+- **✔ O que foi feito, com quem, quantas pessoas e o que a comunidade trouxe**
+- Adjetivos como "maravilhosa" e "excelente"
+- Só a foto
+- O nome de quem faltou
+
+> Fatos e números deixam o relato pronto para o relatório mensal. — _prática da equipe_
+
+### Q094 · Trabalho social · Na prática
+
+Ao fotografar uma ação com crianças, qual é o cuidado certo?
+
+- Fotografar tudo e pedir depois
+- **✔ Ter autorização dos responsáveis e evitar rostos quando não houver**
+- Publicar com o nome completo das crianças
+- Nenhum cuidado extra, por ser ação pública
+
+> Imagem de criança pede autorização e cuidado redobrado. — _prática da equipe_
+
+### Q095 · Esgoto · Na prática
+
+Lenço umedecido vendido como "descartável", jogado no vaso sanitário:
+
+- Se desfaz em poucos minutos
+- Ajuda a limpar a tubulação
+- **✔ Não se desfaz como papel e ajuda a entupir a rede**
+- Fica retido na caixa de gordura
+
+> Lenço, fio dental e cotonete vão para o lixo; no esgoto, viram bolos que entopem a rede. — _prática da equipe_
+
+### Q096 · Esgoto · Na prática
+
+Antes de chegar à rede, a gordura da pia da cozinha deve passar por:
+
+- Caixa d’água
+- Calha de chuva
+- Lugar nenhum: vai direto para a estação
+- **✔ Caixa de gordura, limpa de tempos em tempos**
+
+> A caixa de gordura segura a gordura e evita entupimento e mau cheiro. — _prática da equipe_
+
+### Q097 · Esgoto · Na prática
+
+Um morador ligou a calha do telhado na rede de esgoto. Qual o problema?
+
+- **✔ Na chuva a rede enche, o esgoto pode voltar nas casas e transbordar na rua**
+- Nenhum: a chuva lava a rede
+- Só aumenta a conta de água
+- A água da chuva estraga o asfalto
+
+> Esgoto e chuva têm sistemas separados; a rede de esgoto não é feita para o volume da chuva. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
+
+### Q098 · Esgoto · Na prática
+
+E o contrário: esgoto da casa ligado na galeria de água da chuva?
+
+- O esgoto é tratado dentro da galeria
+- **✔ O esgoto vai sem tratamento para córregos e rios**
+- Não faz diferença
+- Melhora a drenagem da rua
+
+> A galeria leva a chuva direto aos córregos: o esgoto ali não passa por tratamento. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
+
+### Q099 · Esgoto · Na prática
+
+Retorno de esgoto em várias casas da mesma rua logo depois de chuva forte pode indicar:
+
+- Falta de água na região
+- Cloro demais na rede
+- **✔ Água de chuva entrando na rede de esgoto por ligações irregulares**
+- Defeito no hidrômetro
+
+> É um sinal comum de ligação irregular. Registre e encaminhe para a Sabesp verificar. — _prática da equipe_
+
+### Q019 · Descarte correto · Na prática
 
 Qual o jeito certo de descartar óleo de cozinha usado?
 
-- Na pia, com água quente
-- No vaso sanitário
-- **✔ Frio, numa garrafa PET fechada, num ponto de coleta**
+- Na pia, com água quente e detergente
+- No vaso sanitário, com a descarga
+- **✔ Frio, numa garrafa PET fechada, levado a um ponto de coleta**
 - No ralo do quintal
 
-> Guardado numa garrafa fechada e levado a um ponto de coleta, ele vira sabão ou biodiesel. — [SAMAE Timbó — Óleo de cozinha (dado da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
+> No ponto de coleta, ele pode virar sabão ou biodiesel. — [SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
 
-### Q020 · Descarte correto
+### Q062 · Esgoto · Na prática
 
-Onde descartar remédio vencido?
+Por que o óleo de cozinha na pia é um problema para o esgoto?
+
+- **✔ Gruda nos canos, entope e faz o esgoto voltar**
+- Corrói a caixa d’água
+- Evapora e deixa cheiro de gás
+- Aumenta o consumo de água da casa
+
+> Com o tempo, o óleo endurece nas tubulações e forma entupimentos. — [SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
+
+_Corrigido: Sem a alternativa "vira água tratada"._
+
+### Q051 · Água no dia a dia · Na prática
+
+Estimativa divulgada pela Sabesp: banho de 15 minutos com o registro meio aberto pode gastar cerca de:
+
+- 15 litros
+- 40 litros
+- **✔ 135 litros**
+- 600 litros
+
+> É estimativa: muda com o chuveiro e a pressão. Em 5 minutos, cerca de 45 litros. — [Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
+
+_Corrigido: Estimativa, com as condições._
+
+### Q052 · Água no dia a dia · Na prática
+
+Estimativa divulgada pela Sabesp: quanto uma torneira pingando pode desperdiçar por dia?
+
+- Menos de 1 litro
+- Cerca de 5 mil litros
+- Cerca de 500 litros
+- **✔ Cerca de 46 litros**
+
+> Depende do ritmo das gotas; trocar a vedação costuma resolver. — [Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
+
+_Corrigido: Estimativa, com as condições._
+
+### Q053 · Água no dia a dia · Na prática
+
+Ao escovar os dentes, qual hábito economiza mais água?
+
+- **✔ Fechar a torneira enquanto escova**
+- Deixar a torneira aberta num fio fino
+- Usar água morna
+- Escovar mais rápido com a torneira aberta
+
+> Estimativa da Sabesp: cerca de 12 litros com a torneira aberta e meio litro fechando. — [Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
+
+_Corrigido: Agora prática: o hábito que economiza._
+
+### Q050 · Água no dia a dia · Na prática
+
+Como o morador confere se há um vazamento escondido em casa?
+
+- Olha a cor da água da torneira
+- **✔ Fecha todas as torneiras e vê se o hidrômetro continua girando**
+- Mede a temperatura da água
+- Liga o chuveiro no máximo
+
+> Com tudo fechado, o hidrômetro parado indica que não há vazamento. — _prática da equipe_
+
+_Corrigido: Nova: como achar vazamento escondido._
+
+### Q100 · Água no dia a dia · Na prática
+
+Caixa d’água destampada é um risco porque:
+
+- Esquenta demais a água
+- Aumenta a pressão nas torneiras
+- Gasta mais energia
+- **✔ Vira criadouro do Aedes e a água pode ser contaminada**
+
+> Caixa tampada protege a água tratada e evita o mosquito. — [Ministério da Saúde — Aedes aegypti: um perigo mesmo na seca](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca)
+
+### Q101 · Água no dia a dia · Na prática
+
+Qual é a orientação mais comum para limpar a caixa d’água?
+
+- **✔ A cada 6 meses**
+- A cada 5 anos
+- Só quando a água ficar marrom
+- Nunca, se tiver tampa
+
+> Mesmo tampada, ela acumula sujeira no fundo com o tempo. — _prática da equipe_
+
+### Q049 · Água no dia a dia · Para entender
+
+Segundo a ONU, quanto de água por pessoa por dia é preciso para beber, cozinhar e a higiene básica?
+
+- Entre 5 e 10 litros
+- Entre 500 e 1.000 litros
+- Cerca de 2 litros
+- **✔ Entre 50 e 100 litros**
+
+> É a referência usada no reconhecimento da água como direito humano. — [ONU (UNRIC) — Água e o direito humano à água](https://unric.org/pt/agua/)
+
+_Corrigido: ONU: 50 a 100 litros._
+
+### Q020 · Descarte correto · Na prática
+
+Onde descartar remédio vencido ou que sobrou?
 
 - No vaso sanitário
 - Na pia
-- No lixo comum
-- **✔ Num ponto de coleta, como farmácias e unidades de saúde**
+- **✔ Num ponto de coleta habilitado, como uma farmácia participante**
+- No saco de recicláveis
 
-> O Decreto 10.388/2020 criou a logística reversa de medicamentos domiciliares. — [Gov.br — Descarte adequado de medicamentos em desuso](https://www.gov.br/pt-br/noticias/meio-ambiente-e-clima/2022/12/o-descarte-adequado-de-medicamentos-em-desuso-contribui-para-a-qualidade-do-meio-ambiente)
+> O Decreto 10.388/2020 criou a coleta de medicamentos domiciliares e embalagens. — [Planalto — Decreto 10.388/2020 (logística reversa de medicamentos)](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/decreto/d10388.htm)
 
-### Q021 · Descarte correto
+_Corrigido: Ponto de coleta habilitado._
 
-Qual decreto regulamenta a logística reversa de remédios domiciliares vencidos?
+### Q102 · Descarte correto · Na prática
 
-- **✔ Decreto 10.388/2020**
-- Decreto 7.404/2010
-- Decreto 5.440/2005
-- Decreto 9.854/2019
+Pilhas e baterias usadas devem ir para:
 
-> O Decreto 10.388/2020 trata dos medicamentos domiciliares e suas embalagens. — [Gov.br — Descarte adequado de medicamentos em desuso](https://www.gov.br/pt-br/noticias/meio-ambiente-e-clima/2022/12/o-descarte-adequado-de-medicamentos-em-desuso-contribui-para-a-qualidade-do-meio-ambiente)
+- O lixo orgânico
+- **✔ Pontos de coleta específicos (logística reversa)**
+- O vaso sanitário
+- O saco de recicláveis comuns
 
-### Q022 · Nosso território
+> A PNRS prevê retorno de pilhas e baterias a quem fabrica e vende. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+
+### Q103 · Descarte correto · Na prática
+
+Lâmpada fluorescente queimada deve:
+
+- Ir quebrada no lixo comum
+- Ir junto com o vidro reciclável
+- **✔ Voltar por logística reversa, num ponto de coleta**
+- Ser enterrada no quintal
+
+> Ela tem mercúrio; por isso a PNRS a inclui na logística reversa. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+
+### Q104 · Descarte correto · Na prática
+
+Entulho e móveis velhos largados na calçada ou no córrego:
+
+- São recolhidos pela Sabesp
+- Não causam problema
+- Ajudam a segurar a terra da margem
+- **✔ Viram abrigo de rato e escorpião e entopem a drenagem**
+
+> Oriente o morador a usar o serviço de entulho e volumosos da prefeitura. — _prática da equipe_
+
+### Q105 · Descarte correto · Na prática
+
+Qual a melhor forma de separar o lixo em casa para a coleta seletiva?
+
+- **✔ Recicláveis limpos e secos separados do orgânico e do rejeito**
+- Tudo junto, porque a triagem separa
+- Separar só o vidro
+- Lavar também o lixo orgânico
+
+> Separação simples na origem é a que mais ajuda a triagem. — _prática da equipe_
+
+### Q106 · Descarte correto · Na prática
+
+Seringas e agulhas usadas em casa (de insulina, por exemplo):
+
+- No saco de recicláveis
+- **✔ Em recipiente rígido fechado, entregue na unidade de saúde ou ponto indicado**
+- No vaso sanitário
+- Soltas no lixo comum
+
+> Evita acidentes com quem coleta e separa o lixo. — _prática da equipe_
+
+### Q107 · Descarte correto · Fato curioso
+
+O óleo de cozinha entregue num ponto de coleta pode virar:
+
+- Água potável
+- Adubo, jogado direto na terra
+- **✔ Sabão ou biodiesel**
+- Gás de cozinha
+
+> Por que importa: o resíduo vira produto e deixa de poluir a água. — [SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
+
+### Q007 · Resíduos · Para entender
+
+Pela Política Nacional de Resíduos Sólidos, o que vem PRIMEIRO na ordem de prioridade?
+
+- Reciclar
+- **✔ Não gerar**
+- Tratar
+- Dispor em aterro
+
+> A ordem é: não gerar, reduzir, reutilizar, reciclar, tratar e dispor o rejeito. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+
+### Q042 · Saúde · Na prática
+
+Como se pega leptospirose numa enchente?
+
+- Picada de mosquito
+- Pelo ar, perto de quem está doente
+- **✔ Contato com água ou lama contaminadas por urina de ratos, sobretudo com feridas na pele**
+- Bebendo água tratada da torneira
+
+> Também por muito tempo dentro da água ou pelas mucosas. Evite a água e a lama da enchente. — [Ministério da Saúde — Leptospirose](https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/l/leptospirose)
+
+_Corrigido: Água ou lama contaminadas por urina de rato._
+
+### Q108 · Saúde · Na prática
+
+Depois de uma enchente, qual cuidado na limpeza da casa?
+
+- Limpar descalço para não escorregar
+- Só varrer a lama quando secar
+- Deixar a lama secar por semanas
+- **✔ Usar luvas e botas de borracha e desinfetar com água sanitária**
+
+> A lama da enchente pode estar contaminada; proteção e desinfecção previnem doenças. — [Ministério da Saúde — Leptospirose](https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/l/leptospirose)
+
+### Q045 · Saúde · Na prática
+
+Qual atitude mais previne a dengue em casa?
+
+- Deixar a caixa d’água aberta para ventilar
+- Usar repelente e manter os vasos com água
+- Trocar a água dos vasos uma vez por mês
+- **✔ Eliminar água parada e esfregar as bordas dos recipientes**
+
+> Os ovos ficam grudados nas paredes dos recipientes e resistem ao seco. — [Ministério da Saúde — Aedes aegypti: um perigo mesmo na seca](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca)
+
+_Corrigido: Nova: o que mais previne a dengue em casa._
+
+### Q063 · Saúde · Fato curioso
+
+Segundo o IOC/Fiocruz, quanto tempo depois de postos os ovos do Aedes já resistem à seca?
+
+- Cerca de 15 minutos
+- Cerca de 15 dias
+- Cerca de 15 semanas
+- **✔ Cerca de 15 horas**
+
+> Por que importa: é rápido, por isso eliminar criadouros precisa ser rotina semanal. — [IOC/Fiocruz — Mecanismos da impermeabilidade dos ovos do Aedes aegypti](https://www.ioc.fiocruz.br/noticias/descobertos-mecanismos-ligados-impermeabilidade-de-ovos-do-aegypti)
+
+_Corrigido: Fonte original do IOC/Fiocruz._
+
+### Q043 · Saúde · Para entender
+
+A hepatite A passa principalmente por:
+
+- Picada de inseto
+- **✔ Água e alimentos contaminados**
+- Exposição ao sol
+- Tosse e espirro
+
+> É transmitida pela via fecal-oral; saneamento e higiene previnem. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+
+### Q048 · Saúde · Na prática
+
+O que ajuda a prevenir a hepatite A?
+
+- **✔ Água tratada, saneamento, mãos lavadas e vacina**
+- Protetor solar
+- Tomar sol pela manhã
+- Água de poço sem tratamento
+
+> Saneamento e higiene cortam o caminho do vírus; a vacina protege. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+
+### Q047 · Saúde · Para entender
+
+Qual destas doenças NÃO está ligada à água contaminada ou à falta de saneamento?
+
+- Cólera
+- **✔ Sarampo**
+- Esquistossomose
+- Hepatite A
+
+> O sarampo passa pelo ar; as outras se ligam à água e ao esgoto. — [Revista Caminhos de Geografia (UFU) — Doenças de veiculação hídrica](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144)
+
+### Q109 · Saúde · Na prática
+
+Por que lavar as mãos depois de usar o banheiro reduz doenças?
+
+- **✔ Corta o caminho dos micróbios das fezes para a boca e os alimentos**
+- Deixa a pele mais hidratada
+- Evita picadas de mosquito
+- Substitui a vacina
+
+> É a mesma lógica do saneamento, em escala de casa. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+
+### Q041 · Saúde · Na prática
+
+Criança brincando num córrego que recebe esgoto corre risco de:
+
+- Só um resfriado
+- Nenhum, se a água estiver correndo
+- Só alergia de pele
+- **✔ Diarreias, hepatite A e outras doenças**
+
+> Água com esgoto transmite várias doenças; oriente a evitar o contato. — [Revista Caminhos de Geografia (UFU) — Doenças de veiculação hídrica](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144)
+
+_Corrigido: Nova: criança no córrego com esgoto._
+
+### Q110 · Segurança · Na prática
+
+Ao visitar uma frente de obra, o que fazer primeiro?
+
+- Entrar direto para tirar fotos
+- Atravessar a vala pelo caminho mais curto
+- **✔ Se apresentar ao responsável e usar o EPI exigido no local**
+- Ficar perto das máquinas para ouvir melhor
+
+> O responsável conhece os riscos do dia e indica por onde circular. — _prática da equipe_
+
+### Q111 · Segurança · Na prática
+
+Um morador quer espiar dentro de uma vala aberta. O que orientar?
+
+- Pode chegar perto se for de dia
+- **✔ Manter distância e passar só pelos caminhos sinalizados**
+- Pode descer se for rápido
+- Pode, se a máquina estiver desligada
+
+> Vala pode desmoronar; a sinalização existe para isso. — _prática da equipe_
+
+### Q112 · Segurança · Na prática
+
+Poço de visita da rede de esgoto é espaço confinado. Isso quer dizer que:
+
+- **✔ Só entra trabalhador treinado, com medição de gases e equipamento**
+- Qualquer pessoa pode entrar para olhar
+- É seguro se a tampa ficar aberta 5 minutos
+- Só é perigoso quando chove
+
+> Pode ter gases tóxicos e falta de oxigênio. Ninguém da equipe socioambiental entra. — _prática da equipe_
+
+### Q113 · Segurança · Na prática
+
+Você viu uma situação de risco na obra, como vala sem proteção. O que fazer?
+
+- Comentar só no fim do dia
+- Postar nas redes sociais
+- Ignorar, porque não é da sua área
+- **✔ Avisar na hora o responsável da frente e registrar**
+
+> Avisar rápido evita acidentes; registrar deixa o histórico. — _prática da equipe_
+
+### Q060 · Segurança · Fato curioso
+
+Por que abril é o Abril Verde?
+
+- Por causa do Dia da Árvore
+- Por causa do Dia Mundial da Água
+- **✔ Por causa do 28 de abril, Dia Mundial da Segurança e Saúde no Trabalho**
+- Por ser o mês de plantio
+
+> Por que importa: é a data para lembrar que ninguém deve se ferir trabalhando. — [Câmara Municipal de São Paulo — Abril Verde](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/)
+
+### Q114 · Chuva e drenagem · Para entender
+
+Bocas de lobo e galerias de águas pluviais servem para:
+
+- Levar o esgoto das casas
+- Abastecer as caixas d’água
+- **✔ Escoar a água da chuva**
+- Tratar a água do rio
+
+> Drenagem e esgoto são serviços diferentes do saneamento. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
+
+### Q115 · Chuva e drenagem · Na prática
+
+Lixo jogado na rua num dia de chuva:
+
+- É recolhido pela estação de esgoto
+- **✔ Entope bocas de lobo e chega aos córregos e rios**
+- Some com a enxurrada
+- Ajuda a segurar a água
+
+> Muita enchente começa com boca de lobo entupida. — _prática da equipe_
+
+### Q116 · Chuva e drenagem · Para entender
+
+Por que a rede de esgoto e a drenagem precisam ser separadas?
+
+- **✔ São sistemas diferentes: misturar sobrecarrega a rede na chuva e polui os córregos**
+- É só exigência de papel
+- Porque a drenagem trata o esgoto
+- Porque a rede de esgoto aguenta qualquer volume
+
+> A lei define esgotamento e drenagem como serviços distintos. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
+
+### Q117 · Chuva e drenagem · Na prática
+
+Quintal todo cimentado, com a calha jogando tudo na rua:
+
+- Não faz diferença na chuva
+- Diminui as enchentes
+- Melhora o tratamento de esgoto
+- **✔ Aumenta a enxurrada; terra e plantas ajudam a água a infiltrar**
+
+> Cada pedaço de chão que absorve água alivia a drenagem da rua. — _prática da equipe_
+
+### Q022 · Nosso território · Fato curioso
 
 Onde nasce o Rio Tamanduateí?
 
-- Em Paranapiacaba
-- No Parque do Ibirapuera
-- Na Represa Billings
 - **✔ No Parque da Gruta de Santa Luzia, em Mauá**
+- Em Paranapiacaba
+- Na Represa Billings
+- No Parque do Pedroso
 
-> As nascentes ficam no Parque Municipal da Gruta de Santa Luzia, em Mauá. — [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
+> Por que importa: ele cruza Santo André e recebe o que os córregos da cidade levam. — [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
 
-### Q023 · Nosso território
-
-Em qual rio o Tamanduateí deságua?
-
-- Pinheiros
-- Rio Grande
-- Paraíba do Sul
-- **✔ Tietê**
-
-> Ele deságua no Tietê, no Bom Retiro, em São Paulo. — [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
-
-### Q024 · Nosso território
-
-Qual o comprimento aproximado do Rio Tamanduateí?
-
-- Cerca de 8 km
-- **✔ Cerca de 35 km**
-- Cerca de 120 km
-- Cerca de 300 km
-
-> São cerca de 35 km de Mauá até o Tietê. — [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
-
-### Q025 · Nosso território
-
-Por quais cidades o Tamanduateí passa?
-
-- **✔ Mauá, Santo André, São Caetano e São Paulo**
-- Santos, Cubatão e São Vicente
-- Diadema, Guarulhos e Osasco
-- Ribeirão Pires e Rio Grande da Serra
-
-> Mauá, Santo André, São Caetano do Sul e São Paulo. — [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
-
-### Q026 · Nosso território
-
-Qual a área aproximada da bacia do Rio Tamanduateí?
-
-- 32 km²
-- **✔ 320 km²**
-- 3.200 km²
-- 32.000 km²
-
-> Cerca de 320 km². — [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
-
-### Q027 · Nosso território
+### Q027 · Nosso território · Para entender
 
 Quanto do território de Santo André está em área de proteção aos mananciais?
 
 - Cerca de 10%
 - Cerca de 25%
-- **✔ Cerca de 55%**
 - Cerca de 90%
+- **✔ Cerca de 55%**
 
-> Cerca de 55% — a maior parte rumo a Paranapiacaba e à Billings. — [Wikipédia — Represa Billings](https://pt.wikipedia.org/wiki/Represa_Billings)
+> Grande parte rumo a Paranapiacaba e à Billings: cuidar dela é cuidar da água. — [Semasa — 25 anos da Gestão Ambiental em Santo André (2024)](https://portais.santoandre.sp.gov.br/semasa/wp-content/uploads/sites/13/2024/12/Livro-25-Anos-da-Gestao-Ambiental-DGA-2024.pdf)
 
-### Q028 · Nosso território
+_Corrigido: Fonte do Semasa._
 
-Qual rio, que nasce na região de Paranapiacaba, é o principal formador da Billings?
+### Q028 · Nosso território · Fato curioso
+
+Qual rio é o principal formador da Represa Billings?
 
 - Rio Tamanduateí
 - Rio Pinheiros
 - **✔ Rio Grande**
 - Rio Tietê
 
-> O Rio Grande é o principal formador da Represa Billings. — [Wikipédia — Represa Billings](https://pt.wikipedia.org/wiki/Represa_Billings)
+> Por que importa: ele nasce na região de Paranapiacaba, em Santo André. — [Wikipédia — Represa Billings](https://pt.wikipedia.org/wiki/Represa_Billings)
 
-### Q029 · Nosso território
+### Q029 · Nosso território · Fato curioso
 
-Em que ano a Sabesp assumiu a água e o esgoto de Santo André?
+Desde quando a Sabesp opera a água e o esgoto de Santo André?
 
-- 2009
-- 2015
-- **✔ 2019**
-- 2023
+- Janeiro de 2009
+- **✔ Setembro de 2019**
+- Março de 2015
+- Dezembro de 2023
 
-> O convênio foi assinado em julho de 2019. — [Diário do Grande ABC — Sabesp chega a Santo André](https://www.dgabc.com.br/Noticia/3102857/sabesp-chega-a-sto-andre-com-desafio-de-findar-falta-d-agua-e-universalizar-esgoto)
+> Contrato assinado em julho de 2019; operação desde 11/09/2019; 40 anos previstos no contrato. — [Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua)
 
-### Q030 · Nosso território
+_Corrigido: Pergunta sobre o início da operação; contrato e prazo na explicação._
 
-Antes da Sabesp, quem cuidava da água e do esgoto de Santo André?
+### Q030 · Nosso território · Na prática
 
-- **✔ Semasa**
-- Cetesb
-- Daee
-- Emae
+Depois de 2019, o que o Semasa continuou fazendo em Santo André?
 
-> O Semasa, autarquia municipal. — [ABC Repórter — Sabesp assume serviços do Semasa](https://abcreporter.com.br/2019/08/01/sabesp-assume-servicos-do-semasa-e-renova-contrato-com-sao-bernardo/)
+- Tratamento de esgoto
+- Abastecimento de água
+- Cobrança da conta de água
+- **✔ Gestão ambiental, drenagem urbana e resíduos sólidos**
 
-### Q031 · Nosso território
+> Saber quem faz o quê ajuda a encaminhar o morador ao lugar certo. — [Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua)
 
-Qual o prazo do contrato da Sabesp com Santo André, assinado em 2019?
+_Corrigido: Agora prática: o que ficou com o Semasa._
 
-- 10 anos
-- 20 anos
-- 30 anos
-- **✔ 40 anos**
+### Q118 · Nosso território · Para entender
 
-> O contrato é de 40 anos. — [Diário do Grande ABC — Sabesp chega a Santo André](https://www.dgabc.com.br/Noticia/3102857/sabesp-chega-a-sto-andre-com-desafio-de-findar-falta-d-agua-e-universalizar-esgoto)
+Por que proteger os mananciais importa até para quem mora longe deles?
 
-### Q032 · Tratamento
+- Só importam para quem mora ao lado
+- Servem apenas para lazer
+- **✔ Deles vem a água que, tratada, abastece a região**
+- Recebem o esgoto tratado de todas as casas
+
+> Manancial poluído encarece e dificulta o tratamento da água. — [Semasa — 25 anos da Gestão Ambiental em Santo André (2024)](https://portais.santoandre.sp.gov.br/semasa/wp-content/uploads/sites/13/2024/12/Livro-25-Anos-da-Gestao-Ambiental-DGA-2024.pdf)
+
+### Q017 · Resíduos · Fato curioso
+
+Quanto das latas de alumínio de bebidas o Brasil reciclou em 2024?
+
+- **✔ Cerca de 97%**
+- Cerca de 30%
+- Cerca de 55%
+- Cerca de 75%
+
+> Por que importa: foram 97,3%, mostrando que coleta organizada funciona. — [Recicla Latas — Brasil recicla 97,3% das latas de alumínio (2024)](https://reciclalatas.com.br/em-ano-de-cop30-brasil-reforca-sustentabilidade-ao-reciclar-973-das-latas-de-aluminio/)
+
+### Q119 · Resíduos · Para entender
+
+Por que a reciclagem de latas funciona tão bem no Brasil?
+
+- É obrigatória para cada morador
+- **✔ O alumínio tem valor, e há coleta e indústria para reciclar**
+- A lata é biodegradável
+- Não existe lata descartável
+
+> Valor de mercado e logística fazem a lata voltar rápido para a indústria. — [Recicla Latas — Brasil recicla 97,3% das latas de alumínio (2024)](https://reciclalatas.com.br/em-ano-de-cop30-brasil-reforca-sustentabilidade-ao-reciclar-973-das-latas-de-aluminio/)
+
+### Q120 · Resíduos · Na prática
+
+Uma embalagem com restos de comida no saco de recicláveis:
+
+- É limpa sozinha na reciclagem
+- **✔ Pode sujar outros materiais e ser descartada na triagem**
+- Vale mais na venda
+- Vira adubo junto
+
+> Uma passada de água resolve e salva o resto do saco. — _prática da equipe_
+
+### Q121 · Resíduos · Para entender
+
+As cores das lixeiras (azul, vermelho, verde, amarelo) servem para:
+
+- Indicar o dia da coleta
+- Mostrar o bairro de origem
+- **✔ Padronizar a separação de papel, plástico, vidro e metal**
+- Separar o lixo por peso
+
+> É a Resolução Conama 275/2001. Em casa, o essencial é separar seco de úmido. — [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
+
+### Q122 · Resíduos · Na prática
+
+Cascas de frutas e restos de verduras podem virar:
+
+- Plástico reciclado
+- Água de reuso
+- Vidro
+- **✔ Adubo, pela compostagem**
+
+> A compostagem é uma forma de tratar o resíduo orgânico prevista na PNRS. — [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
+
+### Q123 · Resíduos · Na prática
+
+Numa ação de limpeza de um ponto de descarte irregular, o que faz o resultado durar?
+
+- **✔ Conversar com quem descarta ali e indicar o destino certo**
+- Só retirar o lixo e ir embora
+- Colocar uma placa de proibido e nada mais
+- Fazer a limpeza à noite
+
+> Sem mudar o hábito e oferecer alternativa, o ponto volta a encher. — _prática da equipe_
+
+### Q032 · Tratamento · Para entender
 
 Qual costuma ser a PRIMEIRA etapa numa estação de tratamento de esgoto?
 
 - Lodo ativado
+- **✔ Gradeamento**
 - Desinfecção
 - Decantação secundária
-- **✔ Gradeamento**
 
-> O gradeamento retém objetos grandes antes das outras etapas. — [BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/)
+> As grades retêm objetos grandes antes das outras etapas. — [BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/)
 
-### Q033 · Tratamento
+### Q033 · Tratamento · Para entender
 
-No lodo ativado, quem limpa o esgoto?
+No lodo ativado, quem faz o trabalho de limpar o esgoto?
 
-- Peixes
 - Produtos de limpeza
-- Plantas aquáticas
+- Filtros de areia
 - **✔ Micro-organismos que usam oxigênio**
+- Plantas aquáticas
 
 > Bactérias aeróbias consomem a matéria orgânica. — [BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/)
 
-### Q034 · Tratamento
-
-Para que serve a desarenação no tratamento de esgoto?
-
-- **✔ Tirar a areia**
-- Colocar cloro
-- Separar o óleo do sabão
-- Aquecer o esgoto
-
-> A caixa de areia deixa a areia assentar e protege as bombas e tubulações. — [BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/)
-
-### Q035 · Tratamento
+### Q035 · Tratamento · Para entender
 
 No tratamento de água, o que acontece na floculação?
 
-- A água é aquecida
-- A água é bombeada para casa
-- A água recebe flúor
 - **✔ A sujeira se junta em flocos**
+- A água é aquecida
+- A água recebe flúor
+- A água é bombeada para as casas
 
-> Na mistura lenta, as partículas se juntam em flocos. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
+> Na mistura lenta, as partículas se agrupam em flocos que depois assentam. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
 
-### Q036 · Tratamento
+### Q037 · Tratamento · Para entender
 
-No tratamento de água, para que servem os tanques de decantação?
-
-- **✔ Para os flocos de sujeira irem para o fundo**
-- Para adicionar flúor
-- Para medir o consumo
-- Para guardar a água da chuva
-
-> Os flocos pesados assentam no fundo dos tanques. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
-
-### Q037 · Tratamento
-
-O que fica nos filtros da estação de água?
+Quais materiais podem compor os filtros de uma estação de tratamento de água?
 
 - Algodão e papel
-- Telas de plástico
-- Só cloro
-- **✔ Pedras, areia e carvão antracito**
+- Só telas de plástico
+- **✔ Camadas como areia, cascalho e carvão antracito**
+- Sal e cal
 
-> Camadas de pedras, areia e carvão antracito retêm a sujeira que sobrou. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
+> O arranjo varia de estação para estação; as camadas retêm a sujeira que sobrou. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
 
-### Q038 · Tratamento
+_Corrigido: Materiais que PODEM compor os filtros._
+
+### Q038 · Tratamento · Para entender
 
 Por que se coloca flúor na água tratada?
 
-- Para dar cor
-- **✔ Para ajudar a proteger os dentes**
+- Para dar cor à água
 - Para tirar o cheiro
 - Para economizar energia
+- **✔ Para ajudar a prevenir cáries**
 
-> A fluoretação ajuda na prevenção de cáries. — [Sabesp — Tratamento de água (folheto)](https://www.sabesp.com.br/assets/pdf/sabesp-tratamento-agua-1.pdf)
+> A fluoretação é uma medida de saúde bucal. — [Sabesp — Tratamento de água (folheto)](https://www.sabesp.com.br/assets/pdf/sabesp-tratamento-agua-1.pdf)
 
-### Q039 · Tratamento
+### Q039 · Tratamento · Para entender
 
-Qual etapa do tratamento de água garante que não sobrem micro-organismos?
+Qual é o objetivo da desinfecção na estação de água?
 
-- Floculação
-- **✔ Desinfecção**
-- Decantação
-- Captação
+- **✔ Inativar micro-organismos que causam doenças**
+- Deixar a água mais gelada
+- Tirar a areia
+- Juntar a sujeira em flocos
 
-> Na desinfecção, o cloro elimina os micro-organismos. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
+> Em geral é feita com cloro, que também protege a água no caminho até as casas. — [Sabesp — Tratamento de água (folheto)](https://www.sabesp.com.br/assets/pdf/sabesp-tratamento-agua-1.pdf)
 
-### Q040 · Tratamento
+_Corrigido: Desinfecção inativa micro-organismos que causam doenças._
 
-Na coagulação, a estação de água coloca na água:
+### Q124 · Tratamento · Para entender
 
-- **✔ Um coagulante, como sulfato de alumínio**
-- Açúcar
-- Areia
-- Óleo
+Entre coletar, afastar e tratar o esgoto, qual etapa tira a poluição antes de devolver a água ao rio?
 
-> O coagulante (sulfato de alumínio ou cloreto férrico) desestabiliza a sujeira. — [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
+- Coletar
+- **✔ Tratar**
+- Afastar
+- Ligar o imóvel
 
-### Q041 · Saúde
+> Coletar e afastar levam o esgoto embora; só o tratamento remove a poluição. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
 
-Qual destas doenças é ligada à falta de saneamento?
+### Q125 · Tratamento · Para entender
 
-- Catapora
-- Diabetes
-- Rinite
-- **✔ Hepatite A**
+O que é o "afastamento" do esgoto?
 
-> A hepatite A passa por água e alimentos contaminados. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+- Desligar a casa da rede
+- Tratar o esgoto dentro de casa
+- **✔ Levar o esgoto coletado, por coletores e interceptores, até o tratamento**
+- Separar o lixo reciclável
 
-### Q042 · Saúde
+> A lei fala em coleta, transporte, tratamento e disposição final. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
 
-Como a leptospirose é transmitida?
+### Q126 · Tratamento · Para entender
 
-- Picada de mosquito
-- Aperto de mão
-- Pelo ar
-- **✔ Urina de animais infectados, como ratos**
+Rede coletora pronta, mas ainda não conectada a um coletor tronco. Nesse período, o esgoto:
 
-> Enchentes e esgoto a céu aberto espalham a urina contaminada. — [Revista Caminhos de Geografia (UFU) — Doenças de veiculação hídrica](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144)
+- Já está tratado
+- Fica parado na rede para sempre
+- Volta para a caixa d’água
+- **✔ Ainda pode acabar no córrego até o sistema ser conectado**
 
-### Q043 · Saúde
+> Por isso o benefício completo depende do sistema inteiro, não de um trecho. — _prática da equipe_
 
-A hepatite A é transmitida principalmente por:
+### Q001 · Leis e metas · Para entender
 
-- **✔ Água e alimentos contaminados**
-- Picada de inseto
-- Transfusão de sangue
-- Tosse
+Qual Objetivo de Desenvolvimento Sustentável da ONU trata de água potável e saneamento?
 
-> É a via fecal-oral; saneamento e higiene previnem. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+- ODS 3
+- ODS 11
+- ODS 14
+- **✔ ODS 6**
 
-### Q044 · Saúde
+> O ODS 6 trata de assegurar água e saneamento para todas e todos. — [ONU Brasil — Objetivo de Desenvolvimento Sustentável 6](https://brasil.un.org/pt-br/sdgs/6)
 
-Qual campanha de julho trata das hepatites virais?
+### Q002 · Leis e metas · Para entender
 
-- Julho Verde
-- **✔ Julho Amarelo**
-- Julho Azul
-- Julho Lilás
+Pelo marco legal do saneamento, qual é a meta até o fim de 2033?
 
-> Julho Amarelo — o dia 28 de julho é o Dia Mundial contra as Hepatites Virais. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+- 100% com água e esgoto até 2025
+- 50% com esgoto tratado
+- **✔ 99% com água potável e 90% com coleta e tratamento de esgoto**
+- Só ampliar a rede de água
 
-### Q045 · Saúde
+> A Lei 14.026/2020 fixou as metas para 31/12/2033. — [Planalto — Lei 14.026/2020 (marco legal do saneamento)](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14026.htm)
 
-Por quanto tempo os ovos do Aedes aegypti podem sobreviver no seco?
+_Corrigido: Metas de água e esgoto numa pergunta só._
 
-- 1 dia
-- 1 semana
-- 1 mês
-- **✔ Até 1 ano**
+### Q127 · Leis e metas · Para entender
 
-> Até 1 ano — por isso é preciso esfregar as bordas dos recipientes. — [Ministério da Saúde — Aedes aegypti: um perigo mesmo na seca](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca)
+Pela Lei 11.445, o saneamento básico reúne:
 
-### Q046 · Saúde
+- **✔ Água, esgoto, limpeza urbana e resíduos, e drenagem da chuva**
+- Só água e esgoto
+- Água, energia e gás
+- Só esgoto e coleta de lixo
 
-Onde as larvas do Aedes aegypti se desenvolvem?
+> São quatro serviços, com responsáveis que podem ser diferentes na mesma cidade. — [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
 
-- **✔ Em água parada**
-- Em rios correntes
-- Na terra seca
-- Na areia da praia
+### Q128 · Leis e metas · Para entender
 
-> Pratinhos, pneus, baldes e caixas d'água destampadas são criadouros. — [Ministério da Saúde — Aedes aegypti: um perigo mesmo na seca](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca)
+Em 2010, a Assembleia Geral da ONU reconheceu a água e o saneamento como:
 
-### Q047 · Saúde
+- Bens de luxo
+- **✔ Direitos humanos**
+- Serviços opcionais
+- Responsabilidade só de cada família
 
-Qual destas NÃO é uma doença de veiculação hídrica?
+> O reconhecimento reforça que ninguém pode ficar para trás. — [ONU (UNRIC) — Água e o direito humano à água](https://unric.org/pt/agua/)
 
-- Cólera
-- Esquistossomose
-- Leptospirose
-- **✔ Sarampo**
+### Q058 · Leis e metas · Fato curioso
 
-> O sarampo passa pelo ar; as outras estão ligadas à água contaminada. — [Revista Caminhos de Geografia (UFU) — Doenças de veiculação hídrica](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144)
+Segundo o Ranking do Saneamento 2026, cerca de quantos brasileiros não têm coleta de esgoto?
 
-### Q048 · Saúde
+- Cerca de 9 milhões (4%)
+- **✔ Cerca de 90 milhões (43,3%)**
+- Cerca de 30 milhões (14%)
+- Cerca de 180 milhões (85%)
 
-O que ajuda a prevenir a hepatite A?
+> Por que importa: quase metade do país ainda espera o que a obra leva ao bairro. — [Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)
 
-- **✔ Água tratada, saneamento e lavar as mãos**
-- Usar protetor solar
-- Tomar sol
-- Beber água da torneira sem tratamento
+_Corrigido: Números do Ranking 2026._
 
-> Água tratada, saneamento, higiene e vacina previnem. — [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
+### Q059 · Leis e metas · Fato curioso
 
-### Q049 · Águas
+Segundo o mesmo ranking, quantos brasileiros ainda não têm água potável?
 
-Quantos litros de água por pessoa por dia a ONU indica?
+- Menos de 1 milhão
+- Cerca de 100 milhões
+- **✔ Mais de 30 milhões**
+- Cerca de 150 milhões
 
-- 50 litros
-- **✔ 110 litros**
-- 200 litros
-- 500 litros
+> Por que importa: água tratada na torneira ainda não é realidade para todos. — [Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)
 
-> São 110 litros; a média no Brasil é de 166,3 litros. — [AMA — Brasileiros usam 51% a mais de água do que o recomendado](https://news.ama.eco/brasileiros-usam-51-a-mais-de-agua-do-que-a-quantidade-diaria-recomendada/)
+_Corrigido: Números do Ranking 2026._
 
-### Q050 · Águas
+### Q057 · Leis e metas · Fato curioso
 
-Qual a média de consumo de água por pessoa por dia no Brasil?
+Segundo OMS e UNICEF (2025), quantas pessoas no mundo não tinham saneamento gerido com segurança em 2024?
 
-- Cerca de 60 litros
-- Cerca de 110 litros
-- **✔ Cerca de 166 litros**
-- Cerca de 400 litros
+- **✔ Cerca de 3,4 bilhões**
+- Cerca de 34 milhões
+- Cerca de 340 milhões
+- Cerca de 7 bilhões
 
-> Cerca de 166,3 litros — 51% acima do indicado pela ONU. — [AMA — Brasileiros usam 51% a mais de água do que o recomendado](https://news.ama.eco/brasileiros-usam-51-a-mais-de-agua-do-que-a-quantidade-diaria-recomendada/)
+> Por que importa: é quase metade da humanidade, e 354 milhões ainda fazem as necessidades a céu aberto. — [OMS/UNICEF — Relatório JMP 2025 (dados de 2024)](https://data.unicef.org/resources/jmp-report-2025/)
 
-### Q051 · Águas
+_Corrigido: Dado OMS/UNICEF 2025, sem a alternativa "ninguém"._
 
-Quanto gasta um banho de 15 minutos com o registro meio aberto?
+### Q055 · Água no dia a dia · Fato curioso
 
-- Cerca de 15 litros
-- Cerca de 45 litros
-- **✔ Cerca de 135 litros**
-- Cerca de 500 litros
+O Dia Mundial da Água (22 de março) foi proposto em qual conferência da ONU?
 
-> Cerca de 135 litros; em 5 minutos, 45 litros. — [Boqnews — Dicas da Sabesp para economizar água](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
-
-### Q052 · Águas
-
-Quanto uma torneira pingando pode desperdiçar por dia?
-
-- 1 litro
-- **✔ 46 litros**
-- 460 litros
-- 4.600 litros
-
-> Cerca de 46 litros por dia. — [Boqnews — Dicas da Sabesp para economizar água](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
-
-### Q053 · Águas
-
-Quanto dá para economizar fechando a torneira ao escovar os dentes?
-
-- 0,5 litro
-- 3 litros
-- **✔ 11,5 litros**
-- 50 litros
-
-> Cerca de 11,5 litros por escovação. — [Boqnews — Dicas da Sabesp para economizar água](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
-
-### Q054 · Águas
-
-Em que dia é o Dia Mundial da Água?
-
-- 5 de junho
-- **✔ 22 de março**
-- 21 de setembro
-- 19 de novembro
-
-> 22 de março, criado a partir da Rio-92. — [WWF-Brasil — 22 de março, Dia Mundial da Água](https://www.wwf.org.br/?51682%2F22-de-maro-Dia-Mundial-da-gua=)
-
-### Q055 · Águas
-
-Em qual conferência da ONU nasceu o Dia Mundial da Água?
-
-- **✔ Rio-92**
 - Estocolmo-72
 - Kyoto-97
+- **✔ Rio-92**
 - Paris-2015
 
-> Na Rio-92, no Rio de Janeiro. — [WWF-Brasil — 22 de março, Dia Mundial da Água](https://www.wwf.org.br/?51682%2F22-de-maro-Dia-Mundial-da-gua=)
+> Por que importa: o Brasil sediou o encontro que pôs a água na agenda mundial. — [WWF-Brasil — 22 de março, Dia Mundial da Água](https://www.wwf.org.br/?51682%2F22-de-maro-Dia-Mundial-da-gua=)
 
-### Q056 · Esgoto
+### Q018 · Descarte correto · Fato curioso
 
-Em que dia é o Dia Mundial do Banheiro?
+Segundo estimativa divulgada pela Sabesp, 1 litro de óleo de cozinha pode poluir até quantos litros de água?
 
-- 22 de março
-- 28 de abril
-- 5 de junho
-- **✔ 19 de novembro**
+- Até 25 litros
+- **✔ Até 25 mil litros**
+- Até 250 litros
+- Até 2,5 milhões de litros
 
-> 19 de novembro, data da ONU desde 2013. — [Aesbe — 19 de novembro, Dia Mundial do Saneamento (do Banheiro)](https://aesbe.org.br/19-de-novembro-dia-mundial-do-saneamento-reforca-a-importancia-do-acesso-universal-ao-saneamento-basico/)
+> Por que importa: um gesto pequeno na pia tem efeito grande na água. — [SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
 
-### Q057 · Esgoto
+### Q129 · Esgoto · Fato curioso
 
-Quantas pessoas no mundo vivem sem banheiro seguro, segundo as campanhas do Dia Mundial do Banheiro?
+Entre 2015 e 2024, a parcela da população mundial com saneamento gerido com segurança foi de 48% para:
 
-- Cerca de 35 milhões
-- Cerca de 350 milhões
-- **✔ Cerca de 3,5 bilhões**
-- Ninguém
+- 28%
+- 68%
+- **✔ 58%**
+- 98%
 
-> Cerca de 3,5 bilhões de pessoas. — [Aesbe — 19 de novembro, Dia Mundial do Saneamento (do Banheiro)](https://aesbe.org.br/19-de-novembro-dia-mundial-do-saneamento-reforca-a-importancia-do-acesso-universal-ao-saneamento-basico/)
-
-### Q058 · Esgoto
-
-Segundo o Trata Brasil (Ranking 2026), quantos brasileiros não têm coleta de esgoto?
-
-- Cerca de 5%
-- Cerca de 20%
-- **✔ Cerca de 45%**
-- Cerca de 80%
-
-> São 44,8% sem coleta de esgoto. — [Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)
-
-### Q059 · Águas
-
-Segundo o Trata Brasil (Ranking 2026), quantos brasileiros não têm água potável?
-
-- Cerca de 2%
-- **✔ Cerca de 17%**
-- Cerca de 45%
-- Cerca de 70%
-
-> São 16,9% sem água potável. — [Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)
-
-### Q060 · Segurança no trabalho
-
-Qual é o Dia Mundial da Segurança e Saúde no Trabalho?
-
-- 1º de maio
-- **✔ 28 de abril**
-- 15 de outubro
-- 10 de dezembro
-
-> 28 de abril, instituído pela OIT em 2003 — por isso existe o Abril Verde. — [Câmara Municipal de São Paulo — Abril Verde](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/)
-
-### Q061 · Segurança no trabalho
-
-Qual a cor da campanha de abril sobre segurança e saúde no trabalho?
-
-- Abril Azul
-- **✔ Abril Verde**
-- Abril Laranja
-- Abril Branco
-
-> Abril Verde, com o laço verde. — [Câmara Municipal de São Paulo — Abril Verde](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/)
-
-### Q062 · Esgoto
-
-Por que o óleo de cozinha na pia é um problema para o esgoto?
-
-- **✔ Ele entope as tubulações e polui a água**
-- Ele limpa os canos
-- Ele evapora sem deixar nada
-- Ele vira água tratada
-
-> O óleo gruda nos canos, causa entupimentos e polui muita água. — [SAMAE Timbó — Óleo de cozinha (dado da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
-
-### Q063 · Saúde
-
-Quanto tempo depois de postos os ovos do Aedes já resistem à seca, segundo o IOC/Fiocruz?
-
-- 15 minutos
-- **✔ 15 horas**
-- 15 dias
-- 15 semanas
-
-> Cerca de 15 horas depois da postura. — [Estado de Minas — Ovo do Aedes sobrevive sem água (pesquisa do IOC/Fiocruz)](https://www.em.com.br/app/noticia/saude-e-bem-viver/2023/10/28/interna_bem_viver,1583493/aedes-aegypti-ovo-do-mosquito-sobrevive-sem-agua-comprova-pesquisa.shtml)
-
-### Q064 · Leis e metas
-
-A meta 6.1 do ODS 6 pede acesso universal e equitativo a quê, até 2030?
-
-- Internet
-- Transporte público
-- Energia elétrica
-- **✔ Água potável e segura**
-
-> A meta 6.1 é água potável e segura para todos até 2030. — [Ipea — ODS 6: Água potável e saneamento](https://www.ipea.gov.br/ods/ods6.html)
-
-### Q065 · Tratamento
-
-Numa estação de esgoto com lodo ativado, o que vem logo depois do tanque de aeração?
-
-- Gradeamento
-- Captação
-- Desarenação
-- **✔ Decantação secundária**
-
-> No decantador secundário, o lodo com os micro-organismos se separa do esgoto já tratado. — [IFSP Caraguatatuba — Visita técnica à ETE da Sabesp](https://www.ifspcaraguatatuba.edu.br/noticias/estudantes-de-engenharia-civil-realizam-visita-tecnica-a-estacao-de-tratamento-de-esgoto-da-sabesp)
+> Por que importa: 1,2 bilhão de pessoas ganhou acesso; dá para avançar. — [OMS/UNICEF — Relatório JMP 2025 (dados de 2024)](https://data.unicef.org/resources/jmp-report-2025/)
 
 ## Fontes
 
-- `marco`: [Câmara dos Deputados — Marco legal do saneamento entra em vigor (Lei 14.026/2020)](https://www.camara.leg.br/noticias/676791-marco-legal-do-saneamento-entra-em-vigor-hoje-lei-teve-18-vetos-presidenciais/)
-- `usp2033`: [Jornal da USP — Brasil estabelece meta para universalizar o saneamento até 2033](https://jornal.usp.br/campus-ribeirao-preto/brasil-estabelece-meta-ambiciosa-para-universalizar-saneamento-basico-ate-2033/)
+- `equipe`: Prática da equipe socioambiental (revisada pelo proprietário)
+- `marco`: [Planalto — Lei 14.026/2020 (marco legal do saneamento)](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14026.htm)
+- `lei11445`: [Câmara dos Deputados — Lei 11.445/2007, texto atualizado](https://www2.camara.leg.br/legin/fed/lei/2007/lei-11445-5-janeiro-2007-549031-normaatualizada-pl.html)
 - `ods6`: [ONU Brasil — Objetivo de Desenvolvimento Sustentável 6](https://brasil.un.org/pt-br/sdgs/6)
-- `ipea6`: [Ipea — ODS 6: Água potável e saneamento](https://www.ipea.gov.br/ods/ods6.html)
+- `onuagua`: [ONU (UNRIC) — Água e o direito humano à água](https://unric.org/pt/agua/)
+- `jmp`: [OMS/UNICEF — Relatório JMP 2025 (dados de 2024)](https://data.unicef.org/resources/jmp-report-2025/)
+- `tratabrasil`: [Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)
+- `semasa25`: [Semasa — 25 anos da Gestão Ambiental em Santo André (2024)](https://portais.santoandre.sp.gov.br/semasa/wp-content/uploads/sites/13/2024/12/Livro-25-Anos-da-Gestao-Ambiental-DGA-2024.pdf)
+- `sabespsa`: [Prefeitura de Santo André — Sabesp assume o saneamento da cidade](https://web.santoandre.sp.gov.br/portal/noticias/0/3/13038/sabesp-assume-saneamento-de-santo-andre-e-anuncia-novo-pacote-de-obras-para-acabar-com-a-falta-dagua)
+- `sabespcanais`: [Sabesp — Canais de atendimento (folheto)](https://www.sabesp.com.br/assets/images/folhetos/sabesp-canais-atendimento.pdf)
 - `tamanduatei`: [Wikipédia — Rio Tamanduateí](https://pt.wikipedia.org/wiki/Rio_Tamanduate%C3%AD)
-- `sabespsa`: [Diário do Grande ABC — Sabesp chega a Santo André](https://www.dgabc.com.br/Noticia/3102857/sabesp-chega-a-sto-andre-com-desafio-de-findar-falta-d-agua-e-universalizar-esgoto)
-- `abcreporter`: [ABC Repórter — Sabesp assume serviços do Semasa](https://abcreporter.com.br/2019/08/01/sabesp-assume-servicos-do-semasa-e-renova-contrato-com-sao-bernardo/)
 - `billings`: [Wikipédia — Represa Billings](https://pt.wikipedia.org/wiki/Represa_Billings)
-- `oleo`: [SAMAE Timbó — Óleo de cozinha (dado da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
+- `oleo`: [SAMAE Timbó — Óleo de cozinha (estimativa da Sabesp)](https://samaetimbo.com.br/detalhe/mostra/400)
 - `esgoto`: [BRK Ambiental — Etapas do tratamento de esgoto](https://blog.brkambiental.com.br/etapas-tratamento-de-esgoto/)
-- `ete`: [IFSP Caraguatatuba — Visita técnica à ETE da Sabesp](https://www.ifspcaraguatatuba.edu.br/noticias/estudantes-de-engenharia-civil-realizam-visita-tecnica-a-estacao-de-tratamento-de-esgoto-da-sabesp)
 - `tratagua`: [Sabesp — Tratamento de água (folheto)](https://www.sabesp.com.br/assets/pdf/sabesp-tratamento-agua-1.pdf)
 - `etapasagua`: [Tratamento de Água — Etapas do tratamento da água](https://tratamentodeagua.com.br/artigo/etapas-tratamento-agua/)
 - `doencas`: [Revista Caminhos de Geografia (UFU) — Doenças de veiculação hídrica](https://seer.ufu.br/index.php/caminhosdegeografia/article/download/45545/26775/208144)
+- `leptospirose`: [Ministério da Saúde — Leptospirose](https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/l/leptospirose)
 - `hepatite`: [Ministério da Saúde — Julho Amarelo e as hepatites virais](https://www.gov.br/saude/pt-br/assuntos/saude-com-ciencia/noticias/2024/julho/julho-amarelo-entenda-a-importancia-da-prevencao-e-controle-das-hepatites-virais)
 - `dengue`: [Ministério da Saúde — Aedes aegypti: um perigo mesmo na seca](https://www.gov.br/saude/pt-br/assuntos/noticias/2024/outubro/mosquito-aedes-aegypti-um-perigo-mesmo-em-periodos-de-seca)
-- `dengueovo`: [Estado de Minas — Ovo do Aedes sobrevive sem água (pesquisa do IOC/Fiocruz)](https://www.em.com.br/app/noticia/saude-e-bem-viver/2023/10/28/interna_bem_viver,1583493/aedes-aegypti-ovo-do-mosquito-sobrevive-sem-agua-comprova-pesquisa.shtml)
+- `ioc`: [IOC/Fiocruz — Mecanismos da impermeabilidade dos ovos do Aedes aegypti](https://www.ioc.fiocruz.br/noticias/descobertos-mecanismos-ligados-impermeabilidade-de-ovos-do-aegypti)
 - `conama275`: [Resolução Conama 275/2001 (cópia da UFF)](https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf)
 - `pnrs`: [Câmara dos Deputados — Lei 12.305/2010 (Política Nacional de Resíduos Sólidos)](https://www2.camara.leg.br/legin/fed/lei/2010/lei-12305-2-agosto-2010-607598-publicacaooriginal-128609-pl.html)
-- `latas`: [CicloVivo — Em 2024, Brasil reciclou 97,3% das latas de alumínio](https://ciclovivo.com.br/planeta/desenvolvimento/em-2024-brasil-reciclou-973-das-latas-de-aluminio/)
-- `remedios`: [Gov.br — Descarte adequado de medicamentos em desuso](https://www.gov.br/pt-br/noticias/meio-ambiente-e-clima/2022/12/o-descarte-adequado-de-medicamentos-em-desuso-contribui-para-a-qualidade-do-meio-ambiente)
-- `consumo`: [AMA — Brasileiros usam 51% a mais de água do que o recomendado](https://news.ama.eco/brasileiros-usam-51-a-mais-de-agua-do-que-a-quantidade-diaria-recomendada/)
-- `economia`: [Boqnews — Dicas da Sabesp para economizar água](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
-- `tratabrasil`: [Instituto Trata Brasil — Ranking do Saneamento 2026](https://tratabrasil.org.br/wp-content/uploads/2026/03/Release-Ranking-2026_vf.pdf)
+- `reciclalatas`: [Recicla Latas — Brasil recicla 97,3% das latas de alumínio (2024)](https://reciclalatas.com.br/em-ano-de-cop30-brasil-reforca-sustentabilidade-ao-reciclar-973-das-latas-de-aluminio/)
+- `decreto10388`: [Planalto — Decreto 10.388/2020 (logística reversa de medicamentos)](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/decreto/d10388.htm)
+- `economia`: [Boqnews — Dicas da Sabesp para economizar água (estimativas)](https://www.boqnews.com/cidades/dicas-da-sabesp-ensinam-como-economizar-agua/)
 - `diaagua`: [WWF-Brasil — 22 de março, Dia Mundial da Água](https://www.wwf.org.br/?51682%2F22-de-maro-Dia-Mundial-da-gua=)
-- `banheiro`: [Aesbe — 19 de novembro, Dia Mundial do Saneamento (do Banheiro)](https://aesbe.org.br/19-de-novembro-dia-mundial-do-saneamento-reforca-a-importancia-do-acesso-universal-ao-saneamento-basico/)
 - `abrilverde`: [Câmara Municipal de São Paulo — Abril Verde](https://www.saopaulo.sp.leg.br/blog/abril-verde-mes-de-conscientizacao-sobre-seguranca-e-saude-no-trabalho/)
+- `portaria75`: [Ministério das Cidades — Portaria MCID 75/2025 (Trabalho Social)](https://www.gov.br/cidades/pt-br/acesso-a-informacao/institucional/base-juridica/portarias/PORTARIAMCIDN75DE28DEJANEIRODE2025.pdf)

@@ -9,6 +9,8 @@ class ColecaoCPT {
   /** Uma instância por aba em cada pedido (2.21): telas que juntam vários módulos (Meu espaço) leem cada aba uma vez só. */
   static de(ctx, aba, prefixo) { const m = ctx.colecoesCPT || (ctx.colecoesCPT = {}); return m[aba] || (m[aba] = new ColecaoCPT(ctx, aba, prefixo)); }
   constructor(ctx, aba, prefixo) { this.ctx = ctx; this.nome = aba; this.prefixo = prefixo; this.cache = null; }
+  /** A aba já existe? (para ler sem criar a aba de quem só consulta) */
+  static existe(ctx, aba) { try { return !!planilhaCPT_(ctx.config.agendaId).getSheetByName(aba); } catch (_) { return false; } }
   aba() {
     if (!this.ctx.config.agendaId) throw new Error('Os dados da aplicação ainda não foram preparados. Avise a administração técnica.');
     const ss = planilhaCPT_(this.ctx.config.agendaId); let a = ss.getSheetByName(this.nome);

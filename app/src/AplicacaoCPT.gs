@@ -80,7 +80,7 @@ function instalarAplicacaoCPT() {
  */
 function doGet() {
   // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
-  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, EntregasDoMesCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT, ConteudoSaneamentoCPT, QuizCPT, AlbumCPT, JogosCPT, PlacarCPT]; }
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, EntregasDoMesCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT, ConteudoSaneamentoCPT, RevisaoConteudoCPT, QuizCPT, AlbumCPT, JogosCPT, PlacarCPT, OrganogramaCPT, ControleContratoCPT]; }
   catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
   const t = HtmlService.createTemplateFromFile('Aplicacao');
   t.inicial = dadosIniciaisCPT_();
@@ -98,7 +98,7 @@ function dadosIniciaisCPT_() {
   return JSON.stringify(inicial).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos', 'Socioambiental', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa', 'Mascotes', 'Saber', 'Album', 'Jogos', 'Placar', 'Visual'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos', 'Socioambiental', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa', 'Mascotes', 'Saber', 'Album', 'Jogos', 'Placar', 'Visual', 'Organograma'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 

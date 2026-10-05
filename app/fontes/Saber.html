@@ -1,6 +1,7 @@
 <script>
 /*
- * Saber mais 2.19.0 — curiosidade do dia (balão do mascote), campanha do mês, pergunta do dia e quiz da semana.
+ * Saber mais 2.26.0 — curiosidade do dia (fato + por que importa), campanha do mês, pergunta do dia e quiz da semana.
+ * 2.26: página "Revisão do conteúdo" (rota revisao, só o proprietário): aprovar, suspender ou voltar, item a item.
  * Conteúdo e respostas certas vêm do servidor (ConteudoSaneamentoCPT/QuizCPT); a certa só chega depois de responder.
  * Usado pelo Meu espaço: CPTSaber.balao(s), CPTSaber.painel(s) e CPTSaber.aoMudar(fn) para atualizar pontos e humor.
  */
@@ -11,12 +12,12 @@ window.CPTSaber = (() => {
   const $ = id => document.getElementById(id);
   const op = () => 'OP-' + crypto.randomUUID();
   const LETRAS = ['A', 'B', 'C', 'D'];
-  const fonte = f => f ? `<a class="saber-fonte" href="${ui.esc(f.url)}" target="_blank" rel="noopener">Fonte: ${ui.esc(f.nome)}</a>` : '';
+  const fonte = f => !f ? '' : f.url ? `<a class="saber-fonte" href="${ui.esc(f.url)}" target="_blank" rel="noopener">Fonte: ${ui.esc(f.nome)}</a>` : '<span class="saber-fonte is-equipe">Prática da equipe</span>';
   const revisar = x => x && x.revisar ? '<span class="saber-revisar" title="Só você vê este conteúdo até a revisão">a revisar</span>' : '';
   /** Balão do mascote com a curiosidade do dia. */
   function balao(x) {
     s = x; const c = x && x.curiosidade; if (!c) return '';
-    return `<div class="saber-balao" role="note"><span class="saber-kicker">${ic('bulb', '💡')} Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${fonte(c.fonte)}</div>`;
+    return `<div class="saber-balao" role="note"><span class="saber-kicker">${ic('bulb', '💡')} Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${c.importa ? `<p class="saber-importa"><strong>Por que importa:</strong> ${ui.esc(c.importa)}</p>` : ''}${fonte(c.fonte)}</div>`;
   }
   function opcoes(q, tipo, resposta) {
     return `<div class="quiz-opcoes" role="group" aria-label="Alternativas">${q.opcoes.map((o, i) => {
@@ -71,13 +72,64 @@ window.CPTSaber = (() => {
     } catch (e) { ui.toast(e.message); grupo.querySelectorAll('button').forEach(x => { x.disabled = false; }); b.classList.remove('is-enviando'); }
     finally { enviando = false; }
   }
+  // ---------- Revisão do conteúdo (2.26, só o proprietário) ----------
+  let rv = null, filtro = {situacao: 'pendente', tipo: '', eixo: '', busca: ''}, mostrar = 20, rticket = 0;
+  const NOMES = {aprovado: 'Aprovado', suspenso: 'Suspenso', pendente: 'A revisar'};
+  const INTRO_REV = ['Revisão do conteúdo', 'Decida item a item o que a equipe vai ver no Meu espaço. Suspenso some para todos; aprovado aparece para a equipe quando os testes forem liberados. Só você vê esta página.'];
+  function resumo() {
+    const r = rv.resumo, barra = e => `<div class="rev-eixo"><span>${ui.esc(e.nome)}</span><span class="meter" aria-hidden="true"><span style="width:${Math.round(e.n / r.total * 100)}%"></span></span><b>${Math.round(e.n / r.total * 100)}%</b></div>`;
+    return `<section class="panel rev-resumo" id="revResumo"><div class="rev-contas">${['pendente', 'aprovado', 'suspenso'].map(k => `<button class="rev-conta is-${k} ${filtro.situacao === k ? 'is-on' : ''}" data-rev-situacao="${k}"><b>${r[k]}</b><span>${NOMES[k]}</span></button>`).join('')}<button class="rev-conta ${filtro.situacao === '' ? 'is-on' : ''}" data-rev-situacao=""><b>${r.total}</b><span>Todos</span></button></div>
+      <div class="rev-eixos"><span class="small muted">Equilíbrio do banco</span>${r.eixos.map(barra).join('')}</div></section>`;
+  }
+  const lista = () => { return rv.itens.filter(x => (!filtro.situacao || x.situacao === filtro.situacao) && (!filtro.tipo || x.tipo === filtro.tipo) && (!filtro.eixo || x.eixo === filtro.eixo) && (!filtro.busca || (x.id + ' ' + x.texto + ' ' + (x.importa || '') + ' ' + x.tema).toLowerCase().includes(filtro.busca))); };
+  function cartaoRev(x) {
+    const opc = x.opcoes ? `<ol class="rev-opcoes">${x.opcoes.map((o, i) => `<li class="${i === x.certa ? 'is-certa' : ''}">${ui.esc(o)}${i === x.certa ? ' <span class="rev-certa">certa</span>' : ''}</li>`).join('')}</ol><p class="small muted">${ui.esc(x.explica)}</p>` : '';
+    return `<article class="rev-item is-${x.situacao}" data-rev="${ui.esc(x.id)}"><header><b>${ui.esc(x.id)}</b><span class="rev-chip">${x.tipo === 'pergunta' ? 'Pergunta' : 'Curiosidade'}</span><span class="rev-chip is-${x.eixo}">${ui.esc(rv.eixos[x.eixo])}</span><span class="small muted">${ui.esc(x.tema)}</span><span class="rev-estado">${NOMES[x.situacao]}</span></header>
+      <p class="rev-texto">${ui.esc(x.texto)}</p>${x.importa ? `<p class="small"><strong>Por que importa:</strong> ${ui.esc(x.importa)}</p>` : ''}${opc}
+      ${x.correcao ? `<p class="rev-correcao">${ic('pencil', '✎')} Corrigido nesta versão: ${ui.esc(x.correcao)}</p>` : ''}<p class="small">${fonte(x.fonte)}</p>
+      <div class="rev-acoes"><label class="rev-nota"><span class="sr-only">Observação</span><input maxlength="500" placeholder="Observação (opcional)" value="${ui.esc(x.nota)}"></label>
+        ${x.situacao !== 'aprovado' ? '<button class="button" data-rev-decidir="aprovado">Aprovar</button>' : ''}${x.situacao !== 'suspenso' ? '<button class="button ghost" data-rev-decidir="suspenso">Suspender</button>' : ''}${x.situacao !== 'pendente' ? '<button class="button ghost" data-rev-decidir="pendente">Voltar para revisão</button>' : ''}</div></article>`;
+  }
+  function desenharLista() {
+    const l = lista(), el = $('revLista'); if (!el) return;
+    el.innerHTML = l.length ? l.slice(0, mostrar).map(cartaoRev).join('') + (l.length > mostrar ? `<div class="dialog-actions"><button class="button ghost" data-rev-mais>Mostrar mais (${l.length - mostrar})</button></div>` : '') : '<p class="empty-line">Nada com esses filtros.</p>';
+    $('revQuantos').textContent = l.length + (l.length === 1 ? ' item' : ' itens');
+  }
+  function desenharRevisao() {
+    ui.view.innerHTML = ui.intro(...INTRO_REV) + resumo() + `<section class="panel rev-filtros"><label class="field">Tipo<select data-rev-filtro="tipo"><option value="">Todos</option><option value="curiosidade" ${filtro.tipo === 'curiosidade' ? 'selected' : ''}>Curiosidades</option><option value="pergunta" ${filtro.tipo === 'pergunta' ? 'selected' : ''}>Perguntas</option></select></label>
+      <label class="field">Eixo<select data-rev-filtro="eixo"><option value="">Todos</option>${Object.entries(rv.eixos).map(([k, n]) => `<option value="${k}" ${filtro.eixo === k ? 'selected' : ''}>${ui.esc(n)}</option>`).join('')}</select></label>
+      <label class="field rev-busca">Buscar<input type="search" data-rev-filtro="busca" value="${ui.esc(filtro.busca)}" placeholder="ID, palavra ou tema"></label><span class="small muted" id="revQuantos"></span></section><div class="rev-lista" id="revLista"></div>`;
+    desenharLista();
+  }
+  async function revisao() {
+    const mine = ++rticket; ui.view.innerHTML = ui.intro(...INTRO_REV) + '<div class="loading-label"><span class="spinner"></span>Abrindo o banco…</div>';
+    try { const r = await ui.call('carregarRevisaoConteudoCPT'); if (mine !== rticket || ui.state.route !== 'revisao') return; rv = r; mostrar = 20; desenharRevisao(); }
+    catch (e) { if (mine === rticket) ui.view.innerHTML = ui.intro(...INTRO_REV) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  async function decidir(b) {
+    if (enviando) return; const card = b.closest('[data-rev]'), x = rv.itens.find(i => i.id === card.dataset.rev); if (!x) return;
+    enviando = true; card.querySelectorAll('button').forEach(z => { z.disabled = true; });
+    try {
+      const r = await ui.call('decidirConteudoCPT', {id: x.id, situacao: b.dataset.revDecidir, nota: card.querySelector('input').value, versao: x.versao, operacaoId: op()});
+      rv.resumo[x.situacao]--; Object.assign(x, r.item); rv.resumo[x.situacao]++; ui.toast(r.resultado);
+      card.outerHTML = cartaoRev(x); const res = $('revResumo'); if (res) res.outerHTML = resumo();
+    } catch (e) { ui.toast(e.message); card.querySelectorAll('button').forEach(z => { z.disabled = false; }); }
+    finally { enviando = false; }
+  }
   function init(api) {
     ui = api;
+    document.addEventListener('click', e => {
+      if (ui.state.route !== 'revisao' || !rv) return;
+      const d = e.target.closest('[data-rev-decidir]'); if (d) { decidir(d); return; }
+      const s = e.target.closest('[data-rev-situacao]'); if (s) { filtro.situacao = s.dataset.revSituacao; mostrar = 20; desenharRevisao(); return; }
+      if (e.target.closest('[data-rev-mais]')) { mostrar += 20; desenharLista(); }
+    });
+    document.addEventListener('input', e => { const f = e.target.closest('[data-rev-filtro]'); if (!f || ui.state.route !== 'revisao' || !rv) return; filtro[f.dataset.revFiltro] = f.dataset.revFiltro === 'busca' ? f.value.trim().toLowerCase() : f.value; mostrar = 20; desenharLista(); });
     document.addEventListener('click', e => {
       const b = e.target.closest('[data-quiz-responder]'); if (b) { responder(b); return; }
       if (e.target.closest('[data-quiz-semana]') || e.target.closest('[data-quiz-proxima]')) { if (s && s.quiz.semana) janela(); }
     });
   }
-  return {init, balao, painel, aoMudar: fn => { aoMudar = fn; }, pendente: () => !!(s && s.quiz && s.quiz.dia && s.quiz.dia.pergunta)};
+  return {init, balao, painel, revisao, aoMudar: fn => { aoMudar = fn; }, pendente: () => !!(s && s.quiz && s.quiz.dia && s.quiz.dia.pergunta)};
 })();
 </script>

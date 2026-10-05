@@ -13,9 +13,16 @@ window.CPTMascoteV2 = (() => {
   let seq = 0, ID = '';
   const OLHO = '#3a2a20', BOCHECHA = '#f4a6a0';
   const EPI = {capacete: '#f7f5ef', colete: '#f28a3a', faixa: '#fff4dc', luva: '#9aa6ad', bota: '#3a3431', botina: '#7a4a2a'};
+  /** 2.26 · Loja: EPI colorido (cor de cada peça). */
+  const CAPACETES = {'capacete-branco': EPI.capacete, 'capacete-amarelo': '#f6c84c', 'capacete-dourado': '#f2c94c', 'capacete-azul': '#3d7fd6', 'capacete-verde': '#3f9b5a', 'capacete-laranja': '#f08a2c'};
+  const COLETES = {colete: [EPI.colete, EPI.faixa], 'colete-mestre': ['#e6b422', '#3b3b3b'], 'colete-amarelo': ['#d6ea3c', '#c9d1d6'], 'colete-azul': ['#2f6fb3', '#eef3f8']};
+  const LUVAS = {luvas: EPI.luva, 'luvas-amarelas': '#f2c230', 'luvas-azuis': '#4a86c8'};
+  const PES = {'bota-preta': EPI.bota, botina: EPI.botina, 'galocha-amarela': '#f2c230', 'bota-branca': '#eeeae2'};
   /** Mesma lista do servidor (PessoalCPT.cores): [pelo, barriga]. */
   const CORES = {laranja: ['#f2a65e', '#fff2e0'], caramelo: ['#dba46a', '#f8e6cb'], marrom: ['#b58256', '#efd7b4'], creme: ['#ead2a8', '#fbf3e3'], cinza: ['#a7b0ba', '#eef1f3'], grafite: ['#5d626b', '#cfd3d8'],
-    branco: ['#f6f2ea', '#ffffff'], amarelo: ['#f7cf4a', '#fff3c4'], verde: ['#93cf72', '#f1f8e4'], azul: ['#7cb3e2', '#e2f0fb'], lilas: ['#b39ae0', '#efe8fa'], rosa: ['#f2a6c0', '#fde8ef']};
+    branco: ['#f6f2ea', '#ffffff'], amarelo: ['#f7cf4a', '#fff3c4'], verde: ['#93cf72', '#f1f8e4'], azul: ['#7cb3e2', '#e2f0fb'], lilas: ['#b39ae0', '#efe8fa'], rosa: ['#f2a6c0', '#fde8ef'],
+    // 2.26 · cores especiais (loja): menta, coral, dourado e azul-noite
+    menta: ['#7fd1b9', '#e6f7f1'], coral: ['#f08a72', '#fde6df'], dourado: ['#e3b94a', '#fbf0cf'], noite: ['#3c4f86', '#cfd8ef']};
   const mix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
   // ---------- formas ----------
   const ell = (x, y, rx, ry) => `M${x - rx},${y} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0 Z`;
@@ -143,7 +150,11 @@ window.CPTMascoteV2 = (() => {
     'camisa-peixe': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => `<rect x="${x0 + 8}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/><rect x="${x1 - 13}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/>` + linha(`M${(x0 + x1) / 2 - 10},${y0 + 4} L${(x0 + x1) / 2},${y0 + 13} L${(x0 + x1) / 2 + 10},${y0 + 4}`, 3, '#232323')},
     'camisa-cpt': {cor: '#2f7cbf', manga: '#2f7cbf', texto: true, desenho: (x0, x1, y0, y1) => `<path d="M${(x0 + x1) / 2 - 22},${y0 + (y1 - y0) * .5 + 3} c0,0 5,-8 5,-11 a5,5 0 0 0 -10,0 c0,3 5,11 5,11 Z" fill="#9fd3f5" transform="translate(4,0)"/><text x="${(x0 + x1) / 2 + 6}" y="${y0 + (y1 - y0) * .5 + 3}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Arial, sans-serif">CPT</text>`},
     'camisa-veolia': {cor: '#e2231a', manga: '#e2231a', texto: true, desenho: (x0, x1, y0, y1) => `<text x="${(x0 + x1) / 2}" y="${y0 + (y1 - y0) * .5 + 2}" text-anchor="middle" font-size="${Math.min(12, (x1 - x0) / 6.4).toFixed(1)}" font-weight="800" letter-spacing="${x1 - x0 < 80 ? 0 : .6}" fill="#fff" font-family="Arial, sans-serif">VEOLIA</text>` +
-      `<rect x="${x0}" y="${y1 - 7}" width="${x1 - x0}" height="3" fill="#ffffff55"/>`}};
+      `<rect x="${x0}" y="${y1 - 7}" width="${x1 - x0}" height="3" fill="#ffffff55"/>`},
+    // 2.26 · Loja: moletom com bolso canguru e cordão, camisa xadrez e jaqueta jeans com zíper e bolsos
+    'moletom-verde': {cor: '#3f7f52', manga: '#3f7f52', desenho: (x0, x1, y0, y1) => { const m = (x0 + x1) / 2, w = Math.min(22, (x1 - x0) * .2); return `<path d="M${m - w},${y1 - 4} L${m - w + 5},${y1 - 17} H${m + w - 5} L${m + w},${y1 - 4} Z" fill="#00000024"/>` + linha(`M${m - 6},${y0 + 3} v10 M${m + 6},${y0 + 3} v10`, 2.2, '#e9f3ea'); }},
+    'camisa-xadrez': {cor: '#c0453a', manga: '#c0453a', desenho: (x0, x1, y0, y1) => { const v = [], h = []; for (let x = x0 + 4; x < x1; x += 13) v.push(`<rect x="${x}" y="${y0}" width="5" height="${y1 - y0}" fill="#5a1a14" opacity=".35"/>`); for (let y = y0 + 6; y < y1; y += 13) h.push(`<rect x="${x0}" y="${y}" width="${x1 - x0}" height="5" fill="#5a1a14" opacity=".3"/>`); return v.join('') + h.join('') + linha(`M${(x0 + x1) / 2},${y0 + 14} V${y1}`, 1.6, '#f3d9c4'); }},
+    'jaqueta-jeans': {cor: '#4a6fa5', manga: '#4a6fa5', desenho: (x0, x1, y0, y1) => { const m = (x0 + x1) / 2, b = (x1 - x0) * .22; return linha(`M${m},${y0 + 12} V${y1}`, 2, '#c9d6ea') + [-1, 1].map(l => `<rect x="${m + l * b - 8}" y="${y0 + (y1 - y0) * .42}" width="16" height="11" rx="2" fill="none" stroke="#d7a64a" stroke-width="1.6" stroke-dasharray="2 2"/>`).join('') + `<path d="M${x0},${y1 - 6} H${x1}" stroke="#d7a64a" stroke-width="1.6" stroke-dasharray="3 2"/>`; }}};
   /** Camisa: cobre a parte de cima do corpo (sem cobrir o "formato" de baixo), com gola em V. */
   function camisa(id, S, c, ID, laco) {
     const t = CAMISAS[id]; if (!t) return '';
@@ -213,12 +224,12 @@ window.CPTMascoteV2 = (() => {
     P.push(peca('costas'));
     if (S.atras) P.push(S.atras(c, e));
     // pezinhos: bota preta e botina mudam a cor do pé
-    const corPe = q.pes === 'bota-preta' ? EPI.bota : q.pes === 'botina' ? EPI.botina : null;
+    const corPe = PES[q.pes] || null;
     S.pes.forEach(([x, y, rx, ry, cp]) => P.push(f(ell(x, y, rx, ry), corPe || cp || c.p) + (corPe ? `<path d="M${x - rx + 2},${y + ry - 2} Q${x},${y + ry + 2} ${x + rx - 2},${y + ry - 2}" fill="none" stroke="#00000040" stroke-width="2.4" stroke-linecap="round"/><circle cx="${x}" cy="${y - ry * .35}" r="1.6" fill="#ffffff60"/>` : '')));
     // corpo, barriga, roupas
     if (!S.semCorpo) { P.push(f(S.corpo, c.p)); if (S.barriga) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) P.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
     if (S.listras) P.push(`<g clip-path="url(#${ID}t)"><rect x="30" y="160" width="140" height="11" fill="#3b302a"/><rect x="30" y="186" width="140" height="11" fill="#3b302a"/></g>`);
-    const roupa = () => q.corpo === 'colete' ? colete(S2, ID) : q.corpo === 'colete-mestre' ? colete(S2, ID, '#e6b422', '#3b3b3b') : CAMISAS[q.corpo] ? camisa(q.corpo, S2, c, ID, q.broche === 'laco-do-mes') : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
+    const roupa = () => COLETES[q.corpo] ? colete(S2, ID, COLETES[q.corpo][0], COLETES[q.corpo][1]) : CAMISAS[q.corpo] ? camisa(q.corpo, S2, c, ID, q.broche === 'laco-do-mes') : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
     const manga = CAMISAS[q.corpo] ? CAMISAS[q.corpo].manga : null;
     if (!S.semCorpo) P.push(roupa());
     // cabeça
@@ -238,10 +249,10 @@ window.CPTMascoteV2 = (() => {
     const mao = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1];
       if (pose === 'cima') return [sx + lado * 20, sy - S.mao * .9]; if (pose === 'queixo' && lado === queixo) return [R.x + lado * 18, R.y + (S.boca ? S.boca - R.y - 2 : 24)]; return [sx + lado * 4, sy + S.mao * .92]; };
     const cotovelo = (lado, sx, sy) => pose === 'cima' ? [sx + lado * 26, sy - S.mao * .15] : pose === 'queixo' && lado === queixo ? [sx + lado * 26, sy + 16] : [sx + lado * 15, sy + S.mao * .38];
-    const luva = q.luvas === 'luvas';
+    const luva = LUVAS[q.luvas] || '';
     const patinha = (lado, mx, my, w) => { const r = w * .66;
       if (!luva) return f(ell(mx, my, r, r * .92), S.asa ? c.p : c.cl);
-      return f(ell(mx - lado * r * .82, my - r * .15, r * .45, r * .4), EPI.luva) + f(ell(mx, my + r * .05, r * 1.1, r), EPI.luva) + `<path d="${ell(mx + lado * r * .3, my - r * .35, r * .32, r * .2)}" fill="#fff" opacity=".35"/>`; };
+      return f(ell(mx - lado * r * .82, my - r * .15, r * .45, r * .4), luva) + f(ell(mx, my + r * .05, r * 1.1, r), luva) + `<path d="${ell(mx + lado * r * .3, my - r * .35, r * .32, r * .2)}" fill="#fff" opacity=".35"/>`; };
     const braco = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1], [mx, my] = mao(lado), [cx, cy] = cotovelo(lado, sx, sy);
       if (S.asa) { const g = S.asa, penas = [-1, 0, 1].map(k => f(ell(mx + lado * 3 + k * 4 * lado, my + 6 - Math.abs(k) * 2, 4.2, 7.5), c.p)).join('');
         return penas + f(bracoCurvo(sx, sy, cx, cy, mx, my, 19 * g, 9 * g), c.p) + (luva ? patinha(lado, mx, my, 12) : ''); }
@@ -253,8 +264,8 @@ window.CPTMascoteV2 = (() => {
     if (S.asa && q.mao) P.push(ferramenta());
     // cabeça: capacete do kit (sob medida) ou peça do guarda-roupa
     const k = S.capacete;
-    if (q.cabeca === 'capacete-branco' || q.cabeca === 'capacete-amarelo' || q.cabeca === 'capacete-dourado') {
-      const cor = q.cabeca === 'capacete-branco' ? EPI.capacete : q.cabeca === 'capacete-amarelo' ? '#f6c84c' : '#f2c94c';
+    if (CAPACETES[q.cabeca]) {
+      const cor = CAPACETES[q.cabeca];
       const borda = mix(cor, '#000000', .16), aba = mix(cor, '#000000', .07);
       P.push(`<path d="M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z" fill="${cor}" stroke="${borda}" stroke-width="1.4"/><path d="M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z" fill="url(#${ID}g)"/>` +
         `<path d="M${k.x - k.r * 1.25},${k.y} h${k.r * 2.5} a3,3 0 0 1 0,6 h${-k.r * 2.5} a3,3 0 0 1 0,-6 Z" fill="${aba}" stroke="${borda}" stroke-width="1.2"/><rect x="${k.x - 3}" y="${k.y - k.r * .72}" width="6" height="${k.r * .7}" rx="3" fill="${borda}" opacity=".45"/>` +
@@ -277,7 +288,8 @@ window.CPTMascoteV2 = (() => {
   window.CPTMascote = {
     desenhar: (e, q, tam, rotulo, cor, expr) => v2() ? window.CPTMascoteV2.desenhar(e, q, tam, rotulo, cor, expr) : v1.desenhar(e, q, tam, rotulo, cor),
     amostra: k => v2() ? window.CPTMascoteV2.amostra(k) : v1.amostra(k),
-    temDesenho: id => v1.temDesenho(id) || ['luvas', 'bota-preta', 'camisa-veolia', 'laco-do-mes'].includes(id)
+    temDesenho: id => v1.temDesenho(id) || ['luvas', 'bota-preta', 'camisa-veolia', 'laco-do-mes', 'capacete-azul', 'capacete-verde', 'capacete-laranja', 'colete-amarelo', 'colete-azul',
+      'luvas-amarelas', 'luvas-azuis', 'galocha-amarela', 'bota-branca', 'moletom-verde', 'camisa-xadrez', 'jaqueta-jeans'].includes(id)
   };
 })();
 </script>

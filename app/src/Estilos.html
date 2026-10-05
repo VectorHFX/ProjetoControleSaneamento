@@ -1101,6 +1101,7 @@ html[data-visual=v3] .tab-item.active{color:var(--blue)}html[data-visual=v3] .ta
 @keyframes v3-voa{0%{transform:translate(-50%,-50%) scale(.3) rotate(0);opacity:0}12%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 140px)) scale(1) rotate(var(--rot));opacity:0}}
 @keyframes v3-marca{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 html[data-visual=v3] #view[data-entrando]>*{animation:v3-sobe .46s var(--ease) both}
+html[data-visual=v3] #view .v3-novo{animation:v3-sobe .42s var(--ease) both;animation-delay:calc(var(--i,0) * 40ms)}
 html[data-visual=v3] #view[data-entrando]>*:nth-child(2){animation-delay:.05s}html[data-visual=v3] #view[data-entrando]>*:nth-child(3){animation-delay:.1s}html[data-visual=v3] #view[data-entrando]>*:nth-child(n+4){animation-delay:.15s}
 html[data-visual=v3] #view[data-entrando] :is(.kpi,.stat-tile,.home-cards>.panel,.album-foto,.jogo-card,.entry-card,.list-row:not(.list-head),.entrega-card,.missao,.wardrobe-item){animation:v3-sobe .5s var(--ease) both;animation-delay:calc(var(--i,0) * 45ms + 120ms)}
 html[data-visual=v3] .v3-pulso{display:inline-block;animation:v3-pulso .6s var(--ease)}
@@ -1109,12 +1110,12 @@ html[data-visual=v3] .check-list li span{transition:color .3s,opacity .3s}
 .v3-folhas{position:fixed;inset:0;pointer-events:none;z-index:2147483000}
 .v3-folhas span{position:absolute;width:18px;height:18px;animation:v3-voa 1.45s cubic-bezier(.2,.7,.3,1) both}.v3-folhas svg{width:100%;height:100%;display:block}
 /* Quem pede menos movimento (no app ou no sistema) não vê nada se mexendo */
-html[data-visual=v3][data-motion=reduce] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-pulso,dialog[open],.check-list input){animation:none!important}
+html[data-visual=v3][data-motion=reduce] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-novo,.v3-pulso,dialog[open],.check-list input){animation:none!important}
 html[data-visual=v3][data-motion=reduce] .sidebar-art::before,html[data-visual=v3][data-motion=reduce] .page-intro::after{animation:none!important}
 html[data-visual=v3][data-motion=reduce] :is(.button,.stat-tile,.entry-card,.album-foto,.jogo-card,.nav-item .icon){transition:none!important;transform:none!important}
 html[data-visual=v3][data-motion=reduce] :is(.v3-camada,.hero-pet){transform:none!important}
 @media (prefers-reduced-motion:reduce){
-  html[data-visual=v3] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-pulso,dialog[open],.check-list input),html[data-visual=v3] .sidebar-art::before,html[data-visual=v3] .page-intro::after{animation:none!important}
+  html[data-visual=v3] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-novo,.v3-pulso,dialog[open],.check-list input),html[data-visual=v3] .sidebar-art::before,html[data-visual=v3] .page-intro::after{animation:none!important}
   html[data-visual=v3] :is(.v3-camada,.hero-pet){transform:none!important}
   html[data-visual=v3] :is(.button,.stat-tile,.entry-card,.album-foto,.jogo-card,.nav-item .icon){transition:none!important;transform:none!important}}
 /* ============ 2.25 · Acabamento do visual novo: ícones de traço (no lugar dos emojis) e cores harmonizadas ============ */
@@ -1173,4 +1174,55 @@ html[data-visual=v3] .kpi-icon{--accent:var(--blue)!important;--tint:var(--pale)
 html[data-visual=v3] .kpi-icon .icon{width:22px;height:22px}
 html[data-visual=v3] .help-grid .panel h2{color:var(--navy)}
 html[data-visual=v3] .link-button{color:var(--blue)}html[data-visual=v3] .link-button .ic{color:currentColor}
+/* ============ 2.26 · Banco revisto, revisão do conteúdo, caderno, quadro, anexos, controle e organograma ============ */
+/* O "i" de informação abre por cima do conteúdo, mesmo durante a entrada da página (cada cartão animado vira uma camada própria) */
+#view>.page-intro{position:relative;z-index:6}
+.saber-importa{font-size:13px;margin:6px 0 4px;color:var(--ink)}.saber-importa strong{color:var(--blue);font-weight:650}
+.saber-fonte.is-equipe{text-decoration:none;font-style:italic}
+/* Revisão do conteúdo */
+.rev-resumo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px;align-items:center;margin-bottom:16px}
+.rev-contas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rev-conta{display:grid;gap:2px;justify-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;min-height:0}
+.rev-conta b{font-size:24px;line-height:1.1;letter-spacing:-.5px}.rev-conta span{font-size:12px;color:var(--muted)}
+.rev-conta.is-on{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:var(--pale)}
+.rev-conta.is-aprovado b{color:var(--mint)}.rev-conta.is-suspenso b{color:#a4482f}
+.rev-eixos{display:grid;gap:7px}.rev-eixo{display:grid;grid-template-columns:110px minmax(0,1fr) 40px;gap:10px;align-items:center;font-size:12px}.rev-eixo b{text-align:right}
+.rev-filtros{display:grid;grid-template-columns:repeat(2,minmax(0,180px)) minmax(0,1fr) auto;gap:12px;align-items:end;margin-bottom:16px;padding:16px 20px}
+.rev-lista{display:grid;gap:12px}
+.rev-item{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:16px;padding:16px 18px;display:grid;gap:8px;box-shadow:var(--shadow)}
+.rev-item.is-aprovado{border-left-color:var(--mint)}.rev-item.is-suspenso{border-left-color:#c0593d;opacity:.85}
+.rev-item header{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rev-item header b{font-size:13px}
+.rev-chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:20px;background:var(--pale);color:var(--blue)}
+.rev-chip.is-pratica{background:var(--soft);color:var(--mint)}.rev-chip.is-curiosidade{background:#fff3e4;color:#8a5413}
+.rev-estado{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+.rev-item.is-aprovado .rev-estado{color:var(--mint)}.rev-item.is-suspenso .rev-estado{color:#a4482f}
+.rev-texto{font-size:14px;line-height:1.55}
+.rev-opcoes{margin:0;padding-left:22px;list-style:upper-alpha;font-size:13px;display:grid;gap:3px}.rev-opcoes .is-certa{font-weight:650;color:var(--mint)}
+.rev-certa{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:var(--soft);color:var(--mint);border-radius:10px;padding:1px 7px}
+.rev-correcao{font-size:12px;color:#7a5418;background:#fff7e9;border-radius:10px;padding:6px 10px}.rev-correcao .ic{width:14px;height:14px;vertical-align:-2px}
+.rev-acoes{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rev-nota{flex:1 1 220px}.rev-nota input{width:100%}
+.rev-acoes .button.ghost{padding:8px 12px;border:1px solid var(--line)}
+@media (max-width:800px){.rev-resumo{grid-template-columns:1fr}.rev-contas{grid-template-columns:repeat(2,minmax(0,1fr))}.rev-filtros{grid-template-columns:1fr 1fr}.rev-busca{grid-column:1/-1}}
+/* Organograma: o desenho é um "documento" claro (o mesmo do arquivo baixado), dentro de um quadro que rola */
+.org-acoes{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}.org-acoes .ic{width:17px;height:17px}
+.org-quadro{overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fbfaf6;max-height:72vh;-webkit-overflow-scrolling:touch}
+.org-quadro svg{display:block;max-width:100%;height:auto;margin:0 auto}.org-quadro.pode-editar svg .org-no{cursor:pointer}.org-quadro.pode-editar svg .org-no:hover rect:first-child{stroke:#2d6a4f;stroke-width:2}
+.org-painel .small.muted{margin-top:10px}
+.org-lista{margin-top:16px}.org-lista summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.org-lista table{margin-top:10px}
+.org-ponto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:0}
+#orgImpressao{display:none}
+@media print{
+  html.org-imprimindo body>*:not(#orgImpressao){display:none!important}
+  html.org-imprimindo #orgImpressao{display:block!important}html.org-imprimindo #orgImpressao svg{width:100%;height:auto;max-height:190mm}
+  html.org-imprimindo body{background:#fff!important;margin:0}
+  @page{size:A4 landscape;margin:10mm}}
+/* Planilha de controle do contrato: lembrete com link, situação e números do mês para conferir */
+#view .controle-contrato.panel{border-left:5px solid #e9a23b;margin-bottom:18px}#view .controle-contrato.panel.is-feita{border-left-color:var(--mint)}
+.controle-situacao{flex:none;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:999px;background:#fff3e4;color:#8a5413;white-space:nowrap}.controle-situacao.is-atrasada{background:#fde7e1;color:#a4482f}.controle-situacao.is-feita{background:var(--soft);color:var(--mint)}.controle-situacao .ic{width:14px;height:14px;vertical-align:-2px}
+.controle-contrato .panel-head{align-items:flex-start;margin-bottom:14px}.controle-contrato .panel-head p{max-width:640px;font-size:12.5px}
+.controle-acoes{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}.controle-acoes .ic{width:17px;height:17px}
+.controle-indicadores summary{cursor:pointer;font-weight:650;min-height:40px;display:flex;align-items:center;font-size:13px}
+.controle-nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0 10px}
+.controle-num{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;background:var(--surface)}
+.controle-num b{font-size:22px;letter-spacing:-.4px;line-height:1.1}.controle-num span{font-size:12px;color:var(--muted)}.controle-num small{font-size:11px;color:var(--muted)}
 </style>

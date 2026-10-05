@@ -227,7 +227,9 @@ window.CPTEspaco = (() => {
     const m = M();
     dialogo('MASCOTE', 'Cor de ' + m.nome, `<div id="espErro" class="notice" hidden></div><p class="muted">Escolha à vontade: trocar a cor é livre e não gasta pontos.</p><div class="pet-picker color-picker">
       <button class="pet-option ${!m.cor ? 'is-picked' : ''}" data-esp-colorir="">${window.CPTMascote.desenhar(m.especie, m.equipado, 84, 'Cor original')}<span>Original</span></button>
-      ${Object.entries(d.cores || {}).map(([k, n]) => `<button class="pet-option ${m.cor === k ? 'is-picked' : ''}" data-esp-colorir="${k}">${window.CPTMascote.desenhar(m.especie, m.equipado, 84, n, k)}<span><i class="swatch" style="background:${window.CPTMascote.amostra(k)}"></i>${ui.esc(n)}</span></button>`).join('')}</div>`);
+      ${Object.entries(d.cores || {}).map(([k, n]) => `<button class="pet-option ${m.cor === k ? 'is-picked' : ''}" data-esp-colorir="${k}">${window.CPTMascote.desenhar(m.especie, m.equipado, 84, n, k)}<span><i class="swatch" style="background:${window.CPTMascote.amostra(k)}"></i>${ui.esc(n)}</span></button>`).join('')}</div>
+      ${Object.keys(d.coresEspeciais || {}).length ? `<h3 class="answers-head">Cores especiais <small class="muted">(compra uma vez · ${ic('star', '⭐')} ${d.precoCor} pontos cada · você tem ${ui.num(d.pontos.saldo)})</small></h3><div class="pet-picker color-picker">${Object.entries(d.coresEspeciais).map(([k, n]) => { const minha = (d.perfil.cores || []).includes(k);
+        return `<button class="pet-option ${m.cor === k ? 'is-picked' : ''} ${minha ? '' : 'is-loja'}" ${minha ? `data-esp-colorir="${k}"` : `data-esp-comprar-cor="${k}" ${d.pontos.saldo < d.precoCor ? 'aria-disabled="true"' : ''}`}>${window.CPTMascote.desenhar(m.especie, m.equipado, 84, n, k)}<span><i class="swatch" style="background:${window.CPTMascote.amostra(k)}"></i>${ui.esc(n)}</span>${minha ? '' : `<small>${ic('star', '⭐')} ${d.precoCor} pontos</small>`}</button>`; }).join('')}</div>` : ''}`);
   }
   // ---------- Boas-vindas: escolher o primeiro mascote ----------
   function boasVindas(escolhido) {
@@ -357,6 +359,8 @@ window.CPTEspaco = (() => {
       if (t.closest('[data-esp-guarda]')) { guardaAba = 'cabeca'; guardaRoupa(); return; }
       if (t.closest('[data-esp-cor]')) { cores(); return; }
       const cl = t.closest('[data-esp-colorir]'); if (cl) { if ((M().cor || '') !== cl.dataset.espColorir && await mascote({acao: 'colorir', cor: cl.dataset.espColorir})) { fechar(); desenhar(); } else if ((M().cor || '') === cl.dataset.espColorir) fechar(); return; }
+      const cc = t.closest('[data-esp-comprar-cor]'); if (cc) { const k = cc.dataset.espComprarCor; if (d.pontos.saldo < d.precoCor) { ui.toast('Faltam ' + (d.precoCor - d.pontos.saldo) + ' pontos. Complete tarefas do checklist.'); return; }
+        if (confirm('Usar ' + d.precoCor + ' pontos na cor ' + d.coresEspeciais[k].toLowerCase() + '? Depois de comprada, trocar é livre.') && await mascote({acao: 'comprarCor', cor: k})) { fechar(); desenhar(); } return; }
       const ab = t.closest('[data-esp-aba]'); if (ab) { guardaAba = ab.dataset.espAba; guardaRoupa(); return; }
       const ve = t.closest('[data-esp-vestir]'); if (ve) { const it = d.catalogo.find(x => x.id === ve.dataset.espVestir); if (await mascote({acao: 'vestir', slot: it.slot, item: it.id})) { guardaRoupa(); desenhar(); } return; }
       const cl2 = t.closest('[data-esp-classico]'); if (cl2) { const k = cl2.dataset.espClassico; if (d.pontos.saldo < d.precoClassico) { ui.toast('Faltam ' + (d.precoClassico - d.pontos.saldo) + ' pontos. Complete tarefas do checklist.'); return; }

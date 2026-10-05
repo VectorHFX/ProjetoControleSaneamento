@@ -26,16 +26,37 @@ window.CPTVisual = (() => {
     else { delete h.dataset.visual; store.del('cpt.visual'); h.style.removeProperty('--v3-folhagem'); h.style.removeProperty('--v3-jardim'); }
   }
   // ---------- Entrada de página: o conteúdo novo sobe e aparece; os cartões chegam em cascata ----------
-  // Só na chegada a uma página (até duas trocas: esqueleto e conteúdo); salvar e atualizar não fazem a tela "dançar".
+  // 2.26: uma vez só por navegação, quando o conteúdo de verdade chega. O esqueleto de carregamento aparece parado e,
+  // quando os dados chegam, só o que acabou de entrar sobe (o que já estava na tela não pisca de novo).
+  // Se a página se redesenha durante a entrada (cache e depois dados novos, salvar, atualizar), mostra na hora, sem repetir.
   const CASCATA = '.kpi,.stat-tile,.home-cards>.panel,.home-grid>*,.panel,.album-foto,.jogo-card,.entry-card,.list-row:not(.list-head),.entrega-card,.missao,.wardrobe-item';
-  let entradaTimer = 0, navegouEm = 0, entradas = 0;
+  const CARREGANDO = '.skeleton,.loading-label,.skel-list';
+  let entradaTimer = 0, novosTimer = 0, navegouEm = 0, animou = true, esperou = false;
   function entrada() {
     if (!ativo() || calmo()) return; const v = document.getElementById('view'); if (!v) return;
     clearTimeout(entradaTimer); v.removeAttribute('data-entrando'); void v.offsetWidth;
     v.querySelectorAll(CASCATA).forEach((el, i) => el.style.setProperty('--i', Math.min(i, 14)));
-    v.setAttribute('data-entrando', ''); entradaTimer = setTimeout(() => v.removeAttribute('data-entrando'), 1500);
+    v.setAttribute('data-entrando', ''); entradaTimer = setTimeout(() => v.removeAttribute('data-entrando'), 1400);
   }
-  function navegou() { navegouEm = Date.now(); entradas = 0; }
+  /** Depois do esqueleto: sobe só o que acabou de entrar. */
+  function entradaNovos(nos) {
+    if (!ativo() || calmo() || !nos.length) return; let i = 0;
+    nos.forEach(n => { const alvos = n.matches(CASCATA) ? [n] : Array.from(n.querySelectorAll(CASCATA)); (alvos.length ? alvos : [n]).forEach(el => { el.style.setProperty('--i', Math.min(i++, 14)); el.classList.add('v3-novo'); }); });
+    clearTimeout(novosTimer); novosTimer = setTimeout(() => document.querySelectorAll('#view .v3-novo').forEach(el => el.classList.remove('v3-novo')), 1400);
+  }
+  function parar(v) { clearTimeout(entradaTimer); v.removeAttribute('data-entrando'); }
+  function navegou() { navegouEm = Date.now(); animou = false; esperou = false; }
+  /** Cada troca na página: decide se é a chegada do conteúdo (anima uma vez) ou um redesenho (mostra na hora). */
+  function trocou(registros) {
+    const v = document.getElementById('view'); if (!v) return;
+    if (v.hasAttribute('data-entrando') && registros.some(r => r.target === v)) parar(v);
+    if (animou || Date.now() - navegouEm > 8000) return;
+    if (v.querySelector(CARREGANDO)) { esperou = true; return; }
+    animou = true;
+    if (!esperou) { entrada(); return; }
+    const novos = []; registros.forEach(r => r.addedNodes.forEach(n => { if (n.nodeType === 1 && n.isConnected && v.contains(n)) novos.push(n); }));
+    entradaNovos(novos);
+  }
   // ---------- Números que contam até o valor novo (pontos) ----------
   function contar(el, para) {
     if (!el) return; const de = Number(String(el.textContent).replace(/\D/g, '')) || 0, fmt = n => n.toLocaleString('pt-BR');
@@ -137,7 +158,7 @@ window.CPTVisual = (() => {
     document.addEventListener('pointermove', parallax, {passive: true});
     document.addEventListener('pointerout', soltar, {passive: true});
     const v = document.getElementById('view');
-    if (v && window.MutationObserver) new MutationObserver(() => { if (Date.now() - navegouEm < 6000 && entradas < 2) { entradas++; entrada(); } }).observe(v, {childList: true});
+    if (v && window.MutationObserver) new MutationObserver(trocou).observe(v, {childList: true, subtree: true});
   }
   return {init, aplicar, ativo, calmo, entrada, navegou, contar, folhas, cena};
 })();

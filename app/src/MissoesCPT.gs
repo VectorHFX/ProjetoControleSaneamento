@@ -4,6 +4,7 @@
  * - Quem escreveu um relato: dicas do que falta nos relatos dos últimos 7 dias; comentário da gestão sobre um relato.
  * - Atendimento: casos abertos há 30 dias ou mais.
  * - Socioambiental: relatos do mês ainda não preparados, a 5 dias do prazo do relatório (ou depois).
+ * - Gestão e Administrativo (2.26): responder a planilha de controle do contrato do mês anterior (ControleContratoCPT).
  * Nada é ranqueado nem comparado entre pessoas: cada um vê só as próprias missões.
  * Período de testes: só o proprietário recebe missões (as demais pessoas não veem nada novo até liberar).
  * Desempenho: pedido à parte (depois da tela) e cada fonte em cache; quem não tem missão não abre a base.
@@ -26,6 +27,7 @@ class MissoesCPT {
     fonte('relatos', () => this.dicasDeRelato());
     if (this.tem('atendimento', 'administrativo', 'gestao')) fonte('casos', () => this.casosAntigos());
     if (this.tem('socioambiental')) fonte('preparo', () => this.relatosSemPreparo());
+    if (this.tem('administrativo', 'gestao')) fonte('controle', () => new ControleContratoCPT(this.ctx).missoes());
     return out;
   }
   /** Comentários da gestão sobre relatos da pessoa, ainda não vistos. */

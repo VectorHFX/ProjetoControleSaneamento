@@ -34,7 +34,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','GaleriaCPT','AlbumCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','GaleriaCPT','AlbumCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 registros.rows.push(reg(4,'2026-09-10','Mutirão de limpeza',[{titulo:'Fotos',tipo:'FILE_UPLOAD',valor:[foto('FOTOSET0000000000000000003')]}]));
 const F1='FOTOSET0000000000000000001',F2='FOTOSET0000000000000000002',F3='FOTOSET0000000000000000003',VID='VIDEOSET000000000000000001';

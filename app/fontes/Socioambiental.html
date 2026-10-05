@@ -49,7 +49,6 @@ window.CPTSocioambiental = (() => {
         ${numero('Frentes acompanhadas', t.frentes, 'Obras com atividade no mês.')}
         ${numero('Diagnósticos', t.diagnosticos, 'Item 2 do relatório.')}
       </section>
-      <nav class="mesa-index" aria-label="Itens do relatório">${grupos.map(g => `<a href="#item-${ui.esc(g.item.replace('.', '-'))}" class="${g.itens.length ? '' : 'is-empty'}">${ui.esc(g.item)}<small>${g.itens.length ? g.prontos + '/' + g.itens.length : '—'}</small></a>`).join('')}<a href="#item-3">3<small>${ui.num(t.frentes)} fr.</small></a></nav>
       ${grupos.map(grupo).join('')}
       <section class="panel" id="item-3"><div class="panel-head"><div><span class="eyebrow">ITEM 3 E 3.1</span><h2>Atividades por frente de serviço</h2><p>Todas as ações entram na tabela do mês. No 3.1, cada frente ganha um parágrafo e fotos 2 por linha.</p></div><button class="button ghost" data-route="registros" data-filter="relatos">Consultar relatos ${ui.icon('arrow')}</button></div>
         ${d.frentes.length ? `<table class="simple-table"><thead><tr><th>Frente</th><th>Bairros</th><th>Ações</th><th>Pessoas</th></tr></thead><tbody>${d.frentes.map(f => `<tr class="${f.semObra ? 'muted' : ''}"><td>${ui.esc(f.frente)}</td><td>${ui.esc(f.bairros)}</td><td>${ui.num(f.acoes)}</td><td>${ui.num(f.pessoas)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nenhuma ação no mês.</p>'}</section>`;

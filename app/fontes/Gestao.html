@@ -55,6 +55,7 @@ window.CPTGestao = (() => {
   function desenharPainel() {
     const corpo = aba === 'frentes' ? frentes() : aba === 'relatos' ? '<div id="relatosResumo"></div>' : contrato();
     ui.view.innerHTML = abas() + `<div class="painel-body">${corpo}</div><p class="small muted painel-foot">Atualizado às ${new Date(painel.atualizadoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'})}. Use o botão Atualizar no topo para recalcular.</p>`;
+    if (aba === 'contrato') carregarControle();
     if (aba === 'relatos') carregarRelatos();
     if (aba === 'frentes') carregarComparacao();
   }
@@ -62,7 +63,8 @@ window.CPTGestao = (() => {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
     const alertas = painel.alertas.length ? `<ul class="alert-list">${painel.alertas.map(a => `<li class="alert-${a.nivel}"><span class="alert-dot" aria-hidden="true"></span><span>${ui.esc(a.texto)}</span>${a.rota ? `<button class="button ghost" data-route="${a.rota}">Abrir</button>` : a.aba ? `<button class="button ghost" data-painel-aba="${a.aba}">Ver</button>` : ''}</li>`).join('')}</ul>` : '<p class="ok-line">Nada pedindo atenção agora. Bom trabalho da equipe.</p>';
     const pp = painel.parceiros, ppTexto = !pp ? 'Indisponível' : pp.situacao === 'publicado' ? 'Publicado na máscara' : pp.versao ? (pp.situacao === 'conferido' ? 'Conferido' : 'Rascunho') + ' · ' + pp.conferidos + ' campos conferidos' : 'Ainda não iniciado';
-    return `<section class="panel attention"><div class="panel-head"><div><span class="eyebrow">PEDE ATENÇÃO</span><h2>${painel.alertas.length ? painel.alertas.length + (painel.alertas.length === 1 ? ' ponto' : ' pontos') : 'Tudo em dia'}</h2></div></div>${alertas}</section>
+    return `<section class="panel controle-contrato" id="controleContrato" aria-live="polite"><div class="loading-label"><span class="spinner"></span>Planilha de controle do contrato…</div></section>
+      <section class="panel attention"><div class="panel-head"><div><span class="eyebrow">PEDE ATENÇÃO</span><h2>${painel.alertas.length ? painel.alertas.length + (painel.alertas.length === 1 ? ' ponto' : ' pontos') : 'Tudo em dia'}</h2></div></div>${alertas}</section>
       <section class="stat-row" aria-label="Números do contrato no mês">
         ${tile('Ações socioambientais', ui.num(c.acoes), ui.num(c.pessoas) + ' pessoas alcançadas · ' + ui.num(c.frentes) + ' frentes · ' + ui.num(c.bairros) + ' bairros.')}
         ${tile('Pesquisas de satisfação', ui.num(s.mes) + '<small> / ' + s.meta + '</small>', s.semana ? 'Nesta semana: ' + s.semana.total + ' de ' + s.semana.meta + '.' : 'Meta: 15 por semana, 60 no mês.', medidor(s.mes, s.meta))}
@@ -300,10 +302,38 @@ window.CPTGestao = (() => {
     } catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Conectores e pastas', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
 
+  // ---------- Planilha de controle do contrato (2.26): lembrete mensal; a aplicação nunca escreve nela ----------
+  let controle = null, controleTicket = 0;
+  const dataBr = iso => iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : '';
+  async function carregarControle() {
+    const mine = ++controleTicket;
+    try { const r = await ui.call('controleContratoCPT', {}); if (mine !== controleTicket) return; controle = r; desenharControle(); }
+    catch (e) { const box = $('controleContrato'); if (box && mine === controleTicket) box.innerHTML = `<p class="small muted">Planilha de controle: ${ui.esc(e.message)}</p>`; }
+  }
+  function desenharControle() {
+    const box = $('controleContrato'), c = controle; if (!box || !c) return;
+    const quando = iso => new Date(iso).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'});
+    const situacao = c.respondida ? `<span class="controle-situacao is-feita">${ic('tick', '✓')} Respondida por ${ui.esc(c.respondida.nome)} em ${ui.esc(quando(c.respondida.em))}</span>`
+      : `<span class="controle-situacao ${c.atrasada ? 'is-atrasada' : ''}">${c.atrasada ? 'Atrasada · prazo era ' : 'Pendente · prazo '}${dataBr(c.prazo)}</span>`;
+    const nums = (c.indicadores || []).map(x => `<div class="controle-num"><b>${ui.num(x.valor)}</b><span>${ui.esc(x.nome)}</span>${x.nota ? `<small>${ui.esc(x.nota)}</small>` : ''}</div>`).join('');
+    box.classList.toggle('is-feita', !!c.respondida);
+    box.innerHTML = `<div class="panel-head"><div><span class="eyebrow">PLANILHA DE CONTROLE · PREENCHIDA À MÃO</span><h2>${c.respondida ? 'Planilha de ' + ui.esc(c.mesNome) + ' respondida' : 'Responder a planilha de controle de ' + ui.esc(c.mesNome)}</h2>
+      <p>Todo mês a gestão preenche esta planilha à mão. A aplicação não escreve nela: só lembra, abre o link e traz os números do mês para conferir.</p></div>${situacao}</div>
+      <div class="controle-acoes"><a class="button" href="${ui.esc(c.url)}" target="_blank" rel="noopener noreferrer">${ic('file', '📄')} Abrir a planilha de controle ↗</a>
+        ${c.podeMarcar ? (c.respondida ? '<button class="button secondary" data-controle-marcar="nao">Desfazer “respondida”</button>' : '<button class="button secondary" data-controle-marcar="sim">' + ic('tick', '✓') + ' Já respondi este mês</button>') : ''}
+        ${c.ultimaAlteracao ? `<small class="muted">Última alteração no arquivo: ${ui.esc(quando(c.ultimaAlteracao))}</small>` : ''}</div>
+      ${nums ? `<details class="controle-indicadores" ${c.respondida ? '' : 'open'}><summary>Indicadores de ${ui.esc(c.mesNome)} para conferir ao preencher</summary><div class="controle-nums">${nums}</div><p class="small muted">Calculados pela aplicação a partir dos registros e atendimentos. Confira antes de transcrever.</p></details>` : ''}`;
+  }
+  async function marcarControle(sim) {
+    if (!controle) return;
+    try { const r = await ui.call('marcarControleContratoCPT', {mes: controle.mes, respondida: sim, versao: controle.versao, operacaoId: 'OP-' + crypto.randomUUID()}); controle.respondida = r.respondida; controle.versao = r.versao; controle.atrasada = !r.respondida && controle.hoje > controle.prazo; ui.toast(r.resultado); desenharControle(); }
+    catch (e) { ui.toast(e.message); }
+  }
   function init(api) {
     ui = api;
     document.addEventListener('click', e => {
       const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
+      const cm = e.target.closest('[data-controle-marcar]'); if (cm) { marcarControle(cm.dataset.controleMarcar === 'sim'); return; }
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
       const dv = e.target.closest('[data-devolver]'); if (dv) { abrirDevolver(dv.dataset.devolver); return; }
       const cd = e.target.closest('[data-cmp-dia]'); if (cd) { diaCmp = cd.dataset.cmpDia; desenharComparacao(); return; }

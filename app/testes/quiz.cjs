@@ -34,29 +34,39 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','QuizCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 const path=require('path'),DOC=path.join(__dirname,'../../docs/CONTEUDO_SANEAMENTO.md');
-// 1. Banco: IDs únicos, 4 alternativas distintas, certa válida, fonte existente (https), textos sem sobra.
-const C=run('ConteudoSaneamentoCPT.curiosidades'),Q=run('ConteudoSaneamentoCPT.perguntas'),F=run('ConteudoSaneamentoCPT.fontes'),T=run('ConteudoSaneamentoCPT.temas');
-assert.equal(new Set(C.map(x=>x.id)).size,C.length);assert.equal(new Set(Q.map(x=>x.id)).size,Q.length);
-for(const x of C){assert.ok(F[x.fonte],x.id+' fonte');assert.ok(T[x.tema],x.id+' tema');assert.ok(x.texto.length>=30&&x.texto.length<=220,x.id+' tamanho');}
-for(const q of Q){assert.ok(F[q.fonte],q.id+' fonte');assert.ok(T[q.tema],q.id+' tema');assert.equal(q.opcoes.length,4,q.id);assert.equal(new Set(q.opcoes).size,4,q.id+' opções repetidas');
-  assert.ok(Number.isInteger(q.certa)&&q.certa>=0&&q.certa<4,q.id+' certa');assert.ok(q.explica&&q.pergunta.length<=160,q.id);}
-for(const [k,[n,u]] of Object.entries(F)){assert.match(u,/^https:\/\//,k);assert.ok(n,k);}
-const usadas=new Set([...C,...Q].map(x=>x.fonte));for(const k of Object.keys(F))assert.ok(usadas.has(k),'fonte sem uso: '+k);
-// Sem viés de posição: a certa não fica sempre no mesmo lugar.
+// 1. Banco: ~150 itens, IDs únicos, 4 alternativas distintas, certa válida, fonte existente (https ou "prática da equipe"),
+//    eixos 60/25/15 (com folga), curiosidade = fato + por que importa, sem decoreba de cores e sem alternativas óbvias.
+const C=run('ConteudoSaneamentoCPT.curiosidades'),Q=run('ConteudoSaneamentoCPT.perguntas'),F=run('ConteudoSaneamentoCPT.fontes'),T=run('ConteudoSaneamentoCPT.temas'),E=run('ConteudoSaneamentoCPT.eixos'),COR=run('ConteudoSaneamentoCPT.correcoes');
+const todos=[...C,...Q];assert.equal(new Set(todos.map(x=>x.id)).size,todos.length,'IDs repetidos');
+assert.ok(todos.length>=145&&todos.length<=160,'banco com ~150 itens: '+todos.length);
+for(const x of C){assert.ok(F[x.fonte],x.id+' fonte');assert.ok(T[x.tema],x.id+' tema');assert.ok(E[x.eixo],x.id+' eixo');assert.ok(x.texto.length>=30&&x.texto.length<=220,x.id+' tamanho');assert.ok(x.importa&&x.importa.length>=20&&x.importa.length<=180,x.id+' por que importa');}
+for(const q of Q){assert.ok(F[q.fonte],q.id+' fonte');assert.ok(T[q.tema],q.id+' tema');assert.ok(E[q.eixo],q.id+' eixo');assert.equal(q.opcoes.length,4,q.id);assert.equal(new Set(q.opcoes).size,4,q.id+' opções repetidas');
+  assert.ok(Number.isInteger(q.certa)&&q.certa>=0&&q.certa<4,q.id+' certa');assert.ok(q.explica&&q.pergunta.length<=170,q.id);
+  assert.ok(!q.opcoes.some(o=>/^(ninguém|açúcar|vira água tratada)$/i.test(o)),q.id+' alternativa óbvia');}
+for(const [k,[n,u]] of Object.entries(F)){if(k==='equipe')assert.equal(u,'','prática da equipe não tem link');else assert.match(u,/^https:\/\//,k);assert.ok(n,k);}
+const usadas=new Set(todos.map(x=>x.fonte));for(const k of Object.keys(F))assert.ok(usadas.has(k),'fonte sem uso: '+k);
+for(const id of Object.keys(COR))assert.ok(todos.some(x=>x.id===id),'correção de item que não existe: '+id);
+const pct=e=>todos.filter(x=>x.eixo===e).length/todos.length;assert.ok(pct('pratica')>=.55&&pct('pratica')<=.65,'práticas '+pct('pratica'));
+assert.ok(pct('entender')>=.20&&pct('entender')<=.30,'compreensão '+pct('entender'));assert.ok(pct('curiosidade')>=.10&&pct('curiosidade')<=.20,'curiosidades '+pct('curiosidade'));
+assert.ok(Q.filter(q=>/qual cor/i.test(q.pergunta)).length===0,'sem decoreba de cores');
+assert.ok(!/166,3|110 litros|3,5 bilh/.test(JSON.stringify(todos)),'números suspensos não voltam');
+// Sem viés de posição: a certa não fica sempre no mesmo lugar (e é a mesma a cada leitura).
 const pos=[0,1,2,3].map(i=>Q.filter(q=>q.certa===i).length);assert.ok(Math.max(...pos)<Q.length*.35&&Math.min(...pos)>Q.length*.15,'certas concentradas: '+pos);
-assert.ok(Q.length>=60&&C.length>=30);
+assert.deepEqual(run('ConteudoSaneamentoCPT.perguntas').map(q=>q.certa),Q.map(q=>q.certa));
 // Documento de revisão sincronizado com o código.
-const md=['# Conteúdo de saneamento — para revisão','','Gerado de `app/src/ConteudoSaneamentoCPT.gs` por `node app/testes/quiz.cjs --atualizar`. Não edite à mão: anote as correções e os IDs aprovados.','',
-  'Enquanto um ID não estiver em `ConteudoSaneamentoCPT.aprovadas`, só o proprietário vê esse item (com a marca "a revisar").','',
-  '## Curiosidades ('+C.length+')','',...C.map(x=>`- **${x.id}** · ${T[x.tema]} — ${x.texto} ([fonte](${F[x.fonte][1]}))`),'',
-  '## Perguntas do quiz ('+Q.length+')','',...Q.flatMap(q=>[`### ${q.id} · ${T[q.tema]}`,'',q.pergunta,'',...q.opcoes.map((o,i)=>`${i===q.certa?'- **✔ '+o+'**':'- '+o}`),'',`> ${q.explica} — [${F[q.fonte][0]}](${F[q.fonte][1]})`,'']),
-  '## Fontes','',...Object.entries(F).map(([k,[n,u]])=>`- \`${k}\`: [${n}](${u})`),''].join('\n');
+const fonteMd=f=>F[f][1]?`[${F[f][0]}](${F[f][1]})`:'_prática da equipe_';
+const md=['# Conteúdo de saneamento — para revisão','','Gerado de `app/src/ConteudoSaneamentoCPT.gs` por `node app/testes/quiz.cjs --atualizar`. Não edite à mão.','',
+  'A decisão de cada item (Aprovar, Suspender, Voltar) é feita na aplicação, em **Revisão do conteúdo** (só o proprietário). Enquanto um item não for aprovado, só o proprietário o vê, com a marca "a revisar".','',
+  'Eixos: '+Object.entries(E).map(([k,n])=>`${n} ${todos.filter(x=>x.eixo===k).length}`).join(' · ')+` (de ${todos.length}).`,'',
+  '## Curiosidades ('+C.length+')','',...C.map(x=>`- **${x.id}** · ${T[x.tema]} · ${E[x.eixo]} — ${x.texto} **Por que importa:** ${x.importa} (${fonteMd(x.fonte)})${COR[x.id]?` _Corrigido: ${COR[x.id]}_`:''}`),'',
+  '## Perguntas do quiz ('+Q.length+')','',...Q.flatMap(q=>[`### ${q.id} · ${T[q.tema]} · ${E[q.eixo]}`,'',q.pergunta,'',...q.opcoes.map((o,i)=>`${i===q.certa?'- **✔ '+o+'**':'- '+o}`),'',`> ${q.explica} — ${fonteMd(q.fonte)}`,...(COR[q.id]?['',`_Corrigido: ${COR[q.id]}_`]:[]),'']),
+  '## Fontes','',...Object.entries(F).map(([k,[n,u]])=>`- \`${k}\`: ${u?`[${n}](${u})`:n}`),''].join('\n');
 if(process.argv.includes('--atualizar'))fs.writeFileSync(DOC,md);
 assert.equal(fs.existsSync(DOC)&&fs.readFileSync(DOC,'utf8'),md,'docs/CONTEUDO_SANEAMENTO.md desatualizado: rode node app/testes/quiz.cjs --atualizar');
-console.log(`PASS: banco — ${C.length} curiosidades e ${Q.length} perguntas com fonte, 4 alternativas, certas distribuídas ${pos.join('/')}; documento de revisão em dia.`);
+console.log(`PASS: banco — ${C.length} curiosidades (fato + por que importa) e ${Q.length} perguntas; eixos ${['pratica','entender','curiosidade'].map(e=>Math.round(pct(e)*100)+'%').join('/')}; certas ${pos.join('/')}; fontes primárias ou "prática da equipe"; documento em dia.`);
 // 2. Trava de testes: só o proprietário. Os outros nem veem nem respondem; aprovados aparecem para todos depois.
 email='com@example.com';let d=run('carregarMeuEspacoCPT()');assert.equal(d.saber,undefined);
 ctx.p={tipo:'dia',escolha:0,id:'Q001',operacaoId:op()};assert.throws(()=>run('responderQuizCPT(p)'),/reservado à administração técnica/);
@@ -89,11 +99,27 @@ console.log('PASS: quiz da semana — 5 perguntas em ordem, 10 pontos por acerto
 // 5. Amanhã: a pergunta do dia não repete o que já foi respondido; outra pessoa não vê nada do quiz do proprietário.
 const amanha=run(`(()=>{const q=new QuizCPT(AplicacaoCPT.identidade());const d=new Date(ColecaoCPT.hoje()+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return q.perguntaDoDia(d.toISOString().slice(0,10));})()`);
 assert.ok(amanha&&amanha!==qd.id&&!ids5.includes(amanha),'amanhã é pergunta nova');
-// 6. Depois de liberar: os outros veem só o que foi aprovado (nada aprovado = sem quiz, sem curiosidade).
+// 6. Revisão do conteúdo: só o proprietário abre e decide, item a item. Depois de liberar, os outros só veem o aprovado.
+email='com@example.com';assert.throws(()=>run('carregarRevisaoConteudoCPT()'),/exclusiva da administração técnica/);
+ctx.p={id:'Q001',situacao:'aprovado',operacaoId:op()};assert.throws(()=>run('decidirConteudoCPT(p)'),/exclusiva da administração técnica/);
 props.set('CPT_TRAVA_CONFIG','liberada');email='social@example.com';d=run('carregarMeuEspacoCPT()');
 assert.equal(d.saber.curiosidade,null);assert.equal(d.saber.quiz.dia,null);assert.equal(d.saber.quiz.semana,null);assert.deepEqual(d.saber.mes.datas,[]);
-vm.runInContext("ConteudoSaneamentoCPT.__a=ConteudoSaneamentoCPT.aprovadas;Object.defineProperty(ConteudoSaneamentoCPT,'aprovadas',{get:()=>['C01','Q001','Q002','Q003','Q004','Q005','Q006','Q007']})",ctx);
-d=run('carregarMeuEspacoCPT()');assert.equal(d.saber.curiosidade.id,'C01');assert.equal(d.saber.curiosidade.revisar,false);assert.ok(['Q001','Q002','Q003','Q004','Q005','Q006','Q007'].includes(d.saber.quiz.dia.pergunta.id));
-assert.equal(d.saber.quiz.semana.total,5);assert.equal(d.pontos.quiz,0,'pontos do proprietário não aparecem para os outros');
+assert.equal(books.get('agenda').getSheetByName('Revisão do conteúdo'),null,'ler as decisões não cria a aba');
+email='victor@example.com';let rv=run('carregarRevisaoConteudoCPT()');assert.equal(rv.itens.length,todos.length);assert.equal(rv.resumo.pendente,todos.length);
+assert.ok(rv.itens.find(x=>x.id==='C27').correcao,'mostra o que foi corrigido');const q1=rv.itens.find(x=>x.id==='Q001');assert.equal(q1.opcoes[q1.certa],'ODS 6');
+const aprovar=['C01','Q001','Q002','Q007','Q017','Q018','Q019','Q020'];for(const id of aprovar){ctx.p={id,situacao:'aprovado',versao:0,operacaoId:op()};assert.match(run('decidirConteudoCPT(p)').resultado,/Aprovado/);}
+ctx.p={id:'Q999',situacao:'aprovado',versao:0,operacaoId:op()};assert.throws(()=>run('decidirConteudoCPT(p)'),/não encontrado/);
+ctx.p={id:'Q001',situacao:'talvez',versao:1,operacaoId:op()};assert.throws(()=>run('decidirConteudoCPT(p)'),/opção válida/);
+ctx.p={id:'Q001',situacao:'suspenso',versao:0,operacaoId:op()};assert.throws(()=>run('decidirConteudoCPT(p)'),/Outra pessoa alterou/);
+rv=run('carregarRevisaoConteudoCPT()');assert.equal(rv.resumo.aprovado,8);
+email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.saber.curiosidade.id,'C01');assert.equal(d.saber.curiosidade.revisar,false);assert.ok(d.saber.curiosidade.importa);
+assert.ok(aprovar.includes(d.saber.quiz.dia.pergunta.id));assert.equal(d.saber.quiz.semana.total,5);assert.equal(d.pontos.quiz,0,'pontos do proprietário não aparecem para os outros');
+// Suspender tira o item de todos, até do proprietário; o que estava no quiz da semana e não foi respondido sai da lista.
+let sq=d.saber.quiz.semana;ctx.p={tipo:'semana',escolha:0,id:sq.proxima.id,versao:0,operacaoId:op()};sq=run('responderQuizCPT(p)').estado.semana;const alvo=sq.proxima.id,feita=sq.respostas[0].id;
+email='victor@example.com';ctx.p={id:alvo,situacao:'suspenso',nota:'conferir fonte',versao:1,operacaoId:op()};assert.match(run('decidirConteudoCPT(p)').resultado,/Suspenso/);
+email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.saber.quiz.semana.total,4);assert.equal(d.saber.quiz.semana.respondidas,1);assert.notEqual(d.saber.quiz.semana.proxima.id,alvo);assert.equal(d.saber.quiz.semana.respostas[0].id,feita,'o que já foi respondido fica');
+email='victor@example.com';assert.ok(!run(`new QuizCPT(AplicacaoCPT.identidade()).banco().map(q=>q.id)`).includes(alvo),'suspenso some até para o proprietário');
+ctx.p={id:alvo,situacao:'pendente',versao:2,operacaoId:op()};assert.match(run('decidirConteudoCPT(p)').resultado,/Voltou/);
+assert.ok(run(`new QuizCPT(AplicacaoCPT.identidade()).banco().map(q=>q.id)`).includes(alvo),'pendente volta para o proprietário');
 props.delete('CPT_TRAVA_CONFIG');
-console.log('PASS: revisão — depois de liberar, as demais pessoas só veem o que estiver aprovado; nada é misturado entre contas.');
+console.log('PASS: revisão — só o proprietário abre e decide (item a item, com versão); suspenso some para todos; os outros só veem o aprovado depois de liberar.');

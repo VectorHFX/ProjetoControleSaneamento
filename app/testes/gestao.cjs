@@ -50,7 +50,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,MimeType:{GOOGLE_SHEET
   Session:{getActiveUser:()=>({getEmail:()=>email})},
   PropertiesService:{getScriptProperties:()=>({getProperties:()=>Object.fromEntries(props),getProperty:k=>props.get(k)??null,setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k)})},
   SpreadsheetApp:{openById:id=>{if(!books.has(id))throw Error('Não existe');return books.get(id)},create:n=>{criadas++;const b=new Book('ss'+criadas,[new Sheet('Planilha1')],n);books.set(b.id,b);return b},flush(){}},
-  DriveApp:{getFileById:id=>{if(String(id).startsWith('sem-acesso'))throw Error('negado');return {getName:()=>'Arquivo '+id,getMimeType:()=>'application/vnd.google-apps.spreadsheet',getSharingAccess:()=>'PRIVATE',getSharingPermission:()=>'NONE',getViewers:()=>[],getEditors:()=>[],moveTo(){},
+  DriveApp:{getFileById:id=>{if(String(id).startsWith('sem-acesso'))throw Error('negado');return {getName:()=>'Arquivo '+id,getMimeType:()=>'application/vnd.google-apps.spreadsheet',getLastUpdated:()=>new Date('2026-10-02T13:40:00Z'),getSharingAccess:()=>'PRIVATE',getSharingPermission:()=>'NONE',getViewers:()=>[],getEditors:()=>[],moveTo(){},
       getParents:()=>{let n=0;return {hasNext:()=>n===0,next:()=>{n++;return {getId:()=>'PASTA-FOTOS',getName:()=>'Fotos (File responses)',getSharingAccess:()=>'DOMAIN',getSharingPermission:()=>'VIEW',getParents:()=>({hasNext:()=>false})};}};}};},
     getFolderById:id=>({getId:()=>id,getName:()=>'Pasta '+id,getSharingAccess:()=>'PRIVATE',getSharingPermission:()=>'NONE',getViewers:()=>[],getEditors:()=>[],getFoldersByName:()=>({hasNext:()=>false}),createFolder:()=>({})}),
     createFolder:()=>({getId:()=>'pasta',getFoldersByName:()=>({hasNext:()=>false}),createFolder:()=>({})})},
@@ -58,7 +58,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,MimeType:{GOOGLE_SHEET
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)}},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','ProgramaParceirosCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','ProgramaParceirosCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT','EntregasDoMesCPT','ControleContratoCPT','OrganogramaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 
 // Máscara oficial: linha 2 com Junho (C:L), Julho (M:O), Agosto (P:R); perguntas na coluna B; fórmula em P9.
@@ -117,6 +117,36 @@ assert.ok(p.alertas.some(a=>/sem registro/.test(a.texto)&&/Coletor B/.test(a.tex
 assert.ok(p.alertas.some(a=>/mais de 30 dias/.test(a.texto)));
 const rr=run("carregarRelatosResumoCPT('2026-09')");assert.equal(rr.itens.length,3);assert.match(rr.itens.find(x=>x.atividade==='Ação Social Externa').resumo,/Conversa com moradores/);assert.equal(rr.itens.find(x=>x.atividade==='Ação Social Externa').fotos,1);
 console.log('PASS: painel da gestão — números do contrato iguais à regra do relatório, série de 6 meses, frentes com ações, diagnósticos e casos, alertas (frente parada, casos antigos) e relatos em resumo com trecho e fotos.');
+// 2.26: planilha de controle do contrato — lembrete mensal; a aplicação só lê os dados do arquivo no Drive e nunca abre a planilha.
+const abertas=[];const abrir0=ctx.SpreadsheetApp.openById;ctx.SpreadsheetApp.openById=id=>{abertas.push(id);return abrir0(id);};
+email='atd@example.com';assert.throws(()=>run("controleContratoCPT({mes:'2026-09'})"),/Gestão e do Administrativo/);
+email='gestao@example.com';let ct=run("controleContratoCPT({mes:'2026-09'})");
+assert.equal(ct.mes,'2026-09');assert.equal(ct.prazo,'2026-10-10');assert.match(ct.url,/1pQJ5B8wRzsdlU8udlh9ZzcWXozT3BOh4\/edit#gid=733716505$/);assert.equal(ct.respondida,null);assert.equal(ct.ultimaAlteracao,'2026-10-02T13:40:00.000Z');
+assert.equal(ct.indicadores.find(x=>x.nome==='Ações socioambientais').valor,2,'mesmos números do painel');assert.equal(ct.indicadores.find(x=>x.nome==='Atendimentos concluídos').valor,2);assert.equal(ct.podeMarcar,false,'nos testes, só o proprietário marca');
+ctx.m={mes:'2026-09',respondida:true,versao:0,operacaoId:'OP-controle-0001'};assert.throws(()=>run('marcarControleContratoCPT(m)'),/reservado à administração técnica/);
+const hojeC=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),antC=(()=>{const d=new Date(hojeC.slice(0,7)+'-15T12:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7);})();
+email='victor@example.com';let ms=run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').filter(x=>x.id.startsWith('controle-contrato:'));assert.equal(ms.length,1);assert.equal(ms[0].id,'controle-contrato:'+antC);assert.equal(ms[0].rota,'painel');
+ctx.m={mes:antC,respondida:true,versao:0,operacaoId:'OP-controle-0002'};let mk=run('marcarControleContratoCPT(m)');assert.ok(mk.respondida.nome,'quem respondeu');
+assert.equal(run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').filter(x=>x.id.startsWith('controle-contrato:')).length,0,'respondida: o lembrete some');
+ctx.m={mes:antC,respondida:false,versao:mk.versao,operacaoId:'OP-controle-0003'};assert.equal(run('marcarControleContratoCPT(m)').respondida,null);
+assert.equal(run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').filter(x=>x.id.startsWith('controle-contrato:')).length,1,'desfeita: o lembrete volta');
+assert.ok(!abertas.includes('1pQJ5B8wRzsdlU8udlh9ZzcWXozT3BOh4'),'a planilha de controle nunca é aberta pela aplicação');ctx.SpreadsheetApp.openById=abrir0;
+console.log('PASS: planilha de controle — lembrete mensal com link na aba, prazo e números do mês; marcar respondida só pelo proprietário nos testes; missão some e volta; a planilha nunca é aberta.');
+// 2.26: organograma — todos veem; Gestão/Administrativo editam (só o proprietário nos testes); sem ciclos; trazer da equipe sem repetir.
+email='atd@example.com';let og=run('carregarOrganogramaCPT()');assert.deepEqual(og.pessoas,[]);assert.equal(og.podeEditar,false);assert.equal(books.get('agenda').getSheetByName('Organograma'),null,'ler não cria a aba');
+ctx.o={nome:'X',cargo:'Y',area:'gestao',operacaoId:'OP-org-00000001'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/Gestão e pelo Administrativo/);
+email='gestao@example.com';assert.throws(()=>run('salvarOrganogramaCPT(o)'),/reservado à administração técnica/);
+email='victor@example.com';ctx.o={operacaoId:'OP-org-00000002'};og=run('importarOrganogramaCPT(o)');assert.match(og.resultado,/pessoas entraram/);const nEquipe=og.pessoas.length;assert.ok(nEquipe>=4);
+assert.equal(og.foraDoOrganograma,0);ctx.o={operacaoId:'OP-org-00000003'};assert.match(run('importarOrganogramaCPT(o)').resultado,/Toda a equipe já está/);
+const gest=og.pessoas.find(x=>x.nome==='Gestão'),soc=og.pessoas.find(x=>x.nome==='Social');assert.equal(soc.area,'socioambiental');assert.equal(soc.cargo,'Socioambiental');
+ctx.o={id:soc.id,versao:soc.versao,nome:soc.nome,cargo:'Mobilizadora',area:'campo',chefia:gest.id,desde:'jul/2025',operacaoId:'OP-org-00000004'};let so=run('salvarOrganogramaCPT(o)').pessoa;assert.equal(so.chefia,gest.id);
+ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'Gerente',area:'gestao',chefia:soc.id,operacaoId:'OP-org-00000005'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/ciclo/);
+ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'Gerente',area:'gestao',chefia:gest.id,operacaoId:'OP-org-00000006'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/ela mesma/);
+ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'',area:'gestao',operacaoId:'OP-org-00000007'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/cargo/);
+ctx.o={id:gest.id,versao:gest.versao,nome:gest.nome,cargo:'Gerente',area:'gestao',ativo:false,operacaoId:'OP-org-00000008'};assert.throws(()=>run('salvarOrganogramaCPT(o)'),/mude quem responde/);
+ctx.o={id:soc.id,versao:so.versao,nome:soc.nome,cargo:'Mobilizadora',area:'campo',chefia:gest.id,ativo:false,operacaoId:'OP-org-00000009'};run('salvarOrganogramaCPT(o)');
+email='atd@example.com';og=run('carregarOrganogramaCPT()');assert.equal(og.pessoas.length,nEquipe-1,'quem saiu não aparece (fica no histórico)');assert.ok(!og.pessoas.some(x=>'email' in x),'e-mail não vai para a tela');
+console.log('PASS: organograma — todos veem; só Gestão/Administrativo editam (proprietário nos testes); trazer da equipe sem repetir; sem ciclo nem chefia de si mesmo; tirar pede mudar quem responde; e-mail não vai à tela.');
 
 // 5. Auditoria de atendimentos.
 email='social@example.com';assert.throws(()=>run('auditarAtendimentosCPT()'),/Atendimento, Administrativo e Gestão/);

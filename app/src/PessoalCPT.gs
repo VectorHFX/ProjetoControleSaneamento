@@ -7,6 +7,8 @@
  * 2.23: placar da equipe (PlacarCPT, só totais da equipe) no Meu espaço.
  * 2.21: pontos dos joguinhos (JogosCPT) também somam; painel de joguinhos no Meu espaço.
  * 2.19: pontos do quiz (QuizCPT) somam aos do checklist; "Saber mais" no Meu espaço (curiosidade do dia, campanha do mês, quiz).
+ * 2.26: Loja (bloco D) — EPI colorido (capacetes, coletes, luvas e botas), roupas novas e cores especiais de pelagem, por pontos.
+ *       Só existem no elenco novo (desenho chibi); no período de testes, só o proprietário compra.
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
  *
  * Regras das recompensas (calculadas no servidor; nada é concedido duas vezes):
@@ -25,7 +27,12 @@ class PessoalCPT {
   static get classicos() { return {dinossauro: 'Dinossauro', abelha: 'Abelha'}; }
   static get precoClassico() { return 150; }
   /** Peças que só existem no elenco novo (o desenho antigo não as tem). */
-  static get pecasNovas() { return ['luvas', 'bota-preta', 'camisa-veolia', 'laco-do-mes']; }
+  static get pecasNovas() { return ['luvas', 'bota-preta', 'camisa-veolia', 'laco-do-mes'].concat(PessoalCPT.loja); }
+  /** 2.26: peças da loja (só no desenho chibi). */
+  static get loja() { return ['capacete-azul', 'capacete-verde', 'capacete-laranja', 'colete-amarelo', 'colete-azul', 'luvas-amarelas', 'luvas-azuis', 'galocha-amarela', 'bota-branca', 'moletom-verde', 'camisa-xadrez', 'jaqueta-jeans']; }
+  /** 2.26: cores especiais de pelagem, compradas uma vez por pontos (depois trocar é livre). */
+  static get coresEspeciais() { return {menta: 'Menta', coral: 'Coral', dourado: 'Dourado', noite: 'Azul-noite'}; }
+  static get precoCor() { return 120; }
   /** Kit EPI inicial: de todo mundo (não precisa ganhar) e já vestido em cada mascote novo. */
   static get kit() { return {cabeca: 'capacete-branco', corpo: 'colete', luvas: 'luvas', pes: 'bota-preta', broche: 'laco-do-mes'}; }
   /** Elenco novo: para todos depois de liberarConfiguracaoCPT; antes, só para o proprietário. */
@@ -56,7 +63,13 @@ class PessoalCPT {
       ['megafone', 'Megafone', 'mao', 'Ferramentas', 0], ['muda', 'Muda de planta', 'mao', 'Ferramentas', 0], ['chave', 'Chave inglesa', 'mao', 'Ferramentas', 0],
       ['capacete-dourado', 'Capacete dourado', 'cabeca', 'Exclusivos', 300], ['coroa-folhas', 'Coroa de folhas', 'cabeca', 'Exclusivos', 250],
       ['capa', 'Capa de herói da obra', 'costas', 'Exclusivos', 400], ['medalha', 'Medalha de ouro', 'pescoco', 'Exclusivos', 200],
-      ['trofeu', 'Troféu', 'mao', 'Exclusivos', 350], ['colete-mestre', 'Colete de mestre de obras', 'corpo', 'Exclusivos', 300]
+      ['trofeu', 'Troféu', 'mao', 'Exclusivos', 350], ['colete-mestre', 'Colete de mestre de obras', 'corpo', 'Exclusivos', 300],
+      ['capacete-azul', 'Capacete azul', 'cabeca', 'Loja · EPI colorido', 60], ['capacete-verde', 'Capacete verde', 'cabeca', 'Loja · EPI colorido', 60],
+      ['capacete-laranja', 'Capacete laranja', 'cabeca', 'Loja · EPI colorido', 60], ['colete-amarelo', 'Colete amarelo-limão', 'corpo', 'Loja · EPI colorido', 80],
+      ['colete-azul', 'Colete azul', 'corpo', 'Loja · EPI colorido', 80], ['luvas-amarelas', 'Luvas amarelas', 'luvas', 'Loja · EPI colorido', 50],
+      ['luvas-azuis', 'Luvas azuis', 'luvas', 'Loja · EPI colorido', 50], ['galocha-amarela', 'Galocha amarela', 'pes', 'Loja · EPI colorido', 60],
+      ['bota-branca', 'Bota branca', 'pes', 'Loja · EPI colorido', 60], ['moletom-verde', 'Moletom verde', 'corpo', 'Loja · Roupas', 90],
+      ['camisa-xadrez', 'Camisa xadrez', 'corpo', 'Loja · Roupas', 90], ['jaqueta-jeans', 'Jaqueta jeans', 'corpo', 'Loja · Roupas', 120]
     ].map(([id, nome, slot, grupo, preco]) => ({id, nome, slot, grupo, preco}));
   }
   static get pontosPorTarefa() { return 10; }
@@ -101,6 +114,7 @@ class PessoalCPT {
     const novoElenco = PessoalCPT.novo(this.ctx.perfil), kit = Object.values(PessoalCPT.kit);
     const out = {hoje: this.hoje, data: dia, perfil, novoElenco, kit: novoElenco ? kit : [], classicos: novoElenco ? PessoalCPT.classicos : {}, precoClassico: PessoalCPT.precoClassico,
       catalogo: PessoalCPT.catalogo.filter(x => novoElenco || !PessoalCPT.pecasNovas.includes(x.id)), especies: PessoalCPT.especiesPara(this.ctx.perfil), cores: PessoalCPT.cores, slots: PessoalCPT.slots,
+      coresEspeciais: novoElenco ? PessoalCPT.coresEspeciais : {}, precoCor: PessoalCPT.precoCor,
       pontos: this.pontos(perfil), pendentes: this.pendentes(perfil), nota: this.nota(dia), lista: this.lista(dia),
       caderno: {dias: this.diasEscritos(), porPeca: PessoalCPT.diasPorPeca, minimo: PessoalCPT.minimoCaderno,
         recentes: notas.filter(n => String(n.texto || '').trim()).map(n => ({data: n.id.slice(-10), trecho: String(n.texto).trim().slice(0, 90)})).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 12)},
@@ -114,7 +128,7 @@ class PessoalCPT {
   }
   /** "Saber mais": curiosidade do dia, campanha do mês e quiz (conteúdo em ConteudoSaneamentoCPT). */
   saber() {
-    return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx.perfil, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx.perfil, this.hoje), quiz: QuizCPT.de(this.ctx).estado()};
+    return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx, this.hoje), quiz: QuizCPT.de(this.ctx).estado()};
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }
   /** Ações do mascote: iniciar, nomear, colorir, ativar, vestir, resgatar, comprar. Tudo sobre o próprio perfil. */
@@ -130,7 +144,7 @@ class PessoalCPT {
     } else {
       novo = JSON.parse(JSON.stringify(atual)); const m = novo.mascotes[novo.ativo];
       if (acao === 'nomear') { m.nome = PessoalCPT.nome(p.nome); resultado = 'Agora seu mascote se chama ' + m.nome + '.'; }
-      else if (acao === 'colorir') { m.cor = PessoalCPT.cor(p.cor); resultado = m.cor ? m.nome + ' agora está ' + PessoalCPT.cores[m.cor].toLowerCase() + '.' : m.nome + ' voltou à cor original.'; }
+      else if (acao === 'colorir') { m.cor = this.corDoPerfil(p.cor, novo); resultado = m.cor ? m.nome + ' agora está ' + (PessoalCPT.cores[m.cor] || PessoalCPT.coresEspeciais[m.cor]).toLowerCase() + '.' : m.nome + ' voltou à cor original.'; }
       else if (acao === 'ativar') { const i = Number(p.indice); if (!Number.isInteger(i) || !novo.mascotes[i]) throw new Error('Mascote não encontrado.'); novo.ativo = i; resultado = novo.mascotes[i].nome + ' está com você agora.'; }
       else if (acao === 'vestir') {
         const slot = ColecaoCPT.opcao(p.slot, Object.keys(PessoalCPT.slots), 'parte');
@@ -151,9 +165,17 @@ class PessoalCPT {
         novo.resgates[p.chave] = {em: new Date().toISOString(), escolha: p.escolha === 'mascote' ? 'mascote:' + p.especie : 'peca:' + p.item};
       } else if (acao === 'comprar') {
         const it = PessoalCPT.item(p.item); if (!it || !it.preco) throw new Error('Essa peça não é vendida por pontos.');
+        if (PessoalCPT.pecasNovas.includes(it.id) && !PessoalCPT.novo(this.ctx.perfil)) throw new Error('A loja chega junto com o elenco novo.');
         if (novo.pecas.includes(it.id)) throw new Error('Você já tem essa peça.');
         if (this.pontos(atual).saldo < it.preco) throw new Error('Faltam pontos: complete tarefas do seu checklist ou responda o quiz.');
         novo.pecas.push(it.id); novo.compras.push({item: it.id, preco: it.preco, em: new Date().toISOString()}); m.equipado[it.slot] = it.id; resultado = 'Peça exclusiva: ' + it.nome + '!';
+      } else if (acao === 'comprarCor') {
+        if (!PessoalCPT.novo(this.ctx.perfil)) throw new Error('As cores especiais chegam junto com o elenco novo.');
+        const k = ColecaoCPT.opcao(p.cor, Object.keys(PessoalCPT.coresEspeciais), 'cor especial'); novo.cores = novo.cores || [];
+        if (novo.cores.includes(k)) throw new Error('Você já tem essa cor.');
+        if (this.pontos(atual).saldo < PessoalCPT.precoCor) throw new Error('Faltam pontos: complete tarefas do seu checklist ou responda o quiz.');
+        novo.cores.push(k); novo.compras.push({item: 'cor:' + k, preco: PessoalCPT.precoCor, em: new Date().toISOString()}); m.cor = k;
+        resultado = 'Cor especial: ' + m.nome + ' agora está ' + PessoalCPT.coresEspeciais[k].toLowerCase() + '!';
       } else if (acao === 'comprarClassico') {
         // Clássicos (dinossauro e abelha): 150 pontos. Período de testes: só com o elenco novo (proprietário).
         if (!PessoalCPT.novo(this.ctx.perfil)) throw new Error('Os clássicos chegam junto com o elenco novo.');
@@ -166,6 +188,14 @@ class PessoalCPT {
     }
     const e = this.perfis.gravar(novo, atual ? Number(p.versao) : 0, p.operacaoId, this.idPerfil);
     return {resultado, perfil: e, pontos: this.pontos(e), pendentes: this.pendentes(e)};
+  }
+  /** Cor comum (livre) ou especial (só depois de comprada, no elenco novo). */
+  corDoPerfil(v, perfil) {
+    if (v && PessoalCPT.coresEspeciais[v]) {
+      if (!PessoalCPT.novo(this.ctx.perfil) || !(perfil.cores || []).includes(v)) throw new Error('Essa cor especial ainda não é sua. Ela fica na loja de cores.');
+      return v;
+    }
+    return PessoalCPT.cor(v);
   }
   /** Mascote novo já vem com o kit EPI (só no elenco novo). */
   kitInicial() { return PessoalCPT.novo(this.ctx.perfil) ? {...PessoalCPT.kit} : {}; }

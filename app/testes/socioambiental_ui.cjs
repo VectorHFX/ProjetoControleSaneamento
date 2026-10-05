@@ -15,7 +15,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.nav-item[data-route=socioambiental]').click();await p.locator('.mesa-group').first().waitFor();
   const mesa=await p.locator('#view').textContent();
   assert(mesa.includes('ITEM 4.3')&&mesa.includes('Copiar parágrafo padrão'));assert(mesa.includes('Viela Sanitária x Carijós'));
-  assert.equal(await p.locator('.mesa-index a').count(),9);
+  assert.equal(await p.locator('.mesa-index').count(),0,'2.26: sem a barra de atalhos 2, 4.1… 3 (pedido do Victor)');
   // Relato: destino sugerido, legenda padrão com data, até 6 fotos, salvar e gerar.
   await p.locator('#item-4-4 [data-prepare-relato]').click();await p.locator('#deliveryForm').waitFor();
   assert.equal(await p.locator('#deliveryForm [name=destino]').inputValue(),'4.4');

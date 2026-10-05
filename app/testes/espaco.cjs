@@ -34,7 +34,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','QuizCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 const masc=(o)=>{ctx.m={...o,operacaoId:op()};return run('salvarMascoteCPT(m)');};
 // 1. Semana ISO.
@@ -101,6 +101,22 @@ const oito=k=>Array.from({length:8},(_,i)=>({id:'T-'+k+i,texto:'Tarefa '+i,feito
 r=masc({acao:'comprarClassico',especie:'dinossauro',nome:'Rex',versao:r.perfil.versao});assert.equal(r.perfil.mascotes.length,2);assert.equal(r.perfil.mascotes[1].especie,'dinossauro');assert.equal(r.pontos.saldo,10);
 assert.throws(()=>masc({acao:'comprarClassico',especie:'dinossauro',nome:'Rex',versao:r.perfil.versao}),/já tem/);
 assert.throws(()=>masc({acao:'comprarClassico',especie:'abelha',nome:'Mel',versao:r.perfil.versao}),/Faltam pontos/);
+// 2.26: Loja do bloco D — EPI colorido, roupas e cores especiais por pontos; só no elenco novo (proprietário nos testes).
+email='com@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(!d.catalogo.some(x=>x.id==='capacete-azul'),'loja só no elenco novo');assert.deepEqual(d.coresEspeciais,{});
+assert.throws(()=>masc({acao:'comprar',item:'capacete-azul',versao:d.perfil.versao}),/loja chega junto com o elenco novo/);
+assert.throws(()=>masc({acao:'comprarCor',cor:'menta',versao:d.perfil.versao}),/chegam junto com o elenco novo/);
+assert.throws(()=>masc({acao:'colorir',cor:'menta',versao:d.perfil.versao}),/ainda não é sua/);
+email='victor@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(['capacete-azul','colete-azul','luvas-amarelas','galocha-amarela','jaqueta-jeans'].every(k=>d.catalogo.some(x=>x.id===k&&x.preco>0)));
+assert.deepEqual(Object.keys(d.coresEspeciais),['menta','coral','dourado','noite']);assert.equal(d.precoCor,120);
+lista(3,oito('c'));lista(4,oito('d'));r=run('carregarMeuEspacoCPT()');let v=r.perfil.versao;assert.equal(r.pontos.saldo,170);
+assert.throws(()=>masc({acao:'colorir',cor:'menta',versao:v}),/ainda não é sua/);
+r=masc({acao:'comprarCor',cor:'menta',versao:v});assert.equal(r.pontos.saldo,50);assert.equal(r.perfil.mascotes[r.perfil.ativo].cor,'menta');assert.deepEqual(r.perfil.cores,['menta']);
+assert.throws(()=>masc({acao:'comprarCor',cor:'menta',versao:r.perfil.versao}),/já tem essa cor/);assert.throws(()=>masc({acao:'comprarCor',cor:'arcoiris',versao:r.perfil.versao}),/opção válida/);
+r=masc({acao:'colorir',cor:'',versao:r.perfil.versao});r=masc({acao:'colorir',cor:'menta',versao:r.perfil.versao});assert.match(r.resultado,/menta/,'depois de comprada, trocar é livre');assert.equal(r.pontos.saldo,50);
+assert.throws(()=>masc({acao:'comprar',item:'capacete-azul',versao:r.perfil.versao}),/Faltam pontos/);
+lista(5,oito('e'));r=masc({acao:'comprar',item:'capacete-azul',versao:r.perfil.versao});assert.equal(r.pontos.saldo,70);assert.equal(r.perfil.mascotes[r.perfil.ativo].equipado.cabeca,'capacete-azul');
+r=masc({acao:'vestir',slot:'cabeca',item:'capacete-branco',versao:r.perfil.versao});r=masc({acao:'vestir',slot:'cabeca',item:'capacete-azul',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[r.perfil.ativo].equipado.cabeca,'capacete-azul');
+console.log('PASS: loja do bloco D — EPI colorido, roupas e cores especiais por pontos, só no elenco novo; cor comprada uma vez e depois trocar é livre.');
 console.log('PASS: elenco chibi e kit EPI — elenco novo só do proprietário nos testes, mascote novo já com o kit, kit sem precisar ganhar, clássicos por 150 pontos (sem repetir).');
 assert.equal(locked,false);
 console.log('PASS: privacidade — caderno, checklist, pontos e mascote são de cada conta; ninguém lê o espaço do outro pela aplicação.');
