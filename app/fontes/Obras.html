@@ -37,7 +37,7 @@ window.CPTObras = (() => {
   /** Gerência: Catálogo · Obras de hoje · Para vincular. Demais perfis: só o catálogo. */
   function abas() {
     if (!dados.gerencia) return '';
-    const n = vinculos ? vinculos.pendentes.length : null;
+    const n = vinculos ? vinculos.totalPendentes : null;
     return `<div class="segmented obra-tabs" role="tablist" aria-label="Partes de Obras">${[['catalogo', 'Catálogo'], ['hoje', 'Obras de hoje'], ['vincular', 'Para vincular' + (n ? ' (' + n + ')' : '')]].map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-obra-aba="${k}">${t}</button>`).join('')}</div>`;
   }
   function draw() {
@@ -136,24 +136,27 @@ window.CPTObras = (() => {
   }
   function desenharVinculos() {
     const box = $('obrasVincular'); if (!box || !vinculos) return;
-    const t = document.querySelector('[data-obra-aba=vincular]'); if (t) t.textContent = 'Para vincular' + (vinculos.pendentes.length ? ' (' + vinculos.pendentes.length + ')' : '');
+    const total = vinculos.totalPendentes, t = document.querySelector('[data-obra-aba=vincular]'); if (t) t.textContent = 'Para vincular' + (total ? ' (' + total + ')' : '');
     const opcoes = '<option value="">Escolha a obra…</option>' + vinculos.obras.map(o => `<option value="${ui.esc(o.id)}">${ui.esc(o.exibir)}${o.bairros && o.bairros.length ? ' — ' + ui.esc(o.bairros.join(' / ')) : ''}</option>`).join('');
-    box.innerHTML = `<div class="results-head"><span>${vinculos.pendentes.length ? ui.num(vinculos.pendentes.length) + (vinculos.pendentes.length === 1 ? ' registro' : ' registros') + ' com "obra ainda não cadastrada"' : 'Nenhum registro esperando vínculo.'}</span>${dados.podeEditar ? `<button type="button" class="button secondary" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra nova</button>` : ''}</div>
+    box.innerHTML = `<div class="results-head"><span>${total ? ui.num(total) + (total === 1 ? ' registro' : ' registros') + ' com "obra ainda não cadastrada"' + (total > vinculos.pendentes.length ? ' (mostrando os ' + vinculos.pendentes.length + ' mais recentes)' : '') : 'Nenhum registro esperando vínculo.'}</span>${dados.podeEditar ? `<button type="button" class="button secondary" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra nova</button>` : ''}</div>
       <p class="small muted">O registro original não muda. O vínculo vale nas telas, no painel e no relatório.</p>
       <div class="vinculo-lista">${vinculos.pendentes.map(r => `<article class="entry-card vinculo-card" data-vinc="${ui.esc(r.id)}"><div class="card-top"><span class="badge orange">${ui.esc(r.procedimento)}</span><span class="date">${ui.date(r.data)}</span></div>
         <h3>${ui.esc(r.atividade || 'Atividade sem título')}</h3><p class="small muted">${ui.esc([r.bairro, r.responsavel].filter(Boolean).join(' · '))}</p>
         ${r.observacao ? `<blockquote class="vinculo-obs">${ui.esc(r.observacao)}</blockquote>` : '<p class="small muted">Sem observação final.</p>'}
-        <div class="vinculo-acao"><select aria-label="Obra deste registro" data-vinc-obra>${opcoes}</select><button type="button" class="button" data-vincular="${ui.esc(r.id)}">Vincular</button></div></article>`).join('')}</div>`;
+        <div class="vinculo-acao"><select aria-label="Obra deste registro" data-vinc-obra>${opcoes}</select><button type="button" class="button" data-vincular="${ui.esc(r.id)}">Vincular</button></div></article>`).join('')}</div>
+      ${vinculos.feitos && vinculos.feitos.length ? `<details class="panel vinculos-feitos"><summary><strong>Vinculados recentemente</strong> <span class="muted">${ui.num(vinculos.feitos.length)} · para corrigir um engano</span></summary>
+        <div class="bairros-lista">${vinculos.feitos.map(r => `<div class="bairro-row vinculo-feito" data-vinc-feito="${ui.esc(r.id)}"><span><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small class="muted"> · ${ui.date(r.data)} · ${ui.esc(r.obra)}</small></span>
+          <select aria-label="Trocar a obra deste registro" data-vinc-obra>${opcoes.replace('value="' + ui.esc(r.obraId) + '"', 'value="' + ui.esc(r.obraId) + '" selected')}</select><button type="button" class="button ghost" data-vincular="${ui.esc(r.id)}">Trocar</button></div>`).join('')}</div></details>` : ''}`;
   }
   async function vincular(id, botao) {
-    const sel = botao.closest('.vinculo-card').querySelector('[data-vinc-obra]');
+    const sel = botao.closest('.vinculo-card, .vinculo-feito').querySelector('[data-vinc-obra]');
     if (!sel.value) { ui.toast('Escolha a obra deste registro.'); sel.focus(); return; }
-    botao.disabled = true; botao.textContent = 'Vinculando…';
+    const rotulo = botao.textContent; botao.disabled = true; botao.textContent = 'Salvando…';
     try {
       const r = await ui.call('vincularObraCPT', {registroId: id, obraId: sel.value, operacaoId: op()}); ui.toast(r.resultado);
-      vinculos.pendentes = vinculos.pendentes.filter(x => x.id !== id); desenharVinculos();
-      if (!vinculos.pendentes.length && window.CPTMissoes) window.CPTMissoes.feita('vincular-obra');
-    } catch (e) { ui.toast(e.message); botao.disabled = false; botao.textContent = 'Vincular'; }
+      await carregarVinculos();
+      if (!vinculos.totalPendentes && window.CPTMissoes) window.CPTMissoes.feita('vincular-obra');
+    } catch (e) { ui.toast(e.message); botao.disabled = false; botao.textContent = rotulo; }
   }
   function campo(rotulo, html, largo) { return `<label class="${largo ? 'wide' : ''}">${rotulo}${html}</label>`; }
   function editor(o) {

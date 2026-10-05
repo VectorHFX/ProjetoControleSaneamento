@@ -177,7 +177,7 @@ class ProgramaParceirosCPT {
   /** Sugestões calculadas dos registros e atendimentos do mês. Cada uma diz como foi calculada. */
   sugestoes(mes) {
     const reg = this.ctx.base.getSheetByName('Registros'), atd = this.ctx.base.getSheetByName('Atendimentos');
-    const chave = 'parceiros:sug:' + mes + ':' + (reg ? reg.getLastRow() : 0) + ':' + (atd ? atd.getLastRow() : 0) + ':' + (PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO') || 0);
+    const chave = 'parceiros:sug:' + mes + ':' + (reg ? reg.getLastRow() : 0) + ':' + (atd ? atd.getLastRow() : 0) + ':' + (PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO') || 0) + ':' + (PropertiesService.getScriptProperties().getProperty('CPT_VINCULOS_VERSAO') || 0);
     const out = CacheCPT.obter(chave, 600, () => ProgramaParceirosCPT.calcularSugestoes(new RelatorioMensalCPT(this.ctx).coletar(mes)));
     // Comunicação (linhas 32 a 34): o que foi concluído no mês na pasta de materiais.
     try {

@@ -57,6 +57,8 @@ ctx.u={...o1,nomeUso:'Coletor Linda',apelidos:['CT-A',' margem ','']};r=run('sal
 assert.equal(obras.rows[1][35],'Coletor Linda');assert.equal(obras.rows[1][36],'CT-A; margem');assert.equal(obras.rows[0][35],'Nome de uso');assert.equal(obras.rows[0][36],'Também chamada de');
 ctx.u={...run('listarObrasCPT()').obras.find(o=>o.id==='OBR-0002'),nomeUso:'coletor linda'};assert.throws(()=>run('salvarObraCPT(u)'),/já usado/);
 ctx.u={...ctx.u,nomeUso:'Coletor A'};assert.throws(()=>run('salvarObraCPT(u)'),/já usado/);
+ctx.u={...ctx.u,nomeUso:'Coletor [B]'};assert.throws(()=>run('salvarObraCPT(u)'),/colchetes/);ctx.u={...ctx.u,nomeUso:'',apelidos:['B — trecho']};assert.throws(()=>run('salvarObraCPT(u)'),/travessão/);
+ctx.u={nome:'Coletor Linda',situacao:'Em andamento',bairros:[],noFormulario:false};assert.throws(()=>run('salvarObraCPT(u)'),/já usado/,'obra nova não pode repetir nome de uso');
 // Bairros: cadastrar, tirar do formulário e apelidos. Renomear não é permitido (as obras guardam o nome).
 assert.deepEqual(run('listarObrasCPT()').bairrosCadastro.map(b=>b.id),['BAI-002','BAI-001']);
 ctx.b={nome:'Vila Nova',noFormulario:true,apelidos:['VN']};r=run('salvarBairroCPT(b)');assert.equal(r.bairro.id,'BAI-100');assert.deepEqual(bairros.rows[4].slice(0,5),['BAI-100','Vila Nova',true,'Santo André','Bairro']);assert.equal(bairros.rows[4][11],'VN');assert.equal(bairros.rows[0][11],'Também chamado de');
@@ -69,12 +71,23 @@ email='social@example.com';ctx.b={nome:'Outro',noFormulario:true,apelidos:[]};as
 // "Outra obra": o registro do Campo 4.0 não é alterado; o vínculo fica na aplicação e vale em todas as leituras.
 const OUTRA='REG-'+'f'.repeat(24);registros.rows.push([OUTRA,'Relato de atividade',new Date('2026-10-06T12:00:00Z'),'2026-10','','4.0','','Jardim','BAI-002','Obra ainda não cadastrada — identificar na observação final','','Resp','Social','Plantão na rua nova',4,'','','x','','',JSON.stringify({campos:[{titulo:'Observações finais',valor:'Obra na rua das Flores'}]})]);
 const linhaOutra=JSON.stringify(registros.rows.at(-1));
+assert.equal(books.get('agenda').getSheetByName('Vínculos de obra'),null,'sem vínculo gravado, a leitura dos registros não abre a aba de vínculos');
 email='social@example.com';assert.throws(()=>run('listarVinculosObraCPT()'),/Administrativo ou pela Gestão/);
+// Período de testes: só o proprietário confere obras; Administrativo e Gestão ficam travados e sem missão.
+props.set('CPT_TRAVA_CONFIG','travada');email='adm@example.com';assert.throws(()=>run('listarVinculosObraCPT()'),/período de testes/);assert.deepEqual(run('missoesCPT()').missoes,[]);
+assert.equal(run('listarObrasCPT()').gerencia,false);email='victor@example.com';assert.equal(run('listarVinculosObraCPT()').pendentes.length,1);assert.equal(run('listarObrasCPT()').gerencia,true);
+props.set('CPT_TRAVA_CONFIG','liberada');
 email='adm@example.com';let v=run('listarVinculosObraCPT()');assert.equal(v.pendentes.length,1);assert.equal(v.pendentes[0].id,OUTRA);assert.match(v.pendentes[0].observacao,/rua das Flores/);assert(v.obras.some(o=>o.id==='OBR-0002'));
 ctx.k={registroId:OUTRA,obraId:'OBR-9999',operacaoId:'OP-vinculo-0000001'};assert.throws(()=>run('vincularObraCPT(k)'),/Obra não encontrada/);
 ctx.k={registroId:OUTRA,obraId:'OBR-0002',operacaoId:'OP-vinculo-0000002'};r=run('vincularObraCPT(k)');assert.match(r.resultado,/vinculado/);
 assert.equal(JSON.stringify(registros.rows.at(-1)),linhaOutra,'registro original intacto');
 assert.equal(run('listarVinculosObraCPT()').pendentes.length,0);
+// Engano se corrige: o vínculo feito aparece na lista e pode ser trocado; registro comum não entra.
+let fe=run('listarVinculosObraCPT()').feitos;assert.equal(fe.length,1);assert.equal(fe[0].obraId,'OBR-0002');
+ctx.k={registroId:OUTRA,obraId:'OBR-0001',operacaoId:'OP-vinculo-0000003'};assert.match(run('vincularObraCPT(k)').resultado,/trocado/);
+assert.equal(run("AplicacaoCPT.executar(d=>({obra:d.ler(d.registros(),11).find(r=>r[0]==='"+OUTRA+"')[10]}))").obra,'OBR-0001');
+ctx.k={registroId:OUTRA,obraId:'OBR-0002',operacaoId:'OP-vinculo-0000004'};run('vincularObraCPT(k)');
+ctx.k={registroId:registros.rows[1][0],obraId:'OBR-0002',operacaoId:'OP-vinculo-0000005'};assert.throws(()=>run('vincularObraCPT(k)'),/já foi vinculado ou não é/);
 assert.equal(run("AplicacaoCPT.executar(d=>({obra:d.ler(d.registros(),11).find(r=>r[0]==='"+OUTRA+"')[10]}))").obra,'OBR-0002','vínculo aplicado na leitura');
 // Obras de hoje: missão a partir das 7h, sugestão pelo cronograma e pelo dia anterior, confirmação pela gerência.
 books.get('agenda').getSheetByName('Eventos').rows.push(['AG-1',1,'OP-x','','',JSON.stringify({id:'AG-1',versao:1,titulo:'Plantão',obra:'Coletor Linda',data:'2026-10-06',status:'confirmada',frentes:[],responsaveis:[]})]);

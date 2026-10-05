@@ -23,7 +23,8 @@ class CatalogosDeObrasEBairros {
       if(!padrao.test(id))throw new Error('ID inválido: '+id+'. Use OBR-0001 ou BAI-001, sem reaproveitar IDs.');
       if(ids.has(id))throw new Error('ID duplicado: '+id);ids.add(id);
     }
-    const preenchida=r=>r.some(v=>v!==''&&v!==false&&v!==null);
+    // Só as colunas do cadastro contam: AB:AD (controle) e AF:AI (aplicação) têm textos que não são obras.
+    const preenchida=r=>r.slice(0,26).concat(r.slice(35,37)).some(v=>v!==''&&v!==false&&v!==null&&v!==undefined);
     const bairros=bb.filter(preenchida).map(r=>{
       const id=String(r[0]||'').trim(),nome=String(r[1]||'').trim();idValido(id,/^BAI-\d{3,}$/);
       if(!nome||nomes.has(normalizar(nome)))throw new Error('Bairro vazio ou repetido: '+nome);

@@ -6,6 +6,8 @@ const C=ctx.C,linha=(id,nome,bairros,sit,uso,apelidos)=>{const r=Array(37).fill(
 const bairros=[['BAI-001','Vila Linda',true,'Santo André','Bairro',''],['BAI-002','Jardim',true,'Santo André','Bairro','']];
 const d=C.validarLinhas([linha('OBR-0001','Coletor tronco Tamanduateí — margem direita trecho 3','Vila Linda','Em andamento','Coletor Vila Linda','CT3; Margem direita'),linha('OBR-0002','Rede B','Jardim','Paralisada')],bairros);
 assert.equal(d.obras[0].nomeUso,'Coletor Vila Linda');assert.equal(JSON.stringify(d.obras[0].apelidos),'["CT3","Margem direita"]');assert.equal(d.obras[1].nomeUso,'');
+// Linha sem ID com texto só na área de controle (AB:AD) ou no bloco da aplicação (AF:AI) não é obra.
+const controle=Array(37).fill('');controle[27]='Pronto para salvar.';controle[33]='victor@example.com';assert.equal(C.validarLinhas([linha('OBR-0001','A','','Em andamento'),controle],bairros).obras.length,1);
 // Linhas antigas, só até a coluna Z, continuam válidas.
 assert.equal(C.validarLinhas([linha('OBR-0003','Rede C','','Em andamento').slice(0,26)],bairros).obras[0].nomeUso,'');
 assert.equal(C.rotulo(d.obras[0]),'Coletor Vila Linda — Vila Linda [OBR-0001]');assert.equal(C.rotulo(d.obras[1]),'Rede B — Jardim [OBR-0002]');

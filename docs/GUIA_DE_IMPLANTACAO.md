@@ -23,10 +23,10 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
-## Atualização 2.14 — nome de uso das obras, apelidos e bairros na aplicação (≈ 5 min)
+## Atualização 2.14.1 — nome de uso das obras, apelidos e bairros na aplicação (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**. Ele troca o código da Aplicação **e do Campo 4.0** (4.6.0).
-2. Execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.14.0`) e publique uma **Nova versão**.
+2. Execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.14.1`) e publique uma **Nova versão**.
 
 **Novo em Obras:**
 - **Nome de uso.** Cada obra pode ter um nome curto, o que a equipe usa no dia a dia. Ele aparece nas telas, no relatório e na lista do formulário de campo. O nome oficial continua guardado e aparece embaixo, em cinza. Sem nome de uso, vale o oficial.
@@ -43,7 +43,9 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 **Painel da gestão → Frentes de serviço → Obras ativas × ações:** cada dia do mês com obras confirmadas, ações registradas, obras ativas sem ação e ações em obra não ativa. Dia sem confirmação aparece como **não informado**. As confirmações ficam na aba **Obras do dia** da planilha de dados da aplicação.
 
-Confirmar obras do dia e vincular registros são trabalho do dia a dia, por isso Gestão e Administrativo já podem fazer isso durante os testes. Alterar o catálogo (obras e bairros) continua só com você até `liberarConfiguracaoCPT`.
+**Durante os testes, tudo isso fica só com você:** catálogo de obras e bairros, obras de hoje, vínculos e as missões. Gestão e Administrativo não veem as abas nem as missões até você executar `liberarConfiguracaoCPT`. Sua conta (proprietária) nunca é travada.
+
+Vinculou errado? Em Obras → Para vincular → **Vinculados recentemente**, troque a obra do registro.
 
 **Na planilha da Base:** a aba Obras ganha as colunas **AJ (Nome de uso)** e **AK (Também chamada de)**. A aba Bairros ganha a coluna **L (Também chamado de)**. Elas são criadas no primeiro salvamento pela aplicação. Não edite essas colunas à mão.
 

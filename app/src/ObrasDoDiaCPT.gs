@@ -6,6 +6,9 @@
  *   Sugestão: obras do cronograma do dia + as confirmadas no dia anterior. Dia sem confirmação fica "não informado".
  * - Comparação (painel da gestão), por dia e no mês: ativas, com ação, ativas sem ação, ação em obra não ativa.
  * - Missões: tarefas automáticas do checklist. Somem sozinhas quando o trabalho é feito.
+ * - Período de testes (PerfisCPT.travada): confirmar e vincular ficam só com o proprietário; depois, Administrativo e Gestão.
+ * Desempenho: quem não confere obras não abre a base por causa disto. Os vínculos ficam em cache pela versão
+ * CPT_VINCULOS_VERSAO (sem vínculo nenhum, nada é lido) e a contagem de pendentes, pela última linha dos registros.
  */
 const VINCULOS_CPT_ = {config: null, mapa: null};
 class ObrasDoDiaCPT {
@@ -19,47 +22,72 @@ class ObrasDoDiaCPT {
 
   /** Chamado no início de cada execução: os vínculos são lidos de novo, uma vez, quando alguém ler os registros. */
   static iniciar(config) { VINCULOS_CPT_.config = config; VINCULOS_CPT_.mapa = null; }
-  /** registroId → {id, rotulo}. Sem dados da aplicação preparados, nada é aplicado. */
+  static versaoVinculos() { return Number(PropertiesService.getScriptProperties().getProperty('CPT_VINCULOS_VERSAO') || 0); }
+  /** registroId → {id, rotulo}. Sem vínculo gravado ainda (versão 0), não abre planilha nenhuma. */
   static mapaVinculos() {
     if (VINCULOS_CPT_.mapa) return VINCULOS_CPT_.mapa;
-    const m = new Map(), c = VINCULOS_CPT_.config;
-    if (c && c.agendaId) try { new ColecaoCPT({config: c}, 'Vínculos de obra', 'VIN').itens().forEach(v => { if (v.obraId) m.set(v.registroId, {id: v.obraId, rotulo: v.rotulo}); }); } catch (_) {}
-    return (VINCULOS_CPT_.mapa = m);
+    const c = VINCULOS_CPT_.config, v = ObrasDoDiaCPT.versaoVinculos();
+    let lista = [];
+    if (v && c && c.agendaId) try {
+      lista = CacheCPT.obter('vinculos:' + c.agendaId + ':' + v, 21600, () => new ColecaoCPT({config: c}, 'Vínculos de obra', 'VIN').itens().filter(x => x.obraId).map(x => [x.registroId, x.obraId, x.rotulo]));
+    } catch (_) { lista = []; }
+    return (VINCULOS_CPT_.mapa = new Map(lista.map(([r, id, rotulo]) => [r, {id, rotulo}])));
   }
+  /** Quem confere obras: Administrativo e Gestão; no período de testes, só o proprietário. */
+  static pode(perfil) { return PerfisCPT.gerencia(perfil) && (perfil.papeis.includes('administrador') || !PerfisCPT.travada()); }
 
   constructor(ctx) {
-    this.ctx = ctx; if (!ctx.base) ctx.base = planilhaCPT_(ctx.config.baseId);
-    this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil);
+    this.ctx = ctx;
     this.vinculos = new ColecaoCPT(ctx, 'Vínculos de obra', 'VIN'); this.dias = new ColecaoCPT(ctx, 'Obras do dia', 'ODD');
   }
-  exigirGerencia() { if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('Esta conferência é feita pelo Administrativo ou pela Gestão.'); }
-  catalogo() { if (!this._obras) { const o = new ObrasCPT(this.ctx); this._obras = o.ler().linhas.map(x => o.publico(x)); } return this._obras; }
+  /** A base só é aberta quando alguém realmente precisa dela. */
+  get dados() { if (!this._dados) { if (!this.ctx.base) this.ctx.base = planilhaCPT_(this.ctx.config.baseId); this._dados = new DadosDaAplicacao(this.ctx.base, this.ctx.perfil); } return this._dados; }
+  exigirGerencia() {
+    if (!PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('Esta conferência é feita pelo Administrativo ou pela Gestão.');
+    PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'Confirmar obras e vincular registros');
+  }
+  catalogo() { if (!this._obras) { void this.dados; /* abre a base */ const o = new ObrasCPT(this.ctx); this._obras = o.ler().linhas.map(x => o.publico(x)); } return this._obras; }
   obra(id) { const o = this.catalogo().find(x => x.id === id); if (!o) throw new Error('Obra não encontrada: ' + id + '. Atualize a página.'); return o; }
   resumoObra(o) { return {id: o.id, exibir: o.exibir, bairros: o.bairros, situacao: o.situacao}; }
   ativasDoCatalogo() { return this.catalogo().filter(o => ['Em andamento', 'Paralisada', 'A confirmar'].includes(o.situacao)); }
 
   // ---------- "Outra obra" ----------
-  pendentesDeVinculo() {
-    return this.dados.ler(this.dados.registros(), 21).filter(r => r[0] && !String(r[10] || '') && ObrasDoDiaCPT.outraObra(r[9]));
+  /** Linhas (A:N, com os vínculos já aplicados) e o número da linha na planilha. A coluna de detalhes, pesada, fica de fora. */
+  linhasRegistros() { if (!this._linhas) this._linhas = this.dados.ler(this.dados.registros(), 14).map((r, i) => ({r, linha: i + 2})); return this._linhas; }
+  pendentesDeVinculo() { return this.linhasRegistros().filter(x => x.r[0] && !String(x.r[10] || '') && ObrasDoDiaCPT.outraObra(x.r[9])); }
+  /** Contagem para a missão: guardada pela última linha dos registros e pela versão dos vínculos. */
+  contarPendentes() {
+    const a = this.dados.registros(), chave = 'vinc-pend:' + this.ctx.config.baseId + ':' + a.getLastRow() + ':' + ObrasDoDiaCPT.versaoVinculos();
+    return CacheCPT.obter(chave, 3600, () => ({n: this.pendentesDeVinculo().length})).n;
   }
+  resumoRegistro(x, detalhes) {
+    const r = x.r; let observacao = '';
+    if (detalhes) try { const d = DadosDaAplicacao.lerDetalhes(this.dados.registros().getRange(x.linha, 21).getValue()); observacao = ((d.campos || []).filter(c => /observa/i.test(c.titulo || '') && c.valor).map(c => DadosDaAplicacao.json(c.valor)).pop() || ''); } catch (_) {}
+    return {id: String(r[0]), procedimento: String(r[1]), data: this.dados.data(r[2]), bairro: String(r[7] || ''), responsavel: String(r[11] || ''), atividade: String(r[13] || ''), observacao: String(observacao).slice(0, 600)};
+  }
+  /** Pendentes (os 50 mais recentes, com a observação final) e os vínculos já feitos, para corrigir um engano. */
   listarVinculos() {
     this.exigirGerencia();
-    const pendentes = this.pendentesDeVinculo().map(r => {
-      let observacao = '';
-      try { const d = DadosDaAplicacao.lerDetalhes(r[20]); observacao = ((d.campos || []).filter(c => /observa/i.test(c.titulo || '') && c.valor).map(c => DadosDaAplicacao.json(c.valor)).pop() || ''); } catch (_) {}
-      return {id: String(r[0]), procedimento: String(r[1]), data: this.dados.data(r[2]), bairro: String(r[7] || ''), responsavel: String(r[11] || ''), atividade: String(r[13] || ''), observacao: String(observacao).slice(0, 600)};
-    }).sort((a, b) => b.data.localeCompare(a.data));
-    return {pendentes, obras: this.catalogo().filter(o => o.situacao !== 'Finalizada').map(o => this.resumoObra(o)).sort((a, b) => a.exibir.localeCompare(b.exibir, 'pt-BR'))};
+    const pend = this.pendentesDeVinculo().sort((a, b) => this.dados.data(b.r[2]).localeCompare(this.dados.data(a.r[2])));
+    const porId = new Map(this.linhasRegistros().map(x => [String(x.r[0]), x]));
+    const feitos = this.vinculos.itens().slice().sort((a, b) => String(b.alteradoEm).localeCompare(String(a.alteradoEm))).slice(0, 20)
+      .map(v => porId.get(v.registroId) ? {...this.resumoRegistro(porId.get(v.registroId), false), obraId: v.obraId, obra: v.rotulo, por: v.alteradoPor} : null).filter(Boolean);
+    return {pendentes: pend.slice(0, 50).map(x => this.resumoRegistro(x, true)), totalPendentes: pend.length, feitos,
+      obras: this.catalogo().filter(o => o.situacao !== 'Finalizada').map(o => this.resumoObra(o)).sort((a, b) => a.exibir.localeCompare(b.exibir, 'pt-BR'))};
   }
   vincular(p) {
     this.exigirGerencia();
     if (!p || typeof p.registroId !== 'string' || !/^REG-[a-f0-9]{24}$/.test(p.registroId)) throw new Error('Registro inválido.');
     const o = this.obra(String(p.obraId || ''));
-    if (!this.pendentesDeVinculo().some(r => String(r[0]) === p.registroId)) throw new Error('Este registro já foi vinculado ou não é de "obra ainda não cadastrada". Atualize a página.');
-    const rotulo = o.exibir + ' [' + o.id + ']', atual = this.vinculos.obter('VIN-' + p.registroId);
+    // Pode vincular um pendente ou trocar um vínculo já feito (para corrigir engano). Nada além disso.
+    const atual = this.vinculos.obter('VIN-' + p.registroId);
+    if (!atual && !this.pendentesDeVinculo().some(x => String(x.r[0]) === p.registroId)) throw new Error('Este registro já foi vinculado ou não é de "obra ainda não cadastrada". Atualize a página.');
+    if (atual && atual.obraId === o.id) return {resultado: 'Este registro já está em ' + o.exibir + '.'};
+    const rotulo = o.exibir + ' [' + o.id + ']';
     this.vinculos.gravar({registroId: p.registroId, obraId: o.id, rotulo}, atual ? atual.versao : 0, p.operacaoId, 'VIN-' + p.registroId);
+    const props = PropertiesService.getScriptProperties(); props.setProperty('CPT_VINCULOS_VERSAO', String(ObrasDoDiaCPT.versaoVinculos() + 1));
     ObrasDoDiaCPT.iniciar(this.ctx.config); ObrasDoDiaCPT.invalidarPaineis();
-    return {resultado: 'Registro vinculado a ' + o.exibir + '.'};
+    return {resultado: (atual ? 'Vínculo trocado para ' : 'Registro vinculado a ') + o.exibir + '.'};
   }
   /** Visão do mês e painel guardam cálculo em cache pela última linha; vínculo e obras do dia não mudam a linha. */
   static invalidarPaineis() { const p = PropertiesService.getScriptProperties(); p.setProperty('CPT_ENTREGAS_VERSAO', String(Number(p.getProperty('CPT_ENTREGAS_VERSAO') || 0) + 1)); }
@@ -80,7 +108,7 @@ class ObrasDoDiaCPT {
     const ontem = this.confirmacao(ObrasDoDiaCPT.diaAnterior(dia)), ativas = new Set(this.ativasDoCatalogo().map(o => o.id));
     const sugestao = [...new Set(this.doCronograma(dia).concat(ontem ? ontem.obras : []))].filter(id => ativas.has(id)).sort();
     return {dia, hoje, antesDoHorario: dia === hoje && hora < ObrasDoDiaCPT.horaInicio, confirmado: this.confirmacao(dia), sugestao,
-      obras: this.ativasDoCatalogo().map(o => this.resumoObra(o)).sort((a, b) => a.exibir.localeCompare(b.exibir, 'pt-BR')), podeConfirmar: PerfisCPT.gerencia(this.ctx.perfil)};
+      obras: this.ativasDoCatalogo().map(o => this.resumoObra(o)).sort((a, b) => a.exibir.localeCompare(b.exibir, 'pt-BR')), podeConfirmar: ObrasDoDiaCPT.pode(this.ctx.perfil)};
   }
   confirmar(p) {
     this.exigirGerencia();
@@ -121,11 +149,11 @@ class ObrasDoDiaCPT {
   // ---------- Missões ----------
   missoes() {
     const out = [];
-    if (!PerfisCPT.gerencia(this.ctx.perfil)) return out;
+    if (!ObrasDoDiaCPT.pode(this.ctx.perfil)) return out;
     const {dia, hora} = ObrasDoDiaCPT.agora();
     if (hora >= ObrasDoDiaCPT.horaInicio && !this.confirmacao(dia))
       out.push({id: 'obras-hoje', titulo: 'Confirmar as obras de hoje', texto: 'Marque as obras com frente de serviço hoje. Sem isso, o dia fica "não informado" no painel.', rota: 'obras', aba: 'hoje'});
-    const n = this.pendentesDeVinculo().length;
+    const n = this.contarPendentes();
     if (n) out.push({id: 'vincular-obra', titulo: 'Vincular ' + n + (n === 1 ? ' registro' : ' registros') + ' de "outra obra"', texto: 'Ligue cada registro a uma obra do catálogo ou cadastre a obra nova.', rota: 'obras', aba: 'vincular'});
     return out;
   }
@@ -136,4 +164,5 @@ function vincularObraCPT(p) { return ColecaoCPT.executar('obras.vincular', ctx =
 function obrasDeHojeCPT(p) { return AplicacaoCPT.executar((d, ctx) => new ObrasDoDiaCPT(ctx).obrasDeHoje(p), 'obras.hoje'); }
 function confirmarObrasDoDiaCPT(p) { return ColecaoCPT.executar('obras.confirmarDia', ctx => new ObrasDoDiaCPT(ctx).confirmar(p), true); }
 function compararObrasDoMesCPT(mes) { return AplicacaoCPT.executar((d, ctx) => new ObrasDoDiaCPT(ctx).comparar(mes), 'obras.comparar'); }
-function missoesCPT() { return AplicacaoCPT.executar((d, ctx) => ({missoes: new ObrasDoDiaCPT(ctx).missoes()}), 'missoes'); }
+/** Pedido à parte, depois que o Meu espaço aparece: não atrasa a tela. Só abre a base para quem tem missão. */
+function missoesCPT() { return ColecaoCPT.executar('missoes', ctx => ({missoes: new ObrasDoDiaCPT(ctx).missoes()})); }

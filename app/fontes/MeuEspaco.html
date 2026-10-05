@@ -180,7 +180,7 @@ window.CPTEspaco = (() => {
           ${dia > d.hoje ? '<p class="empty-line">O caderno é para hoje e dias anteriores. Use o checklist para planejar este dia.</p>' : `<textarea id="espNota" class="notebook" rows="7" maxlength="10000" placeholder="Como foi o dia? O que aprendeu, o que ficou para amanhã, uma ideia…">${ui.esc(d.nota.texto)}</textarea>`}
           ${cad.recentes.length ? `<details class="notebook-past"><summary>Dias anteriores</summary>${cad.recentes.map(r => `<button class="mini-row" data-esp-ir="${r.data}"><strong>${ui.date(r.data)}</strong><small>${ui.esc(r.trecho)}</small></button>`).join('')}</details>` : ''}</section>
       </div>`;
-    desenharLista(); recuperarNota(); desenharAgendaHoje();
+    desenharLista(); recuperarNota(); desenharAgendaHoje(); carregarMissoes();
   }
   /** "Hoje na agenda": atividades de hoje e dos próximos dias, vindas do cronograma (a frente da pessoa em destaque). */
   async function desenharAgendaHoje() {
@@ -221,6 +221,12 @@ window.CPTEspaco = (() => {
     box.innerHTML = m.length ? `<h3 class="peek-title">🎯 Missões de hoje</h3><ul class="missoes">${m.map(x => `<li class="missao" data-missao="${ui.esc(x.id)}"><span class="missao-alvo" aria-hidden="true"></span><span class="missao-texto"><strong>${ui.esc(x.titulo)}</strong><small>${ui.esc(x.texto)}</small></span><button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? `data-obra-ir="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button></li>`).join('')}</ul>` : '';
   }
   window.CPTMissoes = {feita(id) { if (d && d.missoes) d.missoes = d.missoes.filter(x => x.id !== id); }};
+  /** Pedido à parte, depois que a tela aparece: as missões nunca atrasam o Meu espaço. */
+  let missoesTicket = 0;
+  async function carregarMissoes() {
+    if (dia !== d.hoje) return; const mine = ++missoesTicket;
+    try { const r = await ui.call('missoesCPT'); if (mine !== missoesTicket || !d) return; d.missoes = r.missoes || []; desenharMissoes(); } catch (_) {}
+  }
   function desenharLista() {
     desenharMissoes();
     const box = $('espLista'); if (!box) return; const itens = d.lista.itens.filter(t => !t.removido);

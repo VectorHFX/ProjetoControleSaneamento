@@ -62,7 +62,7 @@ class ObrasCPT {
     obras.sort((a, b) => (ordem[a.situacao] ?? 3) - (ordem[b.situacao] ?? 3) || b.inicioObra.localeCompare(a.inicioObra) || a.exibir.localeCompare(b.exibir, 'pt-BR'));
     const cadastro = this.bairros().filter(b => !b.especial).map(({linha, especial, ...b}) => b).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     return {obras, bairros: cadastro.map(b => b.nome), bairrosCadastro: cadastro,
-      situacoes: ObrasCPT.situacoes, impactos: ObrasCPT.impactos, podeEditar: PerfisCPT.gerencia(this.ctx.perfil) && (this.ctx.perfil.papeis.includes('administrador') || !PerfisCPT.travada()), gerencia: PerfisCPT.gerencia(this.ctx.perfil), formulario: this.statusFormulario()};
+      situacoes: ObrasCPT.situacoes, impactos: ObrasCPT.impactos, podeEditar: PerfisCPT.gerencia(this.ctx.perfil) && (this.ctx.perfil.papeis.includes('administrador') || !PerfisCPT.travada()), gerencia: ObrasDoDiaCPT.pode(this.ctx.perfil), formulario: this.statusFormulario()};
   }
   /** Mensagem do último salvamento das listas do formulário (área de controle AB5:AB6 do Campo 4.0). */
   statusFormulario() {
@@ -82,7 +82,7 @@ class ObrasCPT {
   /** Lista de apelidos: até 10, cada um com até 80 caracteres; vazios e repetidos saem. */
   static listaApelidos(v) {
     if (v == null) return [];
-    if (!Array.isArray(v) || v.length > 10 || v.some(x => typeof x !== 'string' || x.length > 80 || x.includes(';'))) throw new Error('Confira os apelidos: até 10, sem ponto e vírgula.');
+    if (!Array.isArray(v) || v.length > 10 || v.some(x => typeof x !== 'string' || x.length > 80 || /[;\[\]—]/.test(x))) throw new Error('Confira os apelidos: até 10, sem ponto e vírgula, colchetes ou travessão.');
     const vistos = new Set();
     return v.map(x => x.trim()).filter(x => x && !vistos.has(ObrasCPT.norm(x)) && vistos.add(ObrasCPT.norm(x)));
   }
@@ -117,6 +117,8 @@ class ObrasCPT {
     const noFormulario = p.noFormulario === true;
     const tipo = T(p.tipo, 120, 'Tipo de obra'), endereco = T(p.endereco, 300, 'Endereço da frente'), observacao = T(p.observacao, 1000, 'Observação');
     const nomeUso = T(p.nomeUso, 80, 'Nome de uso'), apelidos = ObrasCPT.listaApelidos(p.apelidos);
+    // Colchetes e travessão separam nome, bairros e [ID] na lista do formulário: no nome de uso confundiriam a leitura.
+    if (/[\[\]—]/.test(nomeUso)) throw new Error('O nome de uso não pode ter colchetes nem travessão (—).');
 
     const {aba, linhas} = this.ler();
     this.garantirColunas(aba);
@@ -134,9 +136,11 @@ class ObrasCPT {
       id = 'OBR-' + String(maior + 1).padStart(4, '0');
     }
     // O nome de uso não pode coincidir com o nome (oficial ou de uso) de outra obra: a lista do formulário ficaria ambígua.
-    if (nomeUso) {
-      const outra = linhas.map(o => this.publico(o)).find(o => o.id !== id && [o.nome, o.nomeUso].some(n => n && ObrasCPT.norm(n) === ObrasCPT.norm(nomeUso)));
-      if (outra) throw new Error('O nome de uso "' + nomeUso + '" já usado por ' + outra.id + ' (' + outra.exibir + '). Escolha outro.');
+    // Obra nova: o nome oficial também não pode repetir o nome de uso de outra.
+    const proprios = alvo ? [nomeUso] : [nomeUso, nome];
+    for (const meu of proprios.filter(Boolean)) {
+      const outra = linhas.map(o => this.publico(o)).find(o => o.id !== id && [o.nome, o.nomeUso].some(n => n && ObrasCPT.norm(n) === ObrasCPT.norm(meu)));
+      if (outra) throw new Error('O nome "' + meu + '" já usado por ' + outra.id + ' (' + outra.exibir + '). Escolha outro.');
     }
     const linha = alvo ? alvo.linha : aba.getLastRow() + 1;
     if (!alvo) aba.getRange(linha, 1, 1, 19).setValues([[id, '', '', false, '', '', '', 'Santo André', '', '', '', '', '', 'Aplicação CPT', '', '', '', '', 'Cadastrada na aplicação por ' + this.ctx.email]]);

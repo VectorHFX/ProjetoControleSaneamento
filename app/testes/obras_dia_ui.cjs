@@ -18,13 +18,16 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('#obrasHojeForm [name=nenhuma]').check();assert.equal(await p.locator('#obrasHojeForm [name=obra]:checked').count(),0);
   await p.locator('.hoje-obra',{hasText:'Viela Carijós'}).locator('input').check();assert.ok(!(await p.locator('#obrasHojeForm [name=nenhuma]').isChecked()));
   await p.locator('#obrasHojeForm button[type=submit]').click();await toast(/1 obra confirmada/);await p.getByText(/Confirmado: 1 obra/).waitFor();
-  await espaco();assert.equal(await p.locator('.missao').count(),1);
+  await espaco();await p.waitForFunction(()=>document.querySelectorAll('.missao').length===1);
   await p.locator('.missao[data-missao=vincular-obra] .button').click();await p.locator('.vinculo-card').waitFor();
   assert.match(await p.locator('.vinculo-card').textContent(),/Rua das Flores/);
   await p.locator('.vinculo-card [data-vincular]').click();await toast(/Escolha a obra/);
   await p.selectOption('.vinculo-card [data-vinc-obra]','OBR-0074');await p.locator('.vinculo-card [data-vincular]').click();await toast(/vinculado/);
   await p.getByText('Nenhum registro esperando vínculo.').waitFor();
-  await espaco();assert.equal(await p.locator('.missao').count(),0,'missões cumpridas somem');
+  // Engano se corrige em "Vinculados recentemente".
+  await p.locator('.vinculos-feitos summary').click();assert.equal(await p.locator('.vinculo-feito [data-vinc-obra]').inputValue(),'OBR-0074');
+  await p.selectOption('.vinculo-feito [data-vinc-obra]','OBR-0117');await p.locator('.vinculo-feito [data-vincular]').click();await toast(/trocado para Viela Carijós/);
+  await espaco();await p.locator('#espLista').waitFor();await p.waitForTimeout(300);assert.equal(await p.locator('.missao').count(),0,'missões cumpridas somem');
   // Painel da gestão: obras ativas × ações por dia.
   await p.selectOption('#viewSwitch','gestao');await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=frentes]').click();
   await p.locator('.cmp-dia').first().waitFor();assert.ok(await p.locator('.cmp-dia').count()>=1);
