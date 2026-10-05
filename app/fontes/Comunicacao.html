@@ -2,9 +2,9 @@
 /*
  * Comunicação 2.8.0 — um lugar calmo, uma coisa de cada vez.
  * Hoje: só o que pede ação agora (recados novos, lembretes, ações da equipe na semana, materiais com prazo,
- *   e o que já está guardado para o fechamento do mês). Cada bloco tem no máximo poucas linhas e um verbo.
+ *   e o que já foi concluído no mês). Cada bloco tem no máximo poucas linhas e um verbo.
  * Lembretes: ações socioambientais e materiais, compartilhados com o Social (também na rota "lembretes").
- * Materiais e links: a pasta de links com prazo e situação; o que é concluído entra no mês (Programa Parceiros).
+ * Materiais e links: a pasta de links com prazo e situação; o que é concluído entra no resumo do mês.
  * Galeria: fotos do mês (registros + extras), envio do computador ou por link, pacote .zip para baixar.
  */
 window.CPTComunicacao = (() => {
@@ -59,7 +59,7 @@ window.CPTComunicacao = (() => {
       bloco(2, 'Lembretes de hoje', lemHoje.length ? `<ul class="today-list">${lemHoje.map(linhaLembrete).join('')}</ul>` : '<p class="empty-line">Nada para hoje.</p>' + (L.semana.length ? `<p class="small muted">Nesta semana: ${L.semana.length} ${L.semana.length === 1 ? 'lembrete' : 'lembretes'}.</p>` : ''), '<button class="button ghost" data-com-aba="lembretes">Ver todos</button>') +
       bloco(3, 'Ações da equipe nos próximos 7 dias', (h.agenda || []).length ? `<ul class="today-list">${h.agenda.map(e => `<li class="today-row"><span class="kind kind-acao">${ui.esc(relativo(e.data))}${e.inicio ? ' ' + ui.esc(e.inicio) : ''}</span><span class="row-main"><strong>${ui.esc(e.titulo)}</strong><small>${ui.esc([e.obra, e.bairro].filter(Boolean).join(' · ') || 'Local no cronograma')}</small></span><button class="button ghost" data-lem-evento="${ui.esc(e.id)}">Precisa de material?</button></li>`).join('')}</ul>` : '<p class="empty-line">Nenhuma ação marcada no cronograma para esta semana.</p>', '<button class="button ghost" data-route="cronograma">Cronograma</button>') +
       (h.materiais ? bloco(4, 'Materiais com prazo', h.materiais.length ? `<ul class="today-list">${h.materiais.map(m => `<li class="today-row ${m.prazo && m.prazo < h.hoje ? 'is-late' : ''}"><span class="kind kind-material">${ui.esc(m.situacao === 'producao' ? 'Em produção' : 'A fazer')}</span><span class="row-main"><strong>${ui.esc(m.titulo)}</strong><small>${ui.esc(m.tipo)}${m.prazo ? ' · prazo: ' + ui.esc(relativo(m.prazo)) : ''}</small></span><button class="button secondary" data-mat-concluir="${ui.esc(m.id)}">Concluir</button></li>`).join('')}</ul>` : '<p class="empty-line">Nenhum material com prazo nesta semana.</p>', '<button class="button ghost" data-com-aba="materiais">Ver todos</button>') : '') +
-      (r ? bloco(5, 'Guardado para o fechamento do mês', `<dl class="month-strip"><div><dt>Publicações</dt><dd>${r.publicacoes}</dd></div><div><dt>Pessoas alcançadas</dt><dd>${ui.num(r.alcance)}</dd></div><div><dt>Impressos entregues</dt><dd>${ui.num(r.impressos)}</dd></div><div><dt>Vídeos</dt><dd>${r.videos}</dd></div></dl><p class="small muted">Conta o que você marca como <strong>Concluído</strong> em Materiais e links. Esses números já aparecem como sugestão no Programa Parceiros.</p>`, '<button class="button ghost" data-route="fechamento">Fechamento</button>') : '');
+      (r ? bloco(5, 'Concluído no mês', `<dl class="month-strip"><div><dt>Publicações</dt><dd>${r.publicacoes}</dd></div><div><dt>Pessoas alcançadas</dt><dd>${ui.num(r.alcance)}</dd></div><div><dt>Impressos entregues</dt><dd>${ui.num(r.impressos)}</dd></div><div><dt>Vídeos</dt><dd>${r.videos}</dd></div></dl><p class="small muted">Conta o que você marca como <strong>Concluído</strong> em Materiais e links.</p>`, '') : '');
   }
 
   // ---------------- Lembretes ----------------
@@ -122,7 +122,7 @@ window.CPTComunicacao = (() => {
     const pos = manterFoco ? document.activeElement.selectionStart : null;
     ui.view.innerHTML = cabecalho() + `<section class="panel month-panel"><div><span class="eyebrow">O QUE FOI FEITO EM ${ui.esc(new Date(mes + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long'}).toUpperCase())}</span>
         <dl class="month-strip"><div><dt>Publicações</dt><dd>${r.publicacoes}</dd></div><div><dt>Pessoas alcançadas</dt><dd>${ui.num(r.alcance)}</dd></div><div><dt>Impressos entregues</dt><dd>${ui.num(r.impressos)}</dd></div><div><dt>Vídeos</dt><dd>${r.videos}</dd></div><div><dt>Peças criadas</dt><dd>${r.ferramentas}</dd></div></dl>
-        <p class="small muted">Só conta o que está <strong>Concluído</strong>, pela data de publicação ou entrega. Vai como sugestão para o Programa Parceiros (linhas 32 a 34).${r.semAlcance ? ' ' + r.semAlcance + ' publicação(ões) sem pessoas alcançadas: complete.' : ''}</p></div></section>
+        <p class="small muted">Só conta o que está <strong>Concluído</strong>, pela data de publicação ou entrega. ${r.semAlcance ? ' ' + r.semAlcance + ' publicação(ões) sem pessoas alcançadas: complete.' : ''}</p></div></section>
       <div class="tool-head"><div class="segmented painel-tabs">${[['abertos', 'A fazer e em produção'], ['mes', 'Concluídos no mês']].map(([k, n]) => `<button class="${filtroMat.situacao === k ? 'chosen' : ''}" aria-pressed="${filtroMat.situacao === k}" data-mat-filtro="${k}">${n}</button>`).join('')}</div>
         <span class="search-input small-search">${ui.icon('search')}<input id="matBusca" value="${ui.esc(filtroMat.busca)}" placeholder="Procurar material" aria-label="Procurar material" maxlength="100"></span><button class="button" data-mat-novo>${ui.icon('plus')}Novo material</button></div>
       <div class="cards material-cards">${lista.map(m => `<article class="material ${m.prazo && m.situacao !== 'concluido' && m.prazo < hojeISO() ? 'is-late' : ''}"><div class="card-top"><span class="badge">${ui.esc(m.tipo)}</span><span class="badge ${m.situacao === 'concluido' ? 'status-concluida' : m.situacao === 'producao' ? 'status-andamento' : ''}">${ui.esc(mat.situacoes[m.situacao])}</span></div>
@@ -135,7 +135,7 @@ window.CPTComunicacao = (() => {
     if (!mat) { try { mat = await ui.call('listarMateriaisCPT', ui.state.mes); } catch (e) { ui.toast(e.message); return; } }
     m = m || {tipo: '', situacao: 'afazer'}; const sit = concluir ? 'concluido' : m.situacao;
     dialogo('MATERIAL', concluir ? 'Concluir material' : m.id ? 'Editar material' : 'Novo material', `<form id="matForm" class="stack-form" data-id="${ui.esc(m.id || '')}" data-versao="${m.versao || 0}"><div id="matErro" class="notice" hidden></div>
-      ${concluir ? '<p class="help-note small">Confira a data e, se for publicação, quantas pessoas alcançou. Isso vai para o fechamento do mês.</p>' : ''}
+      ${concluir ? '<p class="help-note small">Confira a data e, se for publicação, quantas pessoas alcançou. Isso entra no resumo do mês.</p>' : ''}
       <label class="field">Título<input name="titulo" maxlength="160" required value="${ui.esc(m.titulo || '')}" placeholder="Ex.: Post sobre a obra da Viela Carijós"></label>
       <div class="form-row"><label class="field">Tipo<select name="tipo" required><option value="">Escolha</option>${mat.tipos.map(t => `<option ${m.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><label class="field">Situação<select name="situacao">${Object.entries(mat.situacoes).map(([k, n]) => `<option value="${k}" ${sit === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
       <label class="field">Link (Drive, Canva, Instagram…)<input name="url" type="url" maxlength="2000" value="${ui.esc(m.url || '')}" placeholder="https://"></label>

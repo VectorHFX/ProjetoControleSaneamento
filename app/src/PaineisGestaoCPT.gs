@@ -20,10 +20,9 @@ class PaineisGestaoCPT {
     const hoje = Utilities.formatDate(new Date(), this.dados.fuso, 'yyyy-MM-dd');
     const chave = 'painel:' + this.ctx.base.getId() + ':' + mes + ':' + reg.getLastRow() + ':' + atd.getLastRow() + ':' + (p.getProperty('CPT_ATD_VERSAO') || 0) + ':' + (p.getProperty('CPT_ENTREGAS_VERSAO') || 0) + ':' + hoje;
     return CacheCPT.obter(chave, 600, () => {
-      let obras = [], parceiros = null;
+      let obras = [];
       try { const o = new ObrasCPT(this.ctx); obras = o.ler().linhas.map(x => o.publico(x)); } catch (_) {}
-      try { const pp = new ProgramaParceirosCPT(this.ctx); parceiros = {atual: pp.atual(mes), anterior: pp.atual(ProgramaParceirosCPT.mesAnterior(mes))}; } catch (_) {}
-      return this.calcular({mes, hoje, linhas: this.dados.ler(reg, 19), fichas: this.dados.ler(atd, 18), obras, entregas: this.dados.situacoesEntregas(), parceiros});
+      return this.calcular({mes, hoje, linhas: this.dados.ler(reg, 19), fichas: this.dados.ler(atd, 18), obras, entregas: this.dados.situacoesEntregas()});
     }, atualizar === true);
   }
 
@@ -39,14 +38,14 @@ class PaineisGestaoCPT {
     const relatos = doMes.filter(x => x.destino), prontos = relatos.filter(x => (e.entregas.get(String(x.r[0])) || {}).situacao === 'pronto').length;
     const pesquisas = doMes.filter(x => x.satisfacao && x.data.startsWith(mes)).map(x => x.data);
     let semana = null;
-    if (hoje.startsWith(mes)) { const d = new Date(hoje + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); const de = d.toISOString().slice(0, 10); d.setUTCDate(d.getUTCDate() + 6); const ate = d.toISOString().slice(0, 10); semana = {de, ate, total: pesquisas.filter(x => x >= de && x <= ate).length, meta: RelatorioMensalCPT.metaSemanal}; }
+    if (hoje.startsWith(mes)) { const d = new Date(hoje + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); const de = d.toISOString().slice(0, 10); d.setUTCDate(d.getUTCDate() + 6); const ate = d.toISOString().slice(0, 10); semana = {de, ate, total: pesquisas.filter(x => x >= de && x <= ate).length, meta: DadosDaAplicacao.metaSemanal}; }
     const abertos = fichas.filter(c => !c.concluido), concluidosMes = fichas.filter(c => c.concluido && c.conclusao.startsWith(mes));
     const prazos = concluidosMes.filter(c => c.abertura && c.conclusao >= c.abertura).map(c => (Date.parse(c.conclusao + 'T12:00:00Z') - Date.parse(c.abertura + 'T12:00:00Z')) / 864e5);
     const frentesMes = new Set(acoes.map(x => S.frente(x.r[9])).filter(Boolean)), bairros = new Set(acoes.map(x => String(x.r[7])).filter(Boolean));
     const contrato = {
       acoes: acoes.length, pessoas: acoes.reduce((n, x) => n + (publico(x) || 0), 0), semPublico: acoes.filter(x => publico(x) === null).length,
       diagnosticos: doMes.filter(x => x.destino === '2').length, frentes: frentesMes.size, bairros: bairros.size,
-      pesquisas: {mes: pesquisas.length, meta: RelatorioMensalCPT.metaMensal, semana}, relatos: {total: relatos.length, prontos},
+      pesquisas: {mes: pesquisas.length, meta: DadosDaAplicacao.metaMensal, semana}, relatos: {total: relatos.length, prontos},
       casos: {abertos: abertos.length, recebidosMes: fichas.filter(c => c.abertura.startsWith(mes)).length, concluidosMes: concluidosMes.length,
         prazoMedio: prazos.length ? Math.round(prazos.reduce((a, b) => a + b, 0) / prazos.length) : null, acima30: abertos.filter(c => (c.dias || 0) > 30).length}
     };
@@ -92,16 +91,12 @@ class PaineisGestaoCPT {
     const alertas = [];
     if (contrato.casos.acima30) alertas.push({nivel: 'alto', texto: contrato.casos.acima30 + ' atendimento(s) em aberto há mais de 30 dias.', rota: 'atendimentos'});
     if (semana && semana.total < semana.meta) alertas.push({nivel: 'medio', texto: 'Pesquisas de satisfação nesta semana: ' + semana.total + ' de ' + semana.meta + '.', rota: 'registros'});
-    if (hoje.startsWith(mes)) { const dia = Number(hoje.slice(8, 10)), fim = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).getUTCDate(), esperado = Math.round(RelatorioMensalCPT.metaMensal * dia / fim);
-      if (pesquisas.length < esperado) alertas.push({nivel: 'medio', texto: 'Ritmo de pesquisas abaixo da meta: ' + pesquisas.length + ' até hoje (o esperado para a data é ' + esperado + ' de ' + RelatorioMensalCPT.metaMensal + ').', rota: 'registros'}); }
+    if (hoje.startsWith(mes)) { const dia = Number(hoje.slice(8, 10)), fim = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).getUTCDate(), esperado = Math.round(DadosDaAplicacao.metaMensal * dia / fim);
+      if (pesquisas.length < esperado) alertas.push({nivel: 'medio', texto: 'Ritmo de pesquisas abaixo da meta: ' + pesquisas.length + ' até hoje (o esperado para a data é ' + esperado + ' de ' + DadosDaAplicacao.metaMensal + ').', rota: 'registros'}); }
     const paradas = lista.filter(f => f.situacao === 'Em andamento' && (f.diasSemRegistro === null || f.diasSemRegistro > PaineisGestaoCPT.diasSemRegistro));
     if (paradas.length) alertas.push({nivel: 'medio', texto: paradas.length + ' frente(s) em andamento sem registro há mais de ' + PaineisGestaoCPT.diasSemRegistro + ' dias: ' + paradas.slice(0, 4).map(f => f.nome).join('; ') + (paradas.length > 4 ? '…' : '') + '.', aba: 'frentes'});
     if (contrato.semPublico) alertas.push({nivel: 'baixo', texto: contrato.semPublico + ' ação(ões) sem público informado (o total de pessoas alcançadas fica menor).', rota: 'registros'});
-    if (relatos.length > prontos) alertas.push({nivel: 'baixo', texto: (relatos.length - prontos) + ' de ' + relatos.length + ' relatos ainda não estão prontos para o relatório.', rota: 'socioambiental'});
-    if (e.parceiros && Number(hoje.slice(8, 10)) >= 5 && hoje.slice(0, 7) === PaineisGestaoCPT.meses(mes, 2)[1] && e.parceiros.anterior.situacao !== 'publicado')
-      alertas.push({nivel: 'medio', texto: 'Programa Parceiros de ' + ProgramaParceirosCPT.mesAnterior(mes) + ' ainda não publicado.', rota: 'parceiros'});
-    return {mes, hoje, contrato, serie, porItem, porPessoa, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString(),
-      parceiros: e.parceiros ? {situacao: e.parceiros.atual.situacao, versao: e.parceiros.atual.versao, conferidos: Object.values(e.parceiros.atual.campos).filter(c => c.conferido).length} : null};
+    return {mes, hoje, contrato, serie, porItem, porPessoa, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
   }
 
   /** Relatos do mês em leitura rápida: quem, onde, quantas pessoas e o começo do relato. JSON lido só das linhas do mês. */
@@ -115,7 +110,7 @@ class PaineisGestaoCPT {
       const json = new Map();
       // Faixas contínuas (as linhas do mês costumam estar juntas): poucas leituras da coluna de detalhes.
       for (let i = 0; i < idx.length;) { let j = i; while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++; const v = a.getRange(idx[i] + 2, 21, idx[j] - idx[i] + 1, 1).getValues(); v.forEach((x, k) => json.set(idx[i] + k, x[0])); i = j + 1; }
-      const entregas = dados.situacoesEntregas(), R = RelatorioMensalCPT;
+      const entregas = dados.situacoesEntregas(), R = DadosDaAplicacao;
       const itens = idx.map(i => {
         // Relato grande: o Campo 4.0 guarda os detalhes num arquivo à parte. Sem lê-lo, a conferência acusaria falta de tudo.
         let campos = R.campos(json.get(i));

@@ -5,7 +5,8 @@
  *   - Campo 4.0      ← campo40/src/  (mantém o appsscript.json atual do projeto)
  * Segurança:
  *   - Antes de mudar, cria uma VERSÃO de segurança do projeto (Gerenciar implantações / Versões mostram).
- *   - Arquivos que só existem no Google são mantidos (nada é apagado).
+ *   - Arquivos que só existem no Google são mantidos, exceto os APOSENTADOS de cada projeto (lista fixa abaixo),
+ *     que saíram da aplicação de propósito e não podem continuar funcionando no Google (ex.: o fechamento do relatório na 2.27).
  *   - conferirAtualizacaoCPT() só mostra o que mudaria; nada é alterado.
  * Pré-requisitos (uma vez): API do Apps Script ligada em script.google.com/home/usersettings,
  * e um token de leitura do GitHub. Veja docs/ATUALIZACAO_AUTOMATICA.md.
@@ -15,7 +16,9 @@ class AtualizadorCPT {
   static get PROP() { return 'CPT_ATUALIZADOR'; }
   static get projetos() {
     return {
-      aplicacao: {nome: 'Aplicação CPT', pasta: 'app/src', scriptId: '1B2gVRbnDP9E4tdecW7lknY5Wq8QlRbmjXXenx-8cOPQX0wBmePmWUhML', publicar: true},
+      aplicacao: {nome: 'Aplicação CPT', pasta: 'app/src', scriptId: '1B2gVRbnDP9E4tdecW7lknY5Wq8QlRbmjXXenx-8cOPQX0wBmePmWUhML', publicar: true,
+        // 2.27: fechamento do relatório retirado da aplicação (base do relatório, anexos, entregas do mês, Programa Parceiros, mesa).
+        aposentados: ['RelatorioMensalCPT', 'EntregasDoMesCPT', 'AnexosRelatorioCPT', 'ProgramaParceirosCPT', 'EntregasCPT', 'Fechamento', 'Socioambiental', 'Entregas']},
       campo40: {nome: 'Campo 4.0', pasta: 'campo40/src', scriptId: '', publicar: false}
     };
   }
@@ -63,36 +66,37 @@ class AtualizadorCPT {
     return texto ? JSON.parse(texto) : {};
   }
 
-  /** Junta o que está no Google com o que veio do GitHub. GitHub vence; arquivos só do Google ficam. */
-  static mesclar(atuais, novos, manterManifesto) {
-    const porNome = new Map(atuais.map(f => [f.name, {name: f.name, type: f.type, source: f.source}])), mudou = [], novosNomes = [];
+  /** Junta o que está no Google com o que veio do GitHub. GitHub vence; arquivos só do Google ficam, menos os aposentados. */
+  static mesclar(atuais, novos, manterManifesto, aposentados) {
+    const sair = new Set((aposentados || []).filter(n => !novos.some(f => f.name === n))), removidos = atuais.filter(f => sair.has(f.name)).map(f => f.name);
+    const porNome = new Map(atuais.filter(f => !sair.has(f.name)).map(f => [f.name, {name: f.name, type: f.type, source: f.source}])), mudou = [], novosNomes = [];
     novos.forEach(f => {
       if (manterManifesto && f.name === 'appsscript') return;
       const a = porNome.get(f.name);
       if (!a) novosNomes.push(f.name); else if (a.source !== f.source || a.type !== f.type) mudou.push(f.name);
       porNome.set(f.name, {name: f.name, type: f.type, source: f.source});
     });
-    const soNoGoogle = atuais.filter(f => !novos.some(n => n.name === f.name)).map(f => f.name);
+    const soNoGoogle = atuais.filter(f => !sair.has(f.name) && !novos.some(n => n.name === f.name)).map(f => f.name);
     // O manifesto precisa existir e vir primeiro.
     const files = [...porNome.values()].sort((a, b) => (a.name === 'appsscript' ? -1 : b.name === 'appsscript' ? 1 : 0));
-    return {files, mudou, novos: novosNomes, soNoGoogle};
+    return {files, mudou, novos: novosNomes, soNoGoogle, removidos};
   }
 
   static plano(chave, c) {
     const p = this.projetos[chave], scriptId = (c.scriptIds || {})[chave] || p.scriptId;
     if (!scriptId) throw new Error('Falta o ID do projeto ' + p.nome + '. Execute configurarAtualizadorCPT com o ID (Configurações do projeto → IDs).');
     const atuais = this.api('get', 'projects/' + scriptId + '/content').files || [];
-    const m = this.mesclar(atuais, this.arquivosDoGitHub(p.pasta, c), !p.publicar);
+    const m = this.mesclar(atuais, this.arquivosDoGitHub(p.pasta, c), !p.publicar, p.aposentados);
     return {chave, nome: p.nome, scriptId, ...m};
   }
 
   static aplicar(chave, c) {
     const pl = this.plano(chave, c), p = this.projetos[chave];
-    if (!pl.mudou.length && !pl.novos.length) return {projeto: pl.nome, resultado: 'Já estava atualizado.'};
+    if (!pl.mudou.length && !pl.novos.length && !pl.removidos.length) return {projeto: pl.nome, resultado: 'Já estava atualizado.'};
     const quando = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm');
     const seguranca = this.api('post', 'projects/' + pl.scriptId + '/versions', {description: 'Segurança antes da atualização de ' + quando});
     this.api('put', 'projects/' + pl.scriptId + '/content', {scriptId: pl.scriptId, files: pl.files});
-    const saida = {projeto: pl.nome, alterados: pl.mudou, criados: pl.novos, mantidosSoNoGoogle: pl.soNoGoogle, versaoDeSeguranca: seguranca.versionNumber};
+    const saida = {projeto: pl.nome, alterados: pl.mudou, criados: pl.novos, removidos: pl.removidos, mantidosSoNoGoogle: pl.soNoGoogle, versaoDeSeguranca: seguranca.versionNumber};
     if (p.publicar) {
       const nova = this.api('post', 'projects/' + pl.scriptId + '/versions', {description: 'Atualização do GitHub (' + c.ramo + ') em ' + quando});
       const imps = (this.api('get', 'projects/' + pl.scriptId + '/deployments').deployments || [])
@@ -130,7 +134,7 @@ function configurarAtualizadorCPT() {
 function conferirAtualizacaoCPT() {
   const c = AtualizadorCPT.config(), saida = {ramo: c.ramo, ultimasMudancasNoGitHub: AtualizadorCPT.ultimosCommits(c), projetos: []};
   Object.keys(AtualizadorCPT.projetos).forEach(k => {
-    try { const p = AtualizadorCPT.plano(k, c); saida.projetos.push({projeto: p.nome, alterar: p.mudou, criar: p.novos, manterSoNoGoogle: p.soNoGoogle}); }
+    try { const p = AtualizadorCPT.plano(k, c); saida.projetos.push({projeto: p.nome, alterar: p.mudou, criar: p.novos, remover: p.removidos, manterSoNoGoogle: p.soNoGoogle}); }
     catch (e) { saida.projetos.push({projeto: AtualizadorCPT.projetos[k].nome, erro: e.message}); }
   });
   console.log(JSON.stringify(saida, null, 2)); return saida;

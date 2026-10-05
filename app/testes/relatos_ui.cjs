@@ -24,8 +24,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await espaco();await p.locator('.missao.t-devolutiva').waitFor();await p.locator('[data-missao-devolutiva]').click();
   assert.match(await p.locator('.devolutiva-texto').textContent(),/Encaminhamento/);await p.fill('#devolutivaForm [name=resposta]','Vou completar.');await p.locator('#devolutivaForm [type=submit]').click();
   await toast(/visto/);assert.equal(await p.locator('.missao.t-devolutiva').count(),0);
-  // Mesa do relatório tem o guia; Gestão (fora do período de testes da prévia) não comenta.
-  await p.locator('.nav-item[data-route=socioambiental]').click();await p.locator('.mesa-hero [data-guia-relato]').click();await p.locator('.guia-relato').waitFor();await p.locator('#closeDialog').click();
+  // Gestão (fora do período de testes da prévia) não comenta.
   await p.goto(url('?perfil=gestao'));await p.locator('#roleView option[value=gestao]').waitFor({state:'attached'});await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=relatos]').click();
   await p.locator('.relato-card .qualidade-chips').first().waitFor();assert.equal(await p.locator('[data-devolver]').count(),0,'período de testes: só o proprietário comenta');
   assert.deepEqual(errors,[]);await b.close();

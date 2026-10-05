@@ -7,16 +7,16 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q;
   await p.addInitScript(()=>{window.__cls=0;new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value;}).observe({type:'layout-shift',buffered:true});});
   // 1) Entrada como na implantação (perfil embutido): a tela não pula quando os dados chegam.
-  await p.goto(url('?inicial=1&latencia=150'));await p.locator('.report-items').waitFor();await p.waitForTimeout(1800);
+  await p.goto(url('?inicial=1&latencia=150'));await p.locator('.panel-dias').waitFor();await p.waitForTimeout(1800);
   const cls=await p.evaluate(()=>window.__cls);assert.ok(cls<0.1,'CLS '+cls.toFixed(3)+' deve ficar abaixo de 0,1');
   // 2) Avisos de recados pedidos depois dos dados do mês (não disputam a primeira tela).
   const ch=await p.evaluate(()=>window.CPT_PREVIA.chamadas.map(c=>[c.nome,c.inicio]));
   const ini=ch.find(c=>c[0]==='carregarInicioCPT'),avi=ch.find(c=>c[0]==='contarAvisosCPT');assert.ok(ini&&avi&&avi[1]>ini[1]+1000,'contarAvisosCPT adiado: '+JSON.stringify(ch));
   // 3) Esqueleto enquanto a página carrega.
-  await p.goto(url('?inicial=1&latencia=900'));await p.locator('.report-items').waitFor();
+  await p.goto(url('?inicial=1&latencia=900'));await p.locator('.panel-dias').waitFor();
   await p.locator('#tabMenu').click();await p.locator('.nav-item[data-route=obras]').click();await p.locator('.skel-list .skeleton').first().waitFor();await p.locator('.skel-list').waitFor({state:'detached'});
   // 4) Contatos: 50 por vez (2.13: linhas), "Mostrar mais", busca com espera curta.
-  await p.goto(url('?inicial=1&latencia=20'));await p.locator('.report-items').waitFor();
+  await p.goto(url('?inicial=1&latencia=20'));await p.locator('.panel-dias').waitFor();
   await p.locator('#tabMenu').click();await p.locator('.nav-item[data-route=contatos]').click();await p.locator('.contacts-table .list-row').first().waitFor();
   await p.evaluate(()=>{for(let i=0;i<130;i++)window.CPT_COM.contatos.push({id:'CON-X'+i,versao:1,nome:'Contato extra '+i,instituicao:'',tipo:'Comércio',telefone:'',email:'',endereco:'',bairro:'Vila Linda',frente:'',etiquetas:i===77?'padaria-unica':'',observacao:'',registros:[]});});
   await p.locator('#refresh').click();await p.waitForFunction(()=>document.querySelectorAll('.contacts-table .list-row').length>=50);

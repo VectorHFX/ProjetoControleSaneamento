@@ -9,16 +9,12 @@ class ConectoresCPT {
   static get chave() { return 'CPT_CONECTORES'; }
   static get catalogo() {
     return [
-      {chave: 'parceiros', nome: 'Máscara do Programa Parceiros', tipo: 'planilha', padrao: '1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m', aba: 2014363223,
-        uso: 'A Gestão publica aqui as respostas conferidas do mês (só os campos marcados como conferidos).'},
       {chave: 'rdas', nome: 'RDAS — relatos diários', tipo: 'planilha', padrao: '176BymNYBSfVt7iQrkNR-IyT_NXdB9GC999mX9C2WtK4',
         uso: 'Continua uma planilha à parte, compartilhada com a equipe interna.'},
-      {chave: 'anexos', nome: 'Anexos do relatório (planilha oficial)', tipo: 'planilha', padrao: '1Et4M0nr4CxlRj7J6EDoru91aC4PJ-G2Y',
-        uso: 'Matriz de Contatos, Controle de manifestações e Indicadores 2026. A aplicação só acrescenta e atualiza casos no Controle de manifestações (sem apagar); Indicadores 2026 nunca é alterado.'},
       {chave: 'central', nome: 'Central CPT 4.0', tipo: 'planilha', padrao: '18Hzcw0amILZBUcy8D952YwJarM6mj16Q8Vg_pei6UmU',
         uso: 'Consulta anterior do projeto (fica como referência).'},
       {chave: 'painelGestao', nome: 'Planilha do Painel de Gestão', tipo: 'planilha', padrao: '1mWROhF6jD4G9lz4PkSWGb6lSLO05SJMJwH8sJHqRYek',
-        uso: 'Painel anterior da gestão. As visões dele agora estão na aplicação (Painel da gestão e Programa Parceiros).'},
+        uso: 'Painel anterior da gestão. As visões dele agora estão na aplicação (Painel da gestão).'},
       {chave: 'contrato', nome: 'Planilha de controle do contrato', tipo: 'planilha', padrao: '1pQJ5B8wRzsdlU8udlh9ZzcWXozT3BOh4', aba: 733716505,
         uso: 'Preenchida 100% à mão pela Gestão, todo mês. A aplicação só abre o link e lembra (Visão do mês · Contrato); nunca escreve nela.'}
     ];
@@ -56,7 +52,7 @@ class ConectoresCPT {
   }
   /**
    * Pastas que a equipe precisa enxergar: onde o formulário guarda as fotos (amostra dos registros recentes)
-   * e onde a aplicação salva relatórios, anexos e fichas.
+   * e a pasta com o que a aplicação gerou até a 2.26 (relatórios, anexos e fichas).
    */
   pastasParaCompartilhar() {
     const out = new Map(), anotar = (pasta, motivo) => {
@@ -73,7 +69,7 @@ class ConectoresCPT {
         });
       }
     } catch (_) {}
-    try { const c = AplicacaoCPT.config(); if (c.pastaEntregasId) anotar(DriveApp.getFolderById(c.pastaEntregasId), 'Relatórios, anexos, fichas e Programa Parceiros gerados pela aplicação'); } catch (_) {}
+    try { const c = AplicacaoCPT.config(); if (c.pastaEntregasId) anotar(DriveApp.getFolderById(c.pastaEntregasId), 'Arquivo: relatórios, anexos e fichas gerados pela aplicação até a 2.26'); } catch (_) {}
     try { const c = AplicacaoCPT.config(); if (c.pastaExtrasId) anotar(DriveApp.getFolderById(c.pastaExtrasId), 'Fotos extras enviadas pela Comunicação na galeria'); } catch (_) {}
     return [...out.values()];
   }

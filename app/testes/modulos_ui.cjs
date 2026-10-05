@@ -1,4 +1,4 @@
-// Interface de Obras e Fechamento na prévia (dados fictícios).
+// Interface de Obras na prévia (dados fictícios); 2.27: o Fechamento saiu.
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),path=require('path'),assert=require('node:assert/strict');
 (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined});const page=await b.newPage({viewport:{width:1280,height:900}});await page.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const erros=[];page.on('pageerror',e=>erros.push(e.message));
 const url='file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html'),out=process.env.SHOTS;
@@ -21,38 +21,8 @@ await page.locator('.bairro-row',{hasText:'Vila Nova'}).waitFor();assert.equal(a
 await page.locator('[data-bairro="Vila Assunção"]').click();assert(await page.locator('#bairroForm input[name=nome]').isDisabled(),'nome do bairro não muda');await page.locator('#bairroForm input[name=noFormulario]').uncheck();await page.locator('#bairroForm button[type=submit]').click();
 await page.locator('.bairro-row',{hasText:'Vila Assunção'}).locator('text=Fora do formulário').waitFor();
 if(out)await page.screenshot({path:out+'/obras.png',fullPage:true});
-await page.locator('.nav-item[data-route=fechamento]').click();await page.locator('.fechamento-item').first().waitFor();assert.equal(await page.locator('.fechamento-item').count(),4);
-// 2.26.1: a página pede só a conferência e as entregas (os Anexos vêm junto); ao voltar, aparece na hora e confere em segundo plano.
-await page.locator('#anexosEstado [data-anexos-conferir]').waitFor();
-assert.equal(await page.evaluate(()=>window.CPT_PREVIA.chamadas.filter(c=>c.nome==='estadoAnexosCPT').length),0,'Anexos sem pedido à parte');
-await page.locator('.nav-item[data-route=obras]').click();await page.locator('.bairro-row').first().waitFor();
-await page.evaluate(()=>window.CPT_PREVIA.chamadas.length=0);await page.locator('.nav-item[data-route=fechamento]').click();
-assert.equal(await page.locator('.fechamento-item').count(),4,'volta sem esqueleto');assert.equal(await page.locator('#view .skeleton').count(),0);assert.equal(await page.locator('.entrega-card').count(),4);
-await page.waitForFunction(()=>window.CPT_PREVIA.chamadas.filter(c=>/conferirFechamentoCPT|carregarEntregasDoMesCPT/.test(c.nome)).length===2);
-// Entregas do mês: 4 cartões; relatório já gerado começa "Em preparo"; atualizar, entregar (retrato) e .zip das fichas.
-await page.locator('.entrega-card').nth(3).waitFor();assert.equal(await page.locator('.entrega-card').count(),4);assert.equal(await page.locator('.page-intro h1').first().textContent().then(t=>t.trim()),'Entregas do mês');
-const rel=page.locator('.entrega-card[data-entrega=relatorio]');assert.match(await rel.locator('.badge').textContent(),/Em preparo/);assert.match(await page.locator('.entrega-card[data-entrega=anexos] .badge').textContent(),/A fazer/);
-await rel.locator('[data-entrega-editar]').click();await page.selectOption('#entregaForm [name=situacao]','revisao');await page.selectOption('#entregaForm [name=responsavel]','ana@example.com');await page.locator('#entregaForm button[type=submit]').click();
-await page.waitForFunction(()=>/Em revisão/.test(document.querySelector('.entrega-card[data-entrega=relatorio] .badge').textContent));assert.match(await rel.locator('.entrega-meta').textContent(),/Ana \(demo\)/);
-await page.locator('.entrega-card[data-entrega=anexos] [data-entrega-editar]').click();await page.selectOption('#entregaForm [name=situacao]','entregue');await page.locator('#entregaForm button[type=submit]').click();
-await page.getByText('Ainda não há arquivo desta entrega').waitFor();await page.locator('#closeDialog').click();
-await rel.locator('[data-entrega-editar]').click();await page.selectOption('#entregaForm [name=situacao]','entregue');await page.locator('#entregaForm button[type=submit]').click();
-await page.locator('.entrega-card.acabou-de-entregar[data-entrega=relatorio]').waitFor();assert.match(await rel.locator('.entrega-retratos summary').textContent(),/Entregas anteriores \(1\)/);
-assert.match(await page.locator('.entregas-topo h2').textContent(),/1 de 4/);
-await page.locator('[data-entrega-zip]').click();await page.locator('.entrega-card[data-entrega=atendimentos] .entrega-arquivo',{hasText:'.zip das fichas'}).waitFor();
-if(out)await page.locator('#entregasMes').screenshot({path:out+'/entregas.png'});
-assert.match(await page.locator('.simple-table').textContent(),/\(parcial\)/);await page.fill('#gerarForm input[name=numero]','15');await page.locator('#gerarForm button').click();
-await page.getByText('Abrir documento').waitFor();if(out)await page.screenshot({path:out+'/fechamento.png',fullPage:true});
-// 2.26: Anexos do relatório = planilha oficial — conferir (nada gravado), atualizar, e o cartão passa a ter o arquivo.
-await page.locator('[data-anexos-conferir]').waitFor();assert.ok(await page.locator('#anexosEstado a[href*="format=xlsx"]').count()===1&&await page.locator('#anexosEstado a[href*="format=pdf"]').count()===1,'Excel e PDF');
-await page.locator('[data-anexos-conferir]').click();await page.locator('.anexos-previa').waitFor();assert.match(await page.locator('.anexos-previa').textContent(),/2 novo\(s\) para acrescentar · 1 para atualizar/);
-page.once('dialog',d=>d.accept());await page.locator('[data-anexos-atualizar]').click();await page.locator('#anexosPlanilhaResultado .notice',{hasText:'Nada foi apagado'}).waitFor();assert.match(await page.locator('#anexosEstado').textContent(),/Atualizada em/);
-await page.waitForFunction(()=>/Em preparo/.test(document.querySelector('.entrega-card[data-entrega=anexos] .badge').textContent));
-await page.locator('.entrega-card[data-entrega=anexos] [data-entrega-rolar]').click();
-await page.locator('[data-fechamento-ir]').nth(1).click();await page.locator('#recordFilters').waitFor();assert.equal(await page.locator('#recordFilters input[name=pendencia]').inputValue(),'publico');
-// Colaboradora de Comunicação: vê Obras sem editar e vê Fechamento; Atendimento não vê Fechamento.
-await page.goto(url+'?perfil=comunicacao');await page.locator('#roleView option[value=comunicacao]').waitFor({state:'attached'});assert(await page.locator('.nav-item[data-route=fechamento]').isVisible());
-await page.locator('.nav-item[data-route=fechamento]').click();await page.locator('.entrega-card').nth(3).waitFor();assert.equal(await page.locator('[data-entrega-editar]').count(),0,'Comunicação acompanha sem alterar (período de testes)');
+// 2.27: o fechamento do mês saiu da aplicação — nenhuma visão tem as páginas Socioambiental, Entregas do mês ou Programa Parceiros.
+await page.goto(url+'?perfil=comunicacao');await page.locator('#roleView option[value=comunicacao]').waitFor({state:'attached'});assert.equal(await page.locator('.nav-item[data-route=fechamento], .nav-item[data-route=socioambiental], .nav-item[data-route=parceiros]').count(),0,'fechamento fora do menu');
 await page.locator('.nav-item[data-route=obras]').click();await page.locator('.obra-card').first().waitFor();assert.equal(await page.locator('[data-obra-acao=nova]').count(),0);assert.equal(await page.locator('[data-obra-confirmar]').count(),0);assert.equal(await page.locator('[data-bairro-novo]').count(),0);
 await page.goto(url+'?perfil=atendimento');await page.locator('#roleView option[value=atendimento]').waitFor({state:'attached'});assert(await page.locator('.nav-item[data-route=fechamento]').isHidden());
-assert.deepEqual(erros,[]);await b.close();console.log('PASS: Obras (filtro mantém foco, revisão diária, cadastro) e Fechamento (pendências, satisfação semanal, geração e atalho para a pendência) por perfil.');})().catch(e=>{console.error(e);process.exit(1);});
+assert.deepEqual(erros,[]);await b.close();console.log('PASS: Obras (filtro mantém foco, revisão diária, cadastro) e o fechamento fora do menu em todas as visões.');})().catch(e=>{console.error(e);process.exit(1);});

@@ -38,7 +38,7 @@ class RelatosCPT {
   }
   /** Lê os campos do registro (Detalhes JSON) e confere. */
   static doRegistro(r, campos) {
-    const R = RelatorioMensalCPT, v = re => R.valor(campos, re) || '';
+    const R = DadosDaAplicacao, v = re => R.valor(campos, re) || '';
     return RelatosCPT.conferir({atividade: r[13], complemento: v(/^complemento/), texto: v(/^relato|relato da atividade|descreva|como foi/), objetivo: v(/^objetivo/),
       observacao: v(/^observacao final/), bairro: r[7], endereco: v(/^endereco completo|^endereco da atividade|^local da atividade/),
       publico: r[14] !== '' && /^\d+$/.test(String(r[14])) ? Number(r[14]) : null, publicoAlvo: v(/^publico-alvo|^publico alvo/)});

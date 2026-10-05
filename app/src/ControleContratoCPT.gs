@@ -34,14 +34,14 @@ class ControleContratoCPT {
       {nome: 'Frentes com atividade', valor: c.frentes}, {nome: 'Bairros com ação', valor: c.bairros}, {nome: 'Diagnósticos', valor: c.diagnosticos},
       {nome: 'Pesquisas de satisfação', valor: c.pesquisas.mes, nota: 'meta ' + c.pesquisas.meta}, {nome: 'Atendimentos recebidos', valor: c.casos.recebidosMes},
       {nome: 'Atendimentos concluídos', valor: c.casos.concluidosMes, nota: c.casos.prazoMedio != null ? 'prazo médio ' + c.casos.prazoMedio + ' dias' : ''},
-      {nome: 'Atendimentos em aberto', valor: c.casos.abertos, nota: c.casos.acima30 ? c.casos.acima30 + ' há mais de 30 dias' : ''}, {nome: 'Relatos prontos', valor: c.relatos.prontos, nota: 'de ' + c.relatos.total}]; } catch (e) { console.warn('Controle do contrato: ' + e.message); }
-    return {mes, mesNome: RelatorioMensalCPT.mesExtenso(mes), prazo, hoje, atrasada: !x && hoje > prazo, url: ControleContratoCPT.url(), ultimaAlteracao: this.ultimaAlteracao(),
+      {nome: 'Atendimentos em aberto', valor: c.casos.abertos, nota: c.casos.acima30 ? c.casos.acima30 + ' há mais de 30 dias' : ''}, {nome: 'Relatos de atividade', valor: c.relatos.total, nota: ''}]; } catch (e) { console.warn('Controle do contrato: ' + e.message); }
+    return {mes, mesNome: DadosDaAplicacao.mesExtenso(mes), prazo, hoje, atrasada: !x && hoje > prazo, url: ControleContratoCPT.url(), ultimaAlteracao: this.ultimaAlteracao(),
       respondida: x ? {nome: x.nome || x.alteradoPor, em: x.alteradoEm} : null, versao: reg ? reg.versao : 0,
       podeMarcar: this.podeMarcar(), indicadores};
   }
   marcar(p) {
     p = p || {}; PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'Marcar a planilha de controle');
-    const mes = EntregasDoMesCPT.mes(p.mes), id = 'CTR-' + mes, antigo = this.registro(mes), respondida = p.respondida !== false;
+    const mes = DadosDaAplicacao.mesValido(p.mes), id = 'CTR-' + mes, antigo = this.registro(mes), respondida = p.respondida !== false;
     const e = this.col.gravar({respondida, nome: this.ctx.perfil.nome}, antigo ? Number(p.versao) : 0, p.operacaoId, id);
     return {resultado: respondida ? 'Marcada como respondida. O lembrete deste mês some do checklist.' : 'Marca desfeita: o lembrete volta.', mes, respondida: e.respondida ? {nome: e.nome, em: e.alteradoEm} : null, versao: e.versao};
   }
@@ -49,7 +49,7 @@ class ControleContratoCPT {
   missoes() {
     const hoje = ColecaoCPT.hoje(), mes = ControleContratoCPT.mesAnterior(hoje); if (this.marca(mes)) return [];
     const prazo = ControleContratoCPT.prazo(mes), br = prazo.split('-').reverse().slice(0, 2).join('/');
-    return [{id: 'controle-contrato:' + mes, titulo: 'Responder a planilha de controle de ' + RelatorioMensalCPT.mesExtenso(mes), tipo: 'rota', rota: 'painel',
+    return [{id: 'controle-contrato:' + mes, titulo: 'Responder a planilha de controle de ' + DadosDaAplicacao.mesExtenso(mes), tipo: 'rota', rota: 'painel',
       texto: (hoje > prazo ? 'O prazo era ' + br + '. ' : 'Prazo: ' + br + '. ') + 'É preenchida à mão; na Visão do mês · Contrato estão o link e os números para conferir.'}];
   }
 }

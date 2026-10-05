@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.27.0 — fechamento do relatório retirado da aplicação (≈ 5 min)
+
+1. Rode a atualização pelo **Cloud Shell** como sempre. Desta vez a conferência mostra também **"Remover (aposentados)"**: `RelatorioMensalCPT`, `EntregasDoMesCPT`, `AnexosRelatorioCPT`, `ProgramaParceirosCPT`, `EntregasCPT`, `Fechamento`, `Socioambiental` e `Entregas`. Eles são **apagados do projeto no Google** de propósito — se ficassem lá, a base do relatório ainda poderia ser montada. Antes de mudar, a atualização cria a versão de segurança de sempre.
+   - Se usar o projeto *CPT • Atualizador* (caminho antigo), cole antes o `atualizador/src/AtualizadorCPT.gs` novo nele; ou apague esses 8 arquivos à mão no editor (⋮ → Excluir).
+2. Execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.27.0`) e publique uma **Nova versão** (se a atualização não publicou).
+3. **O que saiu** (o grupo "Fechamento do mês" inteiro): Mesa do relatório (Socioambiental), preparo de relatos e diagnósticos, documentos socioambientais, Entregas do mês, base do relatório (Google Docs), Anexos do relatório (planilha oficial), pacote mensal de fichas (ANEXO 4) e Programa Parceiros. Também os botões "Preparar", o painel "Para o relatório" e a missão de relatos não preparados.
+4. **O que continua**: a ficha oficial de cada caso em Atendimentos; o lembrete da planilha de controle (Visão do mês · Contrato); relatos em resumo com o guia e o comentário privado; a contagem de ações por eixo; e o **RDAS**, que é do Campo 4.0 e não depende de nada que saiu.
+5. **Nada foi apagado das planilhas e do Drive**: os relatos já preparados, as entregas e os arquivos gerados continuam onde estavam. O código fica no histórico do GitHub para recomeçar o fechamento depois.
+
 ## Atualização 2.26.8 — "Para vincular" com busca e obras finalizadas (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.8`) e publique uma **Nova versão**.

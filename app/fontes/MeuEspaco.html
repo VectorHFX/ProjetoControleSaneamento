@@ -117,7 +117,7 @@ window.CPTArte = (() => {
     padrao: '<path class="ia-a" d="M100 22 C100 22 64 62 64 84 a36 36 0 0 0 72 0 C136 62 100 22 100 22Z"/><path class="ia-p" opacity=".5" d="M84 82 a16 16 0 0 0 10 18" fill="none" stroke-width="6"/><circle class="ia-c" cx="146" cy="44" r="10"/>'
   };
   const alias = {cronograma: 'cronograma', atendimentos: 'atendimentos', registros: 'registros', obras: 'obras', contatos: 'contatos', recados: 'recados', comunicacao: 'comunicacao', lembretes: 'comunicacao',
-    socioambiental: 'socioambiental', fechamento: 'socioambiental', painel: 'painel', parceiros: 'painel', inicio: 'painel', ajuda: 'ajuda', equipe: 'contatos', conectores: 'padrao'};
+    socioambiental: 'socioambiental', painel: 'painel', inicio: 'painel', ajuda: 'ajuda', equipe: 'contatos', conectores: 'padrao'};
   function pagina(rota) { return `<svg class="page-art" viewBox="0 0 200 140">${fundo}${cenas[alias[rota]] || cenas.padrao}${agua}</svg>`; }
   return {pagina};
 })();
@@ -182,7 +182,7 @@ window.CPTEspaco = (() => {
   const diasAbertos = new Set();
   const ILUSTRA_VAZIO = '<svg class="empty-art" viewBox="0 0 120 90" aria-hidden="true"><rect x="18" y="16" width="84" height="64" rx="10" class="ea-paper"/><rect x="18" y="16" width="84" height="16" rx="8" class="ea-top"/><circle cx="40" cy="12" r="5" class="ea-ring"/><circle cx="80" cy="12" r="5" class="ea-ring"/><path d="M44 56 l10 10 l22 -22" class="ea-check"/></svg>';
   const TRABALHO = {
-    atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Abrir a mesa do relatório', 'socioambiental', ''], comunicacao: ['Abrir meu dia na Comunicação', 'comunicacao', 'hoje'],
+    atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Ver os relatos do mês', 'registros', 'relatos'], comunicacao: ['Abrir meu dia na Comunicação', 'comunicacao', 'hoje'],
     comercializacao: ['Ver obras e endereços', 'obras', ''], gestao: ['Abrir a Visão do mês', 'inicio', ''], administrativo: ['Abrir a Visão do mês', 'inicio', '']};
 
   async function render(manterDia) {

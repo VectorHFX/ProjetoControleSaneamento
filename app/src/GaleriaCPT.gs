@@ -13,7 +13,7 @@ class GaleriaCPT {
     if (!album && !GaleriaCPT.pode(ctx.perfil)) throw new Error('A galeria é da Comunicação, do Socioambiental e da Gestão.');
     this.ctx = ctx; this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil); this.col = new ColecaoCPT(ctx, 'Mídias extras', 'MID');
   }
-  static legenda(data, atividade, local) { return [RelatorioMensalCPT.br(data), atividade, local].filter(Boolean).join(' - '); }
+  static legenda(data, atividade, local) { return [DadosDaAplicacao.br(data), atividade, local].filter(Boolean).join(' - '); }
   static ids(texto) { return (String(texto || '').match(/https:\/\/[^\s,;"]+/g) || []).map(u => (u.match(/(?:\/d\/|[?&]id=)([A-Za-z0-9_-]{20,})/) || [])[1]).filter(Boolean); }
   listar(mes, atualizar) {
     this.dados.mes(mes);

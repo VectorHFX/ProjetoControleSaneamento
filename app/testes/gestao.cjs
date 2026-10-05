@@ -1,4 +1,4 @@
-// Programa Parceiros, Painel da gestão, Auditoria de atendimentos, Conectores e trava de configuração, com serviços Google simulados.
+// Painel da gestão, Auditoria de atendimentos, Conectores e trava de configuração, com serviços Google simulados.
 // node app/testes/gestao.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('crypto');
 let email='victor@example.com',locked=false,falharGravacao=0;
@@ -58,53 +58,10 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,MimeType:{GOOGLE_SHEET
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)}},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','ProgramaParceirosCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT','EntregasDoMesCPT','ControleContratoCPT','OrganogramaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT','ControleContratoCPT','OrganogramaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 
-// Máscara oficial: linha 2 com Junho (C:L), Julho (M:O), Agosto (P:R); perguntas na coluna B; fórmula em P9.
-const perguntas=run('ProgramaParceirosCPT.perguntas');
-const mrows=[[],['','Dados','Junho','','','','','','','','','','Julho','','','Agosto']];perguntas.forEach(([l,,r])=>{mrows[l-1]=['',r];});
-mrows[2][15]=0;mrows[7][15]=8;mrows[8][15]=53;mrows[16][15]=8;
-const mascara=new Sheet('Sheet1',mrows,2014363223);mascara.formulas.set('9,16','=40+13');mascara.merges=[{r:2,c:3,w:10},{r:2,c:13,w:3},{r:2,c:16,w:3}];
-books.set('1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m',new Book('1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m',[mascara],'Máscara de lançamento'));
 
-// 1. Programa Parceiros: só Gestão/Administrativo; sugestões com regra; mês anterior vindo da máscara.
-email='social@example.com';assert.throws(()=>run("carregarParceirosCPT('2026-09')"),/Gestão e pelo Administrativo/);
-email='gestao@example.com';let d=run("carregarParceirosCPT('2026-09')");
-assert.equal(d.mascara.ok,true);assert.equal(d.mascara.coluna,0);assert.equal(d.atual.versao,0);assert.equal(d.podePublicar,false);
-assert.equal(d.anterior[8].valor,8);assert.equal(d.origemAnterior,'Máscara oficial');
-assert.equal(d.definicoes.flatMap(g=>g.perguntas).length,90);
-assert.equal(d.sugestoes[8].valor,1,'DDS não é reunião aberta à comunidade');assert.equal(d.sugestoes[9].valor,15);assert.match(d.sugestoes[10].valor,/Ação Social Externa/);
-assert.equal(d.sugestoes[17].valor,8.5);assert.equal(d.sugestoes[19].valor,8);assert.match(d.sugestoes[18].valor,/esperança/);
-assert.equal(d.sugestoes[23].valor,1);assert.equal(d.sugestoes[24].valor,1);assert.equal(d.sugestoes[28].valor,1);assert.equal(d.sugestoes[27].valor,0);
-assert.equal(d.sugestoes[31].valor,12,'média de 2 e 21 dias, arredondada');assert.equal(d.sugestoes[44].valor,1);
-assert.ok(d.sugestoes[8].regra.length>20,'toda sugestão diz como foi calculada');
-// 2. Salvar: validação por tipo, versão, idempotência e conflito.
-ctx.s={mes:'2026-09',versao:0,operacaoId:'OP-aaaaaaaaaa',campos:{17:{valor:'11',conferido:true}}};assert.throws(()=>run('salvarParceirosCPT(s)'),/0 a 10/);
-ctx.s.campos={8:{valor:'onze',conferido:false}};assert.throws(()=>run('salvarParceirosCPT(s)'),/número/);
-ctx.s.campos={999:{valor:'1'}};assert.throws(()=>run('salvarParceirosCPT(s)'),/fora da máscara/);
-ctx.s.campos={8:{valor:'11',conferido:true},9:{valor:'94',conferido:true},10:{valor:'=HOJE()',conferido:true},17:{valor:'8,7',conferido:true},33:{valor:'29.839',conferido:true},12:{valor:'não se aplica',conferido:true},59:{valor:true,conferido:true},83:{valor:'Sim',conferido:false},3:{valor:'',conferido:false}};
-let r=run('salvarParceirosCPT(s)');assert.equal(r.atual.versao,1);assert.equal(r.atual.campos[17].valor,8.7);assert.equal(r.atual.campos[33].valor,29839);assert.equal(r.atual.campos[12].valor,'Não aplicada');assert.equal(r.atual.campos[3],undefined);
-assert.equal(run('salvarParceirosCPT(s)').atual.versao,1,'mesma operação não duplica');
-ctx.s={...ctx.s,operacaoId:'OP-bbbbbbbbbb'};assert.throws(()=>run('salvarParceirosCPT(s)'),/Outra pessoa salvou/);
-assert.equal(run("carregarParceirosCPT('2026-09')").atual.versao,1);
-// 3. Publicar: travado para a Gestão durante os testes; o proprietário publica só os conferidos e cria a coluna do mês.
-ctx.pub={mes:'2026-09',versao:1};assert.throws(()=>run('publicarParceirosCPT(pub)'),/período de testes/);
-email='victor@example.com';r=run('publicarParceirosCPT(pub)');
-assert.equal(mascara.rows[1][18],'Setembro/2026');assert.equal(r.atual.publicacao.coluna,19);assert.equal(r.atual.publicacao.criada,true);
-assert.equal(mascara.rows[7][18],11);assert.equal(mascara.rows[16][18],8.7);assert.equal(mascara.rows[9][18],"'=HOJE()",'texto que parece fórmula entra como texto');
-assert.equal(mascara.rows[58][18],true);assert.equal(mascara.rows[82]?.[18]??'','','não conferido não é gravado');assert.equal(r.atual.situacao,'publicado');assert.equal(locked,false);
-// Mês com fórmula: a linha com fórmula é preservada.
-ctx.s={mes:'2026-08',versao:0,operacaoId:'OP-cccccccccc',campos:{8:{valor:'9',conferido:true},9:{valor:'60',conferido:true}}};run('salvarParceirosCPT(s)');
-r=run("publicarParceirosCPT({mes:'2026-08',versao:1})");assert.equal(mascara.rows[7][15],9);assert.equal(mascara.rows[8][15],53);assert.deepEqual(r.atual.publicacao.comFormula,[9]);assert.match(r.resultado,/fórmula preservadas: 9/);
-// Falha no meio: valores anteriores restaurados.
-ctx.s={mes:'2026-08',versao:2,operacaoId:'OP-dddddddddd',campos:{8:{valor:'7',conferido:true},17:{valor:'6',conferido:true}}};run('salvarParceirosCPT(s)');
-falharGravacao=2;assert.throws(()=>run("publicarParceirosCPT({mes:'2026-08',versao:3})"),/restaurados/);assert.equal(mascara.rows[7][15],9);assert.equal(mascara.rows[16][15],8);falharGravacao=0;
-// Máscara alterada: nada é gravado.
-mascara.rows[7][1]='Outra pergunta qualquer no lugar';assert.throws(()=>run("publicarParceirosCPT({mes:'2026-08',versao:3})"),/máscara mudou na linha 8/);mascara.rows[7][1]=perguntas.find(p=>p[0]===8)[2];
-// Exportar: planilha nova com as 90 perguntas, sem tocar na máscara.
-r=run("exportarParceirosCPT({mes:'2026-09'})");assert.match(r.xlsx,/format=xlsx/);assert.equal(books.get('ss'+criadas).sheets[0].rows.length,91);
-console.log('PASS: Programa Parceiros — 90 perguntas da máscara, sugestões com regra (reuniões sem DDS, satisfação, manifestações, prazo), validação por tipo, versão, idempotência, conflito, publicação só do conferido (trava de testes, coluna nova, fórmula preservada, restauração, máscara alterada) e planilha de conferência.');
 
 // 4. Painel da gestão: contrato, frentes e relatos em resumo.
 email='atd@example.com';assert.throws(()=>run("carregarPainelGestaoCPT({mes:'2026-09'})"),/Administrativo e da Gestão/);
@@ -162,13 +119,13 @@ console.log('PASS: auditoria — recebidos parados, acima de 30 dias, sem próxi
 
 // 6. Conectores e trava.
 email='gestao@example.com';assert.throws(()=>run('conferirConectoresCPT()'),/administração técnica/);assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'https://docs.google.com/spreadsheets/d/NOVOIDNOVOIDNOVOIDNOVOID123/edit'})"),/administração técnica/);
-email='victor@example.com';const c=run('conferirConectoresCPT()');assert.equal(c.travada,true);assert.equal(c.conectores.length,6);assert.ok(c.conectores.every(x=>x.ok));
+email='victor@example.com';const c=run('conferirConectoresCPT()');assert.equal(c.travada,true);assert.equal(c.conectores.length,4);assert.ok(c.conectores.every(x=>x.ok));
 assert.ok(c.pastas.some(x=>x.nome==='Fotos (File responses)'&&x.equipeVe===true),'pasta das fotos encontrada pelos registros');
 run("configurarConectorCPT({chave:'rdas',id:'https://docs.google.com/spreadsheets/d/NOVOIDNOVOIDNOVOIDNOVOID123/edit#gid=0'})");assert.equal(JSON.parse(props.get('CPT_CONECTORES')).rdas.id,'NOVOIDNOVOIDNOVOIDNOVOID123');
 assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'sem-acesso-sem-acesso-123'})"),/não abre/);
-run('liberarConfiguracaoCPT()');email='gestao@example.com';assert.equal(run("carregarParceirosCPT('2026-09')").podePublicar,true);run('travarConfiguracaoCPT()');assert.equal(run("carregarParceirosCPT('2026-09')").podePublicar,false);
+run('liberarConfiguracaoCPT()');email='gestao@example.com';assert.equal(run('listarObrasCPT()').gerencia,true,'liberada: gerência edita obras');run('travarConfiguracaoCPT()');assert.equal(run('listarObrasCPT()').gerencia,false,'travada: só o proprietário');
 ctx.pessoa={email:'nova@example.com',nome:'Nova',papeis:['atendimento'],ativo:true,versao:0};assert.throws(()=>run('PerfisCPT.salvar(AplicacaoCPT.identidade(),pessoa)'),/exclusiva da administração técnica/);
-console.log('PASS: conectores só para a administração técnica (conferência, pasta das fotos, troca por link validada); trava de testes liga/desliga publicação; cargos só pelo proprietário.');
+console.log('PASS: conectores só para a administração técnica (conferência, pasta das fotos, troca por link validada); trava de testes liga/desliga a edição da gerência; cargos só pelo proprietário.');
 // 2.13: registros vêm 50 por vez (linhas ocupam menos espaço), com cursor para "Mostrar mais".
 for(let i=0;i<60;i++)registros.rows.push(reg(900+i,'Relato de atividade','2026-10-'+String(1+i%28).padStart(2,'0'),'OBR-0001','Coletor A [OBR-0001]','Plantão '+i,3));
 {const p1=JSON.parse(JSON.stringify(vm.runInContext("buscarRegistrosCPT({mes:'2026-10'})",ctx)));assert.equal(p1.itens.length,50,'primeira página com 50');assert.ok(p1.proximoCursor);

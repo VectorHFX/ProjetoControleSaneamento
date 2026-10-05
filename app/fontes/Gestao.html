@@ -1,17 +1,14 @@
 <script>
 /*
- * Gestão 2.7.0 — Painel da gestão (contrato, frentes de serviço, relatos em resumo), Programa Parceiros e Conectores.
+ * Gestão 2.7.0 — Painel da gestão (contrato, frentes de serviço, relatos em resumo) e Conectores.
  * Painel: só leitura, com o que pede atenção primeiro. Frentes e relatos abrem o registro ou a ficha de sempre.
- * Programa Parceiros: uma pergunta por linha da máscara; sugestões só entram com um clique; salvar cria versão;
- * publicar grava só o que foi marcado como conferido. O texto digitado fica na tela (e neste navegador) se algo falhar.
+ * 2.27: o Programa Parceiros saiu da aplicação junto com o fechamento do relatório.
  */
 window.CPTGestao = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, painel = null, aba = 'contrato', relatos = null, filtroFrente = {busca: '', andamento: true}, filtroRelato = {busca: '', item: ''};
-  let pp = null, ppOp = null, ppSujo = false;
   const $ = id => document.getElementById(id);
-  const store = {get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} }, del: k => { try { localStorage.removeItem(k); } catch (_) {} }};
   const mesCurto = m => new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'short'}).replace('.', '');
   const mesLongo = m => new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'});
   const pct = (a, b) => b ? Math.min(100, Math.round(a / b * 100)) : 0;
@@ -62,23 +59,21 @@ window.CPTGestao = (() => {
   function contrato() {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
     const alertas = painel.alertas.length ? `<ul class="alert-list">${painel.alertas.map(a => `<li class="alert-${a.nivel}"><span class="alert-dot" aria-hidden="true"></span><span>${ui.esc(a.texto)}</span>${a.rota ? `<button class="button ghost" data-route="${a.rota}">Abrir</button>` : a.aba ? `<button class="button ghost" data-painel-aba="${a.aba}">Ver</button>` : ''}</li>`).join('')}</ul>` : '<p class="ok-line">Nada pedindo atenção agora. Bom trabalho da equipe.</p>';
-    const pp = painel.parceiros, ppTexto = !pp ? 'Indisponível' : pp.situacao === 'publicado' ? 'Publicado na máscara' : pp.versao ? (pp.situacao === 'conferido' ? 'Conferido' : 'Rascunho') + ' · ' + pp.conferidos + ' campos conferidos' : 'Ainda não iniciado';
     return `<section class="panel controle-contrato" id="controleContrato" aria-live="polite"><div class="loading-label"><span class="spinner"></span>Planilha de controle do contrato…</div></section>
       <section class="panel attention"><div class="panel-head"><div><span class="eyebrow">PEDE ATENÇÃO</span><h2>${painel.alertas.length ? painel.alertas.length + (painel.alertas.length === 1 ? ' ponto' : ' pontos') : 'Tudo em dia'}</h2></div></div>${alertas}</section>
       <section class="stat-row" aria-label="Números do contrato no mês">
         ${tile('Ações socioambientais', ui.num(c.acoes), ui.num(c.pessoas) + ' pessoas alcançadas · ' + ui.num(c.frentes) + ' frentes · ' + ui.num(c.bairros) + ' bairros.')}
         ${tile('Pesquisas de satisfação', ui.num(s.mes) + '<small> / ' + s.meta + '</small>', s.semana ? 'Nesta semana: ' + s.semana.total + ' de ' + s.semana.meta + '.' : 'Meta: 15 por semana, 60 no mês.', medidor(s.mes, s.meta))}
         ${tile('Atendimentos em aberto', ui.num(k.abertos), ui.num(k.recebidosMes) + ' recebidos e ' + ui.num(k.concluidosMes) + ' concluídos no mês' + (k.prazoMedio != null ? ' · prazo médio ' + k.prazoMedio + ' dias' : '') + '.')}
-        ${tile('Relatos prontos', ui.num(c.relatos.prontos) + '<small> / ' + ui.num(c.relatos.total) + '</small>', ui.num(c.diagnosticos) + ' diagnósticos no mês.', medidor(c.relatos.prontos, Math.max(1, c.relatos.total)))}
+        ${tile('Relatos de atividade', ui.num(c.relatos.total), ui.num(c.diagnosticos) + ' diagnósticos no mês.')}
       </section>
       <div class="painel-grid">
         <section class="panel wide"><div class="panel-head"><div><h2>Últimos seis meses</h2><p>Pela data de realização de cada atividade.</p></div></div><div class="mini-charts">
           ${colunas(painel.serie, [{k: 'acoes', nome: 'Ações'}], 'Ações socioambientais')}${colunas(painel.serie, [{k: 'pessoas', nome: 'Pessoas'}], 'Pessoas alcançadas')}
           ${colunas(painel.serie, [{k: 'pesquisas', nome: 'Pesquisas'}], 'Pesquisas de satisfação')}${colunas(painel.serie, [{k: 'recebidos', nome: 'Recebidos', cls: 'b'}, {k: 'concluidos', nome: 'Concluídos', cls: 'c'}], 'Atendimentos')}</div></section>
-        <section class="panel"><div class="panel-head"><div><h2>Para o relatório</h2><p>Ações por item do relatório mensal.</p></div><button class="button ghost" data-route="socioambiental">Mesa ${ui.icon('arrow')}</button></div>${barrasH(painel.porItem.map(x => ({rotulo: x.item + ' · ' + x.titulo, quantidade: x.quantidade})), 'Sem ações no mês.')}</section>
+        <section class="panel"><div class="panel-head"><div><h2>Ações por eixo</h2><p>Contagem do mês por tipo de atividade.</p></div></div>${barrasH(painel.porItem.map(x => ({rotulo: x.item + ' · ' + x.titulo, quantidade: x.quantidade})), 'Sem ações no mês.')}</section>
         <section class="panel"><div class="panel-head"><div><h2>Tipos de atividade</h2><p>As mais frequentes no mês.</p></div></div>${barrasH(painel.porTipo, 'Sem ações no mês.')}</section>
         <section class="panel"><div class="panel-head"><div><h2>Quem registrou</h2><p>Registros de campo por pessoa no mês.</p></div></div>${barrasH(painel.porPessoa, 'Sem registros no mês.')}</section>
-        <section class="panel"><div class="panel-head"><div><h2>Programa Parceiros</h2><p>${ui.esc(mesLongo(painel.mes))}</p></div></div><p><span class="badge ${pp && pp.situacao === 'publicado' ? 'status-concluida' : 'status-andamento'}">${ui.esc(ppTexto)}</span></p><button class="button secondary" data-route="parceiros">Responder ${ui.icon('arrow')}</button></section>
       </div>`;
   }
   function frentes() {
@@ -174,116 +169,7 @@ window.CPTGestao = (() => {
         <h4>${ui.esc(r.atividade)}</h4><p class="small muted">${ui.esc([r.frente || r.bairro, r.publico != null ? r.publico + ' pessoas' : 'público não informado', r.responsavel].filter(Boolean).join(' · '))}</p>
         ${r.resumo ? `<p class="relato-text">${ui.esc(r.resumo)}</p>` : '<p class="small late-text">Relato sem texto no registro.</p>'}${r.objetivo ? `<p class="small"><strong>Objetivo:</strong> ${ui.esc(r.objetivo)}</p>` : ''}
         ${qualidade(r.qualidade)}${(dv => dv ? `<p class="devolutiva-status small"><strong>${dv.situacao === 'vista' ? ic('tick', '✓') + ' Comentário visto' : ic('mail', '✉') + ' Comentário enviado'}</strong>${dv.resposta ? ' · resposta: ' + ui.esc(dv.resposta) : ''}</p>` : '')(devolutivaDe(r.id))}
-        <div class="card-bottom"><span>${r.qualidade && devolutivas.podeDevolver ? `<button class="button ghost" data-devolver="${ui.esc(r.id)}">${devolutivaDe(r.id) ? 'Novo comentário' : 'Comentar'}</button>` : ''}</span><span><button class="button ghost" data-record="${ui.esc(r.id)}">Registro completo</button> <button class="button secondary" data-prepare-relato="${ui.esc(r.id)}">Preparar</button></span></div></article>`).join('')}</section>`).join('') || '<p class="muted">Nenhum relato com esse filtro.</p>'}`;
-  }
-
-  // ---------------- Programa Parceiros ----------------
-  const INTRO_PP = ['Programa Parceiros', 'Respostas do mês no formato da máscara de lançamento. Responda, confira e publique.'];
-  const chaveLocal = () => 'cpt.parceiros.' + ui.state.mes;
-  async function renderParceiros() {
-    const mine = ++ticket, mes = ui.state.mes; ppSujo = false; ppOp = null;
-    ui.view.innerHTML = ui.intro(...INTRO_PP) + '<div class="loading-label"><span class="spinner"></span>Abrindo as perguntas e calculando as sugestões do mês…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
-    try {
-      const d = await ui.call('carregarParceirosCPT', mes); if (mine !== ticket || ui.state.route !== 'parceiros') return;
-      pp = d; pp.campos = JSON.parse(JSON.stringify(d.atual.campos || {}));
-      const local = store.get(chaveLocal()); let recuperado = false;
-      if (local) { try { const l = JSON.parse(local); if (l.versao === d.atual.versao && JSON.stringify(l.campos) !== JSON.stringify(pp.campos)) { pp.campos = l.campos; recuperado = true; ppSujo = true; } else store.del(chaveLocal()); } catch (_) { store.del(chaveLocal()); } }
-      desenharParceiros(recuperado);
-    } catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO_PP) + `<div class="notice">${ui.esc(e.message)}</div>`; }
-  }
-  const exibir = v => v === true ? 'Sim (marcado)' : v === false ? 'Não marcado' : v === '' || v == null ? '—' : String(v);
-  function entrada(q, c) {
-    const v = c ? c.valor : '', nome = `name="v${q.linha}" data-linha="${q.linha}" aria-labelledby="pq${q.linha}"`;
-    if (q.tipo === 'texto') return `<textarea ${nome} rows="${String(v).length > 180 ? 5 : 3}" maxlength="5000">${ui.esc(v)}</textarea>`;
-    if (q.tipo === 'marcar') return `<label class="pp-check"><input type="checkbox" ${nome} ${v === true ? 'checked' : ''}> Sim, foi executado no mês</label>`;
-    if (q.tipo === 'simnao') return `<select ${nome}><option value="">Escolha</option>${['Sim', 'Não'].map(o => `<option ${v === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
-    return `<span class="pp-number"><input ${nome} inputmode="decimal" value="${ui.esc(v)}" placeholder="${q.tipo === 'nota' ? '0 a 10' : 'Número'}" maxlength="20"><button type="button" class="button ghost small-button" data-pp-na="${q.linha}">Não se aplica</button></span>`;
-  }
-  function pergunta(q) {
-    if (q.tipo === 'titulo') return `<h4 class="pp-subtitle">${ui.esc(q.rotulo)}</h4>`;
-    if (q.tipo === 'escala') return `<div class="pp-row is-info"><span class="pp-line">L${q.linha}</span><div class="pp-main"><p class="pp-question">${ui.esc(q.rotulo)}</p><p class="small muted">Este campo tem marcações próprias (0 a 5) na máscara. Marque direto na planilha oficial.</p></div></div>`;
-    const c = pp.campos[q.linha], s = pp.sugestoes[q.linha], ant = pp.anterior[q.linha], m = pp.mascara.valores[q.linha];
-    const naMascara = m && c && String(m.valor) !== String(c.valor) ? `<span class="pp-hint warn">Na máscara agora: ${ui.esc(exibir(m.valor))}${m.formula ? ' (fórmula, não será alterada)' : ''}</span>` : m && m.formula ? '<span class="pp-hint">Esta linha tem fórmula na máscara e não será alterada.</span>' : '';
-    return `<div class="pp-row ${c && c.conferido ? 'is-checked' : ''}" id="pp${q.linha}"><span class="pp-line" title="Linha ${q.linha} da máscara">L${q.linha}</span>
-      <div class="pp-main"><p class="pp-question" id="pq${q.linha}">${ui.esc(q.rotulo)}</p>${entrada(q, c)}
-        <div class="pp-hints">${ant ? `<span class="pp-hint">Mês anterior: ${ui.esc(exibir(ant.valor).slice(0, 140))}</span>` : ''}${s ? `<span class="pp-hint suggest">Sugestão: <strong>${ui.esc(String(s.valor).slice(0, 160))}${String(s.valor).length > 160 ? '…' : ''}</strong> <button type="button" class="link-button" data-pp-usar="${q.linha}">Usar</button><small>${ui.esc(s.regra)}</small></span>` : ''}${naMascara}</div></div>
-      <label class="pp-ok"><input type="checkbox" data-pp-ok="${q.linha}" ${c && c.conferido ? 'checked' : ''}><span>Conferido</span></label></div>`;
-  }
-  function contagem() {
-    const resp = pp.definicoes.flatMap(g => g.perguntas).filter(q => !['titulo', 'escala'].includes(q.tipo));
-    const r = resp.filter(q => { const c = pp.campos[q.linha]; return c && c.valor !== '' && c.valor != null; }).length, ok = resp.filter(q => (pp.campos[q.linha] || {}).conferido).length;
-    return {total: resp.length, respondidas: r, conferidas: ok};
-  }
-  function situacaoTexto() {
-    const a = pp.atual; if (!a.versao) return 'Ainda não salvo';
-    if (a.situacao === 'publicado' && a.publicacao) return 'Publicado em ' + new Date(a.publicacao.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'});
-    return (a.situacao === 'conferido' ? 'Conferido' : 'Rascunho') + ' · versão ' + a.versao + (a.por ? ' · ' + a.por.split('@')[0] : '');
-  }
-  function desenharParceiros(recuperado) {
-    const n = contagem(), equipe = pp.definicoes.filter(g => g.quem === 'equipe'), eng = pp.definicoes.filter(g => g.quem === 'engenharia');
-    const grupo = g => `<section class="panel pp-group" id="grupo-${g.id}"><div class="panel-head"><div><span class="eyebrow">${g.quem === 'equipe' ? 'NOSSA EQUIPE' : 'ENGENHARIA (CONCREJATO)'}</span><h2>${ui.esc(g.nome)}</h2></div></div>${g.perguntas.map(pergunta).join('')}</section>`;
-    ui.view.innerHTML = ui.intro(...INTRO_PP) + `${recuperado ? '<div class="notice">Recuperamos respostas que ficaram neste navegador sem salvar. Confira e clique em Salvar respostas.</div>' : ''}${pp.avisos.map(a => `<div class="notice">${ui.esc(a)}</div>`).join('')}
-      <section class="panel pp-status"><div class="pp-status-main"><div><span class="eyebrow">COMPETÊNCIA</span><h2>${ui.esc(mesLongo(pp.mes).replace(/^./, c => c.toUpperCase()))}</h2><p><span class="badge ${pp.atual.situacao === 'publicado' ? 'status-concluida' : pp.atual.versao ? 'status-andamento' : ''}" id="ppSituacao">${ui.esc(situacaoTexto())}</span></p></div>
-        <div class="pp-progress"><p><strong id="ppResp">${n.respondidas}</strong> de ${n.total} respondidas · <strong id="ppOk">${n.conferidas}</strong> conferidas</p>${medidor(n.conferidas, n.total)}</div></div>
-        <div class="dialog-actions pp-tools"><button class="button secondary" id="ppSugestoes" type="button">Trazer sugestões para campos vazios</button><button class="button secondary" id="ppExportar" type="button">Planilha para conferência</button><button class="button secondary" data-pp-print type="button">Imprimir</button>
-          ${pp.podePublicar ? `<button class="button" id="ppPublicar" type="button" ${pp.mascara.ok ? '' : 'disabled title="Conector da máscara indisponível"'}>Publicar na máscara oficial</button>` : '<span class="small muted">Publicar na máscara oficial: reservado à administração técnica durante os testes.</span>'}
-          ${pp.mascara.ok ? `<a class="button ghost" href="${ui.esc(ui.safeURL(pp.mascara.url))}" target="_blank" rel="noopener noreferrer">Abrir máscara</a>` : ''}</div><div id="ppResultado" class="small" aria-live="polite"></div></section>
-      <nav class="pp-jump" aria-label="Ir para o grupo">${pp.definicoes.map(g => `<a href="#grupo-${g.id}">${ui.esc(g.nome)}</a>`).join('')}</nav>
-      <form id="ppForm" novalidate>${equipe.map(grupo).join('')}<details class="pp-eng"><summary>Dados da engenharia (Sistema viário, Qualidade e Ambiental) — preencha quando a Concrejato enviar</summary>${eng.map(grupo).join('')}</details></form>
-      <div class="pp-bar"><span id="ppEstado" class="small">${ppSujo ? 'Alterações não salvas' : 'Tudo salvo'}</span><button class="button" id="ppSalvar" type="button">Salvar respostas</button></div>`;
-    const f = $('ppForm');
-    f.addEventListener('input', e => lerCampo(e.target));
-    f.addEventListener('change', e => { if (e.target.dataset.ppOk) { const l = e.target.dataset.ppOk; pp.campos[l] = {...(pp.campos[l] || {valor: ''}), conferido: e.target.checked}; e.target.closest('.pp-row').classList.toggle('is-checked', e.target.checked); sujar(); } else lerCampo(e.target); });
-    $('ppSalvar').addEventListener('click', salvarPP); $('ppSugestoes').addEventListener('click', usarSugestoes); $('ppExportar').addEventListener('click', exportarPP);
-    if ($('ppPublicar')) $('ppPublicar').addEventListener('click', publicarPP);
-  }
-  function lerCampo(el) {
-    const l = el && el.dataset.linha; if (!l) return;
-    const v = el.type === 'checkbox' ? el.checked : el.value; pp.campos[l] = {...(pp.campos[l] || {conferido: false}), valor: v}; sujar();
-  }
-  function sujar() {
-    ppSujo = true; ppOp = null; if ($('ppEstado')) $('ppEstado').textContent = 'Alterações não salvas';
-    const n = contagem(); if ($('ppResp')) { $('ppResp').textContent = n.respondidas; $('ppOk').textContent = n.conferidas; const m = document.querySelector('.pp-progress .meter span'); if (m) m.style.width = pct(n.conferidas, n.total) + '%'; }
-    store.set(chaveLocal(), JSON.stringify({versao: pp.atual.versao, campos: pp.campos}));
-  }
-  function preencher(l, valor) {
-    const el = document.querySelector(`[data-linha="${l}"]`); if (!el) return;
-    if (el.type === 'checkbox') el.checked = valor === true; else el.value = valor; lerCampo(el);
-  }
-  function usarSugestoes() {
-    let n = 0; Object.keys(pp.sugestoes).forEach(l => { const c = pp.campos[l]; if (!c || c.valor === '' || c.valor == null) { preencher(l, pp.sugestoes[l].valor); n++; } });
-    ui.toast(n ? n + ' sugestões trazidas. Confira cada uma antes de marcar como conferida.' : 'Não há campos vazios com sugestão.');
-  }
-  async function salvarPP() {
-    const b = $('ppSalvar'); b.disabled = true; $('ppEstado').textContent = 'Salvando…';
-    if (!ppOp) ppOp = 'OP-' + crypto.randomUUID();
-    try {
-      const r = await ui.call('salvarParceirosCPT', {mes: pp.mes, versao: pp.atual.versao, operacaoId: ppOp, campos: pp.campos});
-      pp.atual = r.atual; pp.campos = JSON.parse(JSON.stringify(r.atual.campos)); ppSujo = false; ppOp = null; store.del(chaveLocal());
-      $('ppEstado').textContent = 'Tudo salvo'; $('ppSituacao').textContent = situacaoTexto(); $('ppSituacao').className = 'badge status-andamento'; ui.toast(r.resultado);
-    } catch (e) { $('ppEstado').textContent = 'Não salvou: ' + e.message; ui.toast('Suas respostas continuam na tela. ' + e.message); }
-    finally { b.disabled = false; }
-  }
-  async function exportarPP() {
-    if (ppSujo) { ui.toast('Salve as respostas antes de exportar.'); return; }
-    const b = $('ppExportar'); b.disabled = true; $('ppResultado').textContent = 'Criando a planilha de conferência…';
-    try { const r = await ui.call('exportarParceirosCPT', {mes: pp.mes}); $('ppResultado').innerHTML = `${ui.esc(r.resultado)} <a href="${ui.esc(ui.safeURL(r.planilha))}" target="_blank" rel="noopener noreferrer">Abrir</a> · <a href="${ui.esc(ui.safeURL(r.xlsx))}" target="_blank" rel="noopener noreferrer">Baixar Excel</a> · <a href="${ui.esc(ui.safeURL(r.pdf))}" target="_blank" rel="noopener noreferrer">Baixar PDF</a>`; }
-    catch (e) { $('ppResultado').textContent = e.message; } finally { b.disabled = false; }
-  }
-  async function publicarPP() {
-    if (ppSujo) { ui.toast('Salve as respostas antes de publicar.'); return; }
-    const n = contagem(); if (!n.conferidas) { ui.toast('Marque como conferido o que deve ir para a máscara.'); return; }
-    if (!confirm('Gravar ' + n.conferidas + ' resposta(s) conferida(s) na coluna de ' + mesLongo(pp.mes) + ' da máscara oficial? Campos não conferidos e fórmulas não são alterados.')) return;
-    const b = $('ppPublicar'); b.disabled = true; $('ppResultado').textContent = 'Publicando na máscara oficial…';
-    try { const r = await ui.call('publicarParceirosCPT', {mes: pp.mes, versao: pp.atual.versao}); pp.atual = r.atual; $('ppSituacao').textContent = situacaoTexto(); $('ppSituacao').className = 'badge status-concluida'; $('ppResultado').textContent = r.resultado; ui.toast(r.resultado); }
-    catch (e) { $('ppResultado').textContent = e.message; } finally { b.disabled = false; }
-  }
-  function imprimirPP() {
-    const old = $('printDetail'); if (old) old.remove();
-    const paper = document.createElement('article'); paper.id = 'printDetail';
-    paper.innerHTML = `<h1>Programa Parceiros · ${ui.esc(mesLongo(pp.mes))}</h1>` + pp.definicoes.map(g => `<h2>${ui.esc(g.nome)}</h2><table class="pp-print"><tbody>${g.perguntas.filter(q => q.tipo !== 'titulo').map(q => `<tr><td>${ui.esc(q.rotulo)}</td><td>${ui.esc(exibir((pp.campos[q.linha] || {}).valor))}</td></tr>`).join('')}</tbody></table>`).join('');
-    document.body.append(paper); document.body.classList.add('printing-detail');
-    try { window.print(); } finally { document.body.classList.remove('printing-detail'); paper.remove(); }
+        <div class="card-bottom"><span>${r.qualidade && devolutivas.podeDevolver ? `<button class="button ghost" data-devolver="${ui.esc(r.id)}">${devolutivaDe(r.id) ? 'Novo comentário' : 'Comentar'}</button>` : ''}</span><span><button class="button ghost" data-record="${ui.esc(r.id)}">Registro completo</button></span></div></article>`).join('')}</section>`).join('') || '<p class="muted">Nenhum relato com esse filtro.</p>'}`;
   }
 
   // ---------------- Conectores (administração técnica) ----------------
@@ -337,9 +223,6 @@ window.CPTGestao = (() => {
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
       const dv = e.target.closest('[data-devolver]'); if (dv) { abrirDevolver(dv.dataset.devolver); return; }
       const cd = e.target.closest('[data-cmp-dia]'); if (cd) { diaCmp = cd.dataset.cmpDia; desenharComparacao(); return; }
-      const na = e.target.closest('[data-pp-na]'); if (na) { preencher(na.dataset.ppNa, 'Não aplicada'); return; }
-      const usar = e.target.closest('[data-pp-usar]'); if (usar && pp && pp.sugestoes[usar.dataset.ppUsar]) { preencher(usar.dataset.ppUsar, pp.sugestoes[usar.dataset.ppUsar].valor); return; }
-      if (e.target.closest('[data-pp-print]') && pp) imprimirPP();
     });
     // Filtros com espera curta (debounce): o painel é redesenhado quando a pessoa para de digitar.
     let buscaTimer = null;
@@ -365,9 +248,33 @@ window.CPTGestao = (() => {
       try { const r = await ui.call('configurarConectorCPT', {chave: f.dataset.conector, id: f.elements.id.value}); ui.toast(r.resultado); renderConectores(); }
       catch (err) { ui.toast(err.message); } finally { b.disabled = false; }
     });
-    window.addEventListener('beforeunload', e => { if (ppSujo && ui.state.route === 'parceiros') { e.preventDefault(); e.returnValue = ''; } });
   }
-  const sair = () => !ppSujo || ui.state.route !== 'parceiros' || confirm('Há respostas do Programa Parceiros sem salvar (elas ficam guardadas neste navegador). Sair mesmo assim?');
-  return {init, renderPainel, renderParceiros, renderConectores, sair, colunas, barrasH, abas, irPara: k => { aba = k; }};
+  return {init, renderPainel, renderConectores, colunas, barrasH, abas, irPara: k => { aba = k; }};
+})();
+
+/* Guia "Como escrever um bom relato": aberto pelas missões do Meu espaço e pelos relatos da gestão. (2.27: veio da antiga Mesa.) */
+window.CPTGuiaRelato = (() => {
+  'use strict';
+  const PONTOS = [
+    ['O quê', 'A atividade e o tema.', 'Roda de conversa sobre descarte correto de óleo de cozinha.'],
+    ['Onde', 'Rua, escola, praça ou equipamento, além do bairro.', 'Na EMEF Jardim Ipanema, Rua das Flores, 120 (Vila Linda).'],
+    ['Público', 'Quem participou e quantas pessoas, em número.', '22 alunos do 5º ano e 2 professoras.'],
+    ['Resultado', 'O que aconteceu: dúvidas, o que entenderam, o que foi entregue.', 'As crianças perguntaram para onde vai o óleo e levaram folhetos para casa.'],
+    ['Encaminhamento', 'O que fica para depois. Se nada, escreva "sem encaminhamentos".', 'Ficou combinado o ponto de coleta na escola a partir de 10/11.'],
+    ['Tamanho', 'Pelo menos 5 linhas: o relato vira texto do relatório para a Sabesp.', '']];
+  function html(faltam) {
+    const f = new Set(faltam || []);
+    return `<div class="guia-relato"><p>Um bom relato responde a seis perguntas. Escreva como se contasse para alguém que não estava lá.</p>
+      <ol class="guia-pontos">${PONTOS.map(([t, d, ex]) => `<li class="${f.has(t) ? 'falta' : ''}"><strong>${t}${f.has(t) ? ' <span class="guia-falta">faltou aqui</span>' : ''}</strong><span>${d}</span>${ex ? `<em>Ex.: ${ex}</em>` : ''}</li>`).join('')}</ol>
+      <details><summary>Exemplo completo</summary><p class="guia-exemplo">Realizamos uma roda de conversa sobre descarte correto de óleo de cozinha na EMEF Jardim Ipanema (Rua das Flores, 120, Vila Linda), com 22 alunos do 5º ano e 2 professoras. As crianças perguntaram para onde vai o óleo depois da coleta e por que ele não pode ir para a pia; explicamos o entupimento da rede e a contaminação do córrego. Cada aluno levou um folheto para casa. Ficou combinado com a direção um ponto de coleta na escola a partir de 10/11, que a equipe vai acompanhar.</p></details>
+      <p class="small muted">A conferência automática é uma ajuda para escrever. Ninguém recebe nota e não existe ranking.</p></div>`;
+  }
+  function abrir(faltam) {
+    document.getElementById('detailType').textContent = 'GUIA'; document.getElementById('detailTitle').textContent = 'Como escrever um bom relato';
+    document.getElementById('detailContent').innerHTML = html(faltam);
+    const d = document.getElementById('detailDialog'); if (!d.open) d.showModal();
+  }
+  document.addEventListener('click', ev => { const g = ev.target.closest('[data-guia-relato]'); if (g) abrir((g.dataset.guiaRelato || '').split('|').filter(Boolean)); });
+  return {abrir, html};
 })();
 </script>

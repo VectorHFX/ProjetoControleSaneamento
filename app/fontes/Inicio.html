@@ -61,15 +61,6 @@ window.CPTInicio = (() => {
       <div class="chart-tip" hidden></div></div>
       <p class="chart-key"><span class="key-weekend"></span>Fim de semana${hoje.startsWith(mes) ? '<span class="key-today"></span>Hoje' : ''}</p>`;
   }
-  /** Para o relatório: cada item com as ações do mês e quantas já estão prontas. Eixo vazio pede o parágrafo padrão. */
-  function painelRelatorio(lista) {
-    if (!lista || !lista.length) return '<p class="muted">As ações do mês aparecerão aqui.</p>';
-    return `<ul class="report-items" aria-label="Preparo por item do relatório">${lista.map(x => {
-      const preparo = x.tipo === 'consolidado' ? 'Entra na tabela e nas fotos por frente' : !x.quantidade ? (/^4\./.test(x.item) ? 'Sem ação: entra o parágrafo padrão' : 'Sem registro no mês') : x.prontos + ' de ' + x.quantidade + ' pronto' + (x.quantidade === 1 ? '' : 's');
-      const pct = x.quantidade && x.tipo !== 'consolidado' ? Math.round(x.prontos / x.quantidade * 100) : 0;
-      return `<li class="${x.quantidade ? '' : 'is-empty'}"><span class="report-item">${ui.esc(x.item)}</span><span class="report-title">${ui.esc(x.titulo)}<small>${ui.esc(preparo)}</small></span><span class="report-count">${ui.num(x.quantidade)}</span>${x.tipo !== 'consolidado' && x.quantidade ? `<span class="report-track" aria-hidden="true"><span style="width:${pct}%"></span></span>` : '<span></span>'}</li>`;
-    }).join('')}</ul>`;
-  }
   function desenharAgenda() {
     const box = $('homeAgenda'); if (!box) return;
     if (!agenda.itens) { box.innerHTML = agenda.pedido ? '<p class="muted">Carregando a agenda…</p>' : '<p class="muted">Agenda indisponível no momento.</p>'; return; }
@@ -87,37 +78,35 @@ window.CPTInicio = (() => {
     const pesq = s.semana ? s.semana.total + ' de ' + s.semana.meta + ' nesta semana' : s.mes + ' de ' + s.meta + ' no mês';
     const mapa = {
       atendimento: [b('atendimentos', 'Casos em aberto', ui.num(k.abertos) + ' em tratativa', 'abertos'), b('atendimentos', 'Auditoria das fichas', 'O que conferir na carteira', 'auditoria'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('obras', 'Obras e endereços', 'Frentes de serviço')],
-      socioambiental: [b('socioambiental', 'Mesa do relatório', 'Relatos e diagnósticos do mês'), b('lembretes', 'Lembretes', 'Ações e materiais com a Comunicação'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
+      socioambiental: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('lembretes', 'Lembretes', 'Ações e materiais com a Comunicação'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
       comunicacao: [b('comunicacao', 'Meu dia', 'O que fazer hoje', 'hoje'), b('comunicacao', 'Lembretes', 'Ações e materiais', 'lembretes'), b('comunicacao', 'Materiais e links', 'Prazos e publicações', 'materiais'), b('comunicacao', 'Galeria', 'Fotos do mês', 'galeria')],
       comercializacao: [b('obras', 'Obras e endereços', 'Onde estão as frentes'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('atendimentos', 'Consultar atendimentos', 'Casos e observações'), b('registros', 'Registros', 'O que a equipe registrou')],
-      gestao: [b('socioambiental', 'Mesa do relatório', 'Relatos e diagnósticos do mês'), b('parceiros', 'Programa Parceiros', 'Responder e publicar'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('fechamento', 'Fechamento do mês', 'Relatório e anexos')]
+      gestao: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('obras', 'Obras e frentes', 'Catálogo e obras de hoje'), b('cronograma', 'Cronograma', 'Agenda da equipe')]
     };
     mapa.administrativo = mapa.gestao;
     const lista = (mapa[v] || mapa.atendimento).filter(Boolean);
     return lista.length ? `<nav class="shortcuts" aria-label="Atalhos do seu trabalho">${lista.join('')}</nav>` : '';
   }
-  /** Quem prepara o relatório vê "Para o relatório"; Atendimento e Comercialização não usam. */
-  const VISOES_RELATORIO = ['socioambiental', 'comunicacao', 'gestao', 'administrativo'];
   function render(d) {
     // Gestão e Administrativo: abas do painel no topo da Visão do mês (Resumo · Contrato · Frentes · Relatos).
     const abasMes = ui.podeVer('painel') && window.CPTGestao && window.CPTGestao.abas ? window.CPTGestao.abas('resumo') : '';
     if (!d) { ui.view.innerHTML = abasMes + '<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Buscando as informações do mês…</div><div class="skeleton hero-loading"></div><div class="kpis">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; return; }
     const k = d.indicadores, s = d.satisfacao || {mes: 0, meta: 60, semana: null}, perfil = ui.state.perfil || d.perfil, nome = (perfil?.nome || '').split(' ')[0];
-    const visao = ui.visao(), gerencia = ui.podeVer('socioambiental');
+    const visao = ui.visao();
     if (agenda.mes !== d.mes) prefetchAgenda(d.mes);
     ui.view.innerHTML = abasMes + `<section class="home-hero"><div class="home-hero-art" aria-hidden="true">${window.CPTArte ? window.CPTArte.pagina('inicio') : ''}</div><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'} · TELA DE ${ui.esc((window.CPTAgenda.names[visao] || '').toUpperCase())}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
         <p class="home-phrase">${ui.esc(k.frase || 'Números pela data em que cada atividade foi realizada.')}</p>${k.relatosSemPublico ? `<p><button class="chip-alert" data-pending="publico">${ui.num(k.relatosSemPublico)} ${k.relatosSemPublico === 1 ? 'ação' : 'ações'} sem público informado · conferir</button></p>` : ''}</div>
-        <div class="hero-actions">${ui.formLink().replace('button white', 'button')}${gerencia ? '<button class="button secondary" data-route="socioambiental">Mesa do relatório</button>' : ''}</div></section>
+        <div class="hero-actions">${ui.formLink().replace('button white', 'button')}</div></section>
       ${atalhos(visao, d)}
       <section class="stat-row" aria-label="Números do mês">
         ${tile('Ações socioambientais', k.acoes ?? k.registros, delta(k.acoes ?? k.registros, d.comparacao?.anterior, d.comparacao?.mesAnterior), '', 'registros', 'relatos')}
-        ${tile('Pessoas alcançadas', k.pessoas ?? k.participacoes, ui.num(k.frentes || 0) + ' frentes acompanhadas · ' + ui.num(k.diagnosticos || 0) + ' diagnósticos.', '', gerencia ? 'socioambiental' : 'registros', gerencia ? '' : 'relatos')}
+        ${tile('Pessoas alcançadas', k.pessoas ?? k.participacoes, ui.num(k.frentes || 0) + ' frentes acompanhadas · ' + ui.num(k.diagnosticos || 0) + ' diagnósticos.', '', 'registros', 'relatos')}
         ${tile('Pesquisas de satisfação', s.mes, s.semana ? 'Esta semana: ' + s.semana.total + ' de ' + s.semana.meta + '.' : 'Meta mensal: ' + s.meta + '.', medidor(s.mes, s.meta))}
         ${tile('Manifestações em tratativa', k.abertos, ui.num(k.recebidasNoMes || 0) + ' recebidas e ' + ui.num(k.concluidosNoMes || 0) + ' concluídas no mês.', '', 'atendimentos', 'abertos')}
       </section>
       <div class="home-grid"><div class="home-main">
         <section class="panel panel-dias"><div class="panel-head"><div><h2>Ações por dia</h2><p>${ui.num(d.dias.length)} dias com ação em ${ui.esc(nomeMes(d.mes))}</p></div></div>${graficoDias(d)}</section>
-        ${VISOES_RELATORIO.includes(visao) ? `<section class="panel panel-tipos"><div class="panel-head"><div><h2>Para o relatório</h2><p>${ui.num(k.frentes || 0)} frentes · ${ui.num(k.bairros || 0)} bairros · ${ui.num(k.diagnosticos || 0)} diagnósticos</p></div>${gerencia ? `<button class="button ghost" data-route="socioambiental">Preparar ${ui.icon('arrow')}</button>` : `<button class="button ghost" data-route="registros">Consultar ${ui.icon('arrow')}</button>`}</div>${painelRelatorio(d.destinos)}</section>` : ''}
+
       </div><aside class="home-side">
         <section class="panel panel-agenda"><div class="panel-head"><div><span class="eyebrow">EM EQUIPE</span><h2>Agenda</h2></div><button class="icon-button" data-route="cronograma" aria-label="Abrir cronograma">↗</button></div><div id="homeAgenda"></div></section>
         <section class="panel panel-recentes"><div class="panel-head"><div><h2>Últimos registros</h2></div><button class="button ghost" data-route="registros">Ver todos</button></div><div class="mini-list">${d.recentes.length ? d.recentes.map(r => `<button class="mini-row" data-record="${ui.esc(r.id)}"><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small>${ui.date(r.data)} · ${ui.esc(r.bairro || 'Bairro não informado')}</small></button>`).join('') : '<p class="muted">Os novos registros aparecem aqui depois do processamento.</p>'}</div></section>

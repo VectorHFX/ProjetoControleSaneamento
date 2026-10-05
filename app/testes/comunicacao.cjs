@@ -34,7 +34,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ContatosCPT','ComunicacaoCPT','GaleriaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ContatosCPT','ComunicacaoCPT','GaleriaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 
 // 1. Recados: só quem envia e quem recebe veem; leitura por pessoa; resposta reabre a leitura dos outros; idempotência.
@@ -118,10 +118,4 @@ assert.throws(()=>run("baixarPacoteGaleriaCPT({mes:'2026-09',ids:['FOTOAGOSTO000
 assert.throws(()=>run("baixarPacoteGaleriaCPT({mes:'2026-09',ids:['VIDEOSET000000000000000001']})"),/Vídeos/);
 console.log('PASS: galeria — fotos e vídeos dos registros do mês sem repetição, legenda no padrão do relatório, envio idempotente e só de imagens, pacote .zip apenas com arquivos da galeria do mês.');
 
-// 6. Programa Parceiros recebe as publicações do mês (linhas 32 a 34).
-vm.runInContext(fs.readFileSync(__dirname+'/../src/ProgramaParceirosCPT.gs','utf8'),ctx);
-vm.runInContext("RelatorioMensalCPT.prototype.coletar=function(mes){return {mes,atividades:[],registros:[],casos:[]};};",ctx);
-email='victor@example.com';const s=run("new ProgramaParceirosCPT(AplicacaoCPT.contexto()).sugestoes('2026-09')");
-assert.equal(s[32].valor,2);assert.equal(s[33].valor,1200);assert.match(s[33].regra,/1 sem alcance/);assert.match(s[34].valor,/Post da obra \(Instagram\); Matéria no jornal/);
 assert.equal(locked,false);
-console.log('PASS: Programa Parceiros sugere publicações, alcance e temas (linhas 32 a 34) a partir dos materiais concluídos no mês.');

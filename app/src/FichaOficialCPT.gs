@@ -4,7 +4,7 @@
  *   O modelo não é redesenhado: só recebe os dados.
  * - Dados: casos novos (formulário 4.0 + execuções + conclusão) e migrados (ficha oficial antiga + o que aconteceu depois).
  * - Só gera de novo quando o conteúdo muda (hash). A versão anterior vai para "Versões anteriores"; nada é apagado.
- * - Pacote do mês (ANEXO 4): casos em aberto no fim do mês + concluídos no mês, copiados para Entregas mensais/AAAA-MM/Fichas.
+ * - 2.27: o pacote do mês (ANEXO 4) saiu da aplicação junto com o fechamento do relatório; a ficha de cada caso continua.
  */
 class FichaOficialCPT {
   static get modeloPadrao() { return '11wGNtV2E0O-PhSv6XOnVo5KPCB6GPi18rRKEYG6HN54'; }
@@ -70,34 +70,6 @@ class FichaOficialCPT {
     const versoes = this.pasta('Versões anteriores');
     anteriores.filter(id => id !== copia.getId() && id !== pdf.getId()).forEach(id => { try { DriveApp.getFileById(id).moveTo(versoes); } catch (_) {} });
     return {protocolo: reg.protocolo, documento: docUrl, pdf: pdfUrl, gerada: true};
-  }
-
-  /** Casos do pacote do mês: em aberto no fim do mês (abertos até lá) e concluídos dentro do mês. */
-  doMes(mes) {
-    const m = new DadosDaAplicacao(this.ctx.base, this.ctx.perfil).mes(mes), a = this.ciclo.aba('Atendimentos'), n = a.getLastRow() - 1;
-    const dia = v => v instanceof Date ? Utilities.formatDate(v, this.fuso, 'yyyy-MM-dd') : String(v || '').slice(0, 10), fim = m + '-31';
-    return (n > 0 ? a.getRange(2, 1, n, 16).getValues() : []).filter(r => r[0] && (!r[1] || String(r[1]) === String(r[0])) && dia(r[4]) && dia(r[4]) <= fim &&
-      (/conclu/i.test(String(r[3])) ? dia(r[5]).slice(0, 7) === m : true)).map(r => String(r[0])).sort();
-  }
-  /** Gera o pacote em partes (limite de tempo do Google). Repetir continua de onde parou. */
-  pacote(mes, continuar) {
-    // A pasta do mês é a mesma da base do relatório (Entregas mensais/AAAA-MM); pasta() não depende do perfil.
-    const inicio = Date.now(), lista = this.doMes(mes), feitos = [], erros = [], pasta = RelatorioMensalCPT.prototype.pasta.call(null, mes);
-    const it = pasta.getFoldersByName('Fichas'), destino = it.hasNext() ? it.next() : pasta.createFolder('Fichas');
-    const existentes = new Set(); const fi = destino.getFiles(); while (fi.hasNext()) existentes.add(fi.next().getName());
-    let pendentes = 0;
-    for (const p of lista) {
-      const nome = p + '_Ficha_Atendimento.pdf';
-      if (continuar && existentes.has(nome)) { feitos.push({protocolo: p, gerada: false}); continue; }
-      if (Date.now() - inicio > 240000) { pendentes++; continue; }
-      try {
-        const r = this.gerar(p, false), id = (r.pdf.match(/\/d\/([A-Za-z0-9_-]{20,})/) || [])[1];
-        const velhos = destino.getFilesByName(nome); while (velhos.hasNext()) velhos.next().setTrashed(true);
-        DriveApp.getFileById(id).makeCopy(nome, destino); feitos.push({protocolo: p, gerada: r.gerada});
-      } catch (e) { erros.push({protocolo: p, erro: String(e.message || e)}); }
-    }
-    return {mes, total: lista.length, prontas: feitos.length, novas: feitos.filter(x => x.gerada).length, pendentes, erros, pasta: destino.getUrl(),
-      resultado: pendentes ? 'Faltam ' + pendentes + ' ficha(s). Clique de novo para continuar.' : erros.length ? 'Pacote gerado com ' + erros.length + ' ficha(s) a corrigir.' : 'Pacote de fichas do mês pronto.'};
   }
 }
 
@@ -175,10 +147,4 @@ function gerarFichaOficialCPT(p) {
     const r = new FichaOficialCPT(ctx).gerar(String((p && p.protocolo) || ''), !!(p && p.forcar)); CicloAtendimentoCPT.invalidar();
     return {...r, resultado: r.gerada ? 'Ficha oficial gerada.' : 'A ficha já estava atualizada.'};
   }, 'atendimentos.fichaOficial');
-}
-function gerarPacoteFichasCPT(p) {
-  return AplicacaoCPT.executar((d, ctx) => {
-    if (!PerfisCPT.gerencia(ctx.perfil) && !ctx.perfil.papeis.includes('atendimento')) throw new Error('Seu perfil não gera o pacote de fichas.');
-    return new FichaOficialCPT(ctx).pacote(String((p && p.mes) || ''), !!(p && p.continuar));
-  }, 'fechamento.fichas');
 }

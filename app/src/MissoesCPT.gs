@@ -3,7 +3,6 @@
  * - Gerência: confirmar as obras de hoje; vincular registros de "outra obra" (ObrasDoDiaCPT).
  * - Quem escreveu um relato: dicas do que falta nos relatos dos últimos 7 dias; comentário da gestão sobre um relato.
  * - Atendimento: casos abertos há 30 dias ou mais.
- * - Socioambiental: relatos do mês ainda não preparados, a 5 dias do prazo do relatório (ou depois).
  * - Gestão e Administrativo (2.26): responder a planilha de controle do contrato do mês anterior (ControleContratoCPT).
  * Nada é ranqueado nem comparado entre pessoas: cada um vê só as próprias missões.
  * Período de testes: só o proprietário recebe missões (as demais pessoas não veem nada novo até liberar).
@@ -11,7 +10,6 @@
  */
 class MissoesCPT {
   static get diasCaso() { return 30; }
-  static get diasAntesDoPrazo() { return 5; }
   static get diasDica() { return 7; }
   constructor(ctx) { this.ctx = ctx; }
   get perfil() { return this.ctx.perfil; }
@@ -26,7 +24,6 @@ class MissoesCPT {
     fonte('devolutivas', () => this.devolutivas());
     fonte('relatos', () => this.dicasDeRelato());
     if (this.tem('atendimento', 'administrativo', 'gestao')) fonte('casos', () => this.casosAntigos());
-    if (this.tem('socioambiental')) fonte('preparo', () => this.relatosSemPreparo());
     if (this.tem('administrativo', 'gestao')) fonte('controle', () => new ControleContratoCPT(this.ctx).missoes());
     return out;
   }
@@ -50,16 +47,6 @@ class MissoesCPT {
     const chave = 'missao-casos:' + this.ctx.config.baseId + ':' + a.getLastRow() + ':' + (p.getProperty('CPT_ATD_VERSAO') || 0) + ':' + hoje;
     const n = CacheCPT.obter(chave, 3600, () => ({n: this.dados.ler(a, 20).filter(r => r[0] && this.dados.principal(r) && !this.dados.encerrado(r) && (this.dados.dias(r) ?? 0) >= MissoesCPT.diasCaso).length})).n;
     return n ? [{id: 'casos-antigos', titulo: n + (n === 1 ? ' atendimento aberto' : ' atendimentos abertos') + ' há ' + MissoesCPT.diasCaso + ' dias ou mais', texto: 'Veja a próxima ação de cada um ou registre por que continua em aberto.', rota: 'atendimentos', tipo: 'rota'}] : [];
-  }
-  /** Relatos do mês sem preparo "Pronto", a partir de 5 dias antes do prazo do relatório do mês. */
-  relatosSemPreparo() {
-    const hoje = this.hoje(), mes = hoje.slice(0, 7);
-    let prazo = EntregasDoMesCPT.prazoPadrao(mes);
-    try { const x = new ColecaoCPT(this.ctx, 'Entregas do mês', 'ENT').obter('ENT-' + mes + '-relatorio'); if (x && x.prazo) prazo = x.prazo; } catch (_) {}
-    const aviso = new Date(Date.parse(prazo + 'T12:00:00Z') - MissoesCPT.diasAntesDoPrazo * 864e5).toISOString().slice(0, 10);
-    if (hoje < aviso) return [];
-    const n = PaineisGestaoCPT.relatosDoMes(this.dados, this.ctx, mes).itens.filter(r => r.qualidade && r.situacao !== 'pronto').length;
-    return n ? [{id: 'relatos-preparo', titulo: n + (n === 1 ? ' relato do mês ainda não preparado' : ' relatos do mês ainda não preparados'), texto: 'O prazo do relatório é ' + prazo.split('-').reverse().join('/') + '. Prepare na Mesa do relatório.', rota: 'socioambiental', tipo: 'rota'}] : [];
   }
 }
 

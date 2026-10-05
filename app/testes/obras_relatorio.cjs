@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','EntregasDoMesCPT','MissoesCPT','MapaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT','ConectoresCPT','AnexosRelatorioCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','MissoesCPT','MapaCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT','ConectoresCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -132,7 +132,7 @@ email='social@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutiva
 ctx.v={registroId:RELS,resposta:'Vou completar no próximo.',versao:dev.devolutiva.versao,operacaoId:'OP-devolutiva-0003'};assert.match(run('responderDevolutivaCPT(v)').resultado,/visto/);
 assert(!run('missoesCPT()').missoes.some(m=>m.tipo==='devolutiva'));email='adm@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.find(d=>d.registroId===RELS).resposta,'Vou completar no próximo.');
 // Preparo: a 5 dias do prazo (padrão dia 5 do mês seguinte), Socioambiental recebe a missão dos relatos não preparados.
-email='social@example.com';assert(!run('missoesCPT()').missoes.some(m=>m.id==='relatos-preparo'));ctx.relogio('2026-10-31T13:00:00Z');assert(run('missoesCPT()').missoes.some(m=>m.id==='relatos-preparo'));
+email='social@example.com';ctx.relogio('2026-10-31T13:00:00Z');
 // Relato grande com detalhes em arquivo à parte: a conferência lê o arquivo (sem ele, acusaria falta de tudo).
 const RELX='REG-'+'b'.repeat(24),textoX='Na EMEF Jardim, conversamos com 20 alunos sobre descarte de óleo. Eles tiraram dúvidas e receberam folhetos. Ficou combinado o retorno em novembro. '.repeat(3);
 registros.rows.push([RELX,'Relato de atividade',new Date('2026-10-08T12:00:00Z'),'2026-10','','4.0','','Vila Linda','BAI-001','','','Resp','Social','Oficina',20,'','','oficina','','',JSON.stringify({arquivoDetalhesId:'detalhesExternos'})]);
@@ -167,25 +167,6 @@ console.log('PASS: qualidade dos relatos (6 critérios com dica), dicas só para
 console.log('PASS: "Outra obra" vinculada sem tocar no registro original; obras de hoje (missão às 7h, sugestão do cronograma e de ontem, confirmação da gerência) e comparação ativas × ações por dia e no mês.');
 console.log('PASS: nome de uso e apelidos das obras (únicos, oficial preservado) e bairros editáveis na aplicação, com histórico e marcação para o formulário.');
 console.log('PASS: obras consultáveis por todos, edição restrita (travada no período de testes), conflito de versão, bairros validados, nova obra com ID sequencial, revisão diária e marcação para o formulário.');
-// Fechamento: conferência e geração.
-email='atd@example.com';assert.throws(()=>run("conferirFechamentoCPT('2026-10')"),/fechamento do mês está disponível/);
-email='social@example.com';const f=run("conferirFechamentoCPT('2026-10')");
-assert.equal(f.numeros.atividades,2);assert.equal(f.numeros.participantes,15);assert.equal(f.numeros.satisfacao,2);assert.equal(f.numeros.casosAbertos,1);
-assert.equal(f.satisfacao.semanas[0].de,'2026-10-01');assert.equal(f.satisfacao.semanas[0].parcial,true);assert.equal(f.satisfacao.semanas[1].total,1);
-assert.equal(f.verificacoes.find(v=>/Público/.test(v.nome)).situacao,'pendente');
-ctx.g={mes:'2026-10',numero:'15',operacaoId:'OP-geracao1234567890'};const g=run('gerarBaseRelatorioCPT(g)');assert.equal(g.versao,1);assert.match(g.documento,/document/);
-const d=docs[0],texto=d.partes.join('\n');for(const item of ['1. Áreas de Trabalho','3. Atividades desenvolvidas no período','4.1 Reuniões','10. Manifestações Locais e Sabesp','12. Atividades previstas','13. Anexos'])assert(texto.includes(item),item);
-assert(texto.includes('Relatório nº 15'));assert(d.tabelas.some(t=>t.some(r=>r[0]==='Coletor Linda')),'relatório usa o nome de uso');assert(!d.tabelas.some(t=>t.some(r=>r[0]==='Coletor A')),'nome oficial fora das tabelas');const t3=d.tabelas.find(t=>t[0][0]==='Frente de Serviço'&&t[0][1]==='Endereço da Frente');assert.equal(t3.length,6);assert(t3.slice(3,5).every(r=>r[3]==='*Não houve atividade'));assert.equal(t3[1][4],'Comunicado');assert.equal(t3[1][5],'Moradores');assert.match(t3[2][6],/COMPLETAR/);
-assert.equal(t3[5][0],'Total');const t41=d.tabelas[d.tabelas.findIndex(t=>t[0][0]==='Data'&&t[0][2]==='Atividade')];assert.equal(t41.length,2);
-const man=d.tabelas.find(t=>t[0][0]==='Data'&&t[0][1]==='Nome');assert.equal(man.length,2);assert.equal(man[1][8],'Em andamento');assert.equal(man[1][3],'Atendimento itinerante');assert.equal(man[1][4],'Reclamação');
-assert.equal(run('gerarBaseRelatorioCPT(g)').versao,1);ctx.g.operacaoId='OP-geracao9999999999';assert.equal(run('gerarBaseRelatorioCPT(g)').versao,2);
-assert.equal(run("conferirFechamentoCPT('2026-10')").historico.length,2);
-assert.equal(f.numeroSugerido,15);assert.equal(run("conferirFechamentoCPT('2026-12')").numeroSugerido,17);
-const apoio=[...books.values()].find(b=>b.getSheetByName('Indicadores — prévia'));assert(apoio,'planilha de apoio');const ind=apoio.getSheetByName('Indicadores — prévia').rows;
-assert.equal(ind.find(r=>r[1]==='Total de ações socioambientais')[2],2);assert.equal(ind.find(r=>r[1]==='Total de comunidades mapeadas')[2],'Informar');
-assert.deepEqual(JSON.parse(JSON.stringify(apoio.getSheetByName('Controle de manifestações').rows[0])),['Data','Nome','Endereço','Canal','Tipo de Manifestação','Frente de obra','Histórico','Providência','Status','Obs.:']);
-console.log('PASS: numeração sugerida (15 em outubro), planilha de apoio com Controle de manifestações no formato oficial e prévia de indicadores.');
-console.log('PASS: fechamento com metas semanais e mensal, pendências, documento nos 13 itens do Orientador, versões sem sobrescrever e geração idempotente.');
 
 // Cache compartilhado e página com dados embutidos.
 registros.rows.push(reg(9,'Relato de atividade','2026-10-07','','','Nova',5));books.get('base').sheets.push(new Sheet('Início'));
@@ -265,12 +246,6 @@ assert.ok(textos.includes('Consórcio Performance Tamanduateí'));assert.deepEqu
 assert.ok(movs.rows.some(x=>x[3]==='Ficha oficial gerada'));
 r=run("gerarFichaOficialCPT({protocolo:'ATD20260007'})");assert.equal(r.gerada,false,'sem mudança não refaz');assert.equal(copias,1);
 assert.equal(run("abrirAtendimentoCPT('ATD20260007')").fichaAtualizada,true);
-// Pacote do mês: abertos no fim do mês + concluídos no mês.
-email='atd@example.com';const mesP='2026-09';r=run(`gerarPacoteFichasCPT({mes:'${mesP}'})`);assert.ok(r.total>=1);assert.ok(r.erros.every(x=>/nome e solicitação|Protocolo inválido/.test(x.erro)),JSON.stringify(r.erros));assert.ok(r.prontas>=1);
-// 2.26: Anexos do relatório — os mesmos casos do pacote do mês, nas 10 colunas oficiais (com o protocolo à parte, para a nota).
-email='victor@example.com';const ca=JSON.parse(JSON.stringify(run(`new AnexosRelatorioCPT(AplicacaoCPT.contexto()).casos('${mesP}')`))),tiposA=run('AnexosRelatorioCPT.tipos');
-assert.ok(ca.length>=1&&ca.length===r.total,'mesmos casos do pacote');assert.ok(ca.every(x=>x.valores.length===10&&['Concluído','Em andamento'].includes(x.valores[8])&&tiposA.includes(x.valores[4])));
-const m7=ca.find(x=>x.id==='ATD20260007');assert.ok(m7&&/^2026-03-05/.test(m7.valores[0])&&m7.valores[5]==='Coletor A','data da abertura e frente');
 assert.equal(locked,false);
 console.log('PASS: casos migrados mostram os dados da ficha antiga; correção com histórico sem expor contato; incorporação de protocolo; filtro por responsável com dias em aberto; ficha oficial no modelo, sem refazer à toa, e pacote do mês.');
 }

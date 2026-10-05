@@ -51,7 +51,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('#menuToggle').click();await p.locator('.nav-item[data-route=obras]').click();await p.waitForFunction(()=>!document.body.classList.contains('nav-open'));
   assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'obras');await p.locator('#tabbar .tab-item[data-route=meuespaco]').click();await p.locator('.space-hero').waitFor();
   // Gestão continua entrando pelos números do mês.
-  await p.setViewportSize({width:1366,height:900});await p.goto(url('?perfil=gestao&latencia=20'));await p.locator('.report-items').waitFor();
+  await p.setViewportSize({width:1366,height:900});await p.goto(url('?perfil=gestao&latencia=20'));await p.locator('.panel-dias').waitFor();
   assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');assert.equal(await p.locator('.nav-item[data-route=meuespaco]').isHidden(),false);
   assert.deepEqual(errors,[]);
   console.log('PASS: Meu espaço 2.10 — capivara, cor do mascote, agenda de hoje, menu recolhível, barra de atalhos e gaveta no celular; atendimento entra por ele (gestão pela Visão do mês), escolhe e nomeia o mascote, presente da semana vira peça, guarda-roupa, exclusiva só com pontos, checklist +10 uma vez por tarefa, caderno salvo sozinho, planejamento de outro dia e celular sem rolagem.');

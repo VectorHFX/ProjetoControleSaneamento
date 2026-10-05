@@ -55,14 +55,23 @@ sincronizar() {
   local f
   for f in "$CFG/repo/$pasta"/*.gs "$CFG/repo/$pasta"/*.html; do [ -e "$f" ] && cp "$f" "$w/src/"; done
   if [ "$publicar" = sim ] && [ -e "$CFG/repo/$pasta/appsscript.json" ]; then cp "$CFG/repo/$pasta/appsscript.json" "$w/src/"; fi
+  # Aposentados (2.27): saíram da aplicação de propósito; apagar no Google para que não continuem funcionando.
+  local removeu="" a
+  if [ "$pasta" = app/src ]; then
+    for a in RelatorioMensalCPT.gs EntregasDoMesCPT.gs AnexosRelatorioCPT.gs ProgramaParceirosCPT.gs EntregasCPT.gs Fechamento.html Socioambiental.html Entregas.html; do
+      [ -e "$CFG/repo/$pasta/$a" ] && continue
+      [ -e "$w/src/$a" ] && rm -f "$w/src/$a" && removeu="$removeu $a"
+    done
+  fi
   local mudou criou mantidos
   # Diferenças só de espaços ou linhas em branco no fim não contam (o Google normaliza o texto).
   mudou="$(cd "$w/src" && for f in *; do [ -e "../atual/$f" ] && ! diff -qBZ "$f" "../atual/$f" > /dev/null && echo "$f"; done || true)"
   criou="$(cd "$w/src" && for f in *; do [ -e "../atual/$f" ] || echo "$f"; done || true)"
-  mantidos="$(cd "$w/atual" && for f in *; do [ -e "$CFG/repo/$pasta/$f" ] || echo "$f"; done || true)"
+  mantidos="$(cd "$w/atual" && for f in *; do [ -e "$CFG/repo/$pasta/$f" ] || [ ! -e "$w/src/$f" ] || echo "$f"; done || true)"
   echo "  Alterar: ${mudou:-nada}" | tr '\n' ' '; echo
   echo "  Criar:   ${criou:-nada}" | tr '\n' ' '; echo
   echo "  Fica só no Google (mantido): ${mantidos:-nada}" | tr '\n' ' '; echo
+  echo "  Remover (aposentados):${removeu:- nada}"
   # Um arquivo que só existe no Google e declara a mesma classe de um arquivo do GitHub quebra o projeto inteiro.
   local dup="" m c
   for m in $mantidos; do
@@ -72,7 +81,7 @@ sincronizar() {
     done
   done
   if [ -n "$dup" ]; then echo "  ⚠ ATENÇÃO: no Google há arquivo(s) que repetem uma classe do GitHub:$dup"; echo "    Apague esse(s) arquivo(s) no editor (⋮ → Excluir). Com classe repetida, o projeto inteiro para de funcionar."; fi
-  if [ -z "$mudou$criou" ]; then echo "  Já estava atualizado."; return 0; fi
+  if [ -z "$mudou$criou$removeu" ]; then echo "  Já estava atualizado."; return 0; fi
   [ "$MODO" = aplicar ] || return 0
   (cd "$w" && $CLASP version "Segurança antes da atualização de $QUANDO" | tail -1 | sed 's/^/  Versão de segurança: /')
   (cd "$w" && $CLASP push --force > /dev/null) && echo "  Código atualizado."

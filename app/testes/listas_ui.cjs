@@ -6,7 +6,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q;
   // Atendimentos: uma linha por caso, com as colunas combinadas.
-  await p.goto(url('?inicial=1&latencia=20'));await p.locator('.report-items').waitFor();
+  await p.goto(url('?inicial=1&latencia=20'));await p.locator('.panel-dias').waitFor();
   await p.locator('.nav-item[data-route=atendimentos]').click();await p.locator('#caseResults .list-row').first().waitFor();
   assert.deepEqual(await p.$$eval('#caseResults .list-head [data-col]',l=>l.map(x=>x.textContent.trim())),['Caso','Nome','Assunto','Situação','Com quem está','Dias','Próxima ação']);
   const linha=p.locator('#caseResults .list-row',{hasText:'ATD20260016'});

@@ -2,7 +2,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const props=new Map();const chamadas=[];
 const github={'app/src':{'AplicacaoCPT.gs':'nova','Estilos.html':'css','appsscript.json':'{"m":2}','LEIA.md':'x'},'campo40/src':{'ExecucaoDaEngenharia.gs':'exec2','PainelDaExecucao.gs':'painel'}};
-const google={APP:[{name:'appsscript',type:'JSON',source:'{"m":1}',functionSet:{}},{name:'AplicacaoCPT',type:'SERVER_JS',source:'velha'},{name:'Estilos',type:'HTML',source:'css'},{name:'SoNoGoogle',type:'SERVER_JS',source:'x'}],
+const google={APP:[{name:'appsscript',type:'JSON',source:'{"m":1}',functionSet:{}},{name:'AplicacaoCPT',type:'SERVER_JS',source:'velha'},{name:'Estilos',type:'HTML',source:'css'},{name:'SoNoGoogle',type:'SERVER_JS',source:'x'},{name:'RelatorioMensalCPT',type:'SERVER_JS',source:'fechamento'},{name:'Fechamento',type:'HTML',source:'tela'}],
   CAMPO:[{name:'appsscript',type:'JSON',source:'{"campo":1}'},{name:'ExecucaoDaEngenharia',type:'SERVER_JS',source:'exec1'}]};
 const resp=(code,obj)=>({getResponseCode:()=>code,getContentText:()=>typeof obj==='string'?obj:JSON.stringify(obj)});
 const ctx={console:{log(){}},JSON,Map,Set,Object,Array,String,encodeURIComponent,Date,
@@ -22,9 +22,9 @@ const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 assert.throws(()=>run('conferirAtualizacaoCPT()'),/token do GitHub/);
 props.set('CPT_ATUALIZADOR',JSON.stringify({token:'ghp',scriptIds:{campo40:'CAMPOID'}}));
 const antes=JSON.stringify(google);let r=run('conferirAtualizacaoCPT()');assert.equal(JSON.stringify(google),antes,'conferir não altera');
-assert.deepEqual(r.projetos[0].alterar.sort(),['AplicacaoCPT','appsscript']);assert.deepEqual(r.projetos[0].manterSoNoGoogle,['SoNoGoogle']);assert.deepEqual(r.projetos[1].criar,['PainelDaExecucao']);
+assert.deepEqual(r.projetos[0].alterar.sort(),['AplicacaoCPT','appsscript']);assert.deepEqual(r.projetos[0].manterSoNoGoogle,['SoNoGoogle']);assert.deepEqual(r.projetos[0].remover,['RelatorioMensalCPT','Fechamento'],'aposentados (2.27) saem do Google');assert.deepEqual(r.projetos[1].criar,['PainelDaExecucao']);
 r=run('atualizarTudoCPT()');const app=Object.fromEntries(google.APP.map(f=>[f.name,f]));
-assert.equal(app.AplicacaoCPT.source,'nova');assert.equal(app.SoNoGoogle.source,'x','arquivo só do Google mantido');assert.equal(google.APP[0].name,'appsscript');assert.ok(!('functionSet' in google.APP[0]),'só name/type/source vão para a API');assert.ok(!app.LEIA,'só .gs/.html/.json');
+assert.equal(app.AplicacaoCPT.source,'nova');assert.equal(app.SoNoGoogle.source,'x','arquivo só do Google mantido');assert.ok(!app.RelatorioMensalCPT&&!app.Fechamento,'aposentados apagados');assert.deepEqual(r.resultados[0].removidos,['RelatorioMensalCPT','Fechamento']);assert.equal(google.APP[0].name,'appsscript');assert.ok(!('functionSet' in google.APP[0]),'só name/type/source vão para a API');assert.ok(!app.LEIA,'só .gs/.html/.json');
 const campo=Object.fromEntries(google.CAMPO.map(f=>[f.name,f]));assert.equal(campo.appsscript.source,'{"campo":1}','manifesto do Campo mantido');assert.equal(campo.PainelDaExecucao.type,'SERVER_JS');
 assert.ok(r.resultados[0].versaoDeSeguranca);assert.match(r.resultados[0].publicacao,/versão/);
 const put=chamadas.find(c=>c[1].includes('/deployments/WEB1'));assert.equal(JSON.parse(put[2]).deploymentConfig.versionNumber>r.resultados[0].versaoDeSeguranca,true,'publica a versão nova, depois da de segurança');

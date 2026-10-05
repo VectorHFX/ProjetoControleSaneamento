@@ -20,7 +20,7 @@
   /*
    * ROTAS — registro único das páginas (2.11). Para criar, mudar ou tirar uma página, mexa só aqui:
    * o menu lateral, os títulos, as permissões, as telas por cargo, o botão Atualizar e a troca de mês saem deste registro.
-   * - grupo: 'dia' (sempre aberto), 'mes' (Fechamento do mês) ou 'consulta' (Consultas e cadastros); sem grupo = fora do menu.
+   * - grupo: 'dia' (sempre aberto) ou 'consulta' (Consultas e cadastros); sem grupo = fora do menu. 2.27: o grupo "Fechamento do mês" saiu.
    * - acesso: papéis da conta que podem abrir (o servidor confere de novo). Sem acesso = todos.
    * - visoes: telas por cargo em que a página aparece. Sem visoes = todas.
    * - abrir / atualizar / mes: o que fazer ao entrar, no botão Atualizar e ao trocar a competência
@@ -39,9 +39,6 @@
     cronograma:{titulo:'Cronograma',icone:'i-calendar',grupo:'dia',abrir:()=>window.CPTAgenda.render(),atualizar:()=>window.CPTAgenda.render(),mes:()=>window.CPTAgenda.render()},
     comunicacao:{titulo:'Comunicação',icone:'i-megaphone',grupo:'dia',acesso:['administrador','administrativo','gestao','comunicacao'],visoes:['comunicacao',...GESTAO],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar(),mes:()=>window.CPTComunicacao.render()},
     lembretes:{titulo:'Lembretes',icone:'i-bell',grupo:'dia',acesso:['administrador',...MESA],visoes:['socioambiental'],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar()},
-    socioambiental:{titulo:'Socioambiental',icone:'i-file',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTSocioambiental.render(),atualizar:()=>window.CPTSocioambiental.render(),mes:()=>window.CPTSocioambiental.render()},
-    fechamento:{titulo:'Entregas do mês',busca:'fechamento relatorio anexos fichas zip',icone:'i-check',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTFechamento.render(),atualizar:()=>window.CPTFechamento.render(),mes:()=>window.CPTFechamento.render()},
-    parceiros:{titulo:'Programa Parceiros',icone:'i-partner',grupo:'mes',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderParceiros(),atualizar:()=>{if(window.CPTGestao.sair())window.CPTGestao.renderParceiros();},mes:()=>window.CPTGestao.renderParceiros(),podeSair:()=>window.CPTGestao.sair()},
     registros:{titulo:'Registros',icone:'i-records',grupo:'consulta',abrir:()=>renderRecords(),mes:()=>{$('view').innerHTML=skeleton();}},
     mapa:{titulo:'Mapa',busca:'mapa santo andre bairros localizacao',icone:'i-pin',grupo:'consulta',emTeste:true,abrir:()=>window.CPTMapa.render(),atualizar:()=>window.CPTMapa.render(true),mes:()=>window.CPTMapa.render(),aoSair:()=>window.CPTMapa.sair()},
     obras:{titulo:'Obras',icone:'i-pin',grupo:'consulta',abrir:()=>window.CPTObras.render(),atualizar:()=>window.CPTObras.render()},
@@ -53,7 +50,7 @@
     conectores:{titulo:'Conectores e pastas',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderConectores(),atualizar:()=>window.CPTGestao.renderConectores()}
   };
   /** Monta o menu lateral a partir de ROTAS (na ordem do registro, separado por grupo). */
-  (function montarMenu(){const grupos=[['dia','Dia a dia',false],['mes','Fechamento do mês',true],['consulta','Consultas e cadastros',true]];
+  (function montarMenu(){const grupos=[['dia','Dia a dia',false],['consulta','Consultas e cadastros',true]];
     const item=(id,r)=>`<button class="nav-item" data-route="${id}" hidden><svg class="icon"><use href="#${r.icone}"/></svg><span>${esc(r.titulo)}</span></button>`;
     $('navigation').innerHTML=grupos.map(([g,nome,recolhe])=>{const itens=Object.entries(ROTAS).filter(([,r])=>r.grupo===g).map(([id,r])=>item(id,r)).join('');const gid='grupo'+g[0].toUpperCase()+g.slice(1);
       return `<div class="nav-group" data-grupo="${g}">${recolhe?`<button type="button" class="nav-group-head" aria-expanded="true" aria-controls="${gid}"><span>${esc(nome)}</span><svg class="icon chevron" aria-hidden="true"><use href="#i-arrow"/></svg></button><div class="nav-group-items" id="${gid}">${itens}</div>`:`<div class="nav-caption">${esc(nome.toUpperCase())}</div>${itens}`}</div>`;}).join('');})();
@@ -129,7 +126,7 @@
   function mostrarAvatar(){const b=$('topAvatar');if(!b||!window.CPTMascote)return;let a=null;try{a=JSON.parse(store.get('cpt.avatar')||'null');}catch(_){}
     if(!a||!a.especie){b.hidden=true;return;}b.innerHTML=window.CPTMascote.desenhar(a.especie,a.equipado||{},38,a.nome||'Mascote',a.cor||'');b.setAttribute('aria-label','Meu espaço — '+(a.nome||'mascote'));b.title=a.nome||'Meu espaço';b.hidden=false;}
   window.CPTAvatar={guardar(m){if(!m)return;store.set('cpt.avatar',JSON.stringify({especie:m.especie,cor:m.cor||'',nome:m.nome,equipado:m.equipado||{}}));mostrarAvatar();}};
-  // ---------- Menu em grupos: "Dia a dia" sempre aberto; "Fechamento do mês" e "Consultas e cadastros" recolhíveis ----------
+  // ---------- Menu em grupos: "Dia a dia" sempre aberto; "Consultas e cadastros" recolhível ----------
   // Gestão e Administrativo (que veem tudo) começam com os grupos recolhidos; as demais frentes, abertos. A escolha de cada pessoa fica guardada.
   function preferenciaMenu(){try{return JSON.parse(store.get('cpt.menu')||'{}')||{};}catch(_){return {};}}
   function abrirGrupo(grupo,aberto,salvar){const g=document.querySelector('.nav-group[data-grupo="'+grupo+'"]');if(!g)return;g.classList.toggle('is-closed',!aberto);const h=g.querySelector('.nav-group-head');if(h)h.setAttribute('aria-expanded',String(aberto));
@@ -139,7 +136,7 @@
       const temAtual=itens.some(b=>b.dataset.route===state.route&&!b.hidden);abrirGrupo(k,temAtual||(k in pref?!!pref[k]:!GESTAO.includes(visao())),false);});}
   document.addEventListener('click',e=>{const h=e.target.closest('.nav-group-head');if(!h)return;const g=h.closest('.nav-group');abrirGrupo(g.dataset.grupo,g.classList.contains('is-closed'),true);});
   // Barra de atalhos do celular: as 4 páginas mais usadas de cada cargo + Menu.
-  const ATALHOS={atendimento:['meuespaco','atendimentos','cronograma','recados'],socioambiental:['meuespaco','socioambiental','cronograma','recados'],comunicacao:['meuespaco','comunicacao','cronograma','recados'],
+  const ATALHOS={atendimento:['meuespaco','atendimentos','cronograma','recados'],socioambiental:['meuespaco','registros','cronograma','recados'],comunicacao:['meuespaco','comunicacao','cronograma','recados'],
     comercializacao:['meuespaco','obras','cronograma','recados'],gestao:['inicio','atendimentos','recados','cronograma'],administrativo:['inicio','atendimentos','recados','cronograma']};
   function montarTabbar(){const bar=$('tabbar');if(!bar)return;const vis=[...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden),por=new Map(vis.map(b=>[b.dataset.route,b]));
     const rotas=(ATALHOS[visao()]||[]).filter(r=>por.has(r));vis.forEach(b=>{if(rotas.length<4&&!rotas.includes(b.dataset.route))rotas.push(b.dataset.route);});
@@ -197,8 +194,8 @@
    * Quem tem vários papéis (como o proprietário) troca a visão para ver exatamente o que cada colega vê.
    */
   const RESUMO_VISAO={atendimento:'Casos, auditoria das fichas e números do atendimento, mais as ferramentas comuns.',comercializacao:'Ferramentas comuns: obras e endereços, cronograma, registros e consulta de atendimentos.',
-    socioambiental:'Mesa do relatório, lembretes com a Comunicação, preparo de relatos e diagnósticos, fechamento e as ferramentas comuns.',comunicacao:'Seu dia (recados, lembretes, materiais e galeria), mesa do relatório, fechamento e as ferramentas comuns.',
-    gestao:'Tudo: painel do contrato e das frentes, Programa Parceiros, mesa do relatório, fechamento e auditoria.',administrativo:'Tudo: painel do contrato e das frentes, Programa Parceiros, mesa do relatório, fechamento e auditoria.'};
+    socioambiental:'Lembretes com a Comunicação, registros do mês e as ferramentas comuns.',comunicacao:'Seu dia (recados, lembretes, materiais e galeria) e as ferramentas comuns.',
+    gestao:'Tudo: painel do contrato e das frentes, relatos em resumo e auditoria.',administrativo:'Tudo: painel do contrato e das frentes, relatos em resumo e auditoria.'};
   /** Permissão real (papéis da conta). A visão só pode esconder; nunca mostra o que a conta não tem. */
   /** emTeste: página nova, só para o proprietário enquanto o período de testes estiver ligado. */
   function permitido(route){const r=ROTAS[route];if(!r)return false;const p=state.perfil?.papeis||[];if(r.emTeste&&state.perfil?.emTeste&&!p.includes('administrador'))return false;return !r.acesso||p.some(x=>r.acesso.includes(x));}
@@ -228,7 +225,7 @@
   async function openDetail(kind,id){if(kind==='case'){window.CPTAtendimentos.abrir(id);return;}const ticket=++state.detailRequest;activeDocument=null;$('detailType').textContent=kind==='record'?'REGISTRO DE CAMPO':'ATENDIMENTO';$('detailTitle').textContent='Carregando detalhes';$('detailContent').innerHTML='<div class="loading-label"><span class="spinner"></span>Abrindo as informações…</div>';window.CPTDetalhe.abrir(kind==='record'?document.querySelector('#recordResults .list-row[data-record="'+String(id).replace(/"/g,'')+'"]'):null);
     try{const d=await call('abrirRegistroCPT',id);if(ticket!==state.detailRequest||!$('detailDialog').open)return;
       if(kind==='record'){const r=d.registro;$('detailTitle').textContent=r.atividade||r.procedimento;
-        $('detailContent').innerHTML=readingTools()+(/relato de atividade|diagn[oó]stico/i.test(r.procedimento)&&state.perfil?.papeis.some(p=>['administrador','administrativo','gestao','socioambiental','comunicacao'].includes(p))?`<div class="reading-tools"><button class="button" data-prepare-relato="${esc(r.id)}">${/diagn[oó]stico/i.test(r.procedimento)?'Preparar diagnóstico':'Preparar para o relatório'}</button></div>`:'')+summary([['Procedimento',r.procedimento],['Data de realização',date(r.data)],['Bairro',r.bairro],['Responsável',r.responsavel],['Obra de referência',r.obra],['Origem',r.origem],['Público informado',r.publico==null?'Não informado':String(r.publico)]])+`<p class="document-id">Registro: ${esc(r.id)}</p>`+
+        $('detailContent').innerHTML=readingTools()+summary([['Procedimento',r.procedimento],['Data de realização',date(r.data)],['Bairro',r.bairro],['Responsável',r.responsavel],['Obra de referência',r.obra],['Origem',r.origem],['Público informado',r.publico==null?'Não informado':String(r.publico)]])+`<p class="document-id">Registro: ${esc(r.id)}</p>`+
           (r.conferencia?`<details class="help-note"><summary>Conferência do registro</summary><p>${esc(r.conferencia)}</p><p>ID: ${esc(r.id)}</p></details>`:'')+
           (d.anexos.length?`<h3 class="answers-head">Arquivos e evidências</h3><div class="attachments">${d.anexos.map((a,i)=>`<div class="attachment"><p>${esc(a.titulo||'Anexo '+(i+1))}</p><button class="button secondary" data-preview="${esc(a.id)}">Visualizar</button> <a href="${esc(safeURL(a.url))}" target="_blank" rel="noopener noreferrer">Abrir no Drive</a></div>`).join('')}</div><div id="mediaPreview"></div>`:'')+
           sections(d.campos);
@@ -271,14 +268,13 @@
       // Não essencial para a primeira tela: os avisos de recados são pedidos logo depois, sem disputar com os dados do mês.
       setTimeout(()=>window.CPTRecados.contar(false),1200);setInterval(()=>{if(document.visibilityState==='visible')window.CPTRecados.contar(true);},600000);}
     catch(e){accessError(e.message);window.CPT_BOOT?.finish();}}
-  function trocarVisao(v){if(state.route==='parceiros'&&!window.CPTGestao.sair()){$('roleView').value=document.documentElement.dataset.visao;aplicarVisao();return;}$('roleView').value=v;store.set('cpt.view',v);aplicarVisao();state.route='';navigate(entrada());toast('Agora você vê a tela de '+window.CPTAgenda.names[v]+'. Sua conta e suas permissões não mudam.');}
+  function trocarVisao(v){$('roleView').value=v;store.set('cpt.view',v);aplicarVisao();state.route='';navigate(entrada());toast('Agora você vê a tela de '+window.CPTAgenda.names[v]+'. Sua conta e suas permissões não mudam.');}
   $('roleView').addEventListener('change',()=>trocarVisao($('roleView').value));
   document.addEventListener('change',e=>{if(e.target.id==='viewSwitch')trocarVisao(e.target.value);});
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
-  window.CPTEntregas.init({call});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTFechamento||!window.CPTInicio||!window.CPTSocioambiental)throw new Error('Componentes Inicio.html, Obras.html, Fechamento.html ou Socioambiental.html ausentes. Confira os arquivos da versão 2.6.0.');
+  if(!window.CPTObras||!window.CPTInicio)throw new Error('Componentes Inicio.html ou Obras.html ausentes. Confira os arquivos da versão 2.27.0.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
@@ -294,7 +290,7 @@
   if(window.CPTPlacar)window.CPTPlacar.init({esc,num});
   if(window.CPTAlbum)window.CPTAlbum.init({call,esc,toast,intro,state,view:$('view')});
   if(window.CPTMapa)window.CPTMapa.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
-  window.CPTObras.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTFechamento.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTSocioambiental.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
+  window.CPTObras.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   bootstrap();
 })();
 </script>

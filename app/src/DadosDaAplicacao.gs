@@ -1,6 +1,28 @@
 /** DadosDaAplicacao 2.6.0. Somente leitura; compatível com a base Campo 4.0 importada. */
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
+  /** 2.27: utilidades que eram do fechamento do relatório e continuam em uso (legendas, lembrete do contrato, metas de pesquisa). */
+  static get metaSemanal() { return 15; }
+  static get metaMensal() { return 60; }
+  static br(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : (d || ''); }
+  static mesExtenso(m) { const n = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']; return n[Number(m.slice(5, 7)) - 1] + ' de ' + m.slice(0, 4); }
+  /** Campos do formulário guardados no registro (sem abrir arquivos do Drive). */
+  static campos(json) {
+    let d; try { d = JSON.parse(json || '{}'); } catch (_) { return null; }
+    if (d.arquivoDetalhesId) return null;
+    d = d.conteudo || d; const out = [];
+    if (Array.isArray(d.campos)) d.campos.forEach(c => out.push([c.titulo, c.valor]));
+    if (d.consolidado && d.consolidado.campos) Object.entries(d.consolidado.campos).forEach(e => out.push(e));
+    return out;
+  }
+  /** Valor do primeiro campo cujo título combine com re (vazio se não houver). */
+  static valor(campos, re) {
+    if (!campos) return '';
+    const achado = campos.find(([t, v]) => re.test(DadosDaAplicacao.norm(t)) && v !== '' && v != null && !(Array.isArray(v) && !v.length));
+    return achado ? (Array.isArray(achado[1]) ? achado[1].join(', ') : String(achado[1])) : '';
+  }
+  static mesValido(v) { const s = String(v || ''); if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) throw new Error('Escolha um mês válido.'); return s; }
+  static mesAnterior(m) { const d = new Date(m + '-15T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() - 1); return d.toISOString().slice(0, 7); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
   static json(v) {
     if (v instanceof Date) return v.toISOString();
