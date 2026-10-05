@@ -161,6 +161,23 @@ window.CPTEspaco = (() => {
     <g class="sc-house"><rect x="10" y="196" width="26" height="22" rx="2"/><path d="M5 199 L23 182 L41 199Z"/><rect x="44" y="200" width="20" height="18" rx="2"/><path d="M40 203 L54 190 L68 203Z"/><rect x="560" y="188" width="30" height="26" rx="2"/><path d="M554 191 L575 172 L596 191Z"/></g>
     <g class="sc-tree"><circle cx="76" cy="210" r="10"/><circle cx="188" cy="206" r="12"/><circle cx="540" cy="200" r="14"/></g>
     <path class="sc-water1" d="M0 262 C120 250 240 272 360 262 S600 250 720 262 960 272 1080 262 1160 254 1200 258 V300 H0Z"/><path class="sc-water2" d="M0 280 C140 270 260 290 400 280 S640 270 780 282 1020 290 1200 278 V300 H0Z"/></svg>`;
+  // 2.26: quadro na parede (visual novo): a foto mais favoritada da semana no Álbum; sem foto, esta paisagem.
+  const PAISAGEM = `<svg class="quadro-paisagem" viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="quadroCeu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd3ec"/><stop offset="1" stop-color="#f3ead2"/></linearGradient></defs>
+    <rect width="160" height="110" fill="url(#quadroCeu)"/><circle cx="122" cy="30" r="12" fill="#f6c84c"/><circle cx="122" cy="30" r="18" fill="#f6c84c" opacity=".25"/>
+    <path d="M0 70 Q30 44 62 62 T120 54 T160 60 V110 H0Z" fill="#8fbf6a"/><path d="M0 84 Q40 64 82 80 T160 74 V110 H0Z" fill="#5e8f4a"/>
+    <path d="M18 110 C40 96 70 98 86 90 S130 84 160 88 V96 C128 94 108 98 92 102 S48 106 34 110Z" fill="#7cc0ea"/>
+    <g fill="#f4ede0"><rect x="96" y="66" width="14" height="10"/><rect x="113" y="63" width="12" height="13"/></g><g fill="#bd553b"><path d="M94 67 l9 -8 l9 8Z"/><path d="M111 64 l8 -7 l8 7Z"/></g>
+    <g fill="#3f6f3a"><circle cx="30" cy="70" r="7"/><circle cx="40" cy="73" r="5"/><circle cx="140" cy="70" r="6"/></g></svg>`;
+  const corta = (t, n) => { t = String(t || ''); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; };
+  function quadro() {
+    const q = d.quadro, foto = q && q.fileId, album = ui.podeVer('album');
+    const img = foto ? `<img class="quadro-foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="https://drive.google.com/thumbnail?id=${encodeURIComponent(q.fileId)}&amp;sz=w480">` : '';
+    const rotulo = foto ? 'Foto da semana · ' + corta(q.legenda || 'Álbum da equipe', 28) : 'Santo André';
+    return `<${album ? 'button type="button" data-route="album"' : 'div'} class="pet-quadro ${foto ? 'tem-foto' : ''}" aria-label="${ui.esc(foto ? 'Quadro com a foto da semana do álbum: ' + (q.legenda || '') : 'Quadro com uma paisagem')}">
+      <span class="quadro-moldura"><span class="quadro-tela">${PAISAGEM}${img}</span></span><span class="quadro-placa">${ui.esc(rotulo)}</span></${album ? 'button' : 'div'}>`;
+  }
+  // Caderno (2.26): no visual novo, a capa marrom abre uma vez por visita; trocar de dia vira a página.
+  const diasAbertos = new Set();
   const ILUSTRA_VAZIO = '<svg class="empty-art" viewBox="0 0 120 90" aria-hidden="true"><rect x="18" y="16" width="84" height="64" rx="10" class="ea-paper"/><rect x="18" y="16" width="84" height="16" rx="8" class="ea-top"/><circle cx="40" cy="12" r="5" class="ea-ring"/><circle cx="80" cy="12" r="5" class="ea-ring"/><path d="M44 56 l10 10 l22 -22" class="ea-check"/></svg>';
   const TRABALHO = {
     atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Abrir a mesa do relatório', 'socioambiental', ''], comunicacao: ['Abrir meu dia na Comunicação', 'comunicacao', 'hoje'],
@@ -180,8 +197,8 @@ window.CPTEspaco = (() => {
     const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
     const chip = (icone, texto, extra) => `<span class="home-chip" ${extra || ''}>${icone}<span>${texto}</span></span>`;
     const v3 = !!(window.CPTVisual && window.CPTVisual.ativo()); // 2.24: visual novo — o mascote na recepção (parede ripada, plantas, luminárias)
-    ui.view.innerHTML = `<section class="space-hero mascot-stage${v3 ? ' v3-cena-host' : ''}">${v3 ? window.CPTVisual.cena() : CENA}
-        <div class="hero-pet"><div class="mascot-art">${desenho(m, 220, humor())}</div>
+    ui.view.innerHTML = `<section class="space-hero mascot-stage${v3 ? ' v3-cena-host com-quadro' : ''}">${v3 ? window.CPTVisual.cena() : CENA}
+        <div class="hero-pet">${v3 ? quadro() : ''}<div class="mascot-art">${desenho(m, v3 ? 330 : 220, humor())}</div>
           <div class="pet-plate"><h2 class="mascot-name">${ui.esc(m.nome)} <button class="link-button" data-esp-nomear aria-label="Mudar o nome">mudar nome</button></h2><p class="small">${ui.esc(d.especies[m.especie])} de ${ui.esc(nome || 'você')}</p></div></div>
         <div class="hero-copy"><span class="hero-date">${ui.esc(dataLonga(d.hoje))}</span><h1 class="hero-title">${saudacao}${nome ? ', ' + ui.esc(nome) : ''}!</h1>
           <p class="hero-sub">${ui.esc(m.nome)} está torcendo por você hoje.</p>${d.saber && window.CPTSaber ? window.CPTSaber.balao(d.saber) : ''}
@@ -197,12 +214,24 @@ window.CPTEspaco = (() => {
           ${dia === d.hoje ? '<div id="espMissoes"></div>' : ''}<h3 class="peek-title">${ic('check', '✅')} Checklist</h3><div id="espLista"></div>
           <form id="espNova" class="inline-add"><input name="texto" maxlength="200" placeholder="${dia > d.hoje ? 'Planejar uma tarefa para este dia' : 'Nova tarefa para hoje'}" aria-label="Nova tarefa" autocomplete="off"><button class="button" type="submit">${ui.icon('plus')}Adicionar</button></form>
           <p class="small muted">Cada tarefa feita vale ${d.regras.pontosPorTarefa} pontos (até ${d.regras.tarefasPorDia} por dia).${d.proximos.length ? ' Planejado: ' + d.proximos.map(p => `<button class="link-button" data-esp-ir="${p.data}">${ui.date(p.data)} (${p.pendentes})</button>`).join(' ') : ''}</p></section>
-        <section class="panel home-notebook"><div class="panel-head"><div><span class="card-kicker">${ic('lock', '📓')} Só você lê</span><h2>Meu caderno</h2></div><span id="espNotaEstado" class="small muted" aria-live="polite"></span></div>
-          ${dia > d.hoje ? '<p class="empty-line">O caderno é para hoje e dias anteriores. Use o checklist para planejar este dia.</p>' : `<textarea id="espNota" class="notebook" rows="7" maxlength="10000" placeholder="Como foi o dia? O que aprendeu, o que ficou para amanhã, uma ideia…">${ui.esc(d.nota.texto)}</textarea>`}
-          ${cad.recentes.length ? `<details class="notebook-past"><summary>Dias anteriores</summary>${cad.recentes.map(r => `<button class="mini-row" data-esp-ir="${r.data}"><strong>${ui.date(r.data)}</strong><small>${ui.esc(r.trecho)}</small></button>`).join('')}</details>` : ''}</section>
+        <section class="panel home-notebook ${v3 ? 'caderno' : ''}">${v3 ? `<div class="caderno-capa" aria-hidden="true"><span class="caderno-etiqueta">Caderno de ${ui.esc(nome || 'você')}</span><span class="caderno-elastico"></span></div>` : ''}
+          <div class="caderno-folha"><div class="panel-head"><div><span class="card-kicker">${ic('lock', '📓')} Só você lê</span><h2>Meu caderno</h2></div><span id="espNotaEstado" class="small muted" aria-live="polite"></span></div>
+          ${v3 ? `<p class="caderno-data"><strong>${ui.esc(dataLonga(dia))}</strong>${dia === d.hoje ? ' · hoje' : ''}</p>` : ''}
+          ${dia > d.hoje ? '<p class="empty-line">O caderno é para hoje e dias anteriores. Use o checklist para planejar este dia.</p>' : `<textarea id="espNota" class="notebook" rows="${v3 ? 8 : 7}" maxlength="10000" placeholder="Como foi o dia? O que aprendeu, o que ficou para amanhã, uma ideia…">${ui.esc(d.nota.texto)}</textarea>`}
+          ${v3 ? `<p class="caderno-rodape small muted">Cada dia fica guardado na sua página: ${ui.num(cad.dias)} ${cad.dias === 1 ? 'dia escrito' : 'dias escritos'}. Para reler, abra "Dias anteriores" ou volte o dia no checklist.</p>` : ''}
+          ${cad.recentes.length ? `<details class="notebook-past"><summary>Dias anteriores</summary>${cad.recentes.map(r => `<button class="mini-row" data-esp-ir="${r.data}"><strong>${ui.date(r.data)}</strong><small>${ui.esc(r.trecho)}</small></button>`).join('')}</details>` : ''}</div></section>
         ${d.saber && window.CPTSaber ? window.CPTSaber.painel(d.saber) : ''}${d.jogos && window.CPTJogos ? window.CPTJogos.painel(d.jogos) : ''}${d.placar && window.CPTPlacar ? window.CPTPlacar.painel(d.placar) : ''}
       </div>`;
-    desenharLista(); recuperarNota(); desenharAgendaHoje(); carregarMissoes();
+    desenharLista(); recuperarNota(); desenharAgendaHoje(); carregarMissoes(); abrirCaderno();
+  }
+  /** Capa que abre na primeira vez; trocar de dia vira a página. Sem animação com "Reduzir movimentos". */
+  function abrirCaderno() {
+    const c = document.querySelector('.home-notebook.caderno'); if (!c) return;
+    const calmo = window.CPTVisual && window.CPTVisual.calmo(), primeira = !diasAbertos.size, nova = !diasAbertos.has(dia);
+    diasAbertos.add(dia);
+    if (calmo || !nova) { c.classList.add('is-aberto'); return; }
+    c.classList.add(primeira ? 'is-abrindo' : 'is-virando');
+    setTimeout(() => { c.classList.remove('is-abrindo', 'is-virando'); c.classList.add('is-aberto'); }, primeira ? 1200 : 700);
   }
   /** "Hoje na agenda": atividades de hoje e dos próximos dias, vindas do cronograma (a frente da pessoa em destaque). */
   async function desenharAgendaHoje() {
@@ -340,6 +369,9 @@ window.CPTEspaco = (() => {
   }
   function init(api) {
     ui = api;
+    // Quadro: foto sem acesso no Drive (ou que não abre) volta para a paisagem.
+    document.addEventListener('error', e => { const t = e.target; if (!t || !t.classList || !t.classList.contains('quadro-foto')) return; const q = t.closest('.pet-quadro'); t.remove();
+      if (q) { q.classList.remove('tem-foto'); const pl = q.querySelector('.quadro-placa'); if (pl) pl.textContent = 'Santo André'; } }, true);
     // Quiz (Saber.html): pontos novos atualizam o selo de pontos e o humor do mascote.
     // Joguinhos (Jogos.html): mesma atualização de pontos; o quebra-cabeça sem foto usa o mascote da pessoa.
     if (window.CPTJogos) { window.CPTJogos.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.venceu && r.pontos.saldo > 0); if (r.venceu) comemorar(); });

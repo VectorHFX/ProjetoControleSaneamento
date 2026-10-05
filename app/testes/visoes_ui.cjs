@@ -11,12 +11,12 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.goto(url('?latencia=40'));await p.locator('.report-items').waitFor();
   // Proprietário: faixa da visão aparece e a lateral é a do Administrativo.
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Administrativo/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','album','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','mapa','obras','contatos','equipe','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','album','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','mapa','obras','contatos','equipe','organograma','revisao','ajuda']);
   // Ver como Atendimento: cor, lateral, atalhos e auditoria.
   await p.selectOption('#viewSwitch','atendimento');await espaco();await irInicio();
   assert.equal(await p.getAttribute('html','data-visao'),'atendimento');
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Atendimento/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','album','recados','cronograma','registros','mapa','obras','contatos','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','album','recados','cronograma','registros','mapa','obras','contatos','organograma','ajuda']);
   assert.match(await p.locator('.home-hero .eyebrow').textContent(),/TELA DE ATENDIMENTO/);
   const semRelatorio=async v=>assert.equal(await p.locator('.report-items, .panel-tipos').count(),0,'"Para o relatório" fora da visão '+v);
   await semRelatorio('atendimento');
@@ -26,7 +26,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.locator('[data-atd-modo=casos]').click();await p.locator('#caseFilters').waitFor();
   // Ver como Comercialização: só ferramentas comuns.
   await p.selectOption('#viewSwitch','comercializacao');await espaco();await irInicio();
-  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','album','recados','cronograma','registros','mapa','obras','contatos','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','album','recados','cronograma','registros','mapa','obras','contatos','organograma','ajuda']);
   assert.ok(!(await p.locator('.shortcuts').textContent()).includes('Auditoria'));
   await semRelatorio('comercializacao');
   // "Para o relatório" fica nas visões que preparam o relatório.
@@ -74,10 +74,10 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.setViewportSize({width:1366,height:900});const q=p;
   await q.goto(url('?perfil=comercializacao&latencia=20'));await espaco();await irInicio();
   assert.equal(await q.locator('#viewBanner').isHidden(),true);
-  assert.deepEqual(await q.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
+  assert.deepEqual(await q.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','organograma','ajuda']);
   const s=p;
   await s.goto(url('?perfil=socioambiental&latencia=20'));await espaco();await irInicio();
-  assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','lembretes','socioambiental','fechamento','registros','obras','contatos','ajuda']);
+  assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','lembretes','socioambiental','fechamento','registros','obras','contatos','organograma','ajuda']);
   assert.match(await s.locator('.shortcuts').textContent(),/Mesa do relatório/);
   assert.deepEqual(errors,[]);
   console.log('PASS: visões por cargo (faixa, cor, lateral e atalhos mudam; pessoa de um papel não troca), auditoria de atendimentos, painel (alertas, frentes com filtro e detalhe, relatos), Programa Parceiros (sugestão, não se aplica, conferido, salvar, publicar, exportar, rascunho recuperado), conectores e celular sem rolagem lateral.');

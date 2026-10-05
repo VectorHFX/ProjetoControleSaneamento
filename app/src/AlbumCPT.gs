@@ -39,6 +39,13 @@ class AlbumCPT {
       album: this.agrupar(ativos.filter(x => String(x.data).slice(0, 7) === mes)),
       fotos: this.fotos(mes).map(f => { const g = grupos.get(f.fileId); return {...f, coracoes: g ? g.coracoes : 0, meu: !!(g && g.meu)}; })};
   }
+  /** 2.26: foto do quadro na parede do Meu espaço — a mais favoritada da semana (ou dos últimos 30 dias). Só a foto e a legenda. */
+  quadro() {
+    if (!ColecaoCPT.existe(this.ctx, 'Álbum')) return null;
+    const ativos = this.ativos(), semana = PessoalCPT.semana(this.hoje), limite = new Date(Date.parse(this.hoje + 'T12:00:00Z') - 30 * 864e5).toISOString().slice(0, 10);
+    const g = this.agrupar(ativos.filter(x => PessoalCPT.semana(x.dia) === semana))[0] || this.agrupar(ativos.filter(x => x.dia >= limite))[0];
+    return g ? {fileId: g.fileId, legenda: g.atividade || g.legenda || '', local: g.local || '', data: g.data || ''} : null;
+  }
   /** Marca (ativo = true) ou desmarca uma favorita. */
   favoritar(p) {
     p = p || {}; PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'O álbum');

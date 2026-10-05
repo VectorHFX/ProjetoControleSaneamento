@@ -63,5 +63,7 @@ assert.deepEqual(d.album.map(f=>f.fileId),[F1,F3]);assert.ok(d.album.every(f=>f.
 const txt=JSON.stringify(d);for(const e of ['victor@example.com','com@example.com','Paula','Victor'])assert.ok(!txt.includes(e),'álbum não diz quem favoritou: '+e);
 email='social@example.com';d=run("carregarAlbumCPT({mes:'2026-09'})");assert.ok(d.album.every(f=>!f.meu));assert.equal(d.fotos.find(f=>f.fileId===F1).coracoes,3);
 assert.deepEqual(run("carregarAlbumCPT({mes:'2026-08'})").album,[],'álbum do mês só com fotos do mês');
+// 2.26: o quadro na parede do Meu espaço é a foto mais favoritada da semana (só foto e legenda, sem quem favoritou).
+const qd=run('carregarMeuEspacoCPT()').quadro;assert.equal(qd.fileId,F1);assert.ok(qd.legenda);assert.ok(!JSON.stringify(qd).includes('@'));
 props.delete('CPT_TRAVA_CONFIG');
 console.log('PASS: álbum da equipe — todos veem o álbum do mês e as Fotos da semana (mais favoritadas primeiro), sem nomes de quem favoritou.');

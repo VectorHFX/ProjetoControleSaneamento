@@ -306,7 +306,7 @@ window.CPTGestao = (() => {
   let controle = null, controleTicket = 0;
   const dataBr = iso => iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : '';
   async function carregarControle() {
-    const mine = ++controleTicket;
+    const mine = ++controleTicket; if (controle) desenharControle(); // o último resumo aparece na hora (sem piscar) e se atualiza em seguida
     try { const r = await ui.call('controleContratoCPT', {}); if (mine !== controleTicket) return; controle = r; desenharControle(); }
     catch (e) { const box = $('controleContrato'); if (box && mine === controleTicket) box.innerHTML = `<p class="small muted">Planilha de controle: ${ui.esc(e.message)}</p>`; }
   }

@@ -32,7 +32,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('#orgQuadro .org-no').nth(2).click();await p.locator('#orgForm').waitFor();
   await p.locator('#orgForm [name=cargo]').fill('');await p.locator('#orgForm [type=submit]').click();assert.equal(await p.locator('#orgForm [name=cargo]').evaluate(e=>e.validity.valid),false);
   await p.locator('#orgForm [name=cargo]').fill('Supervisão geral');await p.locator('#orgForm [type=submit]').click();await p.locator('#detailDialog').waitFor({state:'hidden'});
-  await p.waitForFunction(()=>document.querySelector('#orgQuadro svg').innerHTML.includes('Supervisão geral'));
+  await p.waitForFunction(()=>{const q=document.querySelector('#orgQuadro svg');return q&&q.innerHTML.includes('Supervisão geral');});
   await p.locator('[data-org-importar]').click();await p.waitForFunction(()=>document.querySelectorAll('#orgQuadro .org-no').length===14);assert.equal(await p.locator('[data-org-importar]').count(),0);
   // 6. Celular: sem rolagem lateral na página (o quadro rola por dentro).
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(300);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'rolagem lateral no celular');

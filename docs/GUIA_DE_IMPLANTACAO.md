@@ -23,6 +23,23 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.0 — banco revisto, revisão do conteúdo, loja, Meu espaço, Anexos, planilha de controle e organograma (≈ 10 min + revisão do conteúdo)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.0`) e publique uma **Nova versão**. Chegam os arquivos novos `RevisaoConteudoCPT.gs`, `OrganogramaCPT.gs`, `ControleContratoCPT.gs`, `AnexosRelatorioCPT.gs` e `Organograma.html`.
+2. **Correções pedidas**: a página não "pisca" mais ao carregar — a entrada anima uma vez só, quando o conteúdo chega (o esqueleto de carregamento fica parado e o botão Atualizar não repete a animação); o **"i" de informação** abre por cima do conteúdo; a barra **2 / 4.1 / 4.2 … / 3** saiu da página Socioambiental. O botão da Mesa virou **"Gerar relatos do mês (Docs)"**, para não confundir com a planilha dos Anexos.
+3. **Banco de saneamento (150 itens)**: 50 curiosidades no formato *fato + por que importa* e 100 perguntas, com eixo em cada item (Na prática 59%, Para entender 26%, Fato curioso 15%). Itens apontados na revisão corrigidos ou trocados (C27, C31, C33, Q039, Q049, Q050, Q057, Q058, Q059 e os de precisão); sem as 8 perguntas de cores, números de lei e datas soltas; fontes primárias (Planalto, Câmara, OMS/UNICEF, Trata Brasil, Semasa, Prefeitura, Fiocruz, Recicla Latas, Ministério das Cidades) ou **"Prática da equipe"** (sem link). Temas novos: coleta × afastamento × tratamento, esgoto × drenagem, obra concluída × sistema operando, falar do benefício sem prometer, registrar uma reclamação útil, ouvir quem não vê benefício, diagnóstico, comunicação prévia e acompanhamento. O texto para conferir fora da aplicação está em `docs/CONTEUDO_SANEAMENTO.md`.
+4. **Revisão do conteúdo** (Consultas e cadastros, só você): cada item com Aprovar, Suspender ou Voltar para revisão, com observação. Não há aprovação em lote. Suspenso some para todos (até para você no quiz); a equipe só verá o que você aprovar, quando o quiz for liberado.
+5. **Loja do bloco D** (elenco novo; nos testes, só você): capacetes azul, verde e laranja; coletes amarelo-limão e azul; luvas amarelas e azuis; galocha amarela e bota branca; moletom verde, camisa xadrez e jaqueta jeans; e as **cores especiais** menta, coral, dourado e azul-noite (120 pontos cada, compra uma vez e depois trocar é livre).
+6. **Meu espaço** (visual novo): o mascote ficou maior, em frente a um **quadro na parede** — a foto mais favoritada da semana no Álbum (ou uma paisagem, se ainda não houver foto); tocar no quadro abre o Álbum. O **caderno** virou um caderninho de capa marrom, folha pautada com margem e marcador; a capa abre na primeira vez e trocar de dia vira a página. Ele **guarda cada dia** numa página (as anotações de dias anteriores ficam em "Dias anteriores" ou voltando o dia no checklist).
+7. **Anexos do relatório = a planilha oficial** (`1Et4…`). Em **Entregas do mês → Anexos do relatório (planilha oficial)**:
+   - **Conferir o que muda** (nada é gravado): quantos casos do mês entram, quais atualizam e quais já estão iguais;
+   - **Atualizar o Controle de manifestações**: os casos do mês (os mesmos das fichas do ANEXO 4) entram nas 10 colunas oficiais pela regra da 3.2.1 — protocolo na nota da data, atualiza no lugar, acrescenta no fim, **nunca apaga nem reordena**, não reabre caso concluído, não troca Providência/Obs. escritas à mão por vazio e não mexe em fórmulas;
+   - **Matriz de Contatos e Indicadores 2026 não são alterados**; links para **baixar Excel e PDF** da planilha inteira.
+   - Gravar na planilha oficial: Gestão e Administrativo; **nos testes, só você**. A conta proprietária precisa ter edição na planilha (confira em **Conectores e pastas**, que agora trata Anexos e a planilha de controle como planilhas).
+   - O acionador antigo `atualizarAnexosAtendimentosAgendado` continua **excluído** (ele escreveria dados parados na mesma aba).
+8. **Planilha de controle do contrato** (`1pQJ5…`, preenchida 100% à mão): a aplicação **nunca escreve nela**. Em **Visão do mês → Contrato** aparece o cartão do mês a responder (o anterior, prazo dia 10), com o link direto na aba, a última alteração do arquivo e os **indicadores do mês para conferir** (ações, pessoas, frentes, bairros, diagnósticos, pesquisas, atendimentos recebidos/concluídos/em aberto, relatos prontos). Gestão e Administrativo recebem a **missão mensal** no checklist até alguém marcar **"Já respondi este mês"** (a marca fica na aplicação, não na planilha).
+9. **Organograma** (Consultas e cadastros, todos veem): desenho por área, com título, legenda e a quem cada pessoa responde. Baixe em **imagem PNG**, **SVG** ou **PDF** (imprimir → Salvar como PDF, A4 deitado). Para montar: **Trazer da equipe** (cria um cartão para cada pessoa de Equipe e acessos) e depois ajuste cargo, área e "Responde a" tocando em cada cartão. Os nomes ficam só na planilha de dados (nada no GitHub). Editar: Gestão e Administrativo; nos testes, só você.
+
 ## Atualização 2.25.0 — acabamento do visual novo, página por página (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.25.0`) e publique uma **Nova versão**.
@@ -655,7 +672,7 @@ Depois:
 | Projeto | Acionador | O que fazer |
 |---|---|---|
 | CAC Controle de Atendimentos | `painelProcessarFila` (horário) | **Excluir.** Ele processa pedidos do painel antigo no Controle. |
-| CAC Controle de Atendimentos | `atualizarAnexosAtendimentosAgendado` (horário) | **Excluir.** Ele reescreveria o Controle de manifestações dos Anexos com dados parados. Agora a planilha sai do Fechamento do mês. |
+| CAC Controle de Atendimentos | `atualizarAnexosAtendimentosAgendado` (horário) | **Excluir.** Ele reescreveria o Controle de manifestações dos Anexos com dados parados. Desde a 2.26, a aplicação atualiza essa aba em Entregas do mês (acumulativo, sem apagar). |
 | CAC Controle de Atendimentos | `aoEditarAvisosProtocolo` (ao editar) | **Excluir.** Só serve às abas antigas de avisos. |
 | CAC Controle de Atendimentos | `aoAbrirFichasOficiaisSabesp` (ao abrir) | **Pode manter.** Só cria o menu para consultar e baixar os PDFs antigos. |
 | Painel de atendimento | `atualizarPainelExecutivoExecucaoAgendado` (horário) | **Excluir.** O painel antigo deixa de ter dados novos. A fila da engenharia agora está na aplicação (filtro Com quem está) e na aba CPT • Ordens em aberto. |
@@ -671,7 +688,7 @@ Depois:
 | **Formulário de Execução + planilha da engenharia** | Concrejato | **Continua separado e compartilhado com eles.** A lista de protocolos passa a vir da Base. As respostas entram no caso como "Execução". |
 | **Base Campo 4.0** (planilha) | Ninguém abre no dia a dia | Fonte única dos casos (abas Atendimentos e Movimentações) |
 | **Controle de Atendimentos antigo** | Consulta | Para de ser atualizado no corte (Bloco 3). Fica como histórico e para os PDFs das fichas antigas. |
-| **Anexos do relatório** | Administrativo | "Indicadores 2026" não é tocado. O "Controle de manifestações" sai pronto do Fechamento do mês. |
+| **Anexos do relatório** | Administrativo | "Indicadores 2026" e a Matriz de Contatos não são tocados. O "Controle de manifestações" é atualizado em Entregas do mês (2.26: acumulativo, sem apagar). |
 
 **O caminho de um caso:**
 1. A ficha chega pelo formulário Campo 4.0 e o caso nasce como **Recebida**, com a próxima ação "Triagem do Atendimento".
@@ -859,7 +876,7 @@ A partir daí, quando o Atendimento encaminha um caso à Execução, os três co
 | Painel de Atendimento / Demandas do Atendimento / Painel Executivo | Aplicação → Atendimentos (filtro Com quem está, dias em aberto, próxima ação) |
 | Correções da Ficha Final | **Corrigir dados da ficha**, com motivo e histórico (2.4) |
 | Fichas Oficiais 3.2.1 (PDF Sabesp) | Botão **Gerar ficha oficial** na ficha do caso, e o pacote do mês no Fechamento (2.4). Mesmo modelo. |
-| Controle de manifestações nos Anexos | Fechamento do mês gera a planilha no formato oficial |
+| Controle de manifestações nos Anexos | Entregas do mês atualiza a aba oficial com a regra acumulativa da 3.2.1 (2.26) |
 | Vínculos de protocolos (mesclagem) | Os antigos foram migrados. Os novos: **Incorporar protocolo duplicado** na ficha (2.4) |
 | Pesquisa de satisfação encerrando a ficha | Depois (decisão de 01/10) |
 

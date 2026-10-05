@@ -33,6 +33,12 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // 4. Meu espaço: o mascote na recepção (parede ripada, plantas, luminárias, placa), pontos que contam e folhas comemorando.
   await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=urso]').click();await p.locator('#espInicio [type=submit]').click();
   await p.locator('.space-hero.v3-cena-host .v3-cena').waitFor();assert.equal(await p.locator('.v3-cena .v3-placa').count(),1);assert.equal(await p.locator('.v3-cena .v3-lumi').count(),2);assert.ok(await p.locator('.v3-cena .v3-brisa path').count()>100,'parede de plantas');
+  // 2.26: mascote maior em frente ao quadro da parede (paisagem sem foto no álbum) e caderno marrom que abre uma vez.
+  assert.equal(await p.locator('.space-hero.com-quadro .hero-pet .pet-quadro .quadro-paisagem').count(),1,'quadro com paisagem');assert.match(await p.locator('.quadro-placa').textContent(),/Santo André/);
+  assert.ok((await p.locator('.space-hero .hero-pet .mascot-svg').boundingBox()).width>=300,'mascote maior');
+  await p.waitForFunction(()=>document.querySelector('.home-notebook.caderno').classList.contains('is-aberto'),null,{timeout:4000});
+  assert.equal(await p.locator('.home-notebook.caderno .caderno-folha textarea.notebook').count(),1);assert.match(await p.locator('.caderno-rodape').textContent(),/Cada dia fica guardado/);
+  assert.match(await p.evaluate(()=>getComputedStyle(document.querySelector('.caderno textarea.notebook')).backgroundImage),/repeating-linear-gradient/,'folha pautada');
   await foto('visual-meuespaco');
   // 2.25: ícones de traço no lugar dos emojis (selos, presente, painéis) e nenhum modelo cru na tela.
   assert.ok(await p.locator('.space-hero .home-chip svg.ic').count()>=3,'selos com ícone');assert.equal(await p.locator('.space-hero .gift svg.ic-gift').count(),1,'presente com ícone');
@@ -49,6 +55,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=gato]').click();await p.locator('#espInicio [type=submit]').click();await p.locator('.space-hero').waitFor();await p.waitForTimeout(300);
   assert.equal(await p.evaluate(()=>document.querySelector('#view').hasAttribute('data-entrando')),false,'sem entrada animada');
   assert.equal(await p.evaluate(()=>getComputedStyle(document.querySelector('.v3-brisa-3')).animationName),'none','plantas paradas');
+  assert.equal(await p.evaluate(()=>document.querySelector('.home-notebook.caderno').className.includes('is-aberto')&&!document.querySelector('.home-notebook.caderno').className.includes('is-abrindo')),true,'caderno já aberto, sem animar a capa');
   await p.locator('#espNova [name=texto]').fill('Conferir a obra');await p.locator('#espNova [type=submit]').click();await p.locator('[data-esp-check]').first().waitFor();
   await p.locator('[data-esp-check]').first().check();await p.waitForFunction(()=>document.querySelector('#espPontos').textContent.trim()==='10');await p.waitForTimeout(200);
   assert.equal(await p.locator('.v3-folhas').count(),0,'sem folhas voando');

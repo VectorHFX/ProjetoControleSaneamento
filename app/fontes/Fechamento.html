@@ -51,7 +51,7 @@ window.CPTFechamento = (() => {
         <div class="dialog-actions"><button class="button secondary" id="pacoteFichas">${ui.icon('file')}Gerar fichas de ${ui.esc(monthName(d.mes))}</button></div><div id="pacoteResultado" aria-live="polite"></div>
       </section>
       <section class="panel" id="anexosPlanilha"><div class="panel-head"><div><h2>Anexos do relatório (planilha oficial)</h2><p>Os casos do mês (os mesmos das fichas do ANEXO 4) entram no Controle de manifestações: atualiza o que já está lá e acrescenta os novos no fim. Nada é apagado; Matriz de Contatos e Indicadores 2026 continuam à mão.</p></div></div>
-        <div id="anexosEstado"><div class="loading-label"><span class="spinner"></span>Planilha dos Anexos…</div></div><div id="anexosResultado" aria-live="polite"></div>
+        <div id="anexosEstado"><div class="loading-label"><span class="spinner"></span>Planilha dos Anexos…</div></div><div id="anexosPlanilhaResultado" aria-live="polite"></div>
       </section>`;
     carregarAnexos(d.mes);
     $('pacoteFichas').onclick = ev => pacote(d.mes, ev.currentTarget, false);
@@ -151,7 +151,7 @@ window.CPTFechamento = (() => {
         <a class="button ghost" href="${ui.esc(a.links.xlsx)}" target="_blank" rel="noopener noreferrer">Baixar Excel</a><a class="button ghost" href="${ui.esc(a.links.pdf)}" target="_blank" rel="noopener noreferrer">Baixar PDF</a></div>`;
   }
   async function conferirAnexos(b) {
-    if (gerando || !anexos) return; gerando = true; const box = $('anexosResultado'); b.disabled = true;
+    if (gerando || !anexos) return; gerando = true; const box = $('anexosPlanilhaResultado'); b.disabled = true;
     box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Comparando os casos do mês com a planilha (nada é gravado)…</div>';
     try {
       const c = await ui.call('conferirAnexosCPT', anexos.mes), faltam = Object.entries({controle: 'Controle de manifestações', matriz: 'Matriz de Contatos', indicadores: 'Indicadores 2026'}).filter(([k]) => !c.abas[k]).map(([, n]) => n);
@@ -165,7 +165,7 @@ window.CPTFechamento = (() => {
   }
   async function atualizarAnexos(b) {
     if (gerando || !anexos) return; if (!confirm('Atualizar o Controle de manifestações da planilha oficial? Nada é apagado; Matriz e Indicadores 2026 não mudam.')) return;
-    gerando = true; b.disabled = true; b.textContent = 'Atualizando… não feche esta página'; const box = $('anexosResultado');
+    gerando = true; b.disabled = true; b.textContent = 'Atualizando… não feche esta página'; const box = $('anexosPlanilhaResultado');
     try { const r = await ui.call('atualizarAnexosCPT', {mes: anexos.mes}); anexos.ultima = {em: r.em, por: r.por, incluidos: r.incluidos, atualizados: r.atualizados}; desenharAnexos(); box.innerHTML = `<div class="notice" role="status">${ui.esc(r.resultado)}</div>`; recarregarEntregas(); }
     catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; b.disabled = false; b.textContent = 'Atualizar o Controle de manifestações'; }
     finally { gerando = false; }

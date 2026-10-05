@@ -127,7 +127,10 @@ window.CPTOrganograma = (() => {
     if (enviando) return; enviando = true; const f = form.elements, erro = $('orgErro');
     try {
       const r = await ui.call('salvarOrganogramaCPT', {id: form.dataset.id || '', versao: Number(form.dataset.versao) || 0, nome: f.nome.value, cargo: f.cargo.value, area: f.area.value, chefia: f.chefia.value, desde: f.desde.value, ordem: Number(f.ordem.value) || 0, ativo, operacaoId: op()});
-      ui.toast(r.resultado); $('detailDialog').close(); await render();
+      ui.toast(r.resultado); $('detailDialog').close();
+      // sem recarregar a página (nada pisca): atualiza a lista aqui e redesenha
+      const id = form.dataset.id || (r.pessoa && r.pessoa.id); d.pessoas = d.pessoas.filter(x => x.id !== id);
+      if (ativo && r.pessoa) d.pessoas.push(r.pessoa); if (r.pessoa) d.atualizadoEm = r.pessoa.alteradoEm || d.atualizadoEm; desenhar();
     } catch (e) { erro.hidden = false; erro.textContent = e.message; } finally { enviando = false; }
   }
   async function importar() {

@@ -10,7 +10,7 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   // Entra direto no "Hoje", com aviso de recado na lateral.
   await p.locator('.welcome-pets').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'meuespaco');
   await p.locator('.nav-item[data-route=comunicacao]').click();await p.locator('.today-hello').waitFor();
-  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','registros','obras','contatos','ajuda']);
+  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','registros','obras','contatos','organograma','ajuda']);
   await p.waitForFunction(()=>document.querySelector('.nav-item[data-route=recados] .nav-badge')?.textContent==='1');
   assert.match(await p.locator('.today-hello').textContent(),/coisas para olhar/);
   assert.equal(await p.locator('.today-block').count(),5);assert.equal(await p.locator('.today-step').first().textContent(),'1');

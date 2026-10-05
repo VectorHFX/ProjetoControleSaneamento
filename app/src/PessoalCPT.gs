@@ -7,6 +7,7 @@
  * 2.23: placar da equipe (PlacarCPT, só totais da equipe) no Meu espaço.
  * 2.21: pontos dos joguinhos (JogosCPT) também somam; painel de joguinhos no Meu espaço.
  * 2.19: pontos do quiz (QuizCPT) somam aos do checklist; "Saber mais" no Meu espaço (curiosidade do dia, campanha do mês, quiz).
+ * 2.26: quadro na parede do Meu espaço (foto mais favoritada do Álbum da equipe; sem foto, uma paisagem).
  * 2.26: Loja (bloco D) — EPI colorido (capacetes, coletes, luvas e botas), roupas novas e cores especiais de pelagem, por pontos.
  *       Só existem no elenco novo (desenho chibi); no período de testes, só o proprietário compra.
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
@@ -122,6 +123,7 @@ class PessoalCPT {
       regras: {pontosPorTarefa: PessoalCPT.pontosPorTarefa, tarefasPorDia: PessoalCPT.tarefasPontuadasPorDia}};
     if (QuizCPT.pode(this.ctx.perfil)) out.saber = this.saber();
     if (JogosCPT.pode(this.ctx.perfil)) out.jogos = JogosCPT.de(this.ctx).estado();
+    if (AlbumCPT.pode(this.ctx.perfil)) { try { out.quadro = new AlbumCPT(this.ctx).quadro(); } catch (e) { console.warn('Quadro: ' + e.message); } }
     if (PlacarCPT.pode(this.ctx.perfil)) { try { out.placar = new PlacarCPT(this.ctx).carregar(); } catch (e) { console.warn('Placar: ' + e.message); } }
     try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
     return out;
