@@ -21,7 +21,7 @@ const eventos=new Sheet('Eventos',[['ID','Versão','Operação ID','Alterado em'
   ['AG-2',1,'OP-y','', '',JSON.stringify({id:'AG-2',versao:1,titulo:'Reunião interna do atendimento',data:mais(1),inicio:'',fim:'',frentes:['atendimento'],responsaveis:[],status:'confirmada',natureza:'interno',criadoPor:'atd@example.com'})]]);
 const books=new Map([['base',new Book('base',[registros])],['agenda',new Book('agenda',[eventos])]]);
 const arquivos=new Map(),cacheMap=new Map();let criados=0;
-const arquivo=(id,mime)=>({getId:()=>id,getMimeType:()=>mime,getSize:()=>1000,getName:()=>id+'.jpg',getBlob:()=>({setName(n){this.n=n;return this},getName(){return this.n}})});
+const arquivo=(id,mime)=>({getId:()=>id,getMimeType:()=>mime,getSize:()=>1000,getName:()=>id+'.jpg',getBlob:()=>({setName(n){this.n=n;return this},getName(){return this.n}}),getThumbnail:()=>({getContentType:()=>'image/png',getBytes:()=>[1,2,3]})});
 ['FOTOSET0000000000000000001','FOTOSET0000000000000000002','FOTOAGOSTO000000000000001'].forEach(id=>arquivos.set(id,arquivo(id,'image/jpeg')));arquivos.set('VIDEOSET000000000000000001',arquivo('VIDEOSET000000000000000001','video/mp4'));
 const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   Session:{getActiveUser:()=>({getEmail:()=>email})},
@@ -30,7 +30,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   DriveApp:{getFileById:id=>{if(!arquivos.has(id))throw Error('sem acesso');return arquivos.get(id)},getFolderById:()=>{throw Error('x')},
     createFolder:()=>({getId:()=>'PASTA-EXTRAS',createFile:b=>{criados++;const id='EXTRA'+String(criados).padStart(20,'0');arquivos.set(id,arquivo(id,b.mime));return arquivos.get(id);}})},
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)})},
-  Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},
+  Utilities:{base64Encode:b=>Buffer.from(b).toString('base64'),getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
@@ -72,5 +72,9 @@ ctx.mh=mesHoje;assert.ok(run('carregarAlbumCPT({mes:mh})').album.some(f=>f.fileI
 fav('FOTOAGOSTO000000000000001',false,'2026-08');
 // 2.26: o quadro na parede do Meu espaço é a foto mais favoritada da semana (só foto e legenda, sem quem favoritou).
 const qd=run('carregarMeuEspacoCPT()').quadro;assert.equal(qd.fileId,F1);assert.ok(qd.legenda);assert.ok(!JSON.stringify(qd).includes('@'));
-props.delete('CPT_TRAVA_CONFIG');
+// 2.26.3: miniatura pela conta da aplicação — só de fotos que o Álbum mostra, sem vídeo, no máximo 12 por pedido.
+ctx.p={ids:[F1,'FOTOAGOSTO000000000000001',VID,'ARQUIVOQUALQUER0000000001','x'],mes:'2026-09'};const mi=run('miniaturasAlbumCPT(p)').miniaturas;
+assert.deepEqual(Object.keys(mi).sort(),[F1,'FOTOAGOSTO000000000000001'].sort(),'só fotos do álbum (sem vídeo, sem arquivo de fora)');assert.match(mi[F1],/^data:image\/png;base64,/);
+ctx.p={ids:Array.from({length:20},(_,i)=>'ARQ'+String(i).padStart(20,'0')),mes:'2026-09'};assert.deepEqual(run('miniaturasAlbumCPT(p)').miniaturas,{});
+props.delete('CPT_TRAVA_CONFIG');email='social@example.com';ctx.p={ids:[F1]};assert.throws(()=>run('miniaturasAlbumCPT(p)'),/reservado/,'travado nos testes para a equipe');
 console.log('PASS: álbum da equipe — todos veem o álbum do mês e as Fotos da semana (mais favoritadas primeiro), sem nomes de quem favoritou.');

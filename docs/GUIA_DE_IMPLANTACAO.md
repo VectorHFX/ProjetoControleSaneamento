@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.3 — miniaturas do Álbum sempre aparecem (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.3`) e publique uma **Nova versão**. Nenhum arquivo novo, nenhuma autorização nova.
+2. **Causa**: as miniaturas eram abertas pelo navegador direto no Drive, com a conta logada nele (ex.: a @veolia.com). Quando essa conta não tem leitura na pasta das fotos, o Drive recusa e aparecia o ícone de câmera — enquanto a aplicação roda com a sua conta proprietária, que vê tudo.
+3. **Agora**: o navegador tenta o Drive primeiro (rápido, como antes); a foto que falhar é pedida à aplicação, que lê com a conta proprietária, em lotes de 12, guardando por 6 horas. Vale para o Álbum (grade e foto ampliada) e para o quadro do Meu espaço. A miniatura que vem pela aplicação é um pouco menor (a do próprio Drive).
+4. Segurança: a aplicação só entrega miniatura de foto que o Álbum mostra (do período ou favorita); qualquer outro arquivo é recusado.
+5. Para a equipe, quando liberar: não é preciso compartilhar as pastas de fotos para o Álbum funcionar (compartilhar só deixa mais rápido e nítido).
+
 ## Atualização 2.26.2 — Álbum com as fotos dos meses anteriores (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.2`) e publique uma **Nova versão**. Nenhum arquivo novo.

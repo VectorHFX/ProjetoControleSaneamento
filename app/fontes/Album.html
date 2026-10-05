@@ -4,6 +4,41 @@
  * Destaque de fotos, não de pessoas: a tela mostra quantos corações cada foto tem, nunca quem favoritou.
  * As miniaturas vêm do Drive (quem vê precisa de leitura na pasta das fotos); sem acesso, aparece um quadro no lugar.
  */
+/*
+ * 2.26.3 — miniaturas pela aplicação. Primeiro o navegador tenta o Drive (rápido, quando a conta de quem vê tem leitura
+ * na pasta). Se falhar, a foto é pedida à aplicação, que lê com a conta proprietária (em lotes de 12). Uma vez obtida,
+ * a miniatura fica guardada nesta aba e os próximos desenhos já usam ela direto, sem tentar o Drive de novo.
+ */
+window.CPTMiniaturas = (() => {
+  'use strict';
+  let chamar = null, timer = null, mesAtual = () => '';
+  const prontas = new Map(), semJeito = new Set(), fila = new Map();
+  const drive = (id, sz) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (sz || 400);
+  /** Endereço da imagem: a miniatura já obtida pela aplicação ou, se ainda não, a do Drive. */
+  const src = (id, sz) => prontas.get(id) || drive(id, sz);
+  /** A imagem não abriu: pede à aplicação. Devolve false quando não há mais o que tentar (falhou() é chamado). */
+  function tentar(img, falhou) {
+    const id = img && img.dataset.mini;
+    if (!id || !chamar || semJeito.has(id) || img.dataset.servidor) { if (falhou) falhou(); return false; }
+    img.dataset.servidor = '1';
+    if (prontas.has(id)) { img.src = prontas.get(id); return true; }
+    if (!fila.has(id)) fila.set(id, []); fila.get(id).push({img, falhou});
+    clearTimeout(timer); timer = setTimeout(enviar, 120); return true;
+  }
+  async function enviar() {
+    const ids = [...fila.keys()].slice(0, 12); if (!ids.length) return;
+    const espera = ids.map(id => [id, fila.get(id)]); ids.forEach(id => fila.delete(id));
+    let r = {}; try { r = (await chamar('miniaturasAlbumCPT', {ids, mes: mesAtual()})).miniaturas || {}; } catch (_) {}
+    espera.forEach(([id, lista]) => {
+      const u = r[id]; if (u) prontas.set(id, u); else semJeito.add(id);
+      lista.forEach(({img, falhou}) => { if (u) { img.src = u; const fig = img.closest('.album-foto'); if (fig) fig.classList.remove('sem-imagem'); } else if (falhou) falhou(); });
+    });
+    if (fila.size) timer = setTimeout(enviar, 0);
+  }
+  function ligar(call, mes) { chamar = call; mesAtual = mes; }
+  return {src, tentar, ligar};
+})();
+
 window.CPTAlbum = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
@@ -11,12 +46,12 @@ window.CPTAlbum = (() => {
   const $ = id => document.getElementById(id);
   const op = () => 'OP-' + crypto.randomUUID();
   const INTRO = ['Álbum da equipe', 'Cada pessoa escolhe até 2 fotos favoritas por dia, entre as fotos dos relatos do mês e dos dois meses anteriores. As mais favoritadas da semana viram destaque. Ninguém vê quem favoritou.'];
-  const thumb = (id, sz) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (sz || 400);
+  const thumb = (id, sz) => window.CPTMiniaturas.src(id, sz);
   const dataCurta = x => x ? x.slice(8, 10) + '/' + x.slice(5, 7) : '';
   function cartao(f, tipo) {
     const cheio = d.usadasHoje >= d.porDia && !f.meu;
     return `<figure class="album-foto ${f.meu ? 'is-meu' : ''}" data-album-foto="${ui.esc(f.fileId)}">
-      <button class="album-ver" data-album-ver="${ui.esc(f.fileId)}" aria-label="Ampliar: ${ui.esc(f.legenda)}"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="${thumb(f.fileId)}"><span class="album-sem" aria-hidden="true">${ic('photo', '📷')}</span></button>
+      <button class="album-ver" data-album-ver="${ui.esc(f.fileId)}" aria-label="Ampliar: ${ui.esc(f.legenda)}"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" data-mini="${ui.esc(f.fileId)}" src="${ui.esc(thumb(f.fileId))}"><span class="album-sem" aria-hidden="true">${ic('photo', '📷')}</span></button>
       <figcaption><span class="album-legenda"><strong>${ui.esc(f.atividade)}</strong><small>${ui.esc([dataCurta(f.data), f.local].filter(Boolean).join(' · '))}</small></span>
       <button class="album-coracao ${f.meu ? 'is-on' : ''}" data-album-fav="${ui.esc(f.fileId)}" aria-pressed="${f.meu}" ${cheio ? 'aria-disabled="true"' : ''} aria-label="${f.meu ? 'Tirar das favoritas' : 'Favoritar'} (${f.coracoes} ${f.coracoes === 1 ? 'coração' : 'corações'})"><span aria-hidden="true">${f.meu ? ic('heart', '❤') : ic('heart', '♡')}</span><b>${f.coracoes || ''}</b></button></figcaption></figure>`;
   }
@@ -66,19 +101,24 @@ window.CPTAlbum = (() => {
   function ampliar(fileId) {
     const f = d.fotos.find(x => x.fileId === fileId) || d.album.find(x => x.fileId === fileId) || d.semana.fotos.find(x => x.fileId === fileId); if (!f) return;
     $('detailType').textContent = 'ÁLBUM DA EQUIPE'; $('detailTitle').textContent = f.atividade;
-    $('detailContent').innerHTML = `<figure class="album-grande"><img decoding="async" referrerpolicy="no-referrer" alt="${ui.esc(f.legenda)}" src="${thumb(f.fileId, 1200)}"><figcaption>${ui.esc(f.legenda)}</figcaption></figure>
+    $('detailContent').innerHTML = `<figure class="album-grande"><img decoding="async" referrerpolicy="no-referrer" alt="${ui.esc(f.legenda)}" data-mini="${ui.esc(f.fileId)}" src="${ui.esc(thumb(f.fileId, 1200))}"><figcaption>${ui.esc(f.legenda)}</figcaption></figure>
       <div class="dialog-actions"><a class="button ghost" href="https://drive.google.com/file/d/${encodeURIComponent(f.fileId)}/view" target="_blank" rel="noopener noreferrer">Abrir no Drive ↗</a></div>`;
     if (!$('detailDialog').open) $('detailDialog').showModal();
   }
   function init(api) {
-    ui = api;
+    ui = api; window.CPTMiniaturas.ligar(ui.call, () => ui.state.mes);
     document.addEventListener('click', e => {
       if (ui.state.route !== 'album' || !d) return;
       const b = e.target.closest('[data-album-fav]'); if (b) { favoritar(b); return; }
       const v = e.target.closest('[data-album-ver]'); if (v) ampliar(v.dataset.albumVer);
     });
-    // Miniatura que não abre (sem acesso à pasta no Drive): mostra o quadro no lugar da imagem quebrada.
-    document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.album-foto')) t.closest('.album-foto').classList.add('sem-imagem'); }, true);
+    // Miniatura que não abre no Drive: pede à aplicação; enquanto isso (ou se nem ela abrir) mostra o quadro no lugar.
+    document.addEventListener('error', e => {
+      const t = e.target; if (!t || t.tagName !== 'IMG') return;
+      const fig = t.closest('.album-foto');
+      if (fig) { fig.classList.add('sem-imagem'); window.CPTMiniaturas.tentar(t); return; }
+      if (t.closest('.album-grande')) window.CPTMiniaturas.tentar(t);
+    }, true);
   }
   return {init, render};
 })();

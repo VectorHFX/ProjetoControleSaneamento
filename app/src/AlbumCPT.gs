@@ -56,6 +56,32 @@ class AlbumCPT {
     const g = this.agrupar(ativos.filter(x => PessoalCPT.semana(x.dia) === semana))[0] || this.agrupar(ativos.filter(x => x.dia >= limite))[0];
     return g ? {fileId: g.fileId, legenda: g.atividade || g.legenda || '', local: g.local || '', data: g.data || ''} : null;
   }
+  /**
+   * 2.26.3: miniatura pela conta da aplicação, para foto que o navegador não abre no Drive (a conta de quem vê não tem
+   * leitura na pasta). Só fotos que o próprio Álbum mostra (do período ou favoritas); no máximo 12 por pedido; cache de 6 h.
+   */
+  miniaturas(p) {
+    p = p || {}; const ids = Array.isArray(p.ids) ? [...new Set(p.ids.map(String))].filter(x => /^[\w-]{10,80}$/.test(x)).slice(0, AlbumCPT.miniaturasPorPedido) : [];
+    if (!ids.length) return {miniaturas: {}};
+    const mes = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(p.mes || '')) ? String(p.mes) : this.hoje.slice(0, 7);
+    const permitidas = new Set(this.ativos().map(x => x.fileId));
+    if (ids.some(id => !permitidas.has(id))) this.fotosRecentes(mes).forEach(f => permitidas.add(f.fileId));
+    const out = {};
+    ids.filter(id => permitidas.has(id)).forEach(id => {
+      const chave = 'album:mini:' + id; let m = CacheCPT.ler(chave);
+      if (!m) {
+        try {
+          const f = DriveApp.getFileById(id); if (!/^image\//.test(f.getMimeType())) return;
+          const b = f.getThumbnail(); if (!b) return;
+          m = {u: 'data:' + (b.getContentType() || 'image/png') + ';base64,' + Utilities.base64Encode(b.getBytes())};
+          CacheCPT.gravar(chave, m, 21600);
+        } catch (_) { return; }
+      }
+      out[id] = m.u;
+    });
+    return {miniaturas: out};
+  }
+  static get miniaturasPorPedido() { return 12; }
   /** Marca (ativo = true) ou desmarca uma favorita. */
   favoritar(p) {
     p = p || {}; PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'O álbum');
@@ -81,4 +107,5 @@ class AlbumCPT {
 }
 
 function carregarAlbumCPT(p) { return ColecaoCPT.executar('album.carregar', ctx => new AlbumCPT(ctx).carregar(p)); }
+function miniaturasAlbumCPT(p) { return ColecaoCPT.executar('album.miniaturas', ctx => new AlbumCPT(ctx).miniaturas(p)); }
 function favoritarAlbumCPT(p) { return ColecaoCPT.executar('album.favoritar', ctx => new AlbumCPT(ctx).favoritar(p), true); }

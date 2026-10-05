@@ -173,7 +173,7 @@ window.CPTEspaco = (() => {
   const corta = (t, n) => { t = String(t || ''); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; };
   function quadro() {
     const q = d.quadro, foto = q && q.fileId, album = ui.podeVer('album');
-    const img = foto ? `<img class="quadro-foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="https://drive.google.com/thumbnail?id=${encodeURIComponent(q.fileId)}&amp;sz=w480">` : '';
+    const img = foto ? `<img class="quadro-foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-mini="${ui.esc(q.fileId)}" src="${ui.esc(window.CPTMiniaturas ? window.CPTMiniaturas.src(q.fileId, 480) : 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(q.fileId) + '&sz=w480')}">` : '';
     const rotulo = foto ? 'Foto da semana · ' + corta(q.legenda || 'Álbum da equipe', 28) : 'Santo André';
     return `<${album ? 'button type="button" data-route="album"' : 'div'} class="pet-quadro ${foto ? 'tem-foto' : ''}" aria-label="${ui.esc(foto ? 'Quadro com a foto da semana do álbum: ' + (q.legenda || '') : 'Quadro com uma paisagem')}">
       <span class="quadro-moldura"><span class="quadro-tela">${PAISAGEM}${img}</span></span><span class="quadro-placa">${ui.esc(rotulo)}</span></${album ? 'button' : 'div'}>`;
@@ -372,8 +372,11 @@ window.CPTEspaco = (() => {
   function init(api) {
     ui = api;
     // Quadro: foto sem acesso no Drive (ou que não abre) volta para a paisagem.
-    document.addEventListener('error', e => { const t = e.target; if (!t || !t.classList || !t.classList.contains('quadro-foto')) return; const q = t.closest('.pet-quadro'); t.remove();
-      if (q) { q.classList.remove('tem-foto'); const pl = q.querySelector('.quadro-placa'); if (pl) pl.textContent = 'Santo André'; } }, true);
+    // 2.26.3: antes de desistir, pede a miniatura à aplicação (a conta de quem vê pode não ter leitura na pasta do Drive).
+    document.addEventListener('error', e => { const t = e.target; if (!t || !t.classList || !t.classList.contains('quadro-foto')) return;
+      const desistir = () => { const q = t.closest('.pet-quadro'); t.remove();
+        if (q) { q.classList.remove('tem-foto'); const pl = q.querySelector('.quadro-placa'); if (pl) pl.textContent = 'Santo André'; } };
+      if (window.CPTMiniaturas) window.CPTMiniaturas.tentar(t, desistir); else desistir(); }, true);
     // Quiz (Saber.html): pontos novos atualizam o selo de pontos e o humor do mascote.
     // Joguinhos (Jogos.html): mesma atualização de pontos; o quebra-cabeça sem foto usa o mascote da pessoa.
     if (window.CPTJogos) { window.CPTJogos.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.venceu && r.pontos.saldo > 0); if (r.venceu) comemorar(); });
