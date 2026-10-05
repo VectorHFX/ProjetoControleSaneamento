@@ -4,6 +4,7 @@
  * 2.18: elenco chibi (urso, águia, gato, cachorro, pato, capivara, sapinho, gota); dinossauro e abelha viram clássicos (150 pontos);
  *       kit EPI inicial (capacete branco, colete, luvas, bota preta) de todo mundo e já vestido nos mascotes novos.
  *       Período de testes: o elenco novo é só do proprietário (PessoalCPT.novo).
+ * 2.23: placar da equipe (PlacarCPT, só totais da equipe) no Meu espaço.
  * 2.21: pontos dos joguinhos (JogosCPT) também somam; painel de joguinhos no Meu espaço.
  * 2.19: pontos do quiz (QuizCPT) somam aos do checklist; "Saber mais" no Meu espaço (curiosidade do dia, campanha do mês, quiz).
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
@@ -107,6 +108,7 @@ class PessoalCPT {
       regras: {pontosPorTarefa: PessoalCPT.pontosPorTarefa, tarefasPorDia: PessoalCPT.tarefasPontuadasPorDia}};
     if (QuizCPT.pode(this.ctx.perfil)) out.saber = this.saber();
     if (JogosCPT.pode(this.ctx.perfil)) out.jogos = JogosCPT.de(this.ctx).estado();
+    if (PlacarCPT.pode(this.ctx.perfil)) { try { out.placar = new PlacarCPT(this.ctx).carregar(); } catch (e) { console.warn('Placar: ' + e.message); } }
     try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
     return out;
   }

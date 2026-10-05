@@ -917,4 +917,17 @@ html[data-theme=light][data-campanha="9"]{--blue:#835c00;--focus:#835c00;--pale:
 html[data-theme=light][data-campanha="10"]{--blue:#b3336a;--focus:#b3336a;--pale:#fbe7ef;--navy:#701f42;--bg:#fdf6f9;--wave1:#f6c9da;--wave2:#ec8fb3;--wave3:#c94a7f;--art-main:#b3336a;--art-secondary:#ec8fb3;--art-soft:#fbe7ef;--water1:#ec8fb3;--water2:#c94a7f;--hill1:#f6c9da;--hill2:#fbe7ef} /* Outubro Rosa */
 html[data-theme=light][data-campanha="11"]{--blue:#1d5ea6;--focus:#1d5ea6;--pale:#e3edf9;--navy:#123a66;--bg:#f4f7fc;--wave1:#c3d8f1;--wave2:#7aa6dc;--wave3:#2c6fbd;--art-main:#1d5ea6;--art-secondary:#7aa6dc;--art-soft:#e3edf9;--water1:#7aa6dc;--water2:#2c6fbd;--hill1:#c3d8f1;--hill2:#e3edf9} /* Novembro Azul */
 html[data-theme=light][data-campanha="12"]{--blue:#b02a2e;--focus:#b02a2e;--pale:#fbe7e6;--navy:#6e1a1c;--bg:#fdf6f5;--wave1:#f4c4c2;--wave2:#e5807b;--wave3:#c0393d;--art-main:#b02a2e;--art-secondary:#e5807b;--art-soft:#fbe7e6;--water1:#e5807b;--water2:#c0393d;--hill1:#f4c4c2;--hill2:#fbe7e6} /* Dezembro Vermelho */
+/* 2.23 · Placar da equipe: só totais da equipe, meta da semana e as últimas 4 semanas. */
+.home-placar{grid-column:1/-1}
+.placar-topo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+.placar-total strong{display:block;font:800 44px/1 var(--font-display);color:var(--blue)}.placar-total>span{font-size:13px;color:var(--muted)}
+.placar-meta{display:block;height:12px;margin:12px 0 6px}.placar-total p{margin:6px 0 0}
+.placar-itens{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.placar-itens li{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--soft);font-size:13px}.placar-itens strong{font-size:17px;font-family:var(--font-display)}
+.placar-semanas{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end;height:150px;margin-top:18px;padding-top:6px}
+.placar-semana{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}.placar-semana b{font-size:12px}
+.placar-barra{display:flex;align-items:flex-end;width:min(56px,100%);height:62%;border-radius:8px 8px 4px 4px;background:var(--soft)}
+.placar-barra span{display:block;width:100%;border-radius:8px 8px 4px 4px;background:var(--art-secondary,var(--blue));opacity:.55}
+.placar-semana.is-atual .placar-barra span{background:var(--blue);opacity:1}.placar-semana small{font-size:11px;color:var(--muted)}.placar-semana.is-atual small{color:var(--blue);font-weight:700}
+@media (max-width:640px){.placar-topo{grid-template-columns:1fr}.placar-total strong{font-size:36px}}
 </style>

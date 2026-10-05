@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.23.0 — Placar da equipe (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.23.0`) e publique uma **Nova versão**.
+2. No **Meu espaço** aparece o **Placar da equipe** (nos testes, só para você): os pontos que a equipe toda somou na semana (segunda a domingo), a **meta coletiva de 400 pontos**, os totais de tarefas feitas, acertos no quiz, vitórias nos joguinhos e fotos favoritadas, e as últimas 4 semanas.
+3. Só números da equipe: o placar não mostra nomes, mascotes, pontos de alguém nem quantas pessoas participaram. É o mesmo para todo mundo.
+4. A meta de 400 pontos é um valor inicial: me diga se quer outro.
+
 ## Atualização 2.22.0 — Tema do mês na aparência (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.22.0`) e publique uma **Nova versão**.

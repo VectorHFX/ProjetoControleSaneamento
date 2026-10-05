@@ -34,7 +34,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','GaleriaCPT','AlbumCPT','JogosCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','GaleriaCPT','AlbumCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 const ini=jogo=>{ctx.p={jogo,operacaoId:op()};return run('iniciarJogoCPT(p)');},fim=(partida,o)=>{ctx.p={partida,...o,operacaoId:op()};return run('terminarJogoCPT(p)');};
 const palavra=c=>c.map(n=>String.fromCharCode(n-7)).reverse().join(''),norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
@@ -75,3 +75,12 @@ console.log('PASS: quebra-cabeça — libera com 10 favoritas, foto do álbum da
 props.set('CPT_TRAVA_CONFIG','liberada');const q3=ini('quebra').partida;email='com@example.com';
 assert.throws(()=>fim(q3.id,{trocas:resolver(q3.ordem)}),/Partida não encontrada/);assert.equal(run('carregarMeuEspacoCPT()').pontos.jogos,0);props.delete('CPT_TRAVA_CONFIG');
 console.log('PASS: privacidade — partida e pontos dos joguinhos são de cada conta.');
+// 6. Placar da equipe (2.23): só totais da equipe na semana, iguais para todos, sem nomes.
+email='atd@example.com';assert.equal(run('carregarMeuEspacoCPT()').placar,undefined,'equipe não vê o placar nos testes');
+email='victor@example.com';const pl=run('carregarMeuEspacoCPT()').placar;
+assert.equal(pl.vitorias,3,'forca (2) e quebra-cabeça (1) vencidos hoje');assert.equal(pl.pontos-pl.tarefas*10,10,'vitórias com pontos somam 5 cada; nada de quiz nesta semana');
+assert.equal(pl.historico.length,4);assert.ok(pl.historico[3].atual);assert.equal(pl.historico[3].pontos,pl.pontos);assert.equal(pl.meta,400);
+props.set('CPT_TRAVA_CONFIG','liberada');email='com@example.com';const pl2=run('carregarMeuEspacoCPT()').placar;props.delete('CPT_TRAVA_CONFIG');
+assert.deepEqual(pl2,pl,'o placar é o mesmo para todos');
+const txt=JSON.stringify(pl);for(const e of ['victor','com@','Victor','Paula','atd@'])assert.ok(!txt.includes(e),'placar não mostra pessoas: '+e);
+console.log('PASS: placar da equipe — só o proprietário nos testes, totais da semana (tarefas, acertos, vitórias, fotos) e 4 semanas, igual para todos, sem nomes.');

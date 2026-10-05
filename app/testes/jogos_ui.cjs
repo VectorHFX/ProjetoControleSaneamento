@@ -10,12 +10,15 @@ const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
   const toast=async re=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source);
   // Equipe não vê.
   await p.goto(url('?perfil=atendimento&latencia=20'));await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=pato]').click();await p.locator('#espInicio [type=submit]').click();await p.locator('.mascot-stage').waitFor();
-  assert.equal(await p.locator('.home-jogos').count(),0,'equipe não vê os joguinhos nos testes');
+  assert.equal(await p.locator('.home-jogos, .home-placar').count(),0,'equipe não vê os joguinhos nem o placar nos testes');
   // Proprietário: forca liberada, quebra-cabeça travado (9 de 10).
   await p.goto(url('?latencia=20'));await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=gato]').click();await p.locator('#espInicio [type=submit]').click();
   await p.locator('.home-jogos').waitFor();const cards=p.locator('.jogo-card');assert.equal(await cards.count(),2);
   assert.match(await cards.nth(1).textContent(),/Libera com 10 fotos favoritas[\s\S]*9 de 10/);assert.equal(await cards.nth(1).locator('[data-jogo-abrir]').count(),0);
   await p.locator('.home-jogos').scrollIntoViewIfNeeded();await foto('jogos-1-painel');
+  // Placar da equipe (2.23): só totais, meta e 4 semanas.
+  assert.match(await p.locator('.home-placar').textContent(),/de 400 pontos na meta da semana[\s\S]*tarefas feitas[\s\S]*acertos no quiz/);assert.equal(await p.locator('.placar-semana').count(),4);
+  assert.doesNotMatch(await p.locator('.home-placar').textContent(),/Victor|Paula|@/);await p.locator('.home-placar').scrollIntoViewIfNeeded();await foto('placar');
   // Forca: erra uma, depois acerta tudo.
   await p.locator('[data-jogo-abrir=forca]').click();await p.locator('.forca-teclado').waitFor();
   const dica=(await p.locator('.forca-dica').textContent()).replace(/^Dica:\s*/,'').trim(),w=c.P.find(x=>x[1]===dica)[0],certas=[...new Set(norm(w).replace(/[^A-Z]/g,''))];
