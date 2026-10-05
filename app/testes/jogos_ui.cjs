@@ -26,7 +26,7 @@ const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
   await p.keyboard.press(certas[0].toLowerCase());assert.ok(await p.locator('.forca-tecla.is-certa').count()>=1,'teclado físico funciona');
   await foto('jogos-2-forca');
   for(const l of certas.slice(1))await p.locator(`[data-forca-letra=${l}]`).click();
-  await toast(/Venceu! \+5/);assert.match(await p.locator('#detailContent').textContent(),/Venceu/);assert.match(await p.locator('#espPontos').textContent(),/5/);
+  await toast(/Venceu! \+5/);assert.match(await p.locator('#detailContent').textContent(),/Venceu/);await p.waitForFunction(()=>document.querySelector('#espPontos').textContent.trim()==='5');
   await foto('jogos-3-forca-venceu');await p.locator('#closeDialog').click();
   // Quebra-cabeça: favorita uma foto no Álbum (10 de 10) e joga.
   await p.locator('.nav-item[data-route=album]').first().click();await p.locator('.album-topo').waitFor();await p.locator('.album-bloco').last().locator('.album-foto:not(.is-meu) [data-album-fav]').first().click();await toast(/álbum da equipe/);

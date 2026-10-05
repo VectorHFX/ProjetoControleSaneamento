@@ -20,7 +20,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const antes=Number((await p.locator('#espPontos').textContent()).replace(/\D/g,''));
   await p.locator('#quizDia .quiz-opcao').first().click();await toast(/Acertou|Quase/);
   await p.locator('#quizDia .quiz-resultado').waitFor();assert.equal(await p.locator('#quizDia .quiz-opcao.is-certa').count(),1);assert.equal(await p.locator('#quizDia .quiz-opcao:not([disabled])').count(),0);
-  const ok=await p.locator('#quizDia .quiz-resultado.is-ok').count();assert.equal(Number((await p.locator('#espPontos').textContent()).replace(/\D/g,'')),antes+(ok?2:0));
+  const ok=await p.locator('#quizDia .quiz-resultado.is-ok').count();/* 2.24: o selo conta até o valor novo */await p.waitForFunction(n=>Number(document.querySelector('#espPontos').textContent.replace(/\D/g,''))===n,antes+(ok?2:0));
   await foto('saber-2-dia');
   // Quiz da semana: 5 perguntas em sequência, placar no fim.
   await p.locator('[data-quiz-semana]').click();await p.locator('#detailDialog[open] .quiz-opcao').first().waitFor();assert.match(await p.locator('#detailTitle').textContent(),/Pergunta 1 de 5/);

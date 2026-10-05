@@ -223,6 +223,7 @@ s=s.replace("<?!= incluirCPT_('Saber'); ?>",(root/'src/Saber.html').read_text())
 s=s.replace("<?!= incluirCPT_('Album'); ?>",(root/'src/Album.html').read_text())
 s=s.replace("<?!= incluirCPT_('Jogos'); ?>",(root/'src/Jogos.html').read_text())
 s=s.replace("<?!= incluirCPT_('Placar'); ?>",(root/'src/Placar.html').read_text())
+s=s.replace("<?!= incluirCPT_('Visual'); ?>",(root/'src/Visual.html').read_text())
 import subprocess,json
 cat=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={catalogo:PessoalCPT.catalogo,especies:PessoalCPT.especiesAntigas,especiesNovas:PessoalCPT.especiesNovas,classicos:PessoalCPT.classicos,precoClassico:PessoalCPT.precoClassico,kit:PessoalCPT.kit,cores:PessoalCPT.cores,slots:PessoalCPT.slots};',c);console.log(JSON.stringify(c.x))",str(root/'src/PessoalCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
 s=s.replace('__CATALOGO__',cat)

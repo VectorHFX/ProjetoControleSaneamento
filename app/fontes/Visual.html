@@ -1,0 +1,142 @@
+<script>
+/*
+ * Visual 2.24.0 — "Veolia acolhedor": parede verde ripada, plantas, madeira clara, luz quente e o vermelho Veolia como destaque.
+ * Trava de testes: o visual novo (html[data-visual=v3]) é só do proprietário até liberarConfiguracaoCPT (mesma regra do elenco
+ * novo dos mascotes); a equipe continua no visual atual. A escolha fica lembrada no navegador para a tela não piscar ao abrir.
+ * Movimento com significado: entrada de página, cartões em cascata, contador de pontos, folhas comemorando conquistas e
+ * parallax suave no cenário do Meu espaço. Tudo desligado com "Reduzir movimentos" (no app) ou com a preferência do sistema.
+ */
+window.CPTVisual = (() => {
+  'use strict';
+  const h = document.documentElement;
+  const store = {get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} }, del: k => { try { localStorage.removeItem(k); } catch (_) {} }};
+  const ativo = () => h.dataset.visual === 'v3';
+  const calmo = () => h.dataset.motion === 'reduce' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /** Fonte do visual novo (Plus Jakarta Sans, Google Fonts), carregada só para quem usa o visual novo. */
+  function fonte() {
+    if (document.getElementById('fonteV3')) return;
+    const l = document.createElement('link'); l.id = 'fonteV3'; l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'; document.head.appendChild(l);
+  }
+  /** Liga ou desliga o visual novo para esta pessoa (pode = proprietário durante os testes; todos depois de liberar). */
+  function aplicar(pode) {
+    if (pode) { h.dataset.visual = 'v3'; fonte(); pintarFolhagem(); store.set('cpt.visual', 'v3'); }
+    else { delete h.dataset.visual; store.del('cpt.visual'); h.style.removeProperty('--v3-folhagem'); h.style.removeProperty('--v3-jardim'); }
+  }
+  // ---------- Entrada de página: o conteúdo novo sobe e aparece; os cartões chegam em cascata ----------
+  // Só na chegada a uma página (até duas trocas: esqueleto e conteúdo); salvar e atualizar não fazem a tela "dançar".
+  const CASCATA = '.kpi,.stat-tile,.home-cards>.panel,.home-grid>*,.panel,.album-foto,.jogo-card,.entry-card,.list-row:not(.list-head),.entrega-card,.missao,.wardrobe-item';
+  let entradaTimer = 0, navegouEm = 0, entradas = 0;
+  function entrada() {
+    if (!ativo() || calmo()) return; const v = document.getElementById('view'); if (!v) return;
+    clearTimeout(entradaTimer); v.removeAttribute('data-entrando'); void v.offsetWidth;
+    v.querySelectorAll(CASCATA).forEach((el, i) => el.style.setProperty('--i', Math.min(i, 14)));
+    v.setAttribute('data-entrando', ''); entradaTimer = setTimeout(() => v.removeAttribute('data-entrando'), 1500);
+  }
+  function navegou() { navegouEm = Date.now(); entradas = 0; }
+  // ---------- Números que contam até o valor novo (pontos) ----------
+  function contar(el, para) {
+    if (!el) return; const de = Number(String(el.textContent).replace(/\D/g, '')) || 0, fmt = n => n.toLocaleString('pt-BR');
+    if (!ativo() || calmo() || de === para) { el.textContent = fmt(para); return; }
+    const t0 = performance.now(), dur = 650, passo = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (para - de) * e)); if (k < 1) requestAnimationFrame(passo); };
+    el.classList.remove('v3-pulso'); void el.offsetWidth; el.classList.add('v3-pulso'); requestAnimationFrame(passo);
+  }
+  // ---------- Folhas comemorando (pontos, vitórias): poucas, leves e somem sozinhas ----------
+  const FOLHA = c => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20C4 10 10 4 20 4c0 10-6 16-16 16Z" fill="${c}"/><path d="M5 19 15 9" stroke="#ffffff88" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
+  function folhas(origem) {
+    if (!ativo() || calmo()) return;
+    const r = origem && origem.getBoundingClientRect ? origem.getBoundingClientRect() : {left: innerWidth / 2, top: innerHeight / 3, width: 0, height: 0};
+    const cores = ['#5e8f4a', '#7fae5f', '#2f6b4f', '#a7c77f', '#d94a2b'], box = document.createElement('div'); box.className = 'v3-folhas'; box.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 9; i++) {
+      const f = document.createElement('span'); f.innerHTML = FOLHA(cores[i % cores.length]);
+      f.style.left = (r.left + r.width / 2) + 'px'; f.style.top = (r.top + r.height / 2) + 'px';
+      f.style.setProperty('--dx', Math.round((Math.random() - .5) * 220) + 'px'); f.style.setProperty('--dy', Math.round(-60 - Math.random() * 90) + 'px');
+      f.style.setProperty('--rot', Math.round((Math.random() - .5) * 540) + 'deg'); f.style.animationDelay = (i * 28) + 'ms'; box.appendChild(f);
+    }
+    document.body.appendChild(box); setTimeout(() => box.remove(), 1700);
+  }
+  // ---------- Parallax suave no cenário do Meu espaço (ponteiro no computador; nada no toque) ----------
+  let px = 0, py = 0, raf = 0;
+  function parallax(e) {
+    const cena = e.target.closest && e.target.closest('.v3-cena-host'); if (!cena || !ativo() || calmo()) return;
+    const r = cena.getBoundingClientRect(); px = (e.clientX - r.left) / r.width - .5; py = (e.clientY - r.top) / r.height - .5;
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; cena.style.setProperty('--px', px.toFixed(3)); cena.style.setProperty('--py', py.toFixed(3)); });
+  }
+  function soltar(e) { const cena = e.target.closest && e.target.closest('.v3-cena-host'); if (cena && !cena.contains(e.relatedTarget)) { cena.style.setProperty('--px', 0); cena.style.setProperty('--py', 0); } }
+  // ---------- Folhagem (parede de plantas): desenhada aqui, só para quem usa o visual novo (não pesa o CSS de ninguém) ----------
+  const G = ['#2f5d34', '#3f6f3a', '#4f7f3f', '#5e8f4a', '#6e9e55', '#7fae5f', '#94bf6f'];
+  const pFolha = (x, y, s, a, c) => `<g transform="translate(${x} ${y}) rotate(${a}) scale(${s})"><path d="M0 0C-15-12-16-38 0-58C16-38 15-12 0 0Z" fill="${c}"/><path d="M0-3V-52" stroke="#ffffff38" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>`;
+  const pCoracao = (x, y, s, a, c) => `<g transform="translate(${x} ${y}) rotate(${a}) scale(${s})"><path d="M0 0C-22-10-26-36-11-46C-4-50 0-45 0-41C0-45 4-50 11-46C26-36 22-10 0 0Z" fill="${c}"/><path d="M0-4V-38" stroke="#ffffff30" stroke-width="1.5" fill="none"/></g>`;
+  function pSamambaia(x, y, s, a, c) {
+    let out = `<g transform="translate(${x} ${y}) rotate(${a}) scale(${s})"><path d="M0 0Q4-60 -6-120" stroke="${c}" stroke-width="2.4" fill="none"/>`;
+    for (let i = 1; i < 12; i++) { const t = i / 12, yy = (-t * 118).toFixed(1), xx = (-6 * t * t + 4 * t).toFixed(1), L = 16 * (1 - t * .6);
+      [-62, 58].forEach(r => { out += `<path transform="translate(${xx} ${yy}) rotate(${r})" d="M0 0C-3-4-3-${L.toFixed(1)} 0-${(L * 1.5).toFixed(1)}C3-${L.toFixed(1)} 3-4 0 0Z" fill="${c}"/>`; }); }
+    return out + '</g>';
+  }
+  /** Folhas em três camadas (escuras atrás, claras na frente), em grade com tremor: cobre a área toda, sempre igual. */
+  function folhagem(w, hh, n, seed) {
+    const partes = [], camadas = [[G.slice(0, 2), 1.25, 0], [G.slice(1, 4), 1.05, .33], [G.slice(3, 7), .85, .66]]; let idx = 0;
+    camadas.forEach(([cores, esc, off], ci) => {
+      const m = Math.floor(n / 3), nx = Math.floor(Math.sqrt(m * w / hh)) + 1, ny = Math.floor(m / nx) + 1;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        idx++; const k = (idx * 7919 + seed * 104729) % 1000 / 1000, k2 = (idx * 6271 + seed * 7907) % 1000 / 1000, k3 = (idx * 3571 + seed * 15485863) % 1000 / 1000;
+        const x = Math.round((i + .5 + (k - .5) * .9 + off) * w / nx), y = Math.round((j + .6 + (k2 - .5) * .9) * hh / ny + 20), s = (esc * (.75 + k3 * .5)).toFixed(2), a = -80 + (idx * 53) % 160, c = cores[idx % cores.length];
+        partes.push(idx % 5 === 0 ? pCoracao(x, y, s, a, c) : pFolha(x, y, s, a, c));
+        if (idx % 13 === 6 && ci > 0) partes.push(pSamambaia(x, y + 40, (.9 + k3 * .5).toFixed(2), Math.trunc(a / 3), cores[0]));
+      }
+    });
+    return partes.join('');
+  }
+  const uri = svg => 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+  function pintarFolhagem() {
+    if (h.style.getPropertyValue('--v3-folhagem')) return;
+    h.style.setProperty('--v3-folhagem', uri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260">${folhagem(360, 240, 120, 3)}</svg>`));
+    h.style.setProperty('--v3-jardim', uri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 150" preserveAspectRatio="xMidYMax slice">${folhagem(260, 150, 90, 7)}</svg>`));
+  }
+  // ---------- Cenário do Meu espaço: parede ripada, parede de plantas atrás do cartão, luminárias, placa da marca e piso ----------
+  /** Folhagem em camadas separadas (para a brisa mexer cada camada num ritmo). */
+  function camadas(w, hh, n, seed) {
+    const out = [[], [], []], conjuntos = [[G.slice(0, 2), 1.25, 0], [G.slice(1, 4), 1.05, .33], [G.slice(3, 7), .85, .66]]; let idx = 0;
+    conjuntos.forEach(([cores, esc, off], ci) => {
+      const m = Math.floor(n / 3), nx = Math.floor(Math.sqrt(m * w / hh)) + 1, ny = Math.floor(m / nx) + 1;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        idx++; const k = (idx * 7919 + seed * 104729) % 1000 / 1000, k2 = (idx * 6271 + seed * 7907) % 1000 / 1000, k3 = (idx * 3571 + seed * 15485863) % 1000 / 1000;
+        const x = Math.round((i + .5 + (k - .5) * .9 + off) * w / nx), y = Math.round((j + .6 + (k2 - .5) * .9) * hh / ny + 20), s = (esc * (.75 + k3 * .5) * 1.5).toFixed(2), a = -80 + (idx * 53) % 160, c = cores[idx % cores.length];
+        out[ci].push(idx % 5 === 0 ? pCoracao(x, y, s, a, c) : pFolha(x, y, s, a, c));
+        if (idx % 11 === 6 && ci > 0) out[ci].push(pSamambaia(x, y + 50, (1.2 + k3 * .6).toFixed(2), Math.trunc(a / 3), cores[0]));
+      }
+    });
+    return out.map(l => l.join(''));
+  }
+  let cenaPronta = '';
+  function cena() {
+    if (cenaPronta) return cenaPronta;
+    const ripas = Array.from({length: 46}, (_, i) => `<rect x="${i * 22}" y="0" width="16" height="470"/>`).join('');
+    const [c1, c2, c3] = camadas(600, 420, 160, 11);
+    const lumi = (x, l) => `<g class="v3-lumi" style="transform-origin:${x}px 0px"><line x1="${x}" y1="0" x2="${x}" y2="${l}"/><path d="M${x - 26} ${l + 34} Q${x} ${l - 8} ${x + 26} ${l + 34} Z"/><ellipse cx="${x}" cy="${l + 35}" rx="22" ry="5" class="v3-lumi-luz"/></g>`;
+    const espinha = Array.from({length: 34}, (_, i) => `M${i * 32 - 40} 600 l40 -130 M${i * 32 - 24} 600 l40 -130`).join(' ');
+    cenaPronta = `<svg class="hero-scene v3-cena" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs><linearGradient id="v3Piso" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="v3-piso1"/><stop offset="1" class="v3-piso2"/></linearGradient>
+        <radialGradient id="v3Luz" cx="22%" cy="18%" r="60%"><stop offset="0" stop-color="#ffd58a" stop-opacity=".42"/><stop offset="1" stop-color="#ffd58a" stop-opacity="0"/></radialGradient>
+        <linearGradient id="v3Sombra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient></defs>
+      <rect width="1000" height="600" class="v3-parede"/>
+      <g class="v3-camada" style="--k:-5"><g class="v3-ripas">${ripas}</g></g>
+      <g class="v3-camada" style="--k:-9"><rect x="380" y="18" width="640" height="452" rx="18" class="v3-musgo"/>
+        <g transform="translate(392 10)"><g class="v3-brisa v3-brisa-1">${c1}</g><g class="v3-brisa v3-brisa-2">${c2}</g><g class="v3-brisa v3-brisa-3">${c3}</g></g></g>
+      <rect width="1000" height="600" fill="url(#v3Luz)"/>
+      <g class="v3-camada" style="--k:-7"><g class="v3-placa"><circle cx="78" cy="96" r="24"/><path d="M78 80c0 0-12 13-12 20a12 12 0 0 0 24 0c0-7-12-20-12-20Z"/></g></g>
+      <g class="v3-camada" style="--k:-14">${lumi(170, 120)}${lumi(330, 96)}</g>
+      <path d="M0 470 H1000 V600 H0Z" fill="url(#v3Piso)"/><path class="v3-espinha" d="${espinha}"/><path d="M0 470 H1000 V600 H0Z" fill="url(#v3Sombra)" opacity=".5"/>
+      <path d="M0 471 H1000" class="v3-rodape"/></svg>`;
+    return cenaPronta;
+  }
+  function init() {
+    if (ativo()) { fonte(); pintarFolhagem(); }
+    document.addEventListener('pointermove', parallax, {passive: true});
+    document.addEventListener('pointerout', soltar, {passive: true});
+    const v = document.getElementById('view');
+    if (v && window.MutationObserver) new MutationObserver(() => { if (Date.now() - navegouEm < 6000 && entradas < 2) { entradas++; entrada(); } }).observe(v, {childList: true});
+  }
+  return {init, aplicar, ativo, calmo, entrada, navegou, contar, folhas, cena};
+})();
+</script>

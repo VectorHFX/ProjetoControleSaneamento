@@ -23,6 +23,20 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.24.0 — Visual novo "Veolia acolhedor" (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.24.0`) e publique uma **Nova versão**. Chega o arquivo novo `Visual.html`.
+2. **Só você vê o visual novo** durante os testes; a equipe continua com o visual atual até `liberarConfiguracaoCPT`. Inspirado na recepção e no escritório da Veolia:
+   - **Menu lateral** como a parede verde ripada, com a luz da sanca em cima e um jardim de plantas embaixo; a página ativa parece uma placa de madeira clara. Só a lista de páginas rola: o jardim e a conta ficam fixos.
+   - **Fundo** em tom de madeira clara, com a luz quente das luminárias; **cartões** brancos como o balcão, com uma luz quente embaixo.
+   - **Visão do mês**: o cabeçalho vira a parede de plantas da recepção.
+   - **Meu espaço**: o mascote fica na recepção — parede ripada, parede de plantas atrás do cartão, duas luminárias pendentes, a placa vermelha da marca e piso de madeira.
+   - **Títulos das páginas** com uma folhinha verde; **vermelho Veolia** só nos destaques (marca, avisos, número de recados).
+   - **Fonte** Plus Jakarta Sans (Google Fonts), carregada só para quem usa o visual novo.
+   - **Escuro**: a recepção à noite. **Mês**: a parede ganha o tom da campanha e as plantas continuam verdes.
+3. **Movimento com significado**: a página nova sobe suave e os cartões chegam em cascata; os pontos contam até o valor novo e folhas comemoram quando você ganha pontos ou vence um jogo; as plantas balançam devagar e as luminárias oscilam; o cenário do Meu espaço acompanha o mouse (parallax). Quem marca **"Reduzir movimentos"** (em Como usar) ou usa essa preferência no sistema não vê nada se mexendo.
+4. Contraste conferido por teste (texto, destaques, botões, menu sobre a parede verde), no claro e no escuro.
+
 ## Atualização 2.23.1 — revisão do tema do mês e do placar (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.23.1`) e publique uma **Nova versão**.

@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.23.1';
+const VERSAO_CPT = '2.24.0';
 
 /**
  * Cada planilha é aberta uma vez por execução e reaproveitada (o equivalente a um "pool" de conexões no Apps Script).
@@ -98,7 +98,7 @@ function dadosIniciaisCPT_() {
   return JSON.stringify(inicial).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos', 'Socioambiental', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa', 'Mascotes', 'Saber', 'Album', 'Jogos', 'Placar'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos', 'Socioambiental', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa', 'Mascotes', 'Saber', 'Album', 'Jogos', 'Placar', 'Visual'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 

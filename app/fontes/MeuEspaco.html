@@ -141,6 +141,11 @@ window.CPTEspaco = (() => {
     const it = (d.lista && d.lista.itens || []).filter(t => !t.removido);
     return it.length && it.every(t => t.feito) ? 'feliz' : 'normal';
   }
+  /** Pontos no selo: contam até o valor novo e, quando ganha, as folhas comemoram (visual novo; sem movimento se pedido). */
+  function mostrarPontos(saldo, ganhou) {
+    const s = $('espPontos'); if (!s) return;
+    if (window.CPTVisual && window.CPTVisual.ativo()) { window.CPTVisual.contar(s, saldo); if (ganhou) window.CPTVisual.folhas(s); } else s.textContent = ui.num(saldo);
+  }
   function atualizarHumor() { const el = document.querySelector('.hero-pet .mascot-art'); if (el && d && d.perfil) el.innerHTML = desenho(M(), 220, humor()); }
   function comemorar() { comemorarAte = Date.now() + 3200; atualizarHumor(); setTimeout(atualizarHumor, 3300); }
   const dataLonga = x => new Date(x + 'T12:00:00Z').toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'});
@@ -173,7 +178,8 @@ window.CPTEspaco = (() => {
     const v = ui.visao(), t = TRABALHO[v] || TRABALHO.atendimento, tr = d.trabalho || {}, hora = Number(new Date().toLocaleString('en-US', {hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo'}));
     const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
     const chip = (icone, texto, extra) => `<span class="home-chip" ${extra || ''}>${icone}<span>${texto}</span></span>`;
-    ui.view.innerHTML = `<section class="space-hero mascot-stage">${CENA}
+    const v3 = !!(window.CPTVisual && window.CPTVisual.ativo()); // 2.24: visual novo — o mascote na recepção (parede ripada, plantas, luminárias)
+    ui.view.innerHTML = `<section class="space-hero mascot-stage${v3 ? ' v3-cena-host' : ''}">${v3 ? window.CPTVisual.cena() : CENA}
         <div class="hero-pet"><div class="mascot-art">${desenho(m, 220, humor())}</div>
           <div class="pet-plate"><h2 class="mascot-name">${ui.esc(m.nome)} <button class="link-button" data-esp-nomear aria-label="Mudar o nome">mudar nome</button></h2><p class="small">${ui.esc(d.especies[m.especie])} de ${ui.esc(nome || 'você')}</p></div></div>
         <div class="hero-copy"><span class="hero-date">${ui.esc(dataLonga(d.hoje))}</span><h1 class="hero-title">${saudacao}${nome ? ', ' + ui.esc(nome) : ''}!</h1>
@@ -279,7 +285,7 @@ window.CPTEspaco = (() => {
   function salvarLista() {
     const pedido = {data: dia, itens: d.lista.itens.filter(t => !t.removido).map(({id, texto, feito}) => ({id, texto, feito}))};
     fila = fila.then(async () => {
-      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; desenharLista(); } d.pontos = r.pontos; const s = $('espPontos'); if (s) s.textContent = ui.num(r.pontos.saldo); if (/pontos!/.test(r.resultado)) { ui.toast(r.resultado); comemorar(); } else atualizarHumor(); }
+      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; desenharLista(); } d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, /pontos!/.test(r.resultado)); if (/pontos!/.test(r.resultado)) { ui.toast(r.resultado); comemorar(); } else atualizarHumor(); }
       catch (e) { ui.toast('Checklist não salvou: ' + e.message); render(true); }
     });
   }
@@ -333,9 +339,9 @@ window.CPTEspaco = (() => {
     ui = api;
     // Quiz (Saber.html): pontos novos atualizam o selo de pontos e o humor do mascote.
     // Joguinhos (Jogos.html): mesma atualização de pontos; o quebra-cabeça sem foto usa o mascote da pessoa.
-    if (window.CPTJogos) { window.CPTJogos.aoMudar(r => { if (!d) return; d.pontos = r.pontos; const s = $('espPontos'); if (s) s.textContent = ui.num(r.pontos.saldo); if (r.venceu) comemorar(); });
+    if (window.CPTJogos) { window.CPTJogos.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.venceu && r.pontos.saldo > 0); if (r.venceu) comemorar(); });
       window.CPTJogos.mascote(() => d && d.perfil ? window.CPTMascote.desenhar(M().especie, M().equipado, 300, M().nome, M().cor, 'feliz').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" ') : ''); }
-    if (window.CPTSaber) window.CPTSaber.aoMudar(r => { if (!d) return; d.pontos = r.pontos; const s = $('espPontos'); if (s) s.textContent = ui.num(r.pontos.saldo); if (r.acertou) comemorar(); else atualizarHumor(); });
+    if (window.CPTSaber) window.CPTSaber.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.acertou); if (r.acertou) comemorar(); else atualizarHumor(); });
     document.addEventListener('click', async e => {
       const t = e.target;
       const esp = t.closest('[data-esp-especie]'); if (esp) { boasVindas(esp.dataset.espEspecie); return; }
