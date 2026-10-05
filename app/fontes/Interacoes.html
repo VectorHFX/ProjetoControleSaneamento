@@ -276,6 +276,7 @@
   if(!window.CPTComunicacao||!window.CPTRecados)throw new Error('Componentes Comunicacao.html ou Recados.html ausentes. Confira os arquivos da versão 2.8.0.');
   window.CPTComunicacao.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});window.CPTRecados.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
   if(!window.CPTEspaco)throw new Error('Componente MeuEspaco.html ausente. Confira os arquivos da versão 2.9.0.');window.CPTEspaco.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,podeVer,view:$('view')});
+  if(window.CPTSaber)window.CPTSaber.init({call,esc,toast});
   if(window.CPTMapa)window.CPTMapa.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   window.CPTObras.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTFechamento.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTSocioambiental.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   bootstrap();

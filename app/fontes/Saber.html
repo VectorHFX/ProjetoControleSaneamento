@@ -1,0 +1,82 @@
+<script>
+/*
+ * Saber mais 2.19.0 — curiosidade do dia (balão do mascote), campanha do mês, pergunta do dia e quiz da semana.
+ * Conteúdo e respostas certas vêm do servidor (ConteudoSaneamentoCPT/QuizCPT); a certa só chega depois de responder.
+ * Usado pelo Meu espaço: CPTSaber.balao(s), CPTSaber.painel(s) e CPTSaber.aoMudar(fn) para atualizar pontos e humor.
+ */
+window.CPTSaber = (() => {
+  'use strict';
+  let ui = null, s = null, aoMudar = () => {}, enviando = false;
+  const $ = id => document.getElementById(id);
+  const op = () => 'OP-' + crypto.randomUUID();
+  const LETRAS = ['A', 'B', 'C', 'D'];
+  const fonte = f => f ? `<a class="saber-fonte" href="${ui.esc(f.url)}" target="_blank" rel="noopener">Fonte: ${ui.esc(f.nome)}</a>` : '';
+  const revisar = x => x && x.revisar ? '<span class="saber-revisar" title="Só você vê este conteúdo até a revisão">a revisar</span>' : '';
+  /** Balão do mascote com a curiosidade do dia. */
+  function balao(x) {
+    s = x; const c = x && x.curiosidade; if (!c) return '';
+    return `<div class="saber-balao" role="note"><span class="saber-kicker">💡 Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${fonte(c.fonte)}</div>`;
+  }
+  function opcoes(q, tipo, resposta) {
+    return `<div class="quiz-opcoes" role="group" aria-label="Alternativas">${q.opcoes.map((o, i) => {
+      const estado = !resposta ? '' : i === resposta.certa ? 'is-certa' : i === resposta.escolha ? 'is-errada' : 'is-apagada';
+      return `<button class="quiz-opcao ${estado}" ${resposta ? 'disabled' : `data-quiz-responder="${tipo}" data-quiz-id="${ui.esc(q.id)}" data-quiz-escolha="${i}"`}><b>${LETRAS[i]}</b><span>${ui.esc(o)}</span></button>`;
+    }).join('')}</div>`;
+  }
+  const explicacao = r => `<div class="quiz-resultado ${r.acertou ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${r.acertou ? '✓ Acertou!' : '✗ Não foi dessa vez.'}</strong> ${ui.esc(r.explica)} ${fonte(r.fonte)}</div>`;
+  function blocoDia() {
+    const q = s.quiz.dia, rg = s.quiz.regras; if (!q) return '<p class="empty-line">A pergunta do dia volta em breve.</p>';
+    const x = q.pergunta || q.resposta;
+    return `<div class="quiz-dia" id="quizDia"><span class="saber-kicker">❓ Pergunta do dia · ${ui.esc(x.tema)} ${revisar(x)}<small>${rg.pontosDia} pontos se acertar</small></span>
+      <p class="quiz-pergunta">${ui.esc(x.pergunta)}</p>${opcoes(x, 'dia', q.resposta)}${q.resposta ? explicacao(q.resposta) + '<p class="small muted">Amanhã tem outra!</p>' : ''}</div>`;
+  }
+  function blocoSemana() {
+    const w = s.quiz.semana, rg = s.quiz.regras; if (!w) return '';
+    const fim = w.respondidas >= w.total;
+    return `<div class="quiz-semana"><div><span class="saber-kicker">🏁 Quiz da semana <small>${rg.porSemana} perguntas · ${rg.pontosPergunta} pontos por acerto</small></span>
+      <p class="small">${fim ? `Feito! ${w.acertos} de ${w.total} certas · +${w.pontos} pontos. Na segunda tem outro.` : w.respondidas ? `${w.respondidas} de ${w.total} respondidas · ${w.acertos} certas até aqui.` : 'Teste o que você sabe sobre água, esgoto e resíduos.'}</p></div>
+      <span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${w.total}" aria-valuenow="${w.respondidas}" aria-label="Quiz da semana"><span style="width:${w.respondidas / w.total * 100}%"></span></span>
+      <button class="button ${fim ? 'ghost' : ''}" data-quiz-semana>${fim ? 'Ver respostas' : w.respondidas ? 'Continuar' : 'Começar'}</button></div>`;
+  }
+  /** Painel "Saber mais" do Meu espaço. */
+  function painel(x) {
+    s = x; if (!s) return ''; const m = s.mes;
+    return `<section class="panel home-saber" id="espSaber"><div class="panel-head"><div><span class="card-kicker">🧠 Saber mais</span><h2>Saneamento no dia a dia</h2></div></div>
+      <p class="saber-mes"><i class="saber-laco" aria-hidden="true" ${window.CPTMascoteV2 ? `style="--laco:${ui.esc(window.CPTMascoteV2.campanha()[1])}"` : ''}></i><span><strong>${ui.esc(m.campanha)}</strong> · ${ui.esc(m.tema)}</span></p>
+      ${m.datas.map(d => `<p class="saber-data"><strong>${d.dia}/${new Date().toLocaleDateString('pt-BR', {month: '2-digit', timeZone: 'America/Sao_Paulo'})} · ${ui.esc(d.titulo)}</strong> ${ui.esc(d.texto)} ${fonte(d.fonte)}</p>`).join('')}
+      ${blocoDia()}${blocoSemana()}</section>`;
+  }
+  function redesenhar() { const p = $('espSaber'); if (p) p.outerHTML = painel(s); }
+  /** Quiz da semana na janela: a próxima pergunta, ou o resultado da última e o botão para seguir. */
+  function janela(ultima) {
+    const w = s.quiz.semana, fim = w.respondidas >= w.total;
+    $('detailType').textContent = 'QUIZ DA SEMANA';
+    $('detailTitle').textContent = fim ? `Resultado: ${w.acertos} de ${w.total}` : `Pergunta ${w.indice + 1} de ${w.total}`;
+    let html = '';
+    if (ultima) html += `<p class="quiz-pergunta">${ui.esc(ultima.pergunta)}</p>${opcoes(ultima, 'semana', ultima)}${explicacao(ultima)}`;
+    if (ultima && !fim) html += '<div class="dialog-actions"><button class="button" data-quiz-proxima>Próxima pergunta</button></div>';
+    else if (!ultima && !fim) html += `<p class="small muted">${ui.esc(w.proxima.tema)} ${revisar(w.proxima)}</p><p class="quiz-pergunta">${ui.esc(w.proxima.pergunta)}</p>${opcoes(w.proxima, 'semana')}`;
+    if (fim) html += `<p class="quiz-placar">⭐ +${w.pontos} pontos nesta semana</p><details class="quiz-revisao" ${ultima ? '' : 'open'}><summary>Ver todas as respostas</summary>${w.respostas.map((r, i) => `<div class="quiz-item"><p><strong>${i + 1}.</strong> ${ui.esc(r.pergunta)}</p><p class="small">${r.acertou ? '✓' : '✗'} Certa: <strong>${ui.esc(r.opcoes[r.certa])}</strong>${r.acertou ? '' : ' · você marcou ' + ui.esc(r.opcoes[r.escolha])}</p><p class="small muted">${ui.esc(r.explica)} ${fonte(r.fonte)}</p></div>`).join('')}</details>`;
+    $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal();
+  }
+  async function responder(b) {
+    if (enviando) return; enviando = true; const tipo = b.dataset.quizResponder;
+    const grupo = b.closest('.quiz-opcoes'); grupo.querySelectorAll('button').forEach(x => { x.disabled = true; }); b.classList.add('is-enviando');
+    const versao = tipo === 'dia' ? s.quiz.dia.versao : s.quiz.semana.versao;
+    try {
+      const r = await ui.call('responderQuizCPT', {tipo, id: b.dataset.quizId, escolha: Number(b.dataset.quizEscolha), versao, operacaoId: op()});
+      s.quiz = r.estado; ui.toast(r.resultado); aoMudar({pontos: r.pontos, acertou: r.resposta.acertou});
+      if (tipo === 'dia') redesenhar(); else { redesenhar(); janela(r.resposta); }
+    } catch (e) { ui.toast(e.message); grupo.querySelectorAll('button').forEach(x => { x.disabled = false; }); b.classList.remove('is-enviando'); }
+    finally { enviando = false; }
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', e => {
+      const b = e.target.closest('[data-quiz-responder]'); if (b) { responder(b); return; }
+      if (e.target.closest('[data-quiz-semana]') || e.target.closest('[data-quiz-proxima]')) { if (s && s.quiz.semana) janela(); }
+    });
+  }
+  return {init, balao, painel, aoMudar: fn => { aoMudar = fn; }, pendente: () => !!(s && s.quiz && s.quiz.dia && s.quiz.dia.pergunta)};
+})();
+</script>

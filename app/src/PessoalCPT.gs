@@ -4,6 +4,7 @@
  * 2.18: elenco chibi (urso, águia, gato, cachorro, pato, capivara, sapinho, gota); dinossauro e abelha viram clássicos (150 pontos);
  *       kit EPI inicial (capacete branco, colete, luvas, bota preta) de todo mundo e já vestido nos mascotes novos.
  *       Período de testes: o elenco novo é só do proprietário (PessoalCPT.novo).
+ * 2.19: pontos do quiz (QuizCPT) somam aos do checklist; "Saber mais" no Meu espaço (curiosidade do dia, campanha do mês, quiz).
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
  *
  * Regras das recompensas (calculadas no servidor; nada é concedido duas vezes):
@@ -78,9 +79,9 @@ class PessoalCPT {
   minhasListas() { const p = 'CHK-' + this.email + '-'; return this.listas.itens().filter(x => x.id.startsWith(p)); }
   diasEscritos() { return this.minhasNotas().filter(n => String(n.texto || '').trim().length >= PessoalCPT.minimoCaderno).length; }
   pontos(perfil) {
-    const ganhos = this.minhasListas().reduce((s, l) => s + Math.min(PessoalCPT.tarefasPontuadasPorDia, (l.itens || []).filter(t => t.pontuado).length) * PessoalCPT.pontosPorTarefa, 0);
-    const gastos = perfil ? (perfil.compras || []).reduce((s, c) => s + c.preco, 0) : 0;
-    return {ganhos, gastos, saldo: ganhos - gastos};
+    const checklist = this.minhasListas().reduce((s, l) => s + Math.min(PessoalCPT.tarefasPontuadasPorDia, (l.itens || []).filter(t => t.pontuado).length) * PessoalCPT.pontosPorTarefa, 0);
+    const quiz = QuizCPT.pontos(this.ctx), ganhos = checklist + quiz, gastos = perfil ? (perfil.compras || []).reduce((s, c) => s + c.preco, 0) : 0;
+    return {ganhos, gastos, saldo: ganhos - gastos, checklist, quiz};
   }
   pendentes(perfil) {
     if (!perfil) return [];
@@ -103,8 +104,13 @@ class PessoalCPT {
         recentes: notas.filter(n => String(n.texto || '').trim()).map(n => ({data: n.id.slice(-10), trecho: String(n.texto).trim().slice(0, 90)})).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 12)},
       proximos: this.minhasListas().filter(l => l.id.slice(-10) > this.hoje && (l.itens || []).some(t => !t.feito)).map(l => ({data: l.id.slice(-10), pendentes: l.itens.filter(t => !t.feito).length})).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 5),
       regras: {pontosPorTarefa: PessoalCPT.pontosPorTarefa, tarefasPorDia: PessoalCPT.tarefasPontuadasPorDia}};
+    if (QuizCPT.pode(this.ctx.perfil)) out.saber = this.saber();
     try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
     return out;
+  }
+  /** "Saber mais": curiosidade do dia, campanha do mês e quiz (conteúdo em ConteudoSaneamentoCPT). */
+  saber() {
+    return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx.perfil, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx.perfil, this.hoje), quiz: new QuizCPT(this.ctx).estado()};
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }
   /** Ações do mascote: iniciar, nomear, colorir, ativar, vestir, resgatar, comprar. Tudo sobre o próprio perfil. */
@@ -142,14 +148,14 @@ class PessoalCPT {
       } else if (acao === 'comprar') {
         const it = PessoalCPT.item(p.item); if (!it || !it.preco) throw new Error('Essa peça não é vendida por pontos.');
         if (novo.pecas.includes(it.id)) throw new Error('Você já tem essa peça.');
-        if (this.pontos(atual).saldo < it.preco) throw new Error('Faltam pontos: complete tarefas do seu checklist.');
+        if (this.pontos(atual).saldo < it.preco) throw new Error('Faltam pontos: complete tarefas do seu checklist ou responda o quiz.');
         novo.pecas.push(it.id); novo.compras.push({item: it.id, preco: it.preco, em: new Date().toISOString()}); m.equipado[it.slot] = it.id; resultado = 'Peça exclusiva: ' + it.nome + '!';
       } else if (acao === 'comprarClassico') {
         // Clássicos (dinossauro e abelha): 150 pontos. Período de testes: só com o elenco novo (proprietário).
         if (!PessoalCPT.novo(this.ctx.perfil)) throw new Error('Os clássicos chegam junto com o elenco novo.');
         ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.classicos), 'clássico');
         if (novo.mascotes.some(x => x.especie === p.especie)) throw new Error('Você já tem esse mascote.');
-        if (this.pontos(atual).saldo < PessoalCPT.precoClassico) throw new Error('Faltam pontos: complete tarefas do seu checklist.');
+        if (this.pontos(atual).saldo < PessoalCPT.precoClassico) throw new Error('Faltam pontos: complete tarefas do seu checklist ou responda o quiz.');
         novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: this.kitInicial(), cor: ''}); novo.ativo = novo.mascotes.length - 1;
         novo.compras.push({item: 'mascote:' + p.especie, preco: PessoalCPT.precoClassico, em: new Date().toISOString()}); resultado = 'Clássico de volta: ' + novo.mascotes[novo.ativo].nome + '!';
       } else throw new Error('Ação inválida.');

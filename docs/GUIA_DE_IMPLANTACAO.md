@@ -23,6 +23,18 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.19.0 — Saber mais: curiosidades, campanha do mês e quiz (≈ 5 min + revisão do conteúdo)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.19.0`) e publique uma **Nova versão**. Chegam os arquivos novos `ConteudoSaneamentoCPT.gs`, `QuizCPT.gs` e `Saber.html`.
+2. Abra o **Meu espaço** com a sua conta (proprietário). Aparecem:
+   - o balão **"Você sabia?"** ao lado do mascote, com uma curiosidade por dia e o link da fonte;
+   - o painel **Saber mais**, com a campanha de saúde do mês (a mesma do laço) e as datas do saneamento do mês;
+   - a **pergunta do dia** (2 pontos se acertar, uma por dia) e o **quiz da semana** (5 perguntas, 10 pontos por acerto, de segunda a domingo).
+   Os pontos do quiz somam aos do checklist e valem na loja. O mascote fica **pensativo** enquanto a pergunta do dia espera resposta.
+3. **Revisão do conteúdo:** tudo está em `docs/CONTEUDO_SANEAMENTO.md` (35 curiosidades e 65 perguntas, cada uma com fonte). Enquanto um item não for aprovado, só você o vê, com a marca **A REVISAR**. Mande os IDs aprovados (ex.: `C01`, `Q001`) e as correções; eles entram em `ConteudoSaneamentoCPT.aprovadas`.
+4. **Período de testes:** a equipe não vê nada disso e não consegue responder (o servidor recusa). Depois de `liberarConfiguracaoCPT`, as outras pessoas veem **só o conteúdo aprovado**.
+5. As respostas ficam na aba nova **Quiz** da planilha de dados da aplicação (cada pessoa só lê as próprias; sem ranking).
+
 ## Atualização 2.18.2 — mascotes novos (elenco chibi), kit EPI, camiseta Veolia e laço do mês (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.18.2`) e publique uma **Nova versão**. O atualizador traz o arquivo novo `Mascotes.html`.
