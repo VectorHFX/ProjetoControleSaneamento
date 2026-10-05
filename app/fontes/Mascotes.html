@@ -96,7 +96,7 @@ window.CPTMascoteV2 = (() => {
       semCabeca: () => f(circ(100, 34, 9), '#f29b3a') + f('M100,25 q5,-7 11,-3 q-5,5 -11,3 Z', '#6fae5a'),
       focinho: (e, c) => f('M74,96 Q74,88 100,88 Q126,88 126,96 L126,110 Q126,124 100,124 Q74,124 74,110 Z', c.cl, 1) + `<ellipse cx="91" cy="100" rx="2.6" ry="4" fill="${c.e}"/><ellipse cx="109" cy="100" rx="2.6" ry="4" fill="${c.e}"/>` + boquinha(e, 100, 112)},
     sapo: {c: ['#93cf72', '#f4f8e6'], semCorpo: true, cab: 'M46,98 C46,70 56,56 70,56 C78,56 84,62 88,66 L112,66 C116,62 122,56 130,56 C144,56 154,70 154,98 L154,170 C154,206 136,216 100,216 C64,216 46,206 46,170 Z',
-      rosto: {x: 100, y: 80, d: 30, grande: true}, capacete: {x: 100, y: 60, r: 17}, pescoco: [100, 132], caixa: [46, 134, 154, 214], barriga: 'M66,150 C66,132 134,132 134,150 L134,178 C134,200 66,200 66,178 Z',
+      rosto: {x: 100, y: 80, d: 30, grande: true}, capacete: {x: 100, y: 59, r: 21}, pescoco: [100, 132], caixa: [46, 134, 154, 214], barriga: 'M66,150 C66,132 134,132 134,150 L134,178 C134,200 66,200 66,178 Z',
       pes: [[78, 218, 16, 7], [122, 218, 16, 7]], ombros: [[56, 140], [144, 140]], braco: 15, mao: 28, boca: 112,
       olhosFundo: e => ['feliz', 'comemorando', 'dormindo'].includes(e) ? '' : `<circle cx="70" cy="80" r="11" fill="#fff"/><circle cx="130" cy="80" r="11" fill="#fff"/>`,
       focinho: e => {
@@ -105,14 +105,14 @@ window.CPTMascoteV2 = (() => {
         if (e === 'feliz') return `<path d="M76,104 Q100,126 124,104 Z" fill="${OLHO}"/><path d="M88,114 q12,7 24,0" fill="#ef7f86"/>`;
         return linha(e === 'pensativo' ? 'M80,110 q20,4 40,-4' : 'M82,108 q18,8 36,0', 2.8);
       }},
-    gota: {c: ['#7cc0ea', '#d8eefb'], semCorpo: true, cab: 'M100,36 C100,36 154,104 154,150 A54,54 0 0 1 46,150 C46,104 100,36 100,36 Z', rosto: {x: 100, y: 150, d: 22}, capacete: {x: 100, y: 84, r: 22}, pescoco: [100, 176],
+    gota: {c: ['#7cc0ea', '#d8eefb'], semCorpo: true, cab: 'M100,36 C100,36 154,104 154,150 A54,54 0 0 1 46,150 C46,104 100,36 100,36 Z', rosto: {x: 100, y: 150, d: 22}, capacete: {x: 100, y: 88, r: 26}, pescoco: [100, 176],
       caixa: [46, 172, 154, 204], pes: [[86, 206, 11, 7], [114, 206, 11, 7]], ombros: [[52, 160], [148, 160]], braco: 11, mao: 22, boca: 164,
       depoisCab: () => `<path d="${ell(74, 118, 8, 15)}" fill="#fff" opacity=".55"/><path d="${circ(80, 98, 3.5)}" fill="#fff" opacity=".6"/>`,
       focinho: e => boquinha(e, 100, 166)},
     // Clássicos (mascotes da primeira versão), no mesmo estilo.
     dinossauro: {c: ['#86c97a', '#e6f4d2'], cab: ell(100, 88, 56, 46), rosto: {x: 100, y: 84, d: 26}, capacete: {x: 100, y: 52, r: 30}, pescoco: [100, 132],
       corpo: 'M64,128 C50,156 50,198 66,212 Q100,224 134,212 C150,198 150,156 136,128 Z', caixa: [52, 126, 148, 220], barriga: ell(100, 182, 24, 26), pes: [[82, 216, 15, 8], [118, 216, 15, 8]], ombros: [[62, 150], [138, 150]], braco: 15, mao: 30,
-      atras: c => f('M130,196 C162,200 174,186 176,170 C166,184 150,184 136,178 Z', c.p) + [[76, 44], [100, 36], [124, 44]].map(([x, y]) => f(`M${x - 9},${y + 8} L${x},${y - 10} L${x + 9},${y + 8} Z`, mix(c.p, '#000000', .18))).join(''),
+      atras: c => f('M130,196 C162,200 174,186 176,170 C166,184 150,184 136,178 Z', c.p) + [[128, 48, 20], [146, 64, 45], [154, 86, 70], [150, 140, 80]].map(([x, y, a]) => `<g transform="rotate(${a} ${x} ${y})">${f(`M${x - 9},${y + 8} L${x},${y - 10} L${x + 9},${y + 8} Z`, mix(c.p, '#000000', .18))}</g>`).join(''),
       focinho: (e, c) => f(ell(100, 106, 22, 13), c.cl, 1) + `<circle cx="93" cy="102" r="2" fill="${mix(c.p, '#000000', .45)}"/><circle cx="107" cy="102" r="2" fill="${mix(c.p, '#000000', .45)}"/>` + boquinha(e, 100, 110)},
     abelha: {c: ['#f7cf4a', '#fff3c4'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 52, r: 30}, pescoco: [100, 132],
       corpo: 'M66,128 C50,156 52,198 68,212 Q100,224 132,212 C148,198 150,156 134,128 Z', caixa: [54, 126, 146, 220], listras: true, pes: [[84, 216, 13, 7, '#3b302a'], [116, 216, 13, 7, '#3b302a']], ombros: [[64, 150], [136, 150]], braco: 14, mao: 30,
@@ -141,8 +141,8 @@ window.CPTMascoteV2 = (() => {
     'camisa-verdao': {cor: '#1f8a4c', manga: '#1f8a4c', desenho: (x0, x1, y0) => linha(`M${(x0 + x1) / 2 - 12},${y0 + 4} L${(x0 + x1) / 2},${y0 + 16} L${(x0 + x1) / 2 + 12},${y0 + 4}`, 4, '#fff')},
     'camisa-tricolor': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => { const y = y0 + (y1 - y0) * .42; return `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="7" fill="#d6252c"/><rect x="${x0}" y="${y + 7}" width="${x1 - x0}" height="4" fill="#fbfbf8"/><rect x="${x0}" y="${y + 11}" width="${x1 - x0}" height="7" fill="#232323"/>`; }},
     'camisa-peixe': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => `<rect x="${x0 + 8}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/><rect x="${x1 - 13}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/>` + linha(`M${(x0 + x1) / 2 - 10},${y0 + 4} L${(x0 + x1) / 2},${y0 + 13} L${(x0 + x1) / 2 + 10},${y0 + 4}`, 3, '#232323')},
-    'camisa-cpt': {cor: '#2f7cbf', manga: '#2f7cbf', desenho: (x0, x1, y0, y1) => `<path d="M${(x0 + x1) / 2 - 22},${y0 + (y1 - y0) * .32 + 4} c0,0 5,-8 5,-11 a5,5 0 0 0 -10,0 c0,3 5,11 5,11 Z" fill="#9fd3f5" transform="translate(4,0)"/><text x="${(x0 + x1) / 2 + 6}" y="${y0 + (y1 - y0) * .32 + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Arial, sans-serif">CPT</text>`},
-    'camisa-veolia': {cor: '#e2231a', manga: '#e2231a', desenho: (x0, x1, y0, y1) => `<text x="${(x0 + x1) / 2}" y="${y0 + (y1 - y0) * .34 + 3}" text-anchor="middle" font-size="${Math.min(12, (x1 - x0) / 6.2)}" font-weight="800" letter-spacing=".6" fill="#fff" font-family="Arial, sans-serif">VEOLIA</text>` +
+    'camisa-cpt': {cor: '#2f7cbf', manga: '#2f7cbf', desenho: (x0, x1, y0, y1) => `<path d="M${(x0 + x1) / 2 - 22},${y0 + (y1 - y0) * .5 + 3} c0,0 5,-8 5,-11 a5,5 0 0 0 -10,0 c0,3 5,11 5,11 Z" fill="#9fd3f5" transform="translate(4,0)"/><text x="${(x0 + x1) / 2 + 6}" y="${y0 + (y1 - y0) * .5 + 3}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Arial, sans-serif">CPT</text>`},
+    'camisa-veolia': {cor: '#e2231a', manga: '#e2231a', desenho: (x0, x1, y0, y1) => `<text x="${(x0 + x1) / 2}" y="${y0 + (y1 - y0) * .5 + 2}" text-anchor="middle" font-size="${Math.min(12, (x1 - x0) / 7.6).toFixed(1)}" font-weight="800" letter-spacing="${x1 - x0 < 80 ? 0 : .6}" fill="#fff" font-family="Arial, sans-serif">VEOLIA</text>` +
       `<rect x="${x0}" y="${y1 - 7}" width="${x1 - x0}" height="3" fill="#ffffff55"/>`}};
   /** Camisa: cobre a parte de cima do corpo (sem cobrir o "formato" de baixo), com gola em V. */
   function camisa(id, S, c, ID) {
@@ -174,6 +174,17 @@ window.CPTMascoteV2 = (() => {
     muda: x => { const [mx, my] = x.m; return f(`M${mx - 4},${my - 10} h24 l-3,16 h-18 Z`, '#c07a45') + linha(`M${mx + 8},${my - 10} Q${mx + 8},${my - 22} ${mx + 9},${my - 28}`, 2.6, '#3f8f45') + `<g transform="rotate(-25 ${mx + 2} ${my - 22})">${f(ell(mx + 2, my - 22, 7, 4), '#6cbf6a')}</g><g transform="rotate(25 ${mx + 15} ${my - 26})">${f(ell(mx + 15, my - 26, 7, 4), '#6cbf6a')}</g>`; },
     chave: x => { const [mx, my] = x.m; return `<g transform="rotate(28 ${mx + 6} ${my - 10})"><rect x="${mx + 3}" y="${my - 34}" width="7" height="34" rx="3.5" fill="#9aa4ab"/><path d="M${mx - 2},${my - 40} a9,9 0 1 0 17,0 l-4,0 v6 h-9 v-6 Z" fill="#9aa4ab"/></g>`; },
     trofeu: x => { const [mx, my] = x.m; return f(`M${mx - 4},${my - 30} h26 l-2,14 q-11,10 -22,0 Z`, '#f2c94c') + linha(`M${mx - 4},${my - 26} q-8,2 -4,9 M${mx + 22},${my - 26} q8,2 4,9`, 2.6, '#d9a520') + `<rect x="${mx + 6}" y="${my - 12}" width="6" height="7" fill="#d9a520"/><rect x="${mx}" y="${my - 6}" width="18" height="6" rx="2" fill="#a77a18"/><path d="M${mx + 2},${my - 26} l3,8" stroke="#fff6c8" stroke-width="2.4" stroke-linecap="round"/>`; }};
+  /** Campanhas de saúde do mês (o laço muda de cor sozinho). */
+  const CAMPANHAS = [['Janeiro Branco', '#f4f2ee', 'saúde mental'], ['Fevereiro Roxo', '#8e5bb5', 'lúpus, fibromialgia e Alzheimer'], ['Março Lilás', '#b98fd6', 'câncer do colo do útero'], ['Abril Azul', '#3f8fd6', 'autismo'],
+    ['Maio Amarelo', '#f2c230', 'segurança no trânsito'], ['Junho Vermelho', '#d6403a', 'doação de sangue'], ['Julho Amarelo', '#f2c230', 'hepatites virais'], ['Agosto Dourado', '#d4a017', 'aleitamento materno'],
+    ['Setembro Amarelo', '#f2c230', 'prevenção do suicídio'], ['Outubro Rosa', '#ef7fa6', 'câncer de mama'], ['Novembro Azul', '#3f8fd6', 'câncer de próstata'], ['Dezembro Vermelho', '#d6403a', 'prevenção ao HIV/aids']];
+  const campanha = () => CAMPANHAS[Number(new Intl.DateTimeFormat('en-US', {month: 'numeric', timeZone: 'America/Sao_Paulo'}).format(new Date())) - 1];
+  function lacoDoMes(S) {
+    // abaixo do nome da camisa, do lado esquerdo do peito; um pouco menor que antes
+    const [x0, y0, x1] = S.caixa, x = S.semCorpo ? 100 - (x1 - x0) * .3 : x0 + (x1 - x0) * .27, y = y0 + (S.semCorpo ? 22 : 44), [, cor] = campanha(), borda = mix(cor, '#000000', .25);
+    const fita = `M${x},${y + 3} C${x - 9},${y - 7} ${x - 4},${y - 15} ${x},${y - 9} C${x + 4},${y - 15} ${x + 9},${y - 7} ${x},${y + 3} L${x + 6},${y + 13} M${x},${y + 3} L${x - 6},${y + 13}`;
+    return `<g transform="translate(${x},${y}) scale(.82) translate(${-x},${-y})"><path d="${fita}" fill="none" stroke="${borda}" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/><path d="${fita}" fill="none" stroke="${cor}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  }
   function colete(S, ID, cor = EPI.colete, faixa = EPI.faixa) { // o colete da rodada aprovada, sob medida para cada corpo
     const [, y0c, , y1c] = S.caixa, y0 = S.semCorpo ? y0c : 120, y1 = S.semCorpo ? Math.min(y1c, y0 + 34) : 186;
     return `<g clip-path="url(#${ID}t)"><path d="M30,${y0} H170 V${y1} Q100,${y1 + 10} 30,${y1} Z" fill="${cor}"/>${S.semCorpo ? '' : `<path d="M100,160 L86,120 L114,120 Z" fill="${S.corPeito || S.c[0]}"/>`}<rect x="30" y="${S.semCorpo ? y0 + 14 : 166}" width="140" height="6" rx="3" fill="${faixa}"/></g>`;
@@ -217,6 +228,7 @@ window.CPTMascoteV2 = (() => {
     P.push(bochechas(e, R.x, R.y + (especie === 'sapo' ? 14 : 0), R.d + (especie === 'sapo' ? 6 : 0)));
     P.push(S.focinho(e, c));
     P.push(peca('rosto'), peca('pescoco'));
+    if (q.broche === 'laco-do-mes') P.push(lacoDoMes(S));
     // braços na frente do corpo, curvos e gordinhos; luvinha com polegar
     const mao = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1];
       if (pose === 'cima') return [sx + lado * 20, sy - S.mao * .9]; if (pose === 'queixo' && lado > 0) return [R.x + 18, R.y + (S.boca ? S.boca - R.y - 2 : 24)]; return [sx + lado * 4, sy + S.mao * .92]; };
@@ -230,14 +242,18 @@ window.CPTMascoteV2 = (() => {
         return penas + f(bracoCurvo(sx, sy, cx, cy, mx, my, 19 * g, 9 * g), c.p) + (luva ? patinha(lado, mx, my, 12) : ''); }
       return f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12, S.braco * .86), c.p) + (manga ? f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12 + 3, S.braco * .86 + 3, .34), manga) : '') + (lado > 0 ? ferramenta() : '') + patinha(lado, mx, my, S.braco * .86); };
     // ferramenta na mão direita, com a patinha por cima (segurando)
-    const ferramenta = () => { if (!q.mao) return ''; xp.m = mao(1); if (P2[q.mao]) return P2[q.mao](xp); const svg = V1 && V1.peca(q.mao); return svg ? `<g transform="translate(${xp.m[0]},${xp.m[1]}) scale(1.15) translate(-114,-124)">${svg}</g>` : ''; };
+    const ferramenta = () => { if (!q.mao) return ''; xp.m = mao(1); const [hx, hy] = xp.m, esc = Math.max(.78, Math.min(1, (S.braco || 13) / 16));
+      if (P2[q.mao]) return `<g transform="translate(${hx},${hy}) scale(${esc.toFixed(2)}) translate(${-hx},${-hy})">${P2[q.mao](xp)}</g>`; const svg = V1 && V1.peca(q.mao); return svg ? `<g transform="translate(${xp.m[0]},${xp.m[1]}) scale(1.15) translate(-114,-124)">${svg}</g>` : ''; };
     P.push(braco(-1), braco(1));
     if (S.asa && q.mao) P.push(ferramenta());
     // cabeça: capacete do kit (sob medida) ou peça do guarda-roupa
     const k = S.capacete;
     if (q.cabeca === 'capacete-branco' || q.cabeca === 'capacete-amarelo' || q.cabeca === 'capacete-dourado') {
       const cor = q.cabeca === 'capacete-branco' ? EPI.capacete : q.cabeca === 'capacete-amarelo' ? '#f6c84c' : '#f2c94c';
-      P.push(f(`M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z`, cor) + f(`M${k.x - k.r * 1.25},${k.y} h${k.r * 2.5} a3,3 0 0 1 0,6 h${-k.r * 2.5} a3,3 0 0 1 0,-6 Z`, cor) + `<rect x="${k.x - 3}" y="${k.y - k.r * .72}" width="6" height="${k.r * .7}" rx="3" fill="#00000016"/>` +
+      const borda = mix(cor, '#000000', .16), aba = mix(cor, '#000000', .07);
+      P.push(`<path d="M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z" fill="${cor}" stroke="${borda}" stroke-width="1.4"/><path d="M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z" fill="url(#${ID}g)"/>` +
+        `<path d="M${k.x - k.r * 1.25},${k.y} h${k.r * 2.5} a3,3 0 0 1 0,6 h${-k.r * 2.5} a3,3 0 0 1 0,-6 Z" fill="${aba}" stroke="${borda}" stroke-width="1.2"/><rect x="${k.x - 3}" y="${k.y - k.r * .72}" width="6" height="${k.r * .7}" rx="3" fill="${borda}" opacity=".45"/>` +
+        `<path d="M${k.x - k.r * .55},${k.y - k.r * .32} q${k.r * .3},-${k.r * .32} ${k.r * .62},-${k.r * .4}" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round"/>` +
         (q.cabeca === 'capacete-dourado' ? linha(`M${k.x - 6},${k.y - k.r * .45} l6,-8 l6,8`, 2, '#fff6c8') : ''));
     } else if (q.cabeca) P.push(peca('cabeca'));
     else if (S.semCabeca) P.push(S.semCabeca(c));
@@ -245,7 +261,7 @@ window.CPTMascoteV2 = (() => {
     const nome = rotulo ? String(rotulo).replace(/[<>"&]/g, '') : 'Mascote';
     return `<svg class="mascot-svg chibi" viewBox="0 0 200 240" width="${tam}" height="${Math.round(tam * 1.2)}" role="img" aria-label="${nome}"><g class="m-all">${P.join('')}</g></svg>`;
   }
-  return {desenhar, amostra: chave => (CORES[chave] || [])[0] || '', especies: Object.keys(ELENCO)};
+  return {desenhar, amostra: chave => (CORES[chave] || [])[0] || '', especies: Object.keys(ELENCO), campanha};
 })();
 
 /* O desenho antigo continua disponível para quem ainda não está no elenco novo (período de testes). */
@@ -256,7 +272,7 @@ window.CPTMascoteV2 = (() => {
   window.CPTMascote = {
     desenhar: (e, q, tam, rotulo, cor, expr) => v2() ? window.CPTMascoteV2.desenhar(e, q, tam, rotulo, cor, expr) : v1.desenhar(e, q, tam, rotulo, cor),
     amostra: k => v2() ? window.CPTMascoteV2.amostra(k) : v1.amostra(k),
-    temDesenho: id => v1.temDesenho(id) || ['luvas', 'bota-preta', 'camisa-veolia'].includes(id)
+    temDesenho: id => v1.temDesenho(id) || ['luvas', 'bota-preta', 'camisa-veolia', 'laco-do-mes'].includes(id)
   };
 })();
 </script>

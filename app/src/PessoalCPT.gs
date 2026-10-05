@@ -22,9 +22,9 @@ class PessoalCPT {
   static get classicos() { return {dinossauro: 'Dinossauro', abelha: 'Abelha'}; }
   static get precoClassico() { return 150; }
   /** Peças que só existem no elenco novo (o desenho antigo não as tem). */
-  static get pecasNovas() { return ['luvas', 'bota-preta', 'camisa-veolia']; }
+  static get pecasNovas() { return ['luvas', 'bota-preta', 'camisa-veolia', 'laco-do-mes']; }
   /** Kit EPI inicial: de todo mundo (não precisa ganhar) e já vestido em cada mascote novo. */
-  static get kit() { return {cabeca: 'capacete-branco', corpo: 'colete', luvas: 'luvas', pes: 'bota-preta'}; }
+  static get kit() { return {cabeca: 'capacete-branco', corpo: 'colete', luvas: 'luvas', pes: 'bota-preta', broche: 'laco-do-mes'}; }
   /** Elenco novo: para todos depois de liberarConfiguracaoCPT; antes, só para o proprietário. */
   static novo(perfil) { return !PerfisCPT.travada() || perfil.papeis.includes('administrador'); }
   static especiesPara(perfil) { return PessoalCPT.novo(perfil) ? PessoalCPT.especiesNovas : PessoalCPT.especiesAntigas; }
@@ -35,7 +35,7 @@ class PessoalCPT {
       amarelo: 'Amarelo', verde: 'Verde', azul: 'Azul', lilas: 'Lilás', rosa: 'Rosa'};
   }
   static cor(v) { return v === '' || v == null ? '' : ColecaoCPT.opcao(v, Object.keys(PessoalCPT.cores), 'cor do mascote'); }
-  static get slots() { return {cabeca: 'Cabeça', rosto: 'Rosto', pescoco: 'Pescoço', corpo: 'Roupa', costas: 'Costas', luvas: 'Luvas', mao: 'Na mão', pes: 'Pés'}; }
+  static get slots() { return {cabeca: 'Cabeça', rosto: 'Rosto', pescoco: 'Pescoço', corpo: 'Roupa', costas: 'Costas', broche: 'Broche', luvas: 'Luvas', mao: 'Na mão', pes: 'Pés'}; }
   /** [id, nome, parte, grupo, preço em pontos (0 = peça comum, ganha por semana ou caderno)] */
   static get catalogo() {
     return [
@@ -43,6 +43,7 @@ class PessoalCPT {
       ['colete', 'Colete refletivo', 'corpo', 'EPI', 0], ['oculos-protecao', 'Óculos de proteção', 'rosto', 'EPI', 0],
       ['abafador', 'Protetor auricular', 'cabeca', 'EPI', 0], ['botina', 'Botina de segurança', 'pes', 'EPI', 0],
       ['luvas', 'Luvas de proteção', 'luvas', 'EPI', 0], ['bota-preta', 'Bota preta', 'pes', 'EPI', 0],
+      ['laco-do-mes', 'Laço da campanha do mês', 'broche', 'Campanhas', 0],
       ['camisa-timao', 'Camisa alvinegra listrada (Timão)', 'corpo', 'Futebol', 0], ['camisa-verdao', 'Camisa verde (Verdão)', 'corpo', 'Futebol', 0],
       ['camisa-tricolor', 'Camisa tricolor (São Paulo)', 'corpo', 'Futebol', 0], ['camisa-peixe', 'Camisa branca (Peixe)', 'corpo', 'Futebol', 0],
       ['camisa-cpt', 'Camiseta da equipe CPT', 'corpo', 'Roupas', 0], ['camisa-veolia', 'Camiseta Veolia', 'corpo', 'Roupas', 0],
