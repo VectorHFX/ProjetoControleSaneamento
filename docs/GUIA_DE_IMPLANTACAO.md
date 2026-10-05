@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.14 e Campo 4.0 (4.6)
+# Guia de instalação: Aplicação CPT 2.15 e Campo 4.0 (4.6)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,27 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.15 — Entregas do mês (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.15.0`) e publique uma **Nova versão**.
+
+**A página "Fechamento do mês" agora se chama "Entregas do mês"** (no menu, no mesmo lugar; a busca ainda acha por "fechamento"). No topo, 4 cartões:
+
+| Cartão | O arquivo vem de |
+|---|---|
+| Relatório mensal | "Gerar base do relatório", na mesma página |
+| Anexos do relatório | "Gerar anexos do mês", na Mesa Socioambiental |
+| Programa Parceiros | A última publicação na máscara oficial |
+| Atendimentos | A pasta das fichas do mês e o **.zip** (botão "Montar .zip") |
+
+- Cada cartão tem **situação** (A fazer → Em preparo → Em revisão → Entregue), **responsável**, **prazo** (sugerido: dia 5 do mês seguinte) e **versão**. Se já existe arquivo e ninguém mexeu, o cartão aparece "Em preparo".
+- **Ao marcar Entregue**, uma cópia do arquivo fica guardada na pasta do mês, em **Entregues/<entrega> · vN**. Gerar de novo depois não muda o que foi entregue; entregar de novo vira a versão seguinte. Do Programa Parceiros fica só o link (a máscara é oficial e compartilhada).
+- O **.zip das fichas** junta os PDFs da pasta Fichas do mês. Acima de 45 MB o Google não monta o .zip; aí use o link da pasta.
+- **Durante os testes, só você altera.** Socioambiental, Comunicação, Gestão e Administrativo veem os cartões. Depois de `liberarConfiguracaoCPT`, eles mudam situação, responsável e prazo; **Entregue** fica com Gestão e Administrativo.
+- Os dados ficam na aba **Entregas do mês** da planilha de dados da aplicação.
+
+---
 
 ## Atualização 2.14.1 — nome de uso das obras, apelidos e bairros na aplicação (≈ 5 min)
 

@@ -19,7 +19,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await p.locator('.role-label').isVisible(),false,'"Minha visão" saiu da lateral');assert.equal(await p.locator('#viewSwitch').isVisible(),true,'troca de tela continua no "Ver como"');
   // Busca: Ctrl+K → página.
   await p.keyboard.press('Control+k');await p.locator('#searchDialog[open]').waitFor();await p.locator('#searchInput').fill('fecham');
-  await p.waitForFunction(()=>/Fechamento do mês/.test(document.querySelector('.search-item.is-sel')?.textContent||''));await p.keyboard.press('Enter');
+  await p.waitForFunction(()=>/Entregas do mês/.test(document.querySelector('.search-item.is-sel')?.textContent||''));await p.keyboard.press('Enter');
   await p.waitForFunction(()=>document.querySelector('.nav-item.active')?.dataset.route==='fechamento');assert.equal(await fechado('mes'),false,'grupo abre ao entrar numa página dele');
   assert.equal(await p.locator('#searchDialog[open]').count(),0);
   // Busca: protocolo → abre a ficha.

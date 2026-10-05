@@ -36,7 +36,7 @@
     comunicacao:{titulo:'Comunicação',icone:'i-megaphone',grupo:'dia',acesso:['administrador','administrativo','gestao','comunicacao'],visoes:['comunicacao',...GESTAO],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar(),mes:()=>window.CPTComunicacao.render()},
     lembretes:{titulo:'Lembretes',icone:'i-bell',grupo:'dia',acesso:['administrador',...MESA],visoes:['socioambiental'],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar()},
     socioambiental:{titulo:'Socioambiental',icone:'i-file',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTSocioambiental.render(),atualizar:()=>window.CPTSocioambiental.render(),mes:()=>window.CPTSocioambiental.render()},
-    fechamento:{titulo:'Fechamento do mês',icone:'i-check',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTFechamento.render(),atualizar:()=>window.CPTFechamento.render(),mes:()=>window.CPTFechamento.render()},
+    fechamento:{titulo:'Entregas do mês',busca:'fechamento relatorio anexos fichas zip',icone:'i-check',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTFechamento.render(),atualizar:()=>window.CPTFechamento.render(),mes:()=>window.CPTFechamento.render()},
     parceiros:{titulo:'Programa Parceiros',icone:'i-partner',grupo:'mes',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderParceiros(),atualizar:()=>{if(window.CPTGestao.sair())window.CPTGestao.renderParceiros();},mes:()=>window.CPTGestao.renderParceiros(),podeSair:()=>window.CPTGestao.sair()},
     registros:{titulo:'Registros',icone:'i-records',grupo:'consulta',abrir:()=>renderRecords(),mes:()=>{$('view').innerHTML=skeleton();}},
     obras:{titulo:'Obras',icone:'i-pin',grupo:'consulta',abrir:()=>window.CPTObras.render(),atualizar:()=>window.CPTObras.render()},
@@ -95,7 +95,7 @@
   function fecharBusca(){const d=$('searchDialog');if(d.open)d.close();}
   /** Monta a lista de resultados para o texto digitado (sem texto: atalhos). Atendimentos vêm do servidor, com espera curta. */
   function resultadosBusca(q){const n=normBusca(q).trim(),out=[],tem=t=>!n||normBusca(t).includes(n);
-    [...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden).forEach(b=>{const nome=b.querySelector('span').textContent;if(tem(nome))out.push({tipo:'Página',titulo:nome,icone:(b.querySelector('use')||{getAttribute:()=>'#i-arrow'}).getAttribute('href'),ir:()=>navigate(b.dataset.route)});});
+    [...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden).forEach(b=>{const nome=b.querySelector('span').textContent;if(tem(nome+' '+((ROTAS[b.dataset.route]||{}).busca||'')))out.push({tipo:'Página',titulo:nome,icone:(b.querySelector('use')||{getAttribute:()=>'#i-arrow'}).getAttribute('href'),ir:()=>navigate(b.dataset.route)});});
     ACOES.filter(a=>podeVer(a.rota)&&(tem(a.titulo)||(n&&normBusca(a.chave).includes(n)))).forEach(a=>out.push({tipo:'Ação',titulo:a.titulo,icone:a.aba?'#i-chart':'#i-plus',ir:()=>{if(a.aba)window.CPTGestao.irPara(a.aba);navigate(a.rota);if(a.alvo)clicarQuandoAparecer(a.alvo);}}));
     if(n.length>=2){
       BUSCA.casos.forEach(c=>out.push({tipo:'Atendimento',titulo:c.protocolo+' · '+(c.nome||'Sem nome'),detalhe:[c.assunto,c.status].filter(Boolean).join(' · '),icone:'#i-case',ir:()=>{navigate('atendimentos');window.CPTAtendimentos.abrir(c.protocolo);}}));
