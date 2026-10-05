@@ -22,13 +22,16 @@ window.CPTMiniaturas = (() => {
     if (!id || !chamar || semJeito.has(id) || img.dataset.servidor) { if (falhou) falhou(); return false; }
     img.dataset.servidor = '1';
     if (prontas.has(id)) { img.src = prontas.get(id); return true; }
-    if (!fila.has(id)) fila.set(id, []); fila.get(id).push({img, falhou});
+    // 2.26.5: de onde a foto vem decide quem confere a permissão: Álbum (padrão) ou Galeria da Comunicação.
+    const origem = img.dataset.miniOrigem === 'galeria' ? 'galeria' : 'album', chave = origem + '|' + id;
+    if (!fila.has(chave)) fila.set(chave, []); fila.get(chave).push({img, falhou});
     clearTimeout(timer); timer = setTimeout(enviar, 120); return true;
   }
   async function enviar() {
-    const ids = [...fila.keys()].slice(0, 12); if (!ids.length) return;
-    const espera = ids.map(id => [id, fila.get(id)]); ids.forEach(id => fila.delete(id));
-    let r = {}; try { r = (await chamar('miniaturasAlbumCPT', {ids, mes: mesAtual()})).miniaturas || {}; } catch (_) {}
+    const primeira = [...fila.keys()][0]; if (!primeira) return;
+    const origem = primeira.split('|')[0], chaves = [...fila.keys()].filter(k => k.startsWith(origem + '|')).slice(0, 12);
+    const ids = chaves.map(k => k.slice(origem.length + 1)), espera = chaves.map((k, i) => [ids[i], fila.get(k)]); chaves.forEach(k => fila.delete(k));
+    let r = {}; try { r = (await chamar(origem === 'galeria' ? 'miniaturasGaleriaCPT' : 'miniaturasAlbumCPT', {ids, mes: mesAtual()})).miniaturas || {}; } catch (_) {}
     espera.forEach(([id, lista]) => {
       const u = r[id]; if (u) prontas.set(id, u); else semJeito.add(id);
       lista.forEach(({img, falhou}) => { if (u) { img.src = u; const fig = img.closest('.album-foto'); if (fig) fig.classList.remove('sem-imagem'); } else if (falhou) falhou(); });
@@ -36,7 +39,9 @@ window.CPTMiniaturas = (() => {
     if (fila.size) timer = setTimeout(enviar, 0);
   }
   function ligar(call, mes) { chamar = call; mesAtual = mes; }
-  return {src, tentar, ligar};
+  /** Miniatura que veio pela aplicação (a pessoa não abre esse arquivo no Drive), ou ''. */
+  const daAplicacao = id => prontas.get(id) || '';
+  return {src, tentar, ligar, daAplicacao};
 })();
 
 window.CPTAlbum = (() => {

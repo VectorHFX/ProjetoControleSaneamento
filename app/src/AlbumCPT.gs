@@ -61,27 +61,15 @@ class AlbumCPT {
    * leitura na pasta). Só fotos que o próprio Álbum mostra (do período ou favoritas); no máximo 12 por pedido; cache de 6 h.
    */
   miniaturas(p) {
-    p = p || {}; const ids = Array.isArray(p.ids) ? [...new Set(p.ids.map(String))].filter(x => /^[\w-]{10,80}$/.test(x)).slice(0, AlbumCPT.miniaturasPorPedido) : [];
+    p = p || {}; const ids = GaleriaCPT.idsPedidos(p);
     if (!ids.length) return {miniaturas: {}};
     const mes = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(p.mes || '')) ? String(p.mes) : this.hoje.slice(0, 7);
     const permitidas = new Set(this.ativos().map(x => x.fileId));
     if (ids.some(id => !permitidas.has(id))) this.fotosRecentes(mes).forEach(f => permitidas.add(f.fileId));
     const out = {};
-    ids.filter(id => permitidas.has(id)).forEach(id => {
-      const chave = 'album:mini:' + id; let m = CacheCPT.ler(chave);
-      if (!m) {
-        try {
-          const f = DriveApp.getFileById(id); if (!/^image\//.test(f.getMimeType())) return;
-          const b = f.getThumbnail(); if (!b) return;
-          m = {u: 'data:' + (b.getContentType() || 'image/png') + ';base64,' + Utilities.base64Encode(b.getBytes())};
-          CacheCPT.gravar(chave, m, 21600);
-        } catch (_) { return; }
-      }
-      out[id] = m.u;
-    });
+    ids.filter(id => permitidas.has(id)).forEach(id => { const u = GaleriaCPT.miniatura(id); if (u) out[id] = u; });
     return {miniaturas: out};
   }
-  static get miniaturasPorPedido() { return 12; }
   /** Marca (ativo = true) ou desmarca uma favorita. */
   favoritar(p) {
     p = p || {}; PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'O álbum');

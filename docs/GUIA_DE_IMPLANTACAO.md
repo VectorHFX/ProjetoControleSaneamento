@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.5 — Galeria da Comunicação mostra as fotos sem depender da pasta (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.5`) e publique uma **Nova versão**. Nenhum arquivo novo, nenhuma autorização nova.
+2. **Comunicação → Galeria**: a mesma solução do Álbum (2.26.3). O navegador tenta o Drive com a conta de quem vê; se ela não tiver leitura na pasta das fotos (era o caso da comunicadora), a aplicação entrega a miniatura com a conta proprietária. Ao ampliar uma foto assim, aparece a miniatura no lugar do visualizador do Drive (que também pediria acesso).
+3. Segurança: só arquivos que estão na galeria do mês, para quem já pode ver a galeria (Comunicação, Socioambiental e Gestão).
+4. **Ainda dependem de leitura na pasta**: baixar o pacote .zip é feito pela aplicação (funciona), mas **"Abrir no Drive"** e os **vídeos** abrem no próprio Drive — para isso a comunicadora precisa de acesso de leitura às pastas listadas em **Conectores e pastas**.
+
 ## Atualização 2.26.4 — tela de notebook (ThinkPad) mais folgada (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.4`) e publique uma **Nova versão**. Só estilos; nada muda nos dados.

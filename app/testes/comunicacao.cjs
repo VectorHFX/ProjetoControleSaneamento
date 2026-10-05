@@ -21,7 +21,7 @@ const eventos=new Sheet('Eventos',[['ID','Versão','Operação ID','Alterado em'
   ['AG-2',1,'OP-y','', '',JSON.stringify({id:'AG-2',versao:1,titulo:'Reunião interna do atendimento',data:mais(1),inicio:'',fim:'',frentes:['atendimento'],responsaveis:[],status:'confirmada',natureza:'interno',criadoPor:'atd@example.com'})]]);
 const books=new Map([['base',new Book('base',[registros])],['agenda',new Book('agenda',[eventos])]]);
 const arquivos=new Map(),cacheMap=new Map();let criados=0;
-const arquivo=(id,mime)=>({getId:()=>id,getMimeType:()=>mime,getSize:()=>1000,getName:()=>id+'.jpg',getBlob:()=>({setName(n){this.n=n;return this},getName(){return this.n}})});
+const arquivo=(id,mime)=>({getId:()=>id,getMimeType:()=>mime,getSize:()=>1000,getName:()=>id+'.jpg',getBlob:()=>({setName(n){this.n=n;return this},getName(){return this.n}}),getThumbnail:()=>({getContentType:()=>'image/jpeg',getBytes:()=>[1,2,3]})});
 ['FOTOSET0000000000000000001','FOTOSET0000000000000000002','FOTOAGOSTO000000000000001'].forEach(id=>arquivos.set(id,arquivo(id,'image/jpeg')));arquivos.set('VIDEOSET000000000000000001',arquivo('VIDEOSET000000000000000001','video/mp4'));
 const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   Session:{getActiveUser:()=>({getEmail:()=>email})},
@@ -102,7 +102,12 @@ registros.rows.push(regBruto(7,'2026-09-08','Plantão 4.0',{campos:[{titulo:'Fot
 arquivos.set('DETALHESJSON00000000000001',{getId:()=>'DETALHESJSON00000000000001',getMimeType:()=>'text/plain',getBlob:()=>({getDataAsString:()=>JSON.stringify({campos:[{titulo:'Fotos',tipo:'FILE_UPLOAD',valor:['FOTO40ARQUIVO0000000000001']}]})})});
 email='com@example.com';let g=run("listarGaleriaCPT({mes:'2026-09'})");
 assert.deepEqual(g.itens.map(i=>i.fileId).sort(),['FOTO40ANEXO000000000000001','FOTO40ARQUIVO0000000000001','FOTO40CODIGOPURO0000000001','FOTOSET0000000000000000001','FOTOSET0000000000000000002','VIDEOSET000000000000000001'],'fotos do 4.0 (código puro, anexos e detalhes em arquivo) entram na galeria');
-assert.equal(g.itens.find(i=>i.fileId==='VIDEOSET000000000000000001').video,true);assert.equal(g.itens[0].legenda.split(' - ')[0].length,10);
+assert.equal(g.itens.find(i=>i.fileId==='VIDEOSET000000000000000001').video,true);
+// 2.26.5: miniatura pela conta da aplicação para quem não tem leitura na pasta — só arquivos da galeria do mês, até 12.
+['FOTOSET0000000000000000001','FOTOSET0000000000000000002','VIDEOSET000000000000000001','ARQUIVOFORA00000000000001'].forEach(id=>{if(!arquivos.has(id))arquivos.set(id,arquivo(id,id.startsWith('VIDEO')?'video/mp4':'image/jpeg'));});
+ctx.m={mes:'2026-09',ids:['FOTOSET0000000000000000001','VIDEOSET000000000000000001','ARQUIVOFORA00000000000001','x']};const gm=run('miniaturasGaleriaCPT(m)').miniaturas;
+assert.deepEqual(Object.keys(gm).sort(),['FOTOSET0000000000000000001','VIDEOSET000000000000000001'],'só arquivos da galeria do mês');assert.equal(gm.FOTOSET0000000000000000001,'data:image/jpeg;base64,AQID');
+email='atd@example.com';assert.throws(()=>run('miniaturasGaleriaCPT(m)'),/Comunicação, do Socioambiental/);email='com@example.com';assert.equal(g.itens[0].legenda.split(' - ')[0].length,10);
 ctx.f={data:'2026-09-07',atividade:'Feira de saúde',local:'Praça',mime:'image/jpeg',base64:Buffer.from('foto').toString('base64'),operacaoId:op()};
 const e1=run('enviarFotoGaleriaCPT(f)');assert.equal(e1.item.legenda,'07/09/2026 - Feira de saúde - Praça');run('enviarFotoGaleriaCPT(f)');assert.equal(criados,1,'repetir o envio não cria outro arquivo');
 assert.throws(()=>run("enviarFotoGaleriaCPT({data:'2026-09-07',atividade:'x',mime:'video/mp4',base64:'AA==',operacaoId:'"+op()+"'})"),/JPG, PNG ou WEBP/);

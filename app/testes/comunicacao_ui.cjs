@@ -5,6 +5,8 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
 (async()=>{
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
   const p=await b.newPage({viewport:{width:1366,height:900},acceptDownloads:true});await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+  // A prévia não abre o Drive: a miniatura recusada (…01) vai para a aplicação; as demais vêm como imagem gerada.
+  await p.route(/drive\.google\.com\/thumbnail/,r=>{const id=new URL(r.request().url()).searchParams.get('id');if(/(01|08)$/.test(id))return r.fulfill({status:403,body:''});r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="360" height="270"><rect width="360" height="270" fill="#7cb3e2"/></svg>'});});
   const toast=async re=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source);
   await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+'?perfil=comunicacao&latencia=30');
   // Entra direto no "Hoje", com aviso de recado na lateral.
@@ -46,6 +48,10 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   await p.locator('[data-mat-filtro=mes]').click();assert.equal(await p.locator('.material').count(),1);
   // Galeria: escolher, baixar, enviar foto.
   await p.locator('[data-com-aba=galeria]').click();await p.locator('.photo').first().waitFor();
+  // 2.26.5: Drive recusa (…01) e a aplicação entrega a miniatura; …08 nem a aplicação abre: aviso no lugar.
+  await p.waitForFunction(()=>[...document.querySelectorAll('.photo img[data-mini$="01"]')].some(i=>i.src.startsWith('data:image')&&i.naturalWidth>0));
+  await p.waitForFunction(()=>document.querySelector('.photo .photo-missing'));
+  await p.locator('.photo img[data-mini$="01"]').first().locator('xpath=..').click();await p.locator('#detailDialog[open] img.media-mini').waitFor();assert.equal(await p.locator('#detailDialog[open] iframe').count(),0,'sem visualizador do Drive para foto sem acesso');await p.locator('#closeDialog').click();
   assert.equal(await p.locator('.photo').count(),24);await p.locator('[data-gal-mais]').click();assert.equal(await p.locator('.photo').count(),30);
   await p.locator('[data-gal-marcar]').nth(0).check();await p.locator('[data-gal-marcar]').nth(1).check();assert.equal(await p.locator('#galSel').textContent(),'2');
   const [dl]=await Promise.all([p.waitForEvent('download'),p.locator('[data-gal-baixar]').click()]);assert.match(dl.suggestedFilename(),/^Fotos 2026-09\.zip$/);

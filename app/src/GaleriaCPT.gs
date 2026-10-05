@@ -57,6 +57,24 @@ class GaleriaCPT {
     if (c.pastaExtrasId) { try { return DriveApp.getFolderById(c.pastaExtrasId); } catch (_) {} }
     const f = DriveApp.createFolder('CPT • Comunicação – Fotos extras'); c.pastaExtrasId = f.getId(); props.setProperty(AplicacaoCPT.chave, JSON.stringify(c)); return f;
   }
+  /** 2.26.5: miniatura (data URL) pela conta da aplicação, com cache de 6 h. '' se o arquivo não é foto/vídeo ou não abre. */
+  static miniatura(id) {
+    const chave = 'album:mini:' + id, salvo = CacheCPT.ler(chave); if (salvo) return salvo.u;
+    try {
+      const f = DriveApp.getFileById(id); if (!/^(image|video)\//.test(f.getMimeType())) return '';
+      const b = f.getThumbnail(); if (!b) return '';
+      const u = 'data:' + (b.getContentType() || 'image/png') + ';base64,' + Utilities.base64Encode(b.getBytes());
+      CacheCPT.gravar(chave, {u}, 21600); return u;
+    } catch (_) { return ''; }
+  }
+  static idsPedidos(p) { return p && Array.isArray(p.ids) ? [...new Set(p.ids.map(String))].filter(x => /^[\w-]{10,80}$/.test(x)).slice(0, 12) : []; }
+  /** Miniaturas para quem não tem leitura na pasta do Drive: só arquivos que estão na galeria do mês; até 12 por pedido. */
+  miniaturas(p) {
+    const ids = GaleriaCPT.idsPedidos(p); if (!ids.length) return {miniaturas: {}};
+    const permitidas = new Set(this.listar(String(p.mes || '')).itens.map(x => x.fileId)), out = {};
+    ids.filter(id => permitidas.has(id)).forEach(id => { const u = GaleriaCPT.miniatura(id); if (u) out[id] = u; });
+    return {miniaturas: out};
+  }
   pastaUrl() { const c = AplicacaoCPT.config(); return c.pastaExtrasId ? 'https://drive.google.com/drive/folders/' + c.pastaExtrasId : ''; }
   /** Uma foto por chamada. Se a conexão cair depois de criar o arquivo, repetir a mesma operação não cria outro. */
   enviar(p) {
@@ -104,4 +122,5 @@ function enviarFotoGaleriaCPT(p) {
   const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) throw new Error('Outro envio está terminando. Tente esta foto de novo.');
   try { return DesempenhoCPT.medir('galeria.enviar', () => new GaleriaCPT(AplicacaoCPT.contexto()).enviar(p)); } finally { lock.releaseLock(); }
 }
+function miniaturasGaleriaCPT(p) { return DesempenhoCPT.medir('galeria.miniaturas', () => new GaleriaCPT(AplicacaoCPT.contexto()).miniaturas(p || {})); }
 function baixarPacoteGaleriaCPT(p) { return DesempenhoCPT.medir('galeria.pacote', () => new GaleriaCPT(AplicacaoCPT.contexto()).pacote(p)); }
