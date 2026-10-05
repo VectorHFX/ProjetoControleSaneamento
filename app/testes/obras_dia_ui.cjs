@@ -43,9 +43,9 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.selectOption('#viewSwitch','gestao');await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=frentes]').click();
   await p.locator('.cmp-dia').first().waitFor();assert.ok(await p.locator('.cmp-dia').count()>=1);
   await p.locator('.cmp-dia').first().click();assert.match(await p.locator('.cmp-detalhe h3').textContent(),/não informado|ativas|nenhuma/);
-  // Comunicação: só o catálogo, sem as abas da gerência.
+  // Comunicação: catálogo e bairros, sem as abas da gerência.
   await p.goto(url('?perfil=comunicacao'));await p.locator('#roleView option[value=comunicacao]').waitFor({state:'attached'});
-  await p.locator('.nav-item[data-route=obras]').click();await p.locator('.obra-card').first().waitFor();assert.equal(await p.locator('[data-obra-aba]').count(),0);
+  await p.locator('.nav-item[data-route=obras]').click();await p.locator('.obra-card').first().waitFor();assert.deepEqual(await p.$$eval('[data-obra-aba]',l=>l.map(x=>x.dataset.obraAba)),['catalogo','bairros'],'só catálogo e bairros');
   assert.deepEqual(errors,[]);await b.close();
   console.log('PASS: missões da gerência (obras de hoje com sugestão e "nenhuma obra"; vincular "outra obra") somem quando cumpridas; painel compara obras ativas × ações por dia; Comunicação vê só o catálogo.');
 })().catch(e=>{console.error(e);process.exit(1);});

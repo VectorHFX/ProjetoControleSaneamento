@@ -128,6 +128,7 @@ window.CPTEspaco = (() => {
   let ui = null, ticket = 0, d = null, dia = null, notaTimer = null, fila = Promise.resolve(), guardaAba = 'cabeca';
   const $ = id => document.getElementById(id);
   const store = {get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} }, del: k => { try { localStorage.removeItem(k); } catch (_) {} }};
+  let parte = store.get('cpt.espaco.parte') || 'dia'; // 2.27.1: aba do Meu espaço (Meu dia · Quiz · Joguinhos)
   const op = () => 'OP-' + crypto.randomUUID();
   const M = () => d.perfil.mascotes[d.perfil.ativo];
   const desenho = (m, tam, expr) => window.CPTMascote.desenhar(m.especie, m.equipado, tam, m.nome, m.cor, expr);
@@ -198,6 +199,11 @@ window.CPTEspaco = (() => {
     const v = ui.visao(), t = TRABALHO[v] || TRABALHO.atendimento, tr = d.trabalho || {}, hora = Number(new Date().toLocaleString('en-US', {hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo'}));
     const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
     const chip = (icone, texto, extra) => `<span class="home-chip" ${extra || ''}>${icone}<span>${texto}</span></span>`;
+    // 2.27.1: menos rolagem — o dia (agenda, checklist, caderno) numa aba; quiz e joguinhos/placar em outras.
+    const saberHtml = d.saber && window.CPTSaber ? window.CPTSaber.painel(d.saber) : '', jogosHtml = (d.jogos && window.CPTJogos ? window.CPTJogos.painel(d.jogos) : '') + (d.placar && window.CPTPlacar ? window.CPTPlacar.painel(d.placar) : '');
+    const extras = [['saber', 'Quiz e saber', saberHtml], ['jogos', d.jogos ? 'Jogos e placar' : 'Placar', jogosHtml]].filter(x => x[2]);
+    const quizAberto = !!(d.saber && d.saber.quiz && d.saber.quiz.dia && !d.saber.quiz.dia.resposta);
+    if (!extras.some(x => x[0] === parte)) parte = 'dia';
     const v3 = !!(window.CPTVisual && window.CPTVisual.ativo()); // 2.24: visual novo — o mascote na recepção (parede ripada, plantas, luminárias)
     ui.view.innerHTML = `<section class="space-hero mascot-stage${v3 ? ' v3-cena-host com-quadro' : ''}">${v3 ? window.CPTVisual.cena() : CENA}
         <div class="hero-pet">${v3 ? quadro() : ''}<div class="mascot-art">${desenho(m, tamanhoHeroi(), humor())}</div>
@@ -210,7 +216,8 @@ window.CPTEspaco = (() => {
           ${d.pendentes.length ? `<button class="gift" data-esp-presente>${ic('gift', '🎁')} <span>${d.pendentes.length === 1 ? ui.esc(d.pendentes[0].titulo) : d.pendentes.length + ' presentes'} esperando por você</span></button>` : ''}
           <div class="pet-tools"><button class="pill-button" data-esp-guarda>${ic('shirt', '👕')} Guarda-roupa</button><button class="pill-button" data-esp-cor>${ic('palette', '🎨')} Cor</button>${d.perfil.mascotes.length > 1 ? `<button class="pill-button" data-esp-trocar>${ic('swap', '🔁')} Trocar mascote</button>` : ''}
             <span class="pet-meter"><span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${cad.porPeca}" aria-valuenow="${cad.porPeca - faltam}" aria-label="Caderno até a próxima peça"><span style="width:${(cad.porPeca - faltam) / cad.porPeca * 100}%"></span></span><small>${faltam} ${faltam === 1 ? 'dia' : 'dias'} de caderno para a próxima peça</small></span></div></div></section>
-      <div class="home-cards">
+      ${abasEspaco(extras, quizAberto)}
+      <div class="home-cards" id="espParte-dia" ${extras.length && parte !== 'dia' ? 'hidden' : ''}>
         <section class="panel home-agenda"><div class="panel-head"><div><span class="card-kicker">${ic('calendar', '📅')} Agenda</span><h2>Hoje na agenda</h2></div>${ui.podeVer('cronograma') ? '<button class="button ghost" data-route="cronograma">Abrir cronograma ' + ui.icon('arrow') + '</button>' : ''}</div><div id="espAgenda" aria-live="polite"><div class="skel-list" aria-hidden="true"><div class="skeleton"></div></div></div></section>
         <section class="panel home-check"><div class="day-nav"><button class="icon-button" data-esp-dia="-1" aria-label="Dia anterior">‹</button><div><span class="eyebrow">${dia === d.hoje ? 'HOJE' : dia > d.hoje ? 'PLANEJAMENTO' : 'DIA ANTERIOR'}</span><h2>${ui.esc(dataLonga(dia))}</h2></div><button class="icon-button" data-esp-dia="1" aria-label="Próximo dia">›</button>${dia !== d.hoje ? '<button class="button ghost" data-esp-dia="0">Voltar para hoje</button>' : ''}</div>
           ${dia === d.hoje ? '<div id="espMissoes"></div>' : ''}<h3 class="peek-title">${ic('check', '✅')} Checklist</h3><div id="espLista"></div>
@@ -222,9 +229,20 @@ window.CPTEspaco = (() => {
           ${dia > d.hoje ? '<p class="empty-line">O caderno é para hoje e dias anteriores. Use o checklist para planejar este dia.</p>' : `<textarea id="espNota" class="notebook" rows="${v3 ? 8 : 7}" maxlength="10000" placeholder="Como foi o dia? O que aprendeu, o que ficou para amanhã, uma ideia…">${ui.esc(d.nota.texto)}</textarea>`}
           ${v3 ? `<p class="caderno-rodape small muted">Cada dia fica guardado na sua página: ${ui.num(cad.dias)} ${cad.dias === 1 ? 'dia escrito' : 'dias escritos'}. Para reler, abra "Dias anteriores" ou volte o dia no checklist.</p>` : ''}
           ${cad.recentes.length ? `<details class="notebook-past"><summary>Dias anteriores</summary>${cad.recentes.map(r => `<button class="mini-row" data-esp-ir="${r.data}"><strong>${ui.date(r.data)}</strong><small>${ui.esc(r.trecho)}</small></button>`).join('')}</details>` : ''}</div></section>
-        ${d.saber && window.CPTSaber ? window.CPTSaber.painel(d.saber) : ''}${d.jogos && window.CPTJogos ? window.CPTJogos.painel(d.jogos) : ''}${d.placar && window.CPTPlacar ? window.CPTPlacar.painel(d.placar) : ''}
-      </div>`;
+      </div>
+      ${extras.map(([k, , html]) => `<div class="home-cards" id="espParte-${k}" ${parte === k ? '' : 'hidden'}>${html}</div>`).join('')}`;
     desenharLista(); recuperarNota(); desenharAgendaHoje(); carregarMissoes(); abrirCaderno();
+  }
+  /** Abas do Meu espaço (só quando há quiz, joguinhos ou placar). A escolha fica guardada neste navegador. */
+  function abasEspaco(extras, quizAberto) {
+    if (!extras.length) return '';
+    const partes = [['dia', 'Meu dia']].concat(extras);
+    return `<div class="segmented esp-tabs" role="tablist" aria-label="Partes do Meu espaço">${partes.map(([k, t]) => `<button type="button" role="tab" id="espTab-${k}" aria-controls="espParte-${k}" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-esp-parte="${k}">${ui.esc(t)}${k === 'saber' && quizAberto ? '<i class="tab-dot" title="Pergunta do dia esperando"></i>' : ''}</button>`).join('')}</div>`;
+  }
+  function trocarParte(k) {
+    parte = k; store.set('cpt.espaco.parte', k);
+    document.querySelectorAll('[data-esp-parte]').forEach(b => { const on = b.dataset.espParte === k; b.classList.toggle('chosen', on); b.setAttribute('aria-selected', on); });
+    document.querySelectorAll('[id^="espParte-"]').forEach(p => { p.hidden = p.id !== 'espParte-' + k; });
   }
   /** Capa que abre na primeira vez; trocar de dia vira a página. Sem animação com "Reduzir movimentos". */
   function abrirCaderno() {
@@ -381,10 +399,12 @@ window.CPTEspaco = (() => {
     // Joguinhos (Jogos.html): mesma atualização de pontos; o quebra-cabeça sem foto usa o mascote da pessoa.
     if (window.CPTJogos) { window.CPTJogos.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.venceu && r.pontos.saldo > 0); if (r.venceu) comemorar(); });
       window.CPTJogos.mascote(() => d && d.perfil ? window.CPTMascote.desenhar(M().especie, M().equipado, 300, M().nome, M().cor, 'feliz').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" ') : ''); }
-    if (window.CPTSaber) window.CPTSaber.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.acertou); if (r.acertou) comemorar(); else atualizarHumor(); });
+    if (window.CPTSaber) window.CPTSaber.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.acertou); if (r.acertou) comemorar(); else atualizarHumor();
+      setTimeout(() => { const dot = document.querySelector('#espTab-saber .tab-dot'); if (dot && document.querySelector('#quizDia .quiz-resultado')) dot.remove(); }); });
     document.addEventListener('click', async e => {
       const t = e.target;
       const esp = t.closest('[data-esp-especie]'); if (esp) { boasVindas(esp.dataset.espEspecie); return; }
+      const pa = t.closest('[data-esp-parte]'); if (pa) { trocarParte(pa.dataset.espParte); return; }
       const dd = t.closest('[data-esp-dia]'); if (dd) { const n = Number(dd.dataset.espDia); irPara(n ? somaDias(dia, n) : d.hoje); return; }
       const ir = t.closest('[data-esp-ir]'); if (ir) { fechar(); irPara(ir.dataset.espIr); return; }
       const md = t.closest('[data-missao-dica]'); if (md) { abrirDica(md.dataset.missaoDica); return; }

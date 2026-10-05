@@ -1,9 +1,12 @@
 <script>
 /* Obras 2.14.0 — consulta para todos; cadastro, revisão diária e bairros para Administrativo e Gestão.
-   Nome de uso em destaque (o oficial fica abaixo); apelidos entram na busca. */
+   Nome de uso em destaque (o oficial fica abaixo); apelidos entram na busca.
+   2.27.1: menos rolagem — Bairros virou aba própria (com busca), o catálogo e o "Para vincular" mostram aos poucos. */
 window.CPTObras = (() => {
   'use strict';
-  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'}, bairrosAberto = false, aba = 'catalogo', hojeDados = null, vinculos = null;
+  let ui = null, dados = null, ticket = 0, filtro = {busca: '', situacao: 'ativas'}, aba = 'catalogo', hojeDados = null, vinculos = null, buscaBairro = '';
+  const POR_VEZ = 12, POR_VEZ_VINC = 8;
+  let mostrar = POR_VEZ, mostrarVinc = POR_VEZ_VINC;
   const op = () => 'OP-' + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
@@ -30,21 +33,22 @@ window.CPTObras = (() => {
   }
   async function render() {
     const mine = ++ticket;
-    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') + '<div class="loading-label"><span class="spinner"></span>Carregando obras…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
+    ui.view.innerHTML = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que sai a lista do formulário de campo.') + '<div class="loading-label"><span class="spinner"></span>Carregando obras…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { dados = await ui.call('listarObrasCPT'); if (mine !== ticket || ui.state.route !== 'obras') return; draw(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro('Obras e frentes de serviço', '') + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
-  /** Gerência: Catálogo · Obras de hoje · Para vincular. Demais perfis: só o catálogo. */
+  /** Gerência: Catálogo · Obras de hoje · Para vincular · Bairros. Demais perfis: Catálogo · Bairros. */
   function abas() {
-    if (!dados.gerencia) return '';
     const n = vinculos ? vinculos.totalPendentes : null;
-    return `<div class="segmented obra-tabs" role="tablist" aria-label="Partes de Obras">${[['catalogo', 'Catálogo'], ['hoje', 'Obras de hoje'], ['vincular', 'Para vincular' + (n ? ' (' + n + ')' : '')]].map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-obra-aba="${k}">${t}</button>`).join('')}</div>`;
+    const partes = dados.gerencia ? [['catalogo', 'Catálogo'], ['hoje', 'Obras de hoje'], ['vincular', 'Para vincular' + (n ? ' (' + n + ')' : '')], ['bairros', 'Bairros']] : [['catalogo', 'Catálogo'], ['bairros', 'Bairros']];
+    return `<div class="segmented obra-tabs" role="tablist" aria-label="Partes de Obras">${partes.map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-obra-aba="${k}">${t}</button>`).join('')}</div>`;
   }
   function draw() {
-    if (!dados.gerencia) aba = 'catalogo';
-    const topo = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que saem a lista do formulário e o item 1 do relatório.') + statusFormulario(dados.formulario) + abas();
+    if (!dados.gerencia && aba !== 'bairros') aba = 'catalogo';
+    const topo = ui.intro('Obras e frentes de serviço', 'Situação, endereço e bairros de cada obra. É daqui que sai a lista do formulário de campo.') + statusFormulario(dados.formulario) + abas();
     if (aba === 'hoje') { ui.view.innerHTML = topo + '<div id="obrasHoje"></div>'; carregarHoje(); return; }
     if (aba === 'vincular') { ui.view.innerHTML = topo + '<div id="obrasVincular"></div>'; carregarVinculos(); return; }
+    if (aba === 'bairros') { desenharBairros(topo); return; }
     const lista = visiveis(), ativas = dados.obras.filter(o => ['Em andamento', 'Paralisada'].includes(o.situacao));
     const atrasadas = ativas.filter(o => (dias(o.atualizadoEm) ?? 99) > 7).length;
     ui.view.innerHTML = topo +
@@ -54,12 +58,11 @@ window.CPTObras = (() => {
         ${dados.podeEditar ? `<button type="button" class="button" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra</button>` : ''}
       </form></section>
       <div class="results-head"><span>${ui.num(lista.length)} obras exibidas · ${ui.num(ativas.length)} ativas</span>${dados.podeEditar && atrasadas ? `<span>${ui.num(atrasadas)} ativas sem revisão há mais de 7 dias</span>` : ''}</div>
-      <div class="obra-lista" role="list">${lista.map(linha).join('') || '<p class="muted">Nenhuma obra com estes filtros.</p>'}</div>
-      ${painelBairros()}`;
-    $('bairrosPainel').addEventListener('toggle', e => { bairrosAberto = e.target.open; });
+      <div class="obra-lista" role="list">${lista.slice(0, mostrar).map(linha).join('') || '<p class="muted">Nenhuma obra com estes filtros.</p>'}</div>
+      ${maisBotao(lista.length - mostrar, POR_VEZ, 'data-obra-mais')}`;
     const f = $('obraFiltros');
-    f.addEventListener('change', () => { filtro = Object.fromEntries(new FormData(f)); draw(); });
-    f.elements.busca.addEventListener('input', e => { filtro.busca = e.target.value; clearTimeout(f._t); f._t = setTimeout(() => { const pos = e.target.selectionStart; draw(); const i = $('obraFiltros').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }, 250); });
+    f.addEventListener('change', () => { filtro = Object.fromEntries(new FormData(f)); mostrar = POR_VEZ; draw(); });
+    f.elements.busca.addEventListener('input', e => { filtro.busca = e.target.value; mostrar = POR_VEZ; clearTimeout(f._t); f._t = setTimeout(() => { const pos = e.target.selectionStart; draw(); const i = $('obraFiltros').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }, 250); });
   }
   function linha(o) {
     const atraso = ['Em andamento', 'Paralisada'].includes(o.situacao) && (dias(o.atualizadoEm) ?? 99) > 7;
@@ -70,12 +73,21 @@ window.CPTObras = (() => {
       ${dados.podeEditar && ['Em andamento', 'Paralisada'].includes(o.situacao) ? `<button class="button ghost" data-obra-confirmar="${ui.esc(o.id)}" title="Confirma que a situação continua a mesma hoje">Continua igual</button>` : ''}
       <button class="button ghost" data-obra="${ui.esc(o.id)}">${dados.podeEditar ? 'Abrir e editar' : 'Ver detalhes'} ${ui.icon('arrow')}</button></span></div></article>`;
   }
-  function painelBairros() {
-    const lista = cadastroBairros(), fora = lista.filter(b => !b.noFormulario).length;
-    return `<details id="bairrosPainel" class="panel bairros-panel" ${bairrosAberto ? 'open' : ''}><summary><strong>Bairros</strong> <span class="muted">${ui.num(lista.length)} cadastrados${fora ? ' · ' + ui.num(fora) + ' fora do formulário' : ''}</span></summary>
-      ${dados.podeEditar ? `<div class="bairros-acoes"><button type="button" class="button secondary" data-bairro-novo>${ui.icon('plus')}Cadastrar bairro</button></div>` : ''}
-      <div class="bairros-lista" role="list">${lista.map(b => `<div class="bairro-row" role="listitem"><span><strong>${ui.esc(b.nome)}</strong>${b.apelidos.length ? `<small class="muted"> · também chamado de ${ui.esc(b.apelidos.join(', '))}</small>` : ''}</span>
-        <span class="badge ${b.noFormulario ? 'green' : ''}">${b.noFormulario ? 'No formulário' : 'Fora do formulário'}</span>${dados.podeEditar && b.id ? `<button type="button" class="button ghost" data-bairro="${ui.esc(b.nome)}">Editar</button>` : ''}</div>`).join('')}</div></details>`;
+  /** "Mostrar mais N" (de quantos faltam, no máximo um lote). */
+  const maisBotao = (faltam, lote, attr) => faltam > 0 ? `<div class="load-more"><button type="button" class="button secondary" ${attr}>Mostrar mais ${Math.min(lote, faltam)} <small class="muted">de ${faltam}</small></button></div>` : '';
+  function desenharBairros(topo) {
+    ui.view.innerHTML = topo + `<section class="panel filter-panel"><form id="bairroFiltro" class="filters cases" onsubmit="return false">
+      <label class="field">Localizar bairro<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(buscaBairro)}" placeholder="Nome ou outro nome do bairro" maxlength="80" autocomplete="off"></span></label>
+      ${dados.podeEditar ? `<button type="button" class="button" data-bairro-novo>${ui.icon('plus')}Cadastrar bairro</button>` : ''}</form></section><div id="bairrosPainel"></div>`;
+    $('bairroFiltro').elements.busca.addEventListener('input', e => { buscaBairro = e.target.value; listaBairros(); });
+    listaBairros();
+  }
+  function listaBairros() {
+    const todos = cadastroBairros(), fora = todos.filter(b => !b.noFormulario).length, n = ui.norm(buscaBairro);
+    const lista = n ? todos.filter(b => ui.norm([b.nome].concat(b.apelidos).join(' ')).includes(n)) : todos;
+    $('bairrosPainel').innerHTML = `<div class="results-head"><span>${ui.num(todos.length)} bairros cadastrados${fora ? ' · ' + ui.num(fora) + ' fora do formulário' : ''}${n ? ' · ' + ui.num(lista.length) + ' com esta busca' : ''}</span></div>
+      <section class="panel bairros-panel"><div class="bairros-lista" role="list">${lista.map(b => `<div class="bairro-row" role="listitem"><span><strong>${ui.esc(b.nome)}</strong>${b.apelidos.length ? `<small class="muted"> · também chamado de ${ui.esc(b.apelidos.join(', '))}</small>` : ''}</span>
+        <span class="badge ${b.noFormulario ? 'green' : ''}">${b.noFormulario ? 'No formulário' : 'Fora do formulário'}</span>${dados.podeEditar && b.id ? `<button type="button" class="button ghost" data-bairro="${ui.esc(b.nome)}">Editar</button>` : ''}</div>`).join('') || '<p class="muted">Nenhum bairro com esse nome.</p>'}</div></section>`;
   }
   function editorBairro(b) {
     const novo = !b, e = b || {id: '', nome: '', noFormulario: true, apelidos: []};
@@ -90,7 +102,7 @@ window.CPTObras = (() => {
     $('bairroForm').onsubmit = async ev => {
       ev.preventDefault(); const f = new FormData(ev.target), b2 = ev.target.querySelector('button[type=submit]'), erro = $('bairroErro');
       b2.disabled = true; b2.textContent = 'Salvando…'; erro.hidden = true;
-      try { const r = await ui.call('salvarBairroCPT', {id: e.id, nome: novo ? f.get('nome') : e.nome, noFormulario: f.has('noFormulario'), apelidos: separar(f.get('apelidos'))}); ui.toast(r.resultado); $('detailDialog').close(); bairrosAberto = true; render(); }
+      try { const r = await ui.call('salvarBairroCPT', {id: e.id, nome: novo ? f.get('nome') : e.nome, noFormulario: f.has('noFormulario'), apelidos: separar(f.get('apelidos'))}); ui.toast(r.resultado); $('detailDialog').close(); aba = 'bairros'; render(); }
       catch (err) { erro.textContent = err.message + ' Seus dados continuam no formulário.'; erro.hidden = false; b2.disabled = false; b2.textContent = novo ? 'Cadastrar bairro' : 'Salvar alterações'; }
     };
   }
@@ -130,6 +142,7 @@ window.CPTObras = (() => {
   // ---------- Para vincular ("outra obra") ----------
   async function carregarVinculos() {
     const box = $('obrasVincular'); if (!box) return;
+    mostrarVinc = POR_VEZ_VINC;
     box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Procurando registros de "outra obra"…</div>';
     try { vinculos = await ui.call('listarVinculosObraCPT'); } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
     if (ui.state.route === 'obras' && aba === 'vincular') desenharVinculos();
@@ -141,11 +154,12 @@ window.CPTObras = (() => {
     const nomeDe = id => { const o = vinculos.obras.find(x => x.id === id); return o ? o.exibir : ''; };
     const campo = (atual, rot) => `<div class="obra-busca"><input type="search" data-vinc-busca autocomplete="off" aria-label="${rot}" placeholder="Digite o nome, apelido ou bairro da obra…" value="${ui.esc(nomeDe(atual))}"><input type="hidden" data-vinc-obra value="${ui.esc(atual || '')}"><div class="obra-sugestoes" role="listbox" hidden></div></div>`;
     box.innerHTML = `<div class="results-head"><span>${total ? ui.num(total) + (total === 1 ? ' registro' : ' registros') + ' com "obra ainda não cadastrada"' + (total > vinculos.pendentes.length ? ' (mostrando os ' + vinculos.pendentes.length + ' mais recentes)' : '') : 'Nenhum registro esperando vínculo.'}</span>${dados.podeEditar ? `<button type="button" class="button secondary" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra nova</button>` : ''}</div>
-      <p class="small muted">O registro original não muda. O vínculo vale nas telas, no painel e no relatório.</p>
-      <div class="vinculo-lista">${vinculos.pendentes.map(r => `<article class="entry-card vinculo-card" data-vinc="${ui.esc(r.id)}"><div class="card-top"><span class="badge orange">${ui.esc(r.procedimento)}</span><span class="date">${ui.date(r.data)}</span></div>
+      <p class="small muted">O registro original não muda. O vínculo vale nas telas e no painel.</p>
+      <div class="vinculo-lista">${vinculos.pendentes.slice(0, mostrarVinc).map(r => `<article class="entry-card vinculo-card" data-vinc="${ui.esc(r.id)}"><div class="card-top"><span class="badge orange">${ui.esc(r.procedimento)}</span><span class="date">${ui.date(r.data)}</span></div>
         <h3>${ui.esc(r.atividade || 'Atividade sem título')}</h3><p class="small muted">${ui.esc([r.bairro, r.responsavel].filter(Boolean).join(' · '))}</p>
         ${r.observacao ? `<blockquote class="vinculo-obs">${ui.esc(r.observacao)}</blockquote>` : '<p class="small muted">Sem observação final.</p>'}
         <div class="vinculo-acao">${campo('', 'Obra deste registro')}<button type="button" class="button" data-vincular="${ui.esc(r.id)}">Vincular</button></div></article>`).join('')}</div>
+      ${maisBotao(vinculos.pendentes.length - mostrarVinc, POR_VEZ_VINC, 'data-vinc-mais')}
       ${vinculos.feitos && vinculos.feitos.length ? `<details class="panel vinculos-feitos"><summary><strong>Vinculados recentemente</strong> <span class="muted">${ui.num(vinculos.feitos.length)} · para corrigir um engano</span></summary>
         <div class="bairros-lista">${vinculos.feitos.map(r => `<div class="bairro-row vinculo-feito" data-vinc-feito="${ui.esc(r.id)}"><span><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small class="muted"> · ${ui.date(r.data)} · ${ui.esc(r.obra)}</small></span>
           ${campo(r.obraId, 'Trocar a obra deste registro')}<button type="button" class="button ghost" data-vincular="${ui.esc(r.id)}">Trocar</button></div>`).join('')}</div></details>` : ''}`;
@@ -183,7 +197,7 @@ window.CPTObras = (() => {
     $('detailType').textContent = novo ? 'NOVA OBRA' : 'OBRA ' + e.id; $('detailTitle').textContent = novo ? 'Cadastrar obra' : exibir(e);
     $('detailContent').innerHTML = `<form id="obraForm"><div id="obraErro" class="notice" hidden></div><div class="editor-grid">
       ${campo('Nome oficial da obra / frente', `<input name="nome" required maxlength="200" value="${ui.esc(e.nome)}" ${dis}>`, true)}
-      ${campo('Nome de uso <small class="muted">(curto, aparece nas telas, no relatório e no formulário)</small>', `<input name="nomeUso" maxlength="80" placeholder="Opcional. Sem ele, vale o nome oficial" value="${ui.esc(e.nomeUso || '')}" ${dis}>`)}
+      ${campo('Nome de uso <small class="muted">(curto, aparece nas telas e no formulário)</small>', `<input name="nomeUso" maxlength="80" placeholder="Opcional. Sem ele, vale o nome oficial" value="${ui.esc(e.nomeUso || '')}" ${dis}>`)}
       ${campo('Também chamada de <small class="muted">(separe por vírgula; ajuda a busca)</small>', `<input name="apelidos" maxlength="400" value="${ui.esc((e.apelidos || []).join(', '))}" ${dis}>`)}
       ${campo('Situação atual', `<select name="situacao" ${dis}>${dados.situacoes.map(s => `<option ${s === e.situacao ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
       <label class="check-inline"><input type="checkbox" name="noFormulario" ${e.noFormulario ? 'checked' : ''} ${dis}> Mostrar no formulário (quando em andamento ou paralisada)</label>
@@ -235,6 +249,8 @@ window.CPTObras = (() => {
       const ok = ev.target.closest('[data-obra-confirmar]'); if (ok) { confirmar(ok.dataset.obraConfirmar, ok); return; }
       if (ev.target.closest('[data-obra-acao="nova"]')) { editor(null); return; }
       const t = ev.target.closest('[data-obra-aba]'); if (t) { aba = t.dataset.obraAba; draw(); return; }
+      if (ev.target.closest('[data-obra-mais]')) { mostrar += POR_VEZ; draw(); return; }
+      if (ev.target.closest('[data-vinc-mais]')) { mostrarVinc += POR_VEZ_VINC; desenharVinculos(); return; }
       const eo = ev.target.closest('[data-escolher-obra]'); if (eo) { escolherObra(eo); return; }
       const vi = ev.target.closest('[data-vincular]'); if (vi) { vincular(vi.dataset.vincular, vi); return; }
       const bairro = ev.target.closest('[data-bairro]'); if (bairro) { editorBairro(cadastroBairros().find(b => b.nome === bairro.dataset.bairro)); return; }

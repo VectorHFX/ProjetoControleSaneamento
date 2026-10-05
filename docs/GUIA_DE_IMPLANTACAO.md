@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.27.1 — menos rolagem em Obras e no Meu espaço (≈ 3 min)
+
+1. Rode a atualização pelo **Cloud Shell** como sempre, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.27.1`) e publique uma **Nova versão** (se a atualização não publicou). Não há planilha nova nem permissão nova.
+2. **Obras**: **Bairros** virou uma aba própria, com campo para localizar o bairro (antes ficava no fim da página, depois de todas as obras). Quem só consulta vê as abas Catálogo e Bairros; a gerência vê também Obras de hoje e Para vincular.
+3. O **Catálogo** mostra 12 obras por vez e o **Para vincular** 8 registros por vez, com o botão **"Mostrar mais"**. Buscar ou trocar o filtro volta para o começo da lista.
+4. **Meu espaço**: abaixo do mascote, as abas **Meu dia** (agenda, checklist e caderno), **Quiz e saber** e **Jogos e placar**. A aba fica presa no alto ao rolar, e o navegador lembra a última escolhida. Um ponto laranja na aba do quiz avisa que a pergunta do dia ainda espera resposta. Quem ainda não vê quiz nem joguinhos continua sem abas.
+
 ## Atualização 2.27.0 — fechamento do relatório retirado da aplicação (≈ 5 min)
 
 1. Rode a atualização pelo **Cloud Shell** como sempre. Desta vez a conferência mostra também **"Remover (aposentados)"**: `RelatorioMensalCPT`, `EntregasDoMesCPT`, `AnexosRelatorioCPT`, `ProgramaParceirosCPT`, `EntregasCPT`, `Fechamento`, `Socioambiental` e `Entregas`. Eles são **apagados do projeto no Google** de propósito — se ficassem lá, a base do relatório ainda poderia ser montada. Antes de mudar, a atualização cria a versão de segurança de sempre.

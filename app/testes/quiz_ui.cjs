@@ -14,13 +14,16 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.saber-balao').waitFor();const balao=await p.locator('.saber-balao').textContent();assert.match(balao,/Você sabia\?[\s\S]*Por que importa:[\s\S]*(Fonte:|Prática da equipe)/);
   assert.equal(await p.locator('.saber-balao a[target=_blank][rel=noopener]').count(),balao.includes('Fonte:')?1:0);
   assert.equal(await p.locator('.saber-balao .saber-revisar').count(),1,'marca "a revisar" para o proprietário');
+  // 2.27.1: o quiz fica na aba "Quiz e curiosidades" (ponto laranja enquanto a pergunta do dia espera).
+  assert.equal(await p.locator('.home-saber').isVisible(),false,'quiz fora da aba Meu dia');assert.equal(await p.locator('#espTab-saber .tab-dot').count(),1);
+  await p.locator('[data-esp-parte=saber]').click();await p.locator('.home-saber').waitFor();assert.equal(await p.locator('#espLista').isVisible(),false);
   assert.match(await p.locator('.home-saber .saber-mes').textContent(),/(Janeiro|Fevereiro|Março|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)/);
   assert.equal(await p.locator('#quizDia .quiz-opcao').count(),4);assert.match(await p.locator('.space-hero .mascot-art').innerHTML(),/pensativo|class="[^"]*chibi/,'mascote presente');
   await foto('saber-1-inicio');
   // Pergunta do dia: responde a primeira alternativa; a certa aparece e as opções travam.
   const antes=Number((await p.locator('#espPontos').textContent()).replace(/\D/g,''));
   await p.locator('#quizDia .quiz-opcao').first().click();await toast(/Acertou|Quase/);
-  await p.locator('#quizDia .quiz-resultado').waitFor();assert.equal(await p.locator('#quizDia .quiz-opcao.is-certa').count(),1);assert.equal(await p.locator('#quizDia .quiz-opcao:not([disabled])').count(),0);
+  await p.locator('#quizDia .quiz-resultado').waitFor();assert.equal(await p.locator('#quizDia .quiz-opcao.is-certa').count(),1);await p.waitForFunction(()=>!document.querySelector('#espTab-saber .tab-dot'));assert.equal(await p.locator('#quizDia .quiz-opcao:not([disabled])').count(),0);
   const ok=await p.locator('#quizDia .quiz-resultado.is-ok').count();/* 2.24: o selo conta até o valor novo */await p.waitForFunction(n=>Number(document.querySelector('#espPontos').textContent.replace(/\D/g,''))===n,antes+(ok?2:0));
   await foto('saber-2-dia');
   // Quiz da semana: 5 perguntas em sequência, placar no fim.

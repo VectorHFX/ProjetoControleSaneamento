@@ -103,7 +103,7 @@
     ACOES.filter(a=>podeVer(a.rota)&&(tem(a.titulo)||(n&&normBusca(a.chave).includes(n)))).forEach(a=>out.push({tipo:'Ação',titulo:a.titulo,icone:a.aba?'#i-chart':'#i-plus',ir:()=>{if(a.aba)window.CPTGestao.irPara(a.aba);navigate(a.rota);if(a.alvo)clicarQuandoAparecer(a.alvo);}}));
     if(n.length>=2){
       BUSCA.casos.forEach(c=>out.push({tipo:'Atendimento',titulo:(c.caso?c.caso+' · ':'')+c.protocolo+' · '+(c.nome||'Sem nome'),detalhe:[c.assunto,c.status].filter(Boolean).join(' · '),icone:'#i-case',ir:()=>{navigate('atendimentos');window.CPTAtendimentos.abrir(c.protocolo);}}));
-      (BUSCA.obras||[]).filter(o=>normBusca([o.nome,o.nomeUso,(o.apelidos||[]).join(' '),(o.bairros||[]).join(' '),o.id].join(' ')).includes(n)).slice(0,5).forEach(o=>out.push({tipo:'Obra',titulo:o.exibir||o.nome,detalhe:[(o.bairros||[]).join(', '),o.situacao].filter(Boolean).join(' · '),icone:'#i-pin',ir:()=>{navigate('obras');preencherQuandoAparecer('#obraFiltros [name=busca]',o.exibir||o.nome);}}));
+      (BUSCA.obras||[]).filter(o=>normBusca([o.nome,o.nomeUso,(o.apelidos||[]).join(' '),(o.bairros||[]).join(' '),o.id].join(' ')).includes(n)).slice(0,5).forEach(o=>out.push({tipo:'Obra',titulo:o.exibir||o.nome,detalhe:[(o.bairros||[]).join(', '),o.situacao].filter(Boolean).join(' · '),icone:'#i-pin',ir:()=>{window.CPTObras.irPara('catalogo');navigate('obras');preencherQuandoAparecer('#obraFiltros [name=busca]',o.exibir||o.nome);}}));
       (BUSCA.contatos||[]).filter(c=>normBusca([c.nome,c.instituicao,c.bairro,c.etiquetas,c.telefone].join(' ')).includes(n)).slice(0,5).forEach(c=>out.push({tipo:'Contato',titulo:c.nome||c.instituicao,detalhe:[c.instituicao,c.bairro].filter(Boolean).join(' · '),icone:'#i-contact',ir:()=>{navigate('contatos');clicarQuandoAparecer('[data-con-abrir="'+String(c.id).replace(/"/g,'')+'"]');}}));}
     return out.slice(0,14);}
   function desenharBusca(){const q=$('searchInput').value,lista=resultadosBusca(q);BUSCA.itens=lista;BUSCA.sel=Math.min(BUSCA.sel,Math.max(0,lista.length-1));
@@ -153,7 +153,7 @@
   function request(nome,arg){
     if(window.CPT_PREVIA)return window.CPT_PREVIA.chamar(nome,arg);
     return new Promise((resolve,reject)=>{
-      let done=false;const limite=/^(gerarBaseRelatorioCPT|gerarPacoteFichasCPT|gerarFichaOficialCPT|gerarDocumentoSocioambientalCPT|gerarAnexosDoMesCPT)$/.test(nome)?360000:45000;const timer=setTimeout(()=>{done=true;reject(new Error('A conexão demorou mais que o esperado. Tente atualizar novamente.'));},limite);
+      let done=false;const limite=nome==='gerarFichaOficialCPT'?360000:45000;const timer=setTimeout(()=>{done=true;reject(new Error('A conexão demorou mais que o esperado. Tente atualizar novamente.'));},limite);
       const ok=x=>{if(done)return;done=true;clearTimeout(timer);resolve(x);},bad=e=>{if(done)return;done=true;clearTimeout(timer);reject(new Error(e&&e.message||'Não foi possível consultar os dados.'));};
       if(!window.google||!google.script||!google.script.run){bad(new Error('Abra esta aplicação pelo endereço publicado no Apps Script.'));return;}
       try{const runner=google.script.run.withSuccessHandler(ok).withFailureHandler(bad);if(typeof runner[nome]!=='function')throw new Error('Função '+nome+' indisponível na versão publicada. Atualize a implantação.');if(arg===undefined)runner[nome]();else runner[nome](arg);}catch(e){bad(e);}
@@ -274,7 +274,7 @@
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTInicio)throw new Error('Componentes Inicio.html ou Obras.html ausentes. Confira os arquivos da versão 2.27.0.');
+  if(!window.CPTObras||!window.CPTInicio)throw new Error('Componentes Inicio.html ou Obras.html ausentes. Confira os arquivos da versão 2.27.1.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
