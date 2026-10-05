@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.8 — "Para vincular" com busca e obras finalizadas (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.8`) e publique uma **Nova versão**.
+2. **Obras → Para vincular**: no lugar da lista enorme, um campo para **digitar** o nome, apelido, nome oficial, bairro ou código da obra. As sugestões aparecem enquanto digita (sem precisar de acento); Enter escolhe a primeira, as setas mudam e Esc fecha. Vale também para **trocar** um vínculo em "Vinculados recentemente".
+3. **Obras finalizadas** também aparecem (marcadas "Finalizada"), para ligar as atividades pós-obra. As em andamento vêm primeiro.
+4. O registro original continua sem mudança; o vínculo vale nas telas, no painel e no relatório, como antes.
+
 ## Atualização 2.26.7 — liberar para a equipe numa função só (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.7`) e publique uma **Nova versão**.

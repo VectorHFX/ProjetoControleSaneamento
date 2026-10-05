@@ -137,20 +137,37 @@ window.CPTObras = (() => {
   function desenharVinculos() {
     const box = $('obrasVincular'); if (!box || !vinculos) return;
     const total = vinculos.totalPendentes, t = document.querySelector('[data-obra-aba=vincular]'); if (t) t.textContent = 'Para vincular' + (total ? ' (' + total + ')' : '');
-    const opcoes = '<option value="">Escolha a obra…</option>' + vinculos.obras.map(o => `<option value="${ui.esc(o.id)}">${ui.esc(o.exibir)}${o.bairros && o.bairros.length ? ' — ' + ui.esc(o.bairros.join(' / ')) : ''}</option>`).join('');
+    // 2.26.8: escolher a obra digitando (nome, apelido ou bairro), em vez de uma lista enorme; finalizadas também (ação pós-obra).
+    const nomeDe = id => { const o = vinculos.obras.find(x => x.id === id); return o ? o.exibir : ''; };
+    const campo = (atual, rot) => `<div class="obra-busca"><input type="search" data-vinc-busca autocomplete="off" aria-label="${rot}" placeholder="Digite o nome, apelido ou bairro da obra…" value="${ui.esc(nomeDe(atual))}"><input type="hidden" data-vinc-obra value="${ui.esc(atual || '')}"><div class="obra-sugestoes" role="listbox" hidden></div></div>`;
     box.innerHTML = `<div class="results-head"><span>${total ? ui.num(total) + (total === 1 ? ' registro' : ' registros') + ' com "obra ainda não cadastrada"' + (total > vinculos.pendentes.length ? ' (mostrando os ' + vinculos.pendentes.length + ' mais recentes)' : '') : 'Nenhum registro esperando vínculo.'}</span>${dados.podeEditar ? `<button type="button" class="button secondary" data-obra-acao="nova">${ui.icon('plus')}Cadastrar obra nova</button>` : ''}</div>
       <p class="small muted">O registro original não muda. O vínculo vale nas telas, no painel e no relatório.</p>
       <div class="vinculo-lista">${vinculos.pendentes.map(r => `<article class="entry-card vinculo-card" data-vinc="${ui.esc(r.id)}"><div class="card-top"><span class="badge orange">${ui.esc(r.procedimento)}</span><span class="date">${ui.date(r.data)}</span></div>
         <h3>${ui.esc(r.atividade || 'Atividade sem título')}</h3><p class="small muted">${ui.esc([r.bairro, r.responsavel].filter(Boolean).join(' · '))}</p>
         ${r.observacao ? `<blockquote class="vinculo-obs">${ui.esc(r.observacao)}</blockquote>` : '<p class="small muted">Sem observação final.</p>'}
-        <div class="vinculo-acao"><select aria-label="Obra deste registro" data-vinc-obra>${opcoes}</select><button type="button" class="button" data-vincular="${ui.esc(r.id)}">Vincular</button></div></article>`).join('')}</div>
+        <div class="vinculo-acao">${campo('', 'Obra deste registro')}<button type="button" class="button" data-vincular="${ui.esc(r.id)}">Vincular</button></div></article>`).join('')}</div>
       ${vinculos.feitos && vinculos.feitos.length ? `<details class="panel vinculos-feitos"><summary><strong>Vinculados recentemente</strong> <span class="muted">${ui.num(vinculos.feitos.length)} · para corrigir um engano</span></summary>
         <div class="bairros-lista">${vinculos.feitos.map(r => `<div class="bairro-row vinculo-feito" data-vinc-feito="${ui.esc(r.id)}"><span><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small class="muted"> · ${ui.date(r.data)} · ${ui.esc(r.obra)}</small></span>
-          <select aria-label="Trocar a obra deste registro" data-vinc-obra>${opcoes.replace('value="' + ui.esc(r.obraId) + '"', 'value="' + ui.esc(r.obraId) + '" selected')}</select><button type="button" class="button ghost" data-vincular="${ui.esc(r.id)}">Trocar</button></div>`).join('')}</div></details>` : ''}`;
+          ${campo(r.obraId, 'Trocar a obra deste registro')}<button type="button" class="button ghost" data-vincular="${ui.esc(r.id)}">Trocar</button></div>`).join('')}</div></details>` : ''}`;
+  }
+  /** Sugestões enquanto digita: sem acento, por nome, apelido, nome oficial, bairro ou código; até 8, em andamento primeiro. */
+  function sugerir(input) {
+    const box = input.parentNode.querySelector('.obra-sugestoes'), q = ui.norm(input.value).trim();
+    input.parentNode.querySelector('[data-vinc-obra]').value = '';
+    if (!q) { box.hidden = true; box.innerHTML = ''; return; }
+    const partes = q.split(/\s+/), achadas = vinculos.obras.filter(o => { const t = ui.norm([o.exibir, o.busca, (o.bairros || []).join(' '), o.id].join(' ')); return partes.every(p => t.includes(p)); }).slice(0, 8);
+    box.innerHTML = achadas.length ? achadas.map((o, i) => `<button type="button" role="option" class="obra-sugestao${i ? '' : ' is-sel'}" data-escolher-obra="${ui.esc(o.id)}"><strong>${ui.esc(o.exibir)}</strong><small>${ui.esc([(o.bairros || []).join(' / '), o.id].filter(Boolean).join(' · '))}</small>${o.situacao === 'Finalizada' ? '<span class="badge">Finalizada</span>' : ''}</button>`).join('')
+      : '<p class="small muted">Nenhuma obra com esse nome. Confira no Catálogo.</p>';
+    box.hidden = false;
+  }
+  function escolherObra(botao) {
+    const w = botao.closest('.obra-busca'), o = vinculos.obras.find(x => x.id === botao.dataset.escolherObra); if (!w || !o) return;
+    w.querySelector('[data-vinc-obra]').value = o.id; w.querySelector('[data-vinc-busca]').value = o.exibir;
+    const box = w.querySelector('.obra-sugestoes'); box.hidden = true; box.innerHTML = '';
   }
   async function vincular(id, botao) {
     const sel = botao.closest('.vinculo-card, .vinculo-feito').querySelector('[data-vinc-obra]');
-    if (!sel.value) { ui.toast('Escolha a obra deste registro.'); sel.focus(); return; }
+    if (!sel.value) { ui.toast('Digite e escolha a obra deste registro na lista.'); const b = sel.parentNode.querySelector('[data-vinc-busca]'); if (b) b.focus(); return; }
     const rotulo = botao.textContent; botao.disabled = true; botao.textContent = 'Salvando…';
     try {
       const r = await ui.call('vincularObraCPT', {registroId: id, obraId: sel.value, operacaoId: op()}); ui.toast(r.resultado);
@@ -203,11 +220,22 @@ window.CPTObras = (() => {
     ui = api;
     // Missões e atalhos levam direto a uma parte (antes da navegação desenhar a página).
     document.addEventListener('click', ev => { const ir = ev.target.closest('[data-obra-ir]'); if (ir) aba = ir.dataset.obraIr; }, true);
+    // 2.26.8: busca de obra no "Para vincular": sugestões ao digitar; Enter escolhe a destacada; setas mudam; Esc fecha.
+    document.addEventListener('input', ev => { if (ev.target.matches && ev.target.matches('[data-vinc-busca]') && vinculos) sugerir(ev.target); });
+    document.addEventListener('keydown', ev => {
+      const t = ev.target; if (!t.matches || !t.matches('[data-vinc-busca]')) return;
+      const box = t.parentNode.querySelector('.obra-sugestoes'), itens = [...box.querySelectorAll('[data-escolher-obra]')]; if (box.hidden || !itens.length) return;
+      const i = itens.findIndex(b => b.classList.contains('is-sel'));
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); const n = (i + (ev.key === 'ArrowDown' ? 1 : itens.length - 1)) % itens.length; itens.forEach((b, k) => b.classList.toggle('is-sel', k === n)); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); escolherObra(itens[Math.max(0, i)]); }
+      else if (ev.key === 'Escape') { box.hidden = true; }
+    });
     document.addEventListener('click', ev => {
       const abrir = ev.target.closest('[data-obra]'); if (abrir) { editor(dados.obras.find(o => o.id === abrir.dataset.obra)); return; }
       const ok = ev.target.closest('[data-obra-confirmar]'); if (ok) { confirmar(ok.dataset.obraConfirmar, ok); return; }
       if (ev.target.closest('[data-obra-acao="nova"]')) { editor(null); return; }
       const t = ev.target.closest('[data-obra-aba]'); if (t) { aba = t.dataset.obraAba; draw(); return; }
+      const eo = ev.target.closest('[data-escolher-obra]'); if (eo) { escolherObra(eo); return; }
       const vi = ev.target.closest('[data-vincular]'); if (vi) { vincular(vi.dataset.vincular, vi); return; }
       const bairro = ev.target.closest('[data-bairro]'); if (bairro) { editorBairro(cadastroBairros().find(b => b.nome === bairro.dataset.bairro)); return; }
       if (ev.target.closest('[data-bairro-novo]')) editorBairro(null);

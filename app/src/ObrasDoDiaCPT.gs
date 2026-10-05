@@ -73,7 +73,9 @@ class ObrasDoDiaCPT {
     const feitos = this.vinculos.itens().slice().sort((a, b) => String(b.alteradoEm).localeCompare(String(a.alteradoEm))).slice(0, 20)
       .map(v => porId.get(v.registroId) ? {...this.resumoRegistro(porId.get(v.registroId), false), obraId: v.obraId, obra: v.rotulo, por: v.alteradoPor} : null).filter(Boolean);
     return {pendentes: pend.slice(0, 50).map(x => this.resumoRegistro(x, true)), totalPendentes: pend.length, feitos,
-      obras: this.catalogo().filter(o => o.situacao !== 'Finalizada').map(o => this.resumoObra(o)).sort((a, b) => a.exibir.localeCompare(b.exibir, 'pt-BR'))};
+      // 2.26.8: entram também as finalizadas (há ação pós-obra); as em andamento vêm primeiro. "busca" leva nome oficial e apelidos.
+      obras: this.catalogo().map(o => ({...this.resumoObra(o), busca: ObrasCPT.nomesConhecidos(o).join(' ')}))
+        .sort((a, b) => (a.situacao === 'Finalizada') - (b.situacao === 'Finalizada') || a.exibir.localeCompare(b.exibir, 'pt-BR'))};
   }
   vincular(p) {
     this.exigirGerencia();

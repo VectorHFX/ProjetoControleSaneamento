@@ -78,6 +78,8 @@ props.set('CPT_TRAVA_CONFIG','travada');email='adm@example.com';assert.throws(()
 assert.equal(run('listarObrasCPT()').gerencia,false);email='victor@example.com';assert.equal(run('listarVinculosObraCPT()').pendentes.length,1);assert.equal(run('listarObrasCPT()').gerencia,true);
 props.set('CPT_TRAVA_CONFIG','liberada');
 email='adm@example.com';let v=run('listarVinculosObraCPT()');assert.equal(v.pendentes.length,1);assert.equal(v.pendentes[0].id,OUTRA);assert.match(v.pendentes[0].observacao,/rua das Flores/);assert(v.obras.some(o=>o.id==='OBR-0002'));
+// 2.26.8: a lista para vincular traz o catálogo inteiro (finalizadas também, por causa da ação pós-obra), finalizadas por último, com nomes para a busca.
+{const cat=run('listarObrasCPT()').obras;assert.equal(v.obras.length,cat.length,'todas as obras do catálogo');const fin=v.obras.map(o=>o.situacao==='Finalizada');assert.ok(fin.every((f,i)=>!i||f>=fin[i-1]),'finalizadas por último');assert.ok(v.obras.every(o=>typeof o.busca==='string'&&o.busca.length));}
 ctx.k={registroId:OUTRA,obraId:'OBR-9999',operacaoId:'OP-vinculo-0000001'};assert.throws(()=>run('vincularObraCPT(k)'),/Obra não encontrada/);
 ctx.k={registroId:OUTRA,obraId:'OBR-0002',operacaoId:'OP-vinculo-0000002'};r=run('vincularObraCPT(k)');assert.match(r.resultado,/vinculado/);
 assert.equal(JSON.stringify(registros.rows.at(-1)),linhaOutra,'registro original intacto');

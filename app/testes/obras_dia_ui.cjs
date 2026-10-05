@@ -24,12 +24,20 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await espaco();await p.waitForFunction(()=>document.querySelectorAll('.missao.t-rota').length===1);
   await p.locator('.missao[data-missao=vincular-obra] .button').click();await p.locator('.vinculo-card').waitFor();
   assert.match(await p.locator('.vinculo-card').textContent(),/Rua das Flores/);
-  await p.locator('.vinculo-card [data-vincular]').click();await toast(/Escolha a obra/);
-  await p.selectOption('.vinculo-card [data-vinc-obra]','OBR-0074');await p.locator('.vinculo-card [data-vincular]').click();await toast(/vinculado/);
+  await p.locator('.vinculo-card [data-vincular]').click();await toast(/escolha a obra/);
+  // 2.26.8: digitar para achar a obra (sem acento, por nome, apelido ou bairro); finalizadas também aparecem.
+  const busca=p.locator('.vinculo-card [data-vinc-busca]');await busca.fill('cipreste');await p.locator('.vinculo-card [data-escolher-obra]').first().waitFor();
+  assert.match(await p.locator('.vinculo-card .obra-sugestoes').textContent(),/Rede coletora Jardim Cipreste.*Finalizada/);
+  await busca.fill('apiai orquidea');await p.locator('.vinculo-card [data-escolher-obra="OBR-0074"]').waitFor();assert.equal(await p.locator('.vinculo-card [data-escolher-obra]').count(),1);
+  await busca.press('Enter');assert.equal(await p.locator('.vinculo-card [data-vinc-obra]').inputValue(),'OBR-0074');assert.match(await busca.inputValue(),/Córrego Apiaí/);
+  await p.locator('.vinculo-card [data-vincular]').click();await toast(/vinculado/);
   await p.getByText('Nenhum registro esperando vínculo.').waitFor();
   // Engano se corrige em "Vinculados recentemente".
   await p.locator('.vinculos-feitos summary').click();assert.equal(await p.locator('.vinculo-feito [data-vinc-obra]').inputValue(),'OBR-0074');
-  await p.selectOption('.vinculo-feito [data-vinc-obra]','OBR-0117');await p.locator('.vinculo-feito [data-vincular]').click();await toast(/trocado para Viela Carijós/);
+  await p.locator('.vinculo-feito [data-vinc-busca]').fill('carijos');await p.locator('.vinculo-feito [data-escolher-obra="OBR-0117"]').click();await p.locator('.vinculo-feito [data-vincular]').click();await toast(/trocado para Viela Carijós/);
+  // Obra finalizada (ação pós-obra) também pode ser escolhida.
+  await p.locator('.vinculos-feitos summary').click().catch(()=>{});if(!(await p.locator('.vinculo-feito [data-vinc-busca]').isVisible()))await p.locator('.vinculos-feitos summary').click();
+  await p.locator('.vinculo-feito [data-vinc-busca]').fill('rede do cipreste');await p.locator('.vinculo-feito [data-escolher-obra="OBR-0042"]').click();await p.locator('.vinculo-feito [data-vincular]').click();await toast(/trocado para Rede coletora Jardim Cipreste/);
   await espaco();await p.locator('#espLista').waitFor();await p.waitForTimeout(300);assert.equal(await p.locator('.missao.t-rota').count(),0,'missões cumpridas somem');
   // Painel da gestão: obras ativas × ações por dia.
   await p.selectOption('#viewSwitch','gestao');await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=frentes]').click();
