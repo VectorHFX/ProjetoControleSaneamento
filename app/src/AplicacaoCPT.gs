@@ -80,7 +80,7 @@ function instalarAplicacaoCPT() {
  */
 function doGet() {
   // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
-  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, EntregasDoMesCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT, ConteudoSaneamentoCPT, RevisaoConteudoCPT, QuizCPT, AlbumCPT, JogosCPT, PlacarCPT, OrganogramaCPT, ControleContratoCPT]; }
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, EntregasDoMesCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT, ConteudoSaneamentoCPT, RevisaoConteudoCPT, QuizCPT, AlbumCPT, JogosCPT, PlacarCPT, OrganogramaCPT, ControleContratoCPT, AnexosRelatorioCPT]; }
   catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
   const t = HtmlService.createTemplateFromFile('Aplicacao');
   t.inicial = dadosIniciaisCPT_();

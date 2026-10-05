@@ -36,6 +36,12 @@ await page.locator('[data-entrega-zip]').click();await page.locator('.entrega-ca
 if(out)await page.locator('#entregasMes').screenshot({path:out+'/entregas.png'});
 assert.match(await page.locator('.simple-table').textContent(),/\(parcial\)/);await page.fill('#gerarForm input[name=numero]','15');await page.locator('#gerarForm button').click();
 await page.getByText('Abrir documento').waitFor();if(out)await page.screenshot({path:out+'/fechamento.png',fullPage:true});
+// 2.26: Anexos do relatório = planilha oficial — conferir (nada gravado), atualizar, e o cartão passa a ter o arquivo.
+await page.locator('[data-anexos-conferir]').waitFor();assert.ok(await page.locator('#anexosEstado a[href*="format=xlsx"]').count()===1&&await page.locator('#anexosEstado a[href*="format=pdf"]').count()===1,'Excel e PDF');
+await page.locator('[data-anexos-conferir]').click();await page.locator('.anexos-previa').waitFor();assert.match(await page.locator('.anexos-previa').textContent(),/2 novo\(s\) para acrescentar · 1 para atualizar/);
+page.once('dialog',d=>d.accept());await page.locator('[data-anexos-atualizar]').click();await page.locator('#anexosResultado .notice',{hasText:'Nada foi apagado'}).waitFor();assert.match(await page.locator('#anexosEstado').textContent(),/Atualizada em/);
+await page.waitForFunction(()=>/Em preparo/.test(document.querySelector('.entrega-card[data-entrega=anexos] .badge').textContent));
+await page.locator('.entrega-card[data-entrega=anexos] [data-entrega-rolar]').click();
 await page.locator('[data-fechamento-ir]').nth(1).click();await page.locator('#recordFilters').waitFor();assert.equal(await page.locator('#recordFilters input[name=pendencia]').inputValue(),'publico');
 // Colaboradora de Comunicação: vê Obras sem editar e vê Fechamento; Atendimento não vê Fechamento.
 await page.goto(url+'?perfil=comunicacao');await page.locator('#roleView option[value=comunicacao]').waitFor({state:'attached'});assert(await page.locator('.nav-item[data-route=fechamento]').isVisible());

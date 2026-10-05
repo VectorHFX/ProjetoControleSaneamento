@@ -1,6 +1,7 @@
 <script>
 /* Entregas do mês 2.15.0 — as 4 entregas (situação, responsável, prazo, versão e retrato), conferência da competência,
-   base do relatório mensal e pacote de fichas oficiais (ANEXO 4) com .zip. */
+   base do relatório mensal e pacote de fichas oficiais (ANEXO 4) com .zip.
+   2.26: Anexos do relatório = a planilha oficial (conferir o que muda e atualizar o Controle de manifestações; Excel e PDF). */
 window.CPTFechamento = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
@@ -48,7 +49,11 @@ window.CPTFechamento = (() => {
       </section>
       <section class="panel" id="gerarFichas"><div class="panel-head"><div><h2>Fichas oficiais do mês (ANEXO 4)</h2><p>Gera no modelo Sabesp a ficha de cada caso em aberto no fim do mês e de cada caso concluído no mês, e junta os PDFs na pasta do mês. Fichas sem mudança não são refeitas.</p></div></div>
         <div class="dialog-actions"><button class="button secondary" id="pacoteFichas">${ui.icon('file')}Gerar fichas de ${ui.esc(monthName(d.mes))}</button></div><div id="pacoteResultado" aria-live="polite"></div>
+      </section>
+      <section class="panel" id="anexosPlanilha"><div class="panel-head"><div><h2>Anexos do relatório (planilha oficial)</h2><p>Os casos do mês (os mesmos das fichas do ANEXO 4) entram no Controle de manifestações: atualiza o que já está lá e acrescenta os novos no fim. Nada é apagado; Matriz de Contatos e Indicadores 2026 continuam à mão.</p></div></div>
+        <div id="anexosEstado"><div class="loading-label"><span class="spinner"></span>Planilha dos Anexos…</div></div><div id="anexosResultado" aria-live="polite"></div>
       </section>`;
+    carregarAnexos(d.mes);
     $('pacoteFichas').onclick = ev => pacote(d.mes, ev.currentTarget, false);
     $('gerarForm').onsubmit = ev => { ev.preventDefault(); gerar(d.mes, ev.target); };
   }
@@ -65,7 +70,7 @@ window.CPTFechamento = (() => {
   function cartao(c) {
     const e = entregas, nomes = e.nomes, i = PASSOS.indexOf(c.situacao), atrasada = c.situacao !== 'entregue' && c.prazo && c.prazo < hoje();
     const resp = e.pessoas.find(p => p.email === c.responsavel), a = c.arquivo;
-    const ir = c.rota ? `<button class="button ghost" data-route="${ui.esc(c.rota)}">Abrir ${ui.icon('arrow')}</button>` : `<button class="button ghost" data-entrega-rolar="${c.tipo === 'relatorio' ? 'gerarRelatorio' : 'gerarFichas'}">Gerar aqui ↓</button>`;
+    const ir = c.rota ? `<button class="button ghost" data-route="${ui.esc(c.rota)}">Abrir ${ui.icon('arrow')}</button>` : `<button class="button ghost" data-entrega-rolar="${c.tipo === 'relatorio' ? 'gerarRelatorio' : c.tipo === 'anexos' ? 'anexosPlanilha' : 'gerarFichas'}">${c.tipo === 'anexos' ? 'Atualizar aqui' : 'Gerar aqui'} ↓</button>`;
     return `<article class="entrega-card s-${c.situacao}" data-entrega="${ui.esc(c.tipo)}"><div class="entrega-head"><h3>${ui.esc(c.titulo)}</h3><span class="badge ${c.situacao === 'entregue' ? 'green' : c.situacao === 'afazer' ? '' : 'orange'}">${ui.esc(nomes[c.situacao])}</span></div>
       <ol class="entrega-passos" aria-label="Etapas">${PASSOS.map((p, k) => `<li class="${k < i ? 'feito' : k === i ? 'atual' : ''}" title="${ui.esc(nomes[p])}"><span></span>${ui.esc(nomes[p])}</li>`).join('')}</ol>
       <p class="small muted">${ui.esc(c.texto)}</p>
@@ -130,9 +135,46 @@ window.CPTFechamento = (() => {
     } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)} Clique de novo: as fichas já geradas não são refeitas.</div>`; }
     finally { gerando = false; b.disabled = false; b.innerHTML = rotulo; }
   }
+  // ---------- Anexos do relatório (2.26): a planilha oficial; conferir antes, depois atualizar ----------
+  let anexos = null;
+  const quando = iso => new Date(iso).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'});
+  async function carregarAnexos(mes) {
+    const box = $('anexosEstado'); if (!box) return;
+    try { anexos = await ui.call('estadoAnexosCPT', mes); if (ui.state.route !== 'fechamento' || !$('anexosEstado')) return; desenharAnexos(); }
+    catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function desenharAnexos() {
+    const a = anexos, box = $('anexosEstado'); if (!box || !a) return;
+    box.innerHTML = `${a.ultima ? `<p class="small">${ic('tick', '✓')} Atualizada em ${ui.esc(quando(a.ultima.em))} por ${ui.esc(a.ultima.por)}: ${ui.num(a.ultima.incluidos)} caso(s) novo(s) e ${ui.num(a.ultima.atualizados)} atualizado(s).</p>` : '<p class="small muted">O Controle de manifestações ainda não foi atualizado para este mês pela aplicação.</p>'}
+      <div class="dialog-actions"><button class="button secondary" data-anexos-conferir>${ic('search', '🔎')} Conferir o que muda</button>
+        <a class="button ghost" href="${ui.esc(a.links.planilha)}" target="_blank" rel="noopener noreferrer">Abrir a planilha ↗</a>
+        <a class="button ghost" href="${ui.esc(a.links.xlsx)}" target="_blank" rel="noopener noreferrer">Baixar Excel</a><a class="button ghost" href="${ui.esc(a.links.pdf)}" target="_blank" rel="noopener noreferrer">Baixar PDF</a></div>`;
+  }
+  async function conferirAnexos(b) {
+    if (gerando || !anexos) return; gerando = true; const box = $('anexosResultado'); b.disabled = true;
+    box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Comparando os casos do mês com a planilha (nada é gravado)…</div>';
+    try {
+      const c = await ui.call('conferirAnexosCPT', anexos.mes), faltam = Object.entries({controle: 'Controle de manifestações', matriz: 'Matriz de Contatos', indicadores: 'Indicadores 2026'}).filter(([k]) => !c.abas[k]).map(([, n]) => n);
+      const nada = !c.novos.length && !c.atualizados.length;
+      box.innerHTML = `<div class="anexos-previa"><p><strong>${ui.num(c.casosDoMes)} caso(s) do mês</strong> · ${ui.num(c.novos.length)} novo(s) para acrescentar · ${ui.num(c.atualizados.length)} para atualizar · ${ui.num(c.iguais)} já iguais. A planilha tem ${ui.num(c.linhasNaPlanilha)} linha(s) no Controle.</p>
+        ${c.novos.length ? `<p class="small">Novos: ${c.novos.map(ui.esc).join(', ')}</p>` : ''}${c.atualizados.length ? `<p class="small">Atualizar: ${c.atualizados.map(ui.esc).join(', ')}</p>` : ''}
+        ${faltam.length ? `<p class="small notice warning">Abas não encontradas: ${faltam.join(', ')}.</p>` : ''}
+        ${nada ? '<p class="small muted">Nada a mudar: o Controle já está em dia com este mês.</p>' : c.podeGravar ? '<div class="dialog-actions"><button class="button" data-anexos-atualizar>Atualizar o Controle de manifestações</button></div>' : '<p class="small muted">Atualizar a planilha oficial fica com a Gestão e o Administrativo (durante os testes, só com a administração técnica).</p>'}</div>`;
+    } catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+    finally { gerando = false; b.disabled = false; }
+  }
+  async function atualizarAnexos(b) {
+    if (gerando || !anexos) return; if (!confirm('Atualizar o Controle de manifestações da planilha oficial? Nada é apagado; Matriz e Indicadores 2026 não mudam.')) return;
+    gerando = true; b.disabled = true; b.textContent = 'Atualizando… não feche esta página'; const box = $('anexosResultado');
+    try { const r = await ui.call('atualizarAnexosCPT', {mes: anexos.mes}); anexos.ultima = {em: r.em, por: r.por, incluidos: r.incluidos, atualizados: r.atualizados}; desenharAnexos(); box.innerHTML = `<div class="notice" role="status">${ui.esc(r.resultado)}</div>`; recarregarEntregas(); }
+    catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; b.disabled = false; b.textContent = 'Atualizar o Controle de manifestações'; }
+    finally { gerando = false; }
+  }
   function init(api) {
     ui = api;
     document.addEventListener('click', ev => {
+      const ac = ev.target.closest('[data-anexos-conferir]'); if (ac) { conferirAnexos(ac); return; }
+      const aa = ev.target.closest('[data-anexos-atualizar]'); if (aa) { atualizarAnexos(aa); return; }
       const ed = ev.target.closest('[data-entrega-editar]'); if (ed) { editarEntrega(ed.dataset.entregaEditar); return; }
       const z = ev.target.closest('[data-entrega-zip]'); if (z) { montarZip(z); return; }
       const ro = ev.target.closest('[data-entrega-rolar]'); if (ro) { const alvo = $(ro.dataset.entregaRolar); if (alvo) alvo.scrollIntoView({behavior: document.documentElement.dataset.motion === 'reduce' ? 'auto' : 'smooth', block: 'start'}); return; }

@@ -1,6 +1,6 @@
 /**
  * EntregasDoMesCPT 2.15.0. As 4 entregas do mês, cada uma com situação, responsável, prazo e versão.
- * - Relatório mensal (base gerada no Fechamento) · Anexos do relatório (Mesa Socioambiental) ·
+ * - Relatório mensal (base gerada no Fechamento) · Anexos do relatório (2.26: a planilha oficial, AnexosRelatorioCPT) ·
  *   Programa Parceiros (máscara oficial) · Atendimentos (pasta das fichas oficiais + .zip).
  * - Situação: A fazer → Em preparo → Em revisão → Entregue. Sem situação gravada, vale "Em preparo" se já há arquivo.
  * - Ao marcar Entregue, guarda um retrato: cópia do arquivo na pasta do mês, em "Entregues/vN" (a máscara do
@@ -13,7 +13,7 @@ class EntregasDoMesCPT {
   static get tipos() {
     return [
       {id: 'relatorio', titulo: 'Relatório mensal', texto: 'Base do relatório (itens 1 a 13), gerada aqui embaixo.', rota: '', icone: 'file'},
-      {id: 'anexos', titulo: 'Anexos do relatório', texto: 'ANEXO 1, 2 e 3, gerados na Mesa Socioambiental.', rota: 'socioambiental', icone: 'file'},
+      {id: 'anexos', titulo: 'Anexos do relatório', texto: 'Planilha oficial: a aplicação acrescenta os casos do mês no Controle de manifestações; Matriz de Contatos e Indicadores 2026 são à mão.', rota: '', icone: 'file'},
       {id: 'parceiros', titulo: 'Programa Parceiros', texto: 'Respostas publicadas na máscara oficial.', rota: 'parceiros', icone: 'partner'},
       {id: 'atendimentos', titulo: 'Atendimentos', texto: 'Fichas oficiais do mês (abertas e concluídas no período) e o .zip.', rota: '', icone: 'case'}];
   }
@@ -42,7 +42,7 @@ class EntregasDoMesCPT {
   arquivo(tipo, mes) {
     try {
       if (tipo === 'relatorio') { const h = new RelatorioMensalCPT(this.ctx).historicoGeracoes(mes)[0]; return h ? {titulo: 'Base do relatório · versão ' + h.versao, url: h.documento, em: h.em} : null; }
-      if (tipo === 'anexos') { const a = JSON.parse(PropertiesService.getScriptProperties().getProperty('CPT_ANEXOS:' + mes) || 'null'); return a ? {titulo: 'Anexos do mês', url: a.pdf || a.doc, doc: a.doc, em: a.em} : null; }
+      if (tipo === 'anexos') { const a = AnexosRelatorioCPT.ultimaSync(mes); return a ? {titulo: 'Planilha oficial dos Anexos · atualizada', url: AnexosRelatorioCPT.links().planilha, em: a.em} : null; }
       if (tipo === 'parceiros') { const p = new ProgramaParceirosCPT(this.ctx).atual(mes); return p && p.publicacao ? {titulo: 'Publicado na máscara · versão ' + p.versao, url: p.publicacao.url, em: p.publicacao.em} : null; }
       if (tipo === 'atendimentos') {
         const pasta = this.pastaSeExiste(mes), it = pasta && pasta.getFoldersByName('Fichas'); if (!it || !it.hasNext()) return null;

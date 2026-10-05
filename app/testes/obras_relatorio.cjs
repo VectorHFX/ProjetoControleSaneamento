@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','EntregasDoMesCPT','MissoesCPT','MapaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','EntregasDoMesCPT','MissoesCPT','MapaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT','ConectoresCPT','AnexosRelatorioCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -257,6 +257,10 @@ r=run("gerarFichaOficialCPT({protocolo:'ATD20260007'})");assert.equal(r.gerada,f
 assert.equal(run("abrirAtendimentoCPT('ATD20260007')").fichaAtualizada,true);
 // Pacote do mês: abertos no fim do mês + concluídos no mês.
 email='atd@example.com';const mesP='2026-09';r=run(`gerarPacoteFichasCPT({mes:'${mesP}'})`);assert.ok(r.total>=1);assert.ok(r.erros.every(x=>/nome e solicitação|Protocolo inválido/.test(x.erro)),JSON.stringify(r.erros));assert.ok(r.prontas>=1);
+// 2.26: Anexos do relatório — os mesmos casos do pacote do mês, nas 10 colunas oficiais (com o protocolo à parte, para a nota).
+email='victor@example.com';const ca=JSON.parse(JSON.stringify(run(`new AnexosRelatorioCPT(AplicacaoCPT.contexto()).casos('${mesP}')`))),tiposA=run('AnexosRelatorioCPT.tipos');
+assert.ok(ca.length>=1&&ca.length===r.total,'mesmos casos do pacote');assert.ok(ca.every(x=>x.valores.length===10&&['Concluído','Em andamento'].includes(x.valores[8])&&tiposA.includes(x.valores[4])));
+const m7=ca.find(x=>x.id==='ATD20260007');assert.ok(m7&&/^2026-03-05/.test(m7.valores[0])&&m7.valores[5]==='Coletor A','data da abertura e frente');
 assert.equal(locked,false);
 console.log('PASS: casos migrados mostram os dados da ficha antiga; correção com histórico sem expor contato; incorporação de protocolo; filtro por responsável com dias em aberto; ficha oficial no modelo, sem refazer à toa, e pacote do mês.');
 }

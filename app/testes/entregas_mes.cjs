@@ -34,7 +34,7 @@ for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','PerfisCPT','Colec
 ctx.historico=[];ctx.parceiros={mes:'2026-10',versao:0,publicacao:null};
 vm.runInContext(`class RelatorioMensalCPT{constructor(c){this.ctx=c}historicoGeracoes(){return historico}pasta(mes){const it=DriveApp.getFolderById('raiz').getFoldersByName(mes);return it.hasNext()?it.next():DriveApp.getFolderById('raiz').createFolder(mes)}}
 class ProgramaParceirosCPT{constructor(c){}atual(){return parceiros}}`,ctx);
-vm.runInContext(fs.readFileSync(__dirname+'/../src/EntregasDoMesCPT.gs','utf8'),ctx);
+for(const f of ['ConectoresCPT','AnexosRelatorioCPT','EntregasDoMesCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 const op=()=>'OP-'+crypto.randomUUID();
 
@@ -80,7 +80,9 @@ new Arq('P3_Ficha_Atendimento.pdf',fichas,46*1024*1024);assert.throws(()=>run("z
 // Depois de liberar: Socioambiental muda a situação, mas "Entregue" é com a gerência.
 props.set('CPT_TRAVA_CONFIG','liberada');email='social@example.com';
 ctx.p={mes:'2026-10',tipo:'anexos',situacao:'revisao',operacaoId:op()};r=run('salvarEntregaDoMesCPT(p)');assert.equal(r.cartao.situacao,'revisao');
-props.set('CPT_ANEXOS:2026-10',JSON.stringify({doc:'https://docs.google.com/document/d/'+new Arq('Anexos',mesP).id+'/edit',em:'2026-11-01T10:00:00Z'}));
+assert.throws(()=>run('salvarEntregaDoMesCPT({...p,situacao:"entregue",versao:'+r.cartao.versao+',operacaoId:"OP-anexos-sem-sync"})'),/Gestão ou o Administrativo|Ainda não há arquivo/);
+// 2.26: "Anexos do relatório" é a planilha oficial; o arquivo do cartão aparece depois de atualizar o Controle de manifestações no mês.
+props.set('CPT_ANEXOS_SYNC:2026-10',JSON.stringify({em:'2026-11-01T10:00:00Z',por:'Victor',incluidos:3,atualizados:1,iguais:0}));
 ctx.p={...ctx.p,situacao:'entregue',versao:r.cartao.versao,operacaoId:op()};assert.throws(()=>run('salvarEntregaDoMesCPT(p)'),/Gestão ou o Administrativo/);
-email='adm@example.com';assert.equal(run("carregarEntregasDoMesCPT('2026-10')").podeEntregar,true);r=run('salvarEntregaDoMesCPT(p)');assert.equal(r.cartao.entregas,1);
+email='adm@example.com';const cxA=run("carregarEntregasDoMesCPT('2026-10')");assert.equal(cxA.podeEntregar,true);assert.match(cxA.cartoes.find(c=>c.tipo==='anexos').arquivo.url,/1Et4M0nr4CxlRj7J6EDoru91aC4PJ-G2Y\/edit$/);r=run('salvarEntregaDoMesCPT(p)');assert.equal(r.cartao.entregas,1);
 console.log('PASS: entregas do mês — 4 cartões por perfil, travadas no período de testes, situação/responsável/prazo com conflito de versão, retrato ao entregar (cópia na pasta do mês; Parceiros só link), reentrega vira versão 2, .zip das fichas com limite e só a gerência marca Entregue.');
