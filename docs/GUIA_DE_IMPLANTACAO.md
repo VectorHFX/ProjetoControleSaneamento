@@ -23,6 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.19.1 — revisão dos mascotes: como as peças vestem cada personagem (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.19.1`) e publique uma **Nova versão**.
+2. O que mudou no desenho (só no elenco novo, que nos testes é só seu):
+   - **Capacetes** (branco, amarelo, dourado), boné e coroa agora assentam na cabeça de cada bicho, em vez de ficarem pequenos no alto.
+   - **Fone e protetor auricular** ficam nas laterais da cabeça (no sapinho não cobrem mais os olhos).
+   - **Laço do mês** subiu para o alto do peito, longe das patinhas; com as camisetas Veolia e CPT, o nome desce um pouco para não ficar embaixo do laço.
+   - **Ferramentas na mão** ficaram maiores (troféu, trena e muda quase sumiam).
+   - **Pensativo** com ferramenta: quem vai ao queixo é a outra mão, e a ferramenta não cobre mais o rosto.
+3. Novo teste automático: desenha as 10 espécies com todas as peças em todas as expressões (1.980 desenhos) e confere as posições.
+
 ## Atualização 2.19.0 — Saber mais: curiosidades, campanha do mês e quiz (≈ 5 min + revisão do conteúdo)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.19.0`) e publique uma **Nova versão**. Chegam os arquivos novos `ConteudoSaneamentoCPT.gs`, `QuizCPT.gs` e `Saber.html`.

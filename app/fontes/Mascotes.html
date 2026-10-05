@@ -1,6 +1,6 @@
 <script>
 /*
- * Mascotes 2.18.0 — elenco chibi (versão B aprovada pelo Victor: pintado, luz e sombra, sem contorno).
+ * Mascotes 2.19.1 — elenco chibi (versão B aprovada pelo Victor: pintado, luz e sombra, sem contorno).
  * Mesma interface do desenho anterior: CPTMascote.desenhar(especie, equipado, tam, rotulo, cor, expressao).
  * Cada bicho tem o seu corpo (urso gordinho, águia fortinha, gato esguio…) e pontos de encaixe: as peças do guarda-roupa
  * desenhadas para o mascote antigo (quadro 160×180) são reposicionadas na cabeça, rosto, pescoço, mão e pés de cada corpo.
@@ -68,35 +68,35 @@ window.CPTMascoteV2 = (() => {
    * pes [[x,y,rx,ry]]; ombros; capacete {x,y,r} (ponto de encaixe da cabeça); pescoco [x,y].
    */
   const ELENCO = {
-    urso: {c: ['#b58256', '#efd7b4'], cab: ell(100, 86, 58, 48), rosto: {x: 100, y: 88, d: 27}, capacete: {x: 100, y: 52, r: 32}, pescoco: [100, 130],
+    urso: {c: ['#b58256', '#efd7b4'], cab: ell(100, 86, 58, 48), rosto: {x: 100, y: 88, d: 27}, capacete: {x: 100, y: 58, r: 40}, orelhas: [58, 84, 38], pescoco: [100, 130],
       corpo: 'M66,128 C46,150 44,196 64,212 Q100,226 136,212 C156,196 154,150 134,128 Z', caixa: [48, 124, 152, 222], barriga: ell(100, 180, 30, 26), pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
       atras: c => f(circ(56, 46, 16), c.p) + f(circ(144, 46, 16), c.p) + `<circle cx="56" cy="46" r="8" fill="${c.cl}"/><circle cx="144" cy="46" r="8" fill="${c.cl}"/>`,
       focinho: (e, c) => f(ell(100, 104, 18, 12), c.cl, 1) + `<path d="${ell(100, 99, 6, 4)}" fill="${c.e}"/>` + boquinha(e, 100, 105)},
-    aguia: {c: ['#4a403b', '#fdfbf6'], corCab: '#fdfbf6', cab: ell(100, 84, 52, 46), rosto: {x: 100, y: 84, d: 24, iris: '#f6d36a', forte: true, olho: 4.8}, capacete: {x: 100, y: 50, r: 30}, pescoco: [100, 128],
+    aguia: {c: ['#4a403b', '#fdfbf6'], corCab: '#fdfbf6', cab: ell(100, 84, 52, 46), rosto: {x: 100, y: 84, d: 24, iris: '#f6d36a', forte: true, olho: 4.8}, capacete: {x: 100, y: 58, r: 38}, orelhas: [52, 82, 38], pescoco: [100, 128],
       corpo: 'M50,138 C48,128 152,128 150,138 C152,178 136,212 100,216 C64,212 48,178 50,138 Z', caixa: [48, 128, 152, 216], peito: 'M74,136 Q100,150 126,136 L100,178 Z', pes: [[84, 216, 12, 7, '#f4b94c'], [116, 216, 12, 7, '#f4b94c']], ombros: [[56, 146], [144, 146]], asa: 1.1, mao: 32,
       atras: () => f('M134,52 l20,-12 l-4,15 l14,2 l-16,12 Z', '#fdfbf6'),
       focinho: e => (['surpreso', 'comemorando', 'feliz'].includes(e) ? `<path d="M93,103 Q100,${e === 'feliz' ? 111 : 116} 107,103 Z" fill="#c9852a"/>` : '') + f('M88,94 Q100,86 112,94 Q110,106 101,112 Q99,113 98,111 Q90,104 88,94 Z', '#f4b94c')},
-    gato: {c: ['#f2a65e', '#fff2e0'], cab: ell(100, 90, 52, 44), rosto: {x: 100, y: 92, d: 24}, capacete: {x: 100, y: 58, r: 28}, pescoco: [100, 132],
+    gato: {c: ['#f2a65e', '#fff2e0'], cab: ell(100, 90, 52, 44), rosto: {x: 100, y: 92, d: 24}, capacete: {x: 100, y: 64, r: 36}, orelhas: [52, 88, 44], pescoco: [100, 132],
       corpo: 'M76,128 C68,160 68,198 78,212 Q100,222 122,212 C132,198 132,160 124,128 Z', caixa: [70, 126, 130, 216], barriga: ell(100, 184, 15, 22), pes: [[88, 216, 11, 7], [112, 216, 11, 7]], ombros: [[78, 148], [122, 148]], braco: 13, mao: 30,
       atras: c => linha('M120,204 C158,206 168,166 150,150', 11, c.p) + f('M58,72 L60,40 L86,56 Z', c.p) + f('M142,72 L140,40 L114,56 Z', c.p) + `<path d="M64,62 L65,48 L78,57 Z" fill="${c.cl}"/><path d="M136,62 L135,48 L122,57 Z" fill="${c.cl}"/>`,
       focinho: (e, c) => linha('M92,58 l2,7 M100,56 v8 M108,58 l-2,7', 2.8, c.e) + `<path d="M97,99 h6 l-3,3.5 Z" fill="#e08a8a"/>` + boquinha(e, 100, 104) + linha('M70,100 h-12 M70,105 l-11,3 M130,100 h12 M130,105 l11,3', 1.6, '#00000033')},
-    cachorro: {c: ['#dba46a', '#f8e6cb'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 52, r: 30}, pescoco: [100, 132],
+    cachorro: {c: ['#dba46a', '#f8e6cb'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 60, r: 38}, orelhas: [56, 82, 42], pescoco: [100, 132],
       corpo: 'M66,130 C58,160 60,198 72,212 Q100,224 128,212 C140,198 142,160 134,130 Z', caixa: [60, 128, 140, 218], barriga: ell(100, 182, 20, 24), pes: [[84, 216, 13, 8], [116, 216, 13, 8]], ombros: [[66, 150], [134, 150]], braco: 15, mao: 31,
       atras: c => linha('M132,196 C152,194 158,176 150,162', 10, c.p),
       depoisCab: c => f('M50,70 C38,84 40,112 54,116 C62,104 62,84 62,72 Z', c.e) + f('M150,70 C162,84 160,112 146,116 C138,104 138,84 138,72 Z', c.e),
       focinho: (e, c) => f(ell(100, 104, 17, 12), c.cl, 1) + `<path d="${ell(100, 98, 6.5, 4.5)}" fill="#3a2a20"/>` + boquinha(e, 100, 105, 'lingua') + `<circle cx="76" cy="72" r="5" fill="${c.cl}"/>`},
-    pato: {c: ['#fbf6ea', '#ffffff'], cab: ell(100, 98, 46, 40), rosto: {x: 100, y: 92, d: 21}, capacete: {x: 100, y: 66, r: 26}, pescoco: [100, 136],
+    pato: {c: ['#fbf6ea', '#ffffff'], cab: ell(100, 98, 46, 40), rosto: {x: 100, y: 92, d: 21}, capacete: {x: 100, y: 72, r: 33}, orelhas: [46, 96, 58], pescoco: [100, 136],
       corpo: 'M70,132 C40,170 46,212 84,218 Q100,222 116,218 C154,212 160,170 130,132 Z', caixa: [48, 132, 152, 220], pes: [[86, 220, 12, 6, '#f3a94a'], [114, 220, 12, 6, '#f3a94a']], ombros: [[70, 160], [130, 160]], asa: .7, mao: 22,
       atras: c => f('M96,62 q-3,-12 7,-14 q-5,7 1,12 Z', c.p),
       focinho: e => (['surpreso', 'comemorando'].includes(e) ? `<path d="M86,112 Q100,124 114,112 Z" fill="#d07a2a"/>` : '') + f('M82,104 Q100,96 118,104 Q118,114 100,115 Q82,114 82,104 Z', '#f3a94a')},
-    capivara: {c: ['#b58a63', '#8f6a4b'], cab: 'M52,76 C52,46 76,40 100,40 C124,40 148,46 148,76 L148,104 C148,126 128,132 100,132 C72,132 52,126 52,104 Z', rosto: {x: 100, y: 80, d: 26, calmo: true, olho: 5}, capacete: {x: 100, y: 46, r: 30}, pescoco: [100, 134],
+    capivara: {c: ['#b58a63', '#8f6a4b'], cab: 'M52,76 C52,46 76,40 100,40 C124,40 148,46 148,76 L148,104 C148,126 128,132 100,132 C72,132 52,126 52,104 Z', rosto: {x: 100, y: 80, d: 26, calmo: true, olho: 5}, capacete: {x: 100, y: 52, r: 37}, orelhas: [49, 80, 40], pescoco: [100, 134],
       corpo: 'M60,130 C46,150 46,200 64,212 Q100,224 136,212 C154,200 154,150 140,130 Z', caixa: [50, 128, 150, 220], pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
       atras: c => f(circ(66, 46, 9), c.e) + f(circ(134, 46, 9), c.e),
       // A laranjinha na cabeça (como na referência) aparece quando não há nada na cabeça.
       semCabeca: () => f(circ(100, 34, 9), '#f29b3a') + f('M100,25 q5,-7 11,-3 q-5,5 -11,3 Z', '#6fae5a'),
       focinho: (e, c) => f('M74,96 Q74,88 100,88 Q126,88 126,96 L126,110 Q126,124 100,124 Q74,124 74,110 Z', c.cl, 1) + `<ellipse cx="91" cy="100" rx="2.6" ry="4" fill="${c.e}"/><ellipse cx="109" cy="100" rx="2.6" ry="4" fill="${c.e}"/>` + boquinha(e, 100, 112)},
     sapo: {c: ['#93cf72', '#f4f8e6'], semCorpo: true, cab: 'M46,98 C46,70 56,56 70,56 C78,56 84,62 88,66 L112,66 C116,62 122,56 130,56 C144,56 154,70 154,98 L154,170 C154,206 136,216 100,216 C64,216 46,206 46,170 Z',
-      rosto: {x: 100, y: 80, d: 30, grande: true}, capacete: {x: 100, y: 59, r: 21}, pescoco: [100, 132], caixa: [46, 134, 154, 214], barriga: 'M66,150 C66,132 134,132 134,150 L134,178 C134,200 66,200 66,178 Z',
+      rosto: {x: 100, y: 80, d: 30, grande: true}, capacete: {x: 100, y: 62, r: 30}, orelhas: [55, 104, 52], pescoco: [100, 132], caixa: [46, 134, 154, 214], barriga: 'M66,150 C66,132 134,132 134,150 L134,178 C134,200 66,200 66,178 Z',
       pes: [[78, 218, 16, 7], [122, 218, 16, 7]], ombros: [[56, 140], [144, 140]], braco: 15, mao: 28, boca: 112,
       olhosFundo: e => ['feliz', 'comemorando', 'dormindo'].includes(e) ? '' : `<circle cx="70" cy="80" r="11" fill="#fff"/><circle cx="130" cy="80" r="11" fill="#fff"/>`,
       focinho: e => {
@@ -105,16 +105,16 @@ window.CPTMascoteV2 = (() => {
         if (e === 'feliz') return `<path d="M76,104 Q100,126 124,104 Z" fill="${OLHO}"/><path d="M88,114 q12,7 24,0" fill="#ef7f86"/>`;
         return linha(e === 'pensativo' ? 'M80,110 q20,4 40,-4' : 'M82,108 q18,8 36,0', 2.8);
       }},
-    gota: {c: ['#7cc0ea', '#d8eefb'], semCorpo: true, cab: 'M100,36 C100,36 154,104 154,150 A54,54 0 0 1 46,150 C46,104 100,36 100,36 Z', rosto: {x: 100, y: 150, d: 22}, capacete: {x: 100, y: 88, r: 26}, pescoco: [100, 176],
+    gota: {c: ['#7cc0ea', '#d8eefb'], semCorpo: true, cab: 'M100,36 C100,36 154,104 154,150 A54,54 0 0 1 46,150 C46,104 100,36 100,36 Z', rosto: {x: 100, y: 150, d: 22}, capacete: {x: 100, y: 92, r: 29}, orelhas: [47, 124, 78], pescoco: [100, 176],
       caixa: [46, 172, 154, 204], pes: [[86, 206, 11, 7], [114, 206, 11, 7]], ombros: [[52, 160], [148, 160]], braco: 11, mao: 22, boca: 164,
       depoisCab: () => `<path d="${ell(74, 118, 8, 15)}" fill="#fff" opacity=".55"/><path d="${circ(80, 98, 3.5)}" fill="#fff" opacity=".6"/>`,
       focinho: e => boquinha(e, 100, 166)},
     // Clássicos (mascotes da primeira versão), no mesmo estilo.
-    dinossauro: {c: ['#86c97a', '#e6f4d2'], cab: ell(100, 88, 56, 46), rosto: {x: 100, y: 84, d: 26}, capacete: {x: 100, y: 52, r: 30}, pescoco: [100, 132],
+    dinossauro: {c: ['#86c97a', '#e6f4d2'], cab: ell(100, 88, 56, 46), rosto: {x: 100, y: 84, d: 26}, capacete: {x: 100, y: 60, r: 40}, orelhas: [56, 84, 42], pescoco: [100, 132],
       corpo: 'M64,128 C50,156 50,198 66,212 Q100,224 134,212 C150,198 150,156 136,128 Z', caixa: [52, 126, 148, 220], barriga: ell(100, 182, 24, 26), pes: [[82, 216, 15, 8], [118, 216, 15, 8]], ombros: [[62, 150], [138, 150]], braco: 15, mao: 30,
       atras: c => f('M130,196 C162,200 174,186 176,170 C166,184 150,184 136,178 Z', c.p) + [[128, 48, 20], [146, 64, 45], [154, 86, 70], [150, 140, 80]].map(([x, y, a]) => `<g transform="rotate(${a} ${x} ${y})">${f(`M${x - 9},${y + 8} L${x},${y - 10} L${x + 9},${y + 8} Z`, mix(c.p, '#000000', .18))}</g>`).join(''),
       focinho: (e, c) => f(ell(100, 106, 22, 13), c.cl, 1) + `<circle cx="93" cy="102" r="2" fill="${mix(c.p, '#000000', .45)}"/><circle cx="107" cy="102" r="2" fill="${mix(c.p, '#000000', .45)}"/>` + boquinha(e, 100, 110)},
-    abelha: {c: ['#f7cf4a', '#fff3c4'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 52, r: 30}, pescoco: [100, 132],
+    abelha: {c: ['#f7cf4a', '#fff3c4'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 60, r: 39}, orelhas: [54, 84, 42], pescoco: [100, 132],
       corpo: 'M66,128 C50,156 52,198 68,212 Q100,224 132,212 C148,198 150,156 134,128 Z', caixa: [54, 126, 146, 220], listras: true, pes: [[84, 216, 13, 7, '#3b302a'], [116, 216, 13, 7, '#3b302a']], ombros: [[64, 150], [136, 150]], braco: 14, mao: 30,
       atras: () => `<path d="${ell(56, 140, 22, 13)}" fill="#dff1ff" opacity=".85" transform="rotate(-25 56 140)"/><path d="${ell(144, 140, 22, 13)}" fill="#dff1ff" opacity=".85" transform="rotate(25 144 140)"/>` +
         linha('M84,48 Q76,30 66,26 M116,48 Q124,30 134,26', 2.6, '#3b302a') + `<circle cx="66" cy="26" r="5" fill="#3b302a"/><circle cx="134" cy="26" r="5" fill="#3b302a"/>`,
@@ -141,21 +141,24 @@ window.CPTMascoteV2 = (() => {
     'camisa-verdao': {cor: '#1f8a4c', manga: '#1f8a4c', desenho: (x0, x1, y0) => linha(`M${(x0 + x1) / 2 - 12},${y0 + 4} L${(x0 + x1) / 2},${y0 + 16} L${(x0 + x1) / 2 + 12},${y0 + 4}`, 4, '#fff')},
     'camisa-tricolor': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => { const y = y0 + (y1 - y0) * .42; return `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="7" fill="#d6252c"/><rect x="${x0}" y="${y + 7}" width="${x1 - x0}" height="4" fill="#fbfbf8"/><rect x="${x0}" y="${y + 11}" width="${x1 - x0}" height="7" fill="#232323"/>`; }},
     'camisa-peixe': {cor: '#fbfbf8', manga: '#fbfbf8', desenho: (x0, x1, y0, y1) => `<rect x="${x0 + 8}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/><rect x="${x1 - 13}" y="${y0}" width="5" height="${y1 - y0}" fill="#232323"/>` + linha(`M${(x0 + x1) / 2 - 10},${y0 + 4} L${(x0 + x1) / 2},${y0 + 13} L${(x0 + x1) / 2 + 10},${y0 + 4}`, 3, '#232323')},
-    'camisa-cpt': {cor: '#2f7cbf', manga: '#2f7cbf', desenho: (x0, x1, y0, y1) => `<path d="M${(x0 + x1) / 2 - 22},${y0 + (y1 - y0) * .5 + 3} c0,0 5,-8 5,-11 a5,5 0 0 0 -10,0 c0,3 5,11 5,11 Z" fill="#9fd3f5" transform="translate(4,0)"/><text x="${(x0 + x1) / 2 + 6}" y="${y0 + (y1 - y0) * .5 + 3}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Arial, sans-serif">CPT</text>`},
-    'camisa-veolia': {cor: '#e2231a', manga: '#e2231a', desenho: (x0, x1, y0, y1) => `<text x="${(x0 + x1) / 2}" y="${y0 + (y1 - y0) * .5 + 2}" text-anchor="middle" font-size="${Math.min(12, (x1 - x0) / 7.6).toFixed(1)}" font-weight="800" letter-spacing="${x1 - x0 < 80 ? 0 : .6}" fill="#fff" font-family="Arial, sans-serif">VEOLIA</text>` +
+    'camisa-cpt': {cor: '#2f7cbf', manga: '#2f7cbf', texto: true, desenho: (x0, x1, y0, y1) => `<path d="M${(x0 + x1) / 2 - 22},${y0 + (y1 - y0) * .5 + 3} c0,0 5,-8 5,-11 a5,5 0 0 0 -10,0 c0,3 5,11 5,11 Z" fill="#9fd3f5" transform="translate(4,0)"/><text x="${(x0 + x1) / 2 + 6}" y="${y0 + (y1 - y0) * .5 + 3}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Arial, sans-serif">CPT</text>`},
+    'camisa-veolia': {cor: '#e2231a', manga: '#e2231a', texto: true, desenho: (x0, x1, y0, y1) => `<text x="${(x0 + x1) / 2}" y="${y0 + (y1 - y0) * .5 + 2}" text-anchor="middle" font-size="${Math.min(12, (x1 - x0) / 6.4).toFixed(1)}" font-weight="800" letter-spacing="${x1 - x0 < 80 ? 0 : .6}" fill="#fff" font-family="Arial, sans-serif">VEOLIA</text>` +
       `<rect x="${x0}" y="${y1 - 7}" width="${x1 - x0}" height="3" fill="#ffffff55"/>`}};
   /** Camisa: cobre a parte de cima do corpo (sem cobrir o "formato" de baixo), com gola em V. */
-  function camisa(id, S, c, ID) {
+  function camisa(id, S, c, ID, laco) {
     const t = CAMISAS[id]; if (!t) return '';
     const [x0c, y0c, x1c, y1c] = S.caixa, y0 = S.semCorpo ? y0c : y0c - 6, y1 = S.semCorpo ? Math.min(y1c, y0 + 38) : y0c + (y1c - y0c) * .62;
-    return `<g clip-path="url(#${ID}t)"><path d="M20,${y0} H180 V${y1} Q100,${y1 + 8} 20,${y1} Z" fill="${t.cor}"/>${t.desenho(x0c, x1c, y0, y1)}${S.semCorpo ? '' : `<path d="M100,${y0c + 18} L90,${y0c - 2} L110,${y0c - 2} Z" fill="${S.corPeito || c.p}"/>`}<path d="M20,${y1} Q100,${y1 + 8} 180,${y1}" fill="none" stroke="#00000018" stroke-width="3"/></g>`;
+    return `<g clip-path="url(#${ID}t)"><path d="M20,${y0} H180 V${y1} Q100,${y1 + 8} 20,${y1} Z" fill="${t.cor}"/>${t.desenho(t.texto && laco && S.semCorpo ? x0c + 24 : x0c, x1c, t.texto && laco && !S.semCorpo ? y0 + (y1 - y0) * .56 : y0, y1)}${S.semCorpo ? '' : `<path d="M100,${y0c + 18} L90,${y0c - 2} L110,${y0c - 2} Z" fill="${S.corPeito || c.p}"/>`}<path d="M20,${y1} Q100,${y1 + 8} 180,${y1}" fill="none" stroke="#00000018" stroke-width="3"/></g>`;
   }
+  /** Arco da cabeça (fone, abafador): sai das conchas e passa um pouco acima do alto da cabeça. */
+  const arco = (x, dx, y, topo) => { const cy = ((topo - 5) - .25 * (y - 6)) / .75; return `M${x - dx},${y - 6} C${x - dx},${cy.toFixed(1)} ${x + dx},${cy.toFixed(1)} ${x + dx},${y - 6}`; };
   const P2 = {
     // cabeça (a aba fica em k.y; o alto da cabeça em k.y - k.r·0,8)
     bone: x => { const {k} = x, cor = '#3f7fc4'; return f(`M${k.x + k.r * .6},${k.y} q${k.r * .9},-2 ${k.r * 1.05},5 q-${k.r * .5},5 -${k.r * 1.05},2 Z`, mix(cor, '#000000', .18)) + f(`M${k.x - k.r},${k.y + 2} A${k.r},${k.r * .8} 0 0 1 ${k.x + k.r},${k.y + 2} Z`, cor) + `<circle cx="${k.x}" cy="${k.y - k.r * .78}" r="3" fill="${mix(cor, '#000000', .25)}"/><path d="M${k.x - k.r * .55},${k.y - k.r * .35} q${k.r * .4},-${k.r * .25} ${k.r * .7},-${k.r * .32}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>`; },
     laco: x => { const {k} = x, bx = k.x + k.r * .72, by = k.y - k.r * .42; return f(`M${bx},${by} l-13,-9 q-4,9 0,18 Z`, '#ef7fa6') + f(`M${bx},${by} l13,-9 q4,9 0,18 Z`, '#ef7fa6') + f(circ(bx, by, 4.2), '#d85d88'); },
-    abafador: x => { const {k} = x, w = k.r * 1.18; return linha(`M${k.x - w},${k.y + 10} Q${k.x - w},${k.y - k.r * 1.05} ${k.x},${k.y - k.r * 1.05} Q${k.x + w},${k.y - k.r * 1.05} ${k.x + w},${k.y + 10}`, 5, '#d6403a') + f(ell(k.x - w, k.y + 16, 8, 12), '#d6403a') + f(ell(k.x + w, k.y + 16, 8, 12), '#d6403a') + f(ell(k.x - w, k.y + 16, 4, 7), '#ef8a80', 1) + f(ell(k.x + w, k.y + 16, 4, 7), '#ef8a80', 1); },
-    fone: x => { const {k} = x, w = k.r * 1.16; return linha(`M${k.x - w},${k.y + 12} Q${k.x - w},${k.y - k.r * 1.05} ${k.x},${k.y - k.r * 1.05} Q${k.x + w},${k.y - k.r * 1.05} ${k.x + w},${k.y + 12}`, 4.5, '#3b3f46') + f(circ(k.x - w, k.y + 16, 10), '#3b3f46') + f(circ(k.x + w, k.y + 16, 10), '#3b3f46') + `<circle cx="${k.x - w}" cy="${k.y + 16}" r="4" fill="#7cc0ea"/><circle cx="${k.x + w}" cy="${k.y + 16}" r="4" fill="#7cc0ea"/>`; },
+    // abafador e fone: conchas nos lados da cabeça (S.orelhas = [meia largura, altura das conchas, alto da cabeça]) e arco por cima
+    abafador: x => { const {k} = x, [dx, y, topo] = x.S.orelhas; return linha(arco(k.x, dx, y, topo), 5, '#d6403a') + [-1, 1].map(l => f(ell(k.x + l * dx, y, 9, 13), '#d6403a') + f(ell(k.x + l * dx, y, 4.4, 7.5), '#ef8a80', 1)).join(''); },
+    fone: x => { const {k} = x, [dx, y, topo] = x.S.orelhas; return linha(arco(k.x, dx, y, topo), 4.5, '#3b3f46') + [-1, 1].map(l => f(circ(k.x + l * dx, y, 10), '#3b3f46') + `<circle cx="${k.x + l * dx}" cy="${y}" r="4" fill="#7cc0ea"/>`).join(''); },
     'coroa-folhas': x => { const {k} = x; return Array.from({length: 7}, (_, i) => { const a = Math.PI * (1.05 + i * .15), px = k.x + Math.cos(a) * k.r * 1.02, py = k.y - 2 + Math.sin(a) * k.r * .7; return `<g transform="rotate(${(a * 180 / Math.PI + 90).toFixed(1)} ${px.toFixed(1)} ${py.toFixed(1)})">${f(ell(px, py, 8, 4.5), i % 2 ? '#4ea65a' : '#73c06a')}</g>`; }).join(''); },
     // rosto
     'oculos-protecao': x => { const {R} = x, w = R.d + 14; return linha(`M${R.x - w - 6},${R.y} h6 M${R.x + w},${R.y} h6`, 3, '#3d7ea6') + `<rect x="${R.x - w}" y="${R.y - 10}" width="${w * 2}" height="20" rx="10" fill="#bfe6fb" fill-opacity=".5" stroke="#3d7ea6" stroke-width="2.6"/><path d="M${R.x - w + 6},${R.y - 5} h10" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>`; },
@@ -180,8 +183,8 @@ window.CPTMascoteV2 = (() => {
     ['Setembro Amarelo', '#f2c230', 'prevenção do suicídio'], ['Outubro Rosa', '#ef7fa6', 'câncer de mama'], ['Novembro Azul', '#3f8fd6', 'câncer de próstata'], ['Dezembro Vermelho', '#d6403a', 'prevenção ao HIV/aids']];
   const campanha = () => CAMPANHAS[Number(new Intl.DateTimeFormat('en-US', {month: 'numeric', timeZone: 'America/Sao_Paulo'}).format(new Date())) - 1];
   function lacoDoMes(S) {
-    // abaixo do nome da camisa, do lado esquerdo do peito; um pouco menor que antes
-    const [x0, y0, x1] = S.caixa, x = S.semCorpo ? 100 - (x1 - x0) * .3 : x0 + (x1 - x0) * .27, y = y0 + (S.semCorpo ? 22 : 44), [, cor] = campanha(), borda = mix(cor, '#000000', .25);
+    // no alto do peito, do lado esquerdo, logo abaixo do queixo (longe das patinhas); o nome da camisa desce um pouco quando ele está
+    const [x0, , x1] = S.caixa, x = 100 - (x1 - x0) * (S.semCorpo ? .23 : .2), y = S.pescoco[1] + (S.semCorpo ? 12 : 16), [, cor] = campanha(), borda = mix(cor, '#000000', .25);
     const fita = `M${x},${y + 3} C${x - 9},${y - 7} ${x - 4},${y - 15} ${x},${y - 9} C${x + 4},${y - 15} ${x + 9},${y - 7} ${x},${y + 3} L${x + 6},${y + 13} M${x},${y + 3} L${x - 6},${y + 13}`;
     return `<g transform="translate(${x},${y}) scale(.82) translate(${-x},${-y})"><path d="${fita}" fill="none" stroke="${borda}" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/><path d="${fita}" fill="none" stroke="${cor}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
   }
@@ -199,6 +202,8 @@ window.CPTMascoteV2 = (() => {
     ID = 'mv' + (++seq);
     const base = CORES[cor] || S.c, c = {p: base[0], cl: base[1], e: mix(base[0], '#000000', .35)}, R = S.rosto, P = [];
     const pose = e === 'comemorando' ? 'cima' : e === 'pensativo' ? 'queixo' : 'baixo';
+    // pensando: a mão vai ao queixo; com ferramenta na direita, quem pensa é a esquerda (a ferramenta não cobre o rosto)
+    const queixo = q.mao ? -1 : 1;
     const S2 = {...S, corPeito: S.peito ? c.cl : c.p};
     P.push(`<defs><linearGradient id="${ID}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a2410" stop-opacity=".18"/></linearGradient>
       <clipPath id="${ID}t"><path d="${S.semCorpo ? S.cab : S.corpo}"/></clipPath></defs><ellipse cx="100" cy="226" rx="${especie === 'gota' ? 40 : 52}" ry="7" fill="#3a2410" opacity=".12"/>`);
@@ -213,7 +218,7 @@ window.CPTMascoteV2 = (() => {
     // corpo, barriga, roupas
     if (!S.semCorpo) { P.push(f(S.corpo, c.p)); if (S.barriga) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) P.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
     if (S.listras) P.push(`<g clip-path="url(#${ID}t)"><rect x="30" y="160" width="140" height="11" fill="#3b302a"/><rect x="30" y="186" width="140" height="11" fill="#3b302a"/></g>`);
-    const roupa = () => q.corpo === 'colete' ? colete(S2, ID) : q.corpo === 'colete-mestre' ? colete(S2, ID, '#e6b422', '#3b3b3b') : CAMISAS[q.corpo] ? camisa(q.corpo, S2, c, ID) : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
+    const roupa = () => q.corpo === 'colete' ? colete(S2, ID) : q.corpo === 'colete-mestre' ? colete(S2, ID, '#e6b422', '#3b3b3b') : CAMISAS[q.corpo] ? camisa(q.corpo, S2, c, ID, q.broche === 'laco-do-mes') : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
     const manga = CAMISAS[q.corpo] ? CAMISAS[q.corpo].manga : null;
     if (!S.semCorpo) P.push(roupa());
     // cabeça
@@ -231,8 +236,8 @@ window.CPTMascoteV2 = (() => {
     if (q.broche === 'laco-do-mes') P.push(lacoDoMes(S));
     // braços na frente do corpo, curvos e gordinhos; luvinha com polegar
     const mao = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1];
-      if (pose === 'cima') return [sx + lado * 20, sy - S.mao * .9]; if (pose === 'queixo' && lado > 0) return [R.x + 18, R.y + (S.boca ? S.boca - R.y - 2 : 24)]; return [sx + lado * 4, sy + S.mao * .92]; };
-    const cotovelo = (lado, sx, sy) => pose === 'cima' ? [sx + lado * 26, sy - S.mao * .15] : pose === 'queixo' && lado > 0 ? [sx + 26, sy + 16] : [sx + lado * 15, sy + S.mao * .38];
+      if (pose === 'cima') return [sx + lado * 20, sy - S.mao * .9]; if (pose === 'queixo' && lado === queixo) return [R.x + lado * 18, R.y + (S.boca ? S.boca - R.y - 2 : 24)]; return [sx + lado * 4, sy + S.mao * .92]; };
+    const cotovelo = (lado, sx, sy) => pose === 'cima' ? [sx + lado * 26, sy - S.mao * .15] : pose === 'queixo' && lado === queixo ? [sx + lado * 26, sy + 16] : [sx + lado * 15, sy + S.mao * .38];
     const luva = q.luvas === 'luvas';
     const patinha = (lado, mx, my, w) => { const r = w * .66;
       if (!luva) return f(ell(mx, my, r, r * .92), S.asa ? c.p : c.cl);
@@ -242,7 +247,7 @@ window.CPTMascoteV2 = (() => {
         return penas + f(bracoCurvo(sx, sy, cx, cy, mx, my, 19 * g, 9 * g), c.p) + (luva ? patinha(lado, mx, my, 12) : ''); }
       return f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12, S.braco * .86), c.p) + (manga ? f(bracoCurvo(sx, sy, cx, cy, mx, my, S.braco * 1.12 + 3, S.braco * .86 + 3, .34), manga) : '') + (lado > 0 ? ferramenta() : '') + patinha(lado, mx, my, S.braco * .86); };
     // ferramenta na mão direita, com a patinha por cima (segurando)
-    const ferramenta = () => { if (!q.mao) return ''; xp.m = mao(1); const [hx, hy] = xp.m, esc = Math.max(.78, Math.min(1, (S.braco || 13) / 16));
+    const ferramenta = () => { if (!q.mao) return ''; xp.m = mao(1); const [hx, hy] = xp.m, esc = Math.max(1.1, Math.min(1.35, (S.braco || 14) / 16 * 1.3));
       if (P2[q.mao]) return `<g transform="translate(${hx},${hy}) scale(${esc.toFixed(2)}) translate(${-hx},${-hy})">${P2[q.mao](xp)}</g>`; const svg = V1 && V1.peca(q.mao); return svg ? `<g transform="translate(${xp.m[0]},${xp.m[1]}) scale(1.15) translate(-114,-124)">${svg}</g>` : ''; };
     P.push(braco(-1), braco(1));
     if (S.asa && q.mao) P.push(ferramenta());

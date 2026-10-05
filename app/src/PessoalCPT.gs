@@ -110,7 +110,7 @@ class PessoalCPT {
   }
   /** "Saber mais": curiosidade do dia, campanha do mês e quiz (conteúdo em ConteudoSaneamentoCPT). */
   saber() {
-    return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx.perfil, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx.perfil, this.hoje), quiz: new QuizCPT(this.ctx).estado()};
+    return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx.perfil, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx.perfil, this.hoje), quiz: QuizCPT.de(this.ctx).estado()};
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }
   /** Ações do mascote: iniciar, nomear, colorir, ativar, vestir, resgatar, comprar. Tudo sobre o próprio perfil. */

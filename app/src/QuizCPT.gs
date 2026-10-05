@@ -18,7 +18,9 @@ class QuizCPT {
   idSemana(semana) { return 'QUI-' + this.email + '-S-' + semana; }
   meus() { const p = 'QUI-' + this.email + '-'; return this.colecao.itens().filter(x => x.id.startsWith(p)); }
   /** Pontos ganhos no quiz (somados aos do checklist em PessoalCPT.pontos). */
-  static pontos(ctx) { if (!QuizCPT.pode(ctx.perfil)) return 0; const q = new QuizCPT(ctx); return q.meus().reduce((s, x) => s + (Number(x.pontos) || 0), 0); }
+  static pontos(ctx) { if (!QuizCPT.pode(ctx.perfil)) return 0; return QuizCPT.de(ctx).meus().reduce((s, x) => s + (Number(x.pontos) || 0), 0); }
+  /** Uma instância por pedido: pontos e estado leem a coleção uma vez só. */
+  static de(ctx) { return ctx.quizCPT || (ctx.quizCPT = new QuizCPT(ctx)); }
   static segunda(dia) { const d = new Date(dia + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7); return d.toISOString().slice(0, 10); }
   banco() { return ConteudoSaneamentoCPT.visiveis(ConteudoSaneamentoCPT.perguntas, this.ctx.perfil); }
   /** IDs respondidos antes de uma data (pelo dia da resposta). */
@@ -83,4 +85,4 @@ class QuizCPT {
   }
 }
 
-function responderQuizCPT(p) { return ColecaoCPT.executar('quiz.responder', ctx => new QuizCPT(ctx).responder(p), true); }
+function responderQuizCPT(p) { return ColecaoCPT.executar('quiz.responder', ctx => QuizCPT.de(ctx).responder(p), true); }
