@@ -23,6 +23,11 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.23.1 — revisão do tema do mês e do placar (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.23.1`) e publique uma **Nova versão**.
+2. No tema do mês, os fundos suaves (quadrinhos do placar, cartões travados) agora seguem a cor da campanha, em vez de ficarem verde-menta.
+
 ## Atualização 2.23.0 — Placar da equipe (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.23.0`) e publique uma **Nova versão**.
