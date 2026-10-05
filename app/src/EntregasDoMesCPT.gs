@@ -78,7 +78,10 @@ class EntregasDoMesCPT {
     const responsavel = String(p.responsavel || '');
     if (responsavel && !PerfisCPT.lista(this.ctx.config).some(x => x.ativo && x.email === responsavel)) throw new Error('Responsável não encontrado na equipe.');
     const prazo = p.prazo ? ColecaoCPT.data(p.prazo, 'prazo', true) : '';
+    // Antes de copiar qualquer arquivo: clique repetido devolve o que já foi gravado; versão antiga não grava (nem copia).
+    const ja = this.col.porOperacao(String(p.operacaoId || '')); if (ja) return {resultado: t.titulo + ': já salvo.', cartao: this.cartao(mes, t)};
     const atual = this.item(mes, t.id), antes = atual ? atual.situacao : '';
+    if (Number(p.versao != null ? p.versao : atual ? atual.versao : 0) !== (atual ? atual.versao : 0)) throw new Error('Outra pessoa alterou este item agora há pouco. Atualize a página e confira antes de salvar de novo.');
     if (p.situacao === 'entregue' && antes !== 'entregue' && !PerfisCPT.gerencia(this.ctx.perfil)) throw new Error('Marcar como entregue é com a Gestão ou o Administrativo.');
     const novo = {mes, tipo: t.id, situacao: p.situacao, responsavel, prazo, entregas: atual ? atual.entregas || 0 : 0, retratos: atual ? atual.retratos || [] : []};
     let aviso = '';

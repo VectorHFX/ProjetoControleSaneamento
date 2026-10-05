@@ -60,6 +60,11 @@ const entregues=mesP.subs.find(s=>s.nome==='Entregues');assert.equal(entregues.s
 // Voltar para revisão e entregar de novo vira a versão 2, com outro retrato.
 ctx.p={...ctx.p,situacao:'revisao',versao:r.cartao.versao,operacaoId:op()};r=run('salvarEntregaDoMesCPT(p)');
 ctx.p={...ctx.p,situacao:'entregue',versao:r.cartao.versao,operacaoId:op()};r=run('salvarEntregaDoMesCPT(p)');assert.equal(r.cartao.entregas,2);assert.equal(entregues.subs.length,2);
+// Clique repetido (mesma operação) não tira outro retrato; versão antiga não copia nada.
+const copias=()=>[...arquivos.values()].filter(a=>!a.lixo).length;let antes=copias();ctx.p={...ctx.p};r=run('salvarEntregaDoMesCPT(p)');assert.match(r.resultado,/já salvo/);assert.equal(copias(),antes,'sem cópia repetida');
+ctx.p={mes:'2026-10',tipo:'relatorio',situacao:'revisao',versao:r.cartao.versao,operacaoId:op()};let rv=run('salvarEntregaDoMesCPT(p)');ctx.p={...ctx.p,situacao:'entregue',versao:1,operacaoId:op()};antes=copias();
+assert.throws(()=>run('salvarEntregaDoMesCPT(p)'),/Outra pessoa alterou/);assert.equal(copias(),antes,'conflito não deixa cópia solta no Drive');
+ctx.p={...ctx.p,situacao:'entregue',versao:rv.cartao.versao,operacaoId:op()};r=run('salvarEntregaDoMesCPT(p)');assert.equal(r.cartao.entregas,3);
 // Conflito: versão antiga não grava por cima.
 ctx.p={...ctx.p,situacao:'preparo',versao:1,operacaoId:op()};assert.throws(()=>run('salvarEntregaDoMesCPT(p)'),/Outra pessoa alterou/);
 // Programa Parceiros: retrato só com link (máscara oficial não é copiada).

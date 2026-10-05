@@ -117,12 +117,15 @@ class PaineisGestaoCPT {
       for (let i = 0; i < idx.length;) { let j = i; while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++; const v = a.getRange(idx[i] + 2, 21, idx[j] - idx[i] + 1, 1).getValues(); v.forEach((x, k) => json.set(idx[i] + k, x[0])); i = j + 1; }
       const entregas = dados.situacoesEntregas(), R = RelatorioMensalCPT;
       const itens = idx.map(i => {
-        const r = base[i], campos = R.campos(json.get(i)), texto = R.valor(campos, /^relato|relato da atividade|relato do diagnostico|descreva|como foi/) || '';
+        // Relato grande: o Campo 4.0 guarda os detalhes num arquivo à parte. Sem lê-lo, a conferência acusaria falta de tudo.
+        let campos = R.campos(json.get(i));
+        if (!campos && /arquivoDetalhesId/.test(String(json.get(i) || ''))) try { campos = R.campos(JSON.stringify(DadosDaAplicacao.lerDetalhes(json.get(i)))); } catch (_) { campos = null; }
+        const r = base[i], texto = R.valor(campos, /^relato|relato da atividade|relato do diagnostico|descreva|como foi/) || '';
         return {id: String(r[0]), data: dados.data(r[2]), atividade: String(r[13] || r[1]), procedimento: String(r[1]), bairro: String(r[7]), frente: SocioambientalCPT.frente(r[9]), responsavel: String(r[11]),
           publico: r[14] !== '' && /^\d+$/.test(String(r[14])) ? Number(r[14]) : null, item: SocioambientalCPT.destino(r[1], r[13], r[17]),
           resumo: texto.length > 360 ? texto.slice(0, 357).replace(/\s+\S*$/, '') + '…' : texto, objetivo: R.valor(campos, /^objetivo/).slice(0, 200),
           fotos: (String(json.get(i) || '').match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).length, situacao: (entregas.get(String(r[0])) || {}).situacao || '',
-          qualidade: RelatosCPT.ehRelato(r[1]) ? RelatosCPT.doRegistro(r, campos) : null};
+          qualidade: RelatosCPT.ehRelato(r[1]) && campos ? RelatosCPT.doRegistro(r, campos) : null};
       }).sort((x, y) => y.data.localeCompare(x.data));
       return {mes, itens};
     });

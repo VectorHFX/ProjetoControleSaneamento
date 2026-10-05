@@ -15,5 +15,5 @@ ctx.source={registro:{id:'REG-'+'d'.repeat(24),procedimento:'Diagnóstico de ár
 email='social@example.com';let dg=plain(run('carregarEntregaRelatoCPT(id)'));ctx.p={id:ctx.id,versao:0,fonteHash:dg.hash,titulo:'Diagnóstico local',texto:'Síntese',situacao:'pronto',fotos:[],operacaoId:'OP-diagnostico-0001'};
 assert.throws(()=>run('salvarEntregaRelatoCPT(p)'),/Aprovar o diagnóstico é com a Gestão/);ctx.p.situacao='revisao';assert.equal(run('salvarEntregaRelatoCPT(p).entrega.situacao'),'revisao');
 email='victor@example.com';ctx.p={...ctx.p,versao:1,situacao:'pronto',operacaoId:'OP-diagnostico-0002'};assert.equal(run('salvarEntregaRelatoCPT(p).entrega.situacao'),'pronto');
-email='social@example.com';ctx.p={...ctx.p,versao:2,texto:'Síntese revista',operacaoId:'OP-diagnostico-0003'};assert.equal(run('salvarEntregaRelatoCPT(p).entrega.versao'),3,'já aprovado: ajustar o texto mantendo Pronto continua permitido');
+email='social@example.com';ctx.p={...ctx.p,versao:2,texto:'Síntese revista',operacaoId:'OP-diagnostico-0003'};assert.throws(()=>run('salvarEntregaRelatoCPT(p)'),/já foi aprovado/,'aprovado não muda sem nova aprovação');ctx.p.situacao='revisao';assert.equal(run('salvarEntregaRelatoCPT(p).entrega.situacao'),'revisao');
 console.log('PASS: diagnóstico — Socioambiental manda para revisão; só a gerência aprova.');

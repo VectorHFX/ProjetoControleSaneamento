@@ -58,7 +58,8 @@ class EntregasCPT {
     const titulo=CronogramaCPT.texto(p.titulo,180,true),texto=CronogramaCPT.texto(p.texto,tipo==='diagnostico'?20000:12000,true);
     if(!EntregasCPT.situacoes[tipo].includes(p.situacao))throw new Error(tipo==='relato'?'Escolha Rascunho ou Pronto para entrega.':'Escolha Rascunho, Em revisão ou Pronto.');
     // Diagnóstico: quem prepara manda para revisão; aprovar (Pronto) é com a Gestão ou o Administrativo.
-    if(tipo==='diagnostico'&&p.situacao==='pronto'&&(!atual||atual.situacao!=='pronto')&&!PerfisCPT.gerencia(this.ctx.perfil))throw new Error('Aprovar o diagnóstico é com a Gestão ou o Administrativo. Marque "Em revisão" para pedir a aprovação.');
+    // Diagnóstico aprovado também não muda sem nova aprovação: quem não é da gerência só o devolve para "Em revisão".
+    if(tipo==='diagnostico'&&p.situacao==='pronto'&&!PerfisCPT.gerencia(this.ctx.perfil))throw new Error(atual&&atual.situacao==='pronto'?'Este diagnóstico já foi aprovado. Para mudar, salve como "Em revisão" e peça nova aprovação.':'Aprovar o diagnóstico é com a Gestão ou o Administrativo. Marque "Em revisão" para pedir a aprovação.');
     const max=EntregasCPT.limites[tipo];
     if(!Array.isArray(p.fotos)||p.fotos.length>max||new Set(p.fotos.map(f=>f.id)).size!==p.fotos.length)throw new Error('Selecione no máximo '+(max===8?'oito':'doze')+' imagens diferentes.');
     const anexos=new Set(fonte.anexos.map(x=>x.id));const fotos=p.fotos.map(f=>{if(!anexos.has(f.id))throw new Error('A foto não pertence a este registro.');return {id:f.id,legenda:CronogramaCPT.texto(f.legenda||'',300),lista:tipo==='relato'&&f.lista===true};});

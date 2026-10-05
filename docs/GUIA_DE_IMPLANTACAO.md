@@ -23,9 +23,9 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
-## Atualização 2.16 — qualidade dos relatos, comentário da gestão e missões por área (≈ 5 min)
+## Atualização 2.16.1 — qualidade dos relatos, comentário da gestão e missões por área (≈ 5 min)
 
-1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.16.0`) e publique uma **Nova versão**.
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.16.1`) e publique uma **Nova versão**.
 
 **Qualidade dos relatos (sem nota e sem ranking):** cada relato de atividade é conferido em 6 pontos: **O quê, Onde, Público, Resultado, Encaminhamento e Tamanho** (ao menos 5 linhas). Aparece como selinhos ✓/○ em Visão do mês → **Relatos em resumo**; passando o mouse, aparece a dica. A conferência usa palavras-chave simples, é uma ajuda para escrever e não avalia pessoas.
 
@@ -38,7 +38,7 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 - **Atendimento:** casos abertos há 30 dias ou mais.
 - **Socioambiental:** relatos do mês ainda não preparados, a partir de 5 dias antes do prazo do relatório (o prazo do cartão Relatório em Entregas do mês).
 
-**Diagnóstico:** quem prepara manda para **Em revisão**; **aprovar (Pronto)** agora é só com Gestão ou Administrativo.
+**Diagnóstico:** quem prepara manda para **Em revisão**; **aprovar (Pronto)** agora é só com Gestão ou Administrativo. Um diagnóstico aprovado só muda voltando para Em revisão.
 
 **Durante os testes, tudo isso fica só com você:** só você recebe missões e só você comenta relatos. Os selinhos de qualidade e o guia já aparecem para quem tem acesso. Depois de `liberarConfiguracaoCPT`, as missões chegam a cada pessoa e Gestão e Administrativo podem comentar.
 

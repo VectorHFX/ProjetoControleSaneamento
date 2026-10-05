@@ -131,6 +131,13 @@ ctx.v={registroId:RELS,resposta:'Vou completar no próximo.',versao:dev.devoluti
 assert(!run('missoesCPT()').missoes.some(m=>m.tipo==='devolutiva'));email='adm@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.find(d=>d.registroId===RELS).resposta,'Vou completar no próximo.');
 // Preparo: a 5 dias do prazo (padrão dia 5 do mês seguinte), Socioambiental recebe a missão dos relatos não preparados.
 email='social@example.com';assert(!run('missoesCPT()').missoes.some(m=>m.id==='relatos-preparo'));ctx.relogio('2026-10-31T13:00:00Z');assert(run('missoesCPT()').missoes.some(m=>m.id==='relatos-preparo'));
+// Relato grande com detalhes em arquivo à parte: a conferência lê o arquivo (sem ele, acusaria falta de tudo).
+const RELX='REG-'+'b'.repeat(24),textoX='Na EMEF Jardim, conversamos com 20 alunos sobre descarte de óleo. Eles tiraram dúvidas e receberam folhetos. Ficou combinado o retorno em novembro. '.repeat(3);
+registros.rows.push([RELX,'Relato de atividade',new Date('2026-10-08T12:00:00Z'),'2026-10','','4.0','','Vila Linda','BAI-001','','','Resp','Social','Oficina',20,'','','oficina','','',JSON.stringify({arquivoDetalhesId:'detalhesExternos'})]);
+const getFile=ctx.DriveApp.getFileById;ctx.DriveApp.getFileById=id=>id==='detalhesExternos'?{getBlob:()=>({getDataAsString:()=>JSON.stringify({campos:[{titulo:'Relato da atividade',valor:textoX},{titulo:'Complemento da atividade',valor:'Óleo'},{titulo:'Público-alvo da atividade',valor:'Alunos'}]})})}:getFile(id);
+props.set('CPT_ENTREGAS_VERSAO',String(Number(props.get('CPT_ENTREGAS_VERSAO')||0)+1));
+const rx=run("AplicacaoCPT.executar(d=>({r:PaineisGestaoCPT.relatosDoMes(d,AplicacaoCPT.contexto(),'2026-10').itens.find(x=>x.id==='"+RELX+"')}))").r;
+assert(rx.qualidade,'qualidade calculada pelo arquivo externo');assert.equal(rx.qualidade.faltam,0);ctx.DriveApp.getFileById=getFile;registros.rows.pop();
 registros.rows.pop();atd.rows.pop();email='adm@example.com';
 console.log('PASS: qualidade dos relatos (6 critérios com dica), dicas só para quem escreveu, devolutiva privada e travada nos testes, casos de 30+ dias para o Atendimento, preparo a 5 dias do prazo para o Socioambiental.');
 console.log('PASS: "Outra obra" vinculada sem tocar no registro original; obras de hoje (missão às 7h, sugestão do cronograma e de ontem, confirmação da gerência) e comparação ativas × ações por dia e no mês.');
