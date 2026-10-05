@@ -151,8 +151,12 @@ ctx.m={tipo:'bairro',id:'BAI-002',lat:-23.65,lng:-46.53};assert.match(run('posic
 ctx.m={tipo:'obra',id:'OBR-0002',lat:-23.66,lng:-46.52};run('posicionarNoMapaCPT(m)');assert.equal(obras.rows[2][9],-23.66);assert.equal(obras.rows[2][10],-46.52);
 ctx.m={tipo:'obra',id:'OBR-0002',lat:-22.9,lng:-43.2};assert.throws(()=>run('posicionarNoMapaCPT(m)'),/fora de Santo André/);
 mp=run("carregarMapaCPT({periodo:'mes',mes:'2026-10'})");assert.equal(mp.bairros.find(x=>x.nome==='Jardim').lat,-23.65,'cache renovado depois de posicionar');
-ctx.Maps={newGeocoder:()=>({setRegion(){return this},setLanguage(){return this},geocode:q=>/Vila Linda/.test(q)?{results:[{geometry:{location:{lat:-23.67,lng:-46.545}}}]}:{results:[{geometry:{location:{lat:-22.9,lng:-43.2}}}]}})};
-let sg=run('sugerirBairrosNoMapaCPT()');assert.equal(sg.gravados,1);assert.match(sg.resultado,/Vila Nova/,'fora do município fica para o clique');assert.equal(bairros.rows[1][12],-23.67);
+// Mudou o catálogo (obra nova): o mapa não espera o cache vencer.
+ctx.n2={nome:'Rede do Mapa',situacao:'A confirmar',bairros:[],noFormulario:false};run('salvarObraCPT(n2)');assert(run("carregarMapaCPT({periodo:'mes',mes:'2026-10'})").obras.some(o=>o.nome==='Rede do Mapa'));
+// A pesquisa do Google roda sem segurar a trava de salvamento.
+let travadoDurante=null;
+ctx.Maps={newGeocoder:()=>({setRegion(){return this},setLanguage(){return this},geocode:q=>(travadoDurante=travadoDurante||locked,/Vila Linda/.test(q))?{results:[{geometry:{location:{lat:-23.67,lng:-46.545}}}]}:{results:[{geometry:{location:{lat:-22.9,lng:-43.2}}}]}})};
+let sg=run('sugerirBairrosNoMapaCPT()');assert.equal(travadoDurante,false,'trava livre durante a pesquisa');assert.equal(locked,false);assert.equal(sg.gravados,1);assert.match(sg.resultado,/Vila Nova/,'fora do município fica para o clique');assert.equal(bairros.rows[1][12],-23.67);
 email='adm@example.com';props.set('CPT_TRAVA_CONFIG','travada');assert.throws(()=>run("carregarMapaCPT({periodo:'hoje'})"),/período de testes/);props.set('CPT_TRAVA_CONFIG','liberada');
 assert.equal(run("carregarMapaCPT({periodo:'semana'})").periodo.de,'2026-10-01');
 registros.rows.pop();atd.rows.pop();email='adm@example.com';

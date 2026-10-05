@@ -202,6 +202,8 @@ class ObrasCPT {
   }
   /** O Campo 4.0 lê esta célula de hora em hora e atualiza as listas do formulário. */
   marcarSincronizacao(aba) {
+    // Toda mudança de obra ou bairro passa aqui: o mapa (em cache) é recalculado na próxima abertura.
+    try { MapaCPT.invalidar(); } catch (_) {}
     if (aba.getMaxColumns() < 30) return;
     if (String(aba.getRange(1, 28).getValue()) !== 'ATUALIZAR FORMULÁRIO') return;
     aba.getRange(6, 28).setValue(ObrasCPT.marcador + ' em ' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'));

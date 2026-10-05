@@ -2,7 +2,8 @@
 /*
  * Mapa 2.17.0 — Santo André com obras, ações socioambientais, atendimentos e bairros.
  * Leaflet (biblioteca livre) é carregado só quando o mapa abre, da CDN unpkg, com verificação de integridade.
- * Fundo: OpenStreetMap (desenho claro/escuro da CARTO). Sem chave e sem custo.
+ * Fundo: as imagens oficiais do OpenStreetMap (livres, com atribuição; sem chave e sem custo, inclusive para uso por empresa).
+ * No tema escuro, as mesmas imagens recebem um filtro de cor (não há fundo escuro oficial gratuito para uso comercial).
  * Só contagens agregadas por obra e por bairro chegam aqui: nenhum endereço, nome ou protocolo.
  * Sem internet para a biblioteca, mostra as mesmas contagens em lista.
  */
@@ -10,7 +11,7 @@ window.CPTMapa = (() => {
   'use strict';
   const LEAFLET = {js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     jsSri: 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=', cssSri: 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='};
-  const FUNDO = {claro: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', escuro: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'};
+  const FUNDO = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   const COR = {obra: '#1f6fb2', hoje: '#e07a1f', acao: '#2e9e7d', caso: '#c2552f', bairro: '#7a8b99'};
   const INTRO = ['Mapa de Santo André', 'Onde estão as obras e onde a equipe atuou. Só números por obra e por bairro: nenhum endereço de munícipe aparece aqui.'];
   let ui = null, ticket = 0, dados = null, periodo = 'mes', camadas = {obras: true, acoes: true, casos: true, bairros: true}, mapa = null, grupos = null, posicionando = null, leaflet = null;
@@ -50,9 +51,9 @@ window.CPTMapa = (() => {
   function raio(n, max) { return n ? 7 + Math.round(18 * Math.sqrt(n / Math.max(1, max))) : 0; }
   function desenhar(L) {
     const box = $('mapaCanvas'); if (!box) return; box.innerHTML = '';
-    const escuro = document.documentElement.dataset.theme === 'dark', lim = dados.limites;
+    const lim = dados.limites;
     mapa = L.map(box, {zoomControl: true, zoomAnimation: movimento(), fadeAnimation: movimento(), markerZoomAnimation: movimento(), maxBounds: [[lim.latMin - 0.05, lim.lngMin - 0.05], [lim.latMax + 0.05, lim.lngMax + 0.05]], minZoom: 11});
-    L.tileLayer(escuro ? FUNDO.escuro : FUNDO.claro, {maxZoom: 19, subdomains: 'abcd', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'}).addTo(mapa);
+    L.tileLayer(FUNDO, {maxZoom: 19, className: 'mapa-fundo', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>'}).addTo(mapa);
     mapa.fitBounds([[-23.70, -46.58], [-23.60, -46.47]]);
     grupos = {bairros: L.layerGroup(), acoes: L.layerGroup(), casos: L.layerGroup(), obras: L.layerGroup()};
     const maxA = Math.max(...dados.bairros.map(b => b.acoes), 1), maxC = Math.max(...dados.bairros.map(b => b.casos), ...dados.obras.map(o => o.casos), 1), plural = (n, s, p) => n + ' ' + (n === 1 ? s : p);

@@ -7,7 +7,7 @@ const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+(q||'');
   const pg=await b.newPage({viewport:{width:1366,height:900}});await pg.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});
-  pg.errors=[];pg.on('pageerror',e=>pg.errors.push(e.message));await pg.route('**/basemaps.cartocdn.com/**',r=>r.fulfill({status:200,contentType:'image/png',body:PNG}));
+  pg.errors=[];pg.on('pageerror',e=>pg.errors.push(e.message));await pg.route('**/tile.openstreetmap.org/**',r=>r.fulfill({status:200,contentType:'image/png',body:PNG}));
   // Uma página só (o Chromium em processo único não abre outra): troca a rota da biblioteca entre as fases.
   const nova=async servir=>{await pg.unroute('https://unpkg.com/**');
     await pg.route('https://unpkg.com/**',r=>{if(!servir)return r.abort();const f=r.request().url().endsWith('.css')?'leaflet.css':'leaflet.js';return r.fulfill({status:200,contentType:f.endsWith('css')?'text/css':'application/javascript',headers:{'Access-Control-Allow-Origin':'*'},body:fs.readFileSync(path.join(DIR,f))});});return pg;};
@@ -16,7 +16,7 @@ const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     const p=await nova(true);await p.goto(url());await p.locator('.nav-item[data-route=mapa]').click();
     await p.locator('.leaflet-container').waitFor();await p.locator('path.mapa-bolha-acao').first().waitFor({state:'attached'});
     assert.equal(await p.locator('path.mapa-bolha-acao').count(),2,'ações nos 2 bairros com ponto');assert.equal(await p.locator('path.mapa-obra-hoje').count(),1,'frente de hoje em destaque');
-    assert.match(await p.locator('.leaflet-control-attribution').textContent(),/OpenStreetMap/);
+    assert.match(await p.locator('.leaflet-control-attribution').textContent(),/colaboradores do OpenStreetMap/);assert.equal(await p.locator('img[src*=cartocdn]').count(),0,'sem fundo de licença comercial');
     assert.equal(await p.locator('#mapaLado').textContent().then(t=>/Rua |@|protocolo/i.test(t)),false,'nenhum endereço ou protocolo na tela');
     await p.locator('[data-mapa-camada=acoes]').uncheck();assert.equal(await p.locator('path.mapa-bolha-acao').count(),0);await p.locator('[data-mapa-camada=acoes]').check();
     // Posicionar: escolhe a obra sem ponto e clica no mapa.

@@ -1,5 +1,5 @@
 /**
- * MapaCPT 2.17.0. Mapa de Santo André (Leaflet + OpenStreetMap no navegador; nada pago, sem chave).
+ * MapaCPT 2.17.1. Mapa de Santo André (Leaflet + imagens oficiais do OpenStreetMap no navegador; nada pago, sem chave).
  * - Camadas: obras (as confirmadas hoje em destaque), ações socioambientais e atendimentos (bolhas), bairros.
  * - Período: hoje, últimos 7 dias ou o mês da competência.
  * - Privacidade: só contagens agregadas por obra ou por bairro. Nenhum endereço, nome ou protocolo sai do servidor.
@@ -119,20 +119,29 @@ class MapaCPT {
    * Sugere o ponto dos bairros ainda sem ponto pela pesquisa de endereços do Google ("<bairro>, Santo André - SP").
    * Só grava resultado dentro do município; o resto fica para o clique. Até 40 por vez (limite de tempo do Google).
    */
-  sugerirBairros() {
+  /** Pesquisa sem trava (pode levar dezenas de segundos); a gravação, curta, fica com a trava em sugerirBairrosNoMapaCPT. */
+  pesquisarBairros() {
     this.exigirPosicionar();
-    const a = this.obrasCtl.aba('Bairros'), c = MapaCPT.colunasBairro, faltam = this.bairros().filter(b => b.lat == null).slice(0, 40);
-    if (!faltam.length) return {resultado: 'Todos os bairros já têm ponto.', gravados: 0, fora: []};
-    this.garantirColunasBairro(a);
-    const geo = Maps.newGeocoder().setRegion('br').setLanguage('pt-BR'), gravados = [], fora = [];
+    const faltam = this.bairros().filter(b => b.lat == null).slice(0, 40), achados = [], fora = [];
+    const geo = faltam.length ? Maps.newGeocoder().setRegion('br').setLanguage('pt-BR') : null;
     faltam.forEach(b => {
       try {
         const r = geo.geocode(b.nome + ', Santo André - SP, Brasil'), res = (r && r.results || []).find(x => MapaCPT.dentro(x.geometry.location.lat, x.geometry.location.lng));
         if (!res) { fora.push(b.nome); return; }
-        const lat = Math.round(res.geometry.location.lat * 1e6) / 1e6, lng = Math.round(res.geometry.location.lng * 1e6) / 1e6;
-        a.getRange(b.linha, c.lat, 1, 2).setValues([[lat, lng]]); gravados.push(b.nome);
+        achados.push({id: b.id, nome: b.nome, lat: Math.round(res.geometry.location.lat * 1e6) / 1e6, lng: Math.round(res.geometry.location.lng * 1e6) / 1e6});
       } catch (e) { fora.push(b.nome); }
     });
+    return {faltavam: faltam.length, achados, fora};
+  }
+  /** Grava o que a pesquisa achou, só em bairro que continua sem ponto (alguém pode ter clicado nesse meio tempo). */
+  sugerirBairros(pesquisa) {
+    this.exigirPosicionar();
+    const r0 = pesquisa || this.pesquisarBairros(), fora = r0.fora;
+    if (!r0.faltavam) return {resultado: 'Todos os bairros já têm ponto.', gravados: 0, fora: []};
+    const a = this.obrasCtl.aba('Bairros'), c = MapaCPT.colunasBairro, gravados = [];
+    this.garantirColunasBairro(a);
+    const atuais = new Map(this.bairros().map(b => [b.id, b]));
+    r0.achados.forEach(x => { const b = atuais.get(x.id); if (!b || b.lat != null) return; a.getRange(b.linha, c.lat, 1, 2).setValues([[x.lat, x.lng]]); gravados.push(b.nome); });
     if (gravados.length) { this.obrasCtl.historico(null, {id: 'BAIRROS', sugeridos: gravados}, 'Pontos sugeridos pela pesquisa do Google'); MapaCPT.invalidar(); }
     return {resultado: gravados.length + (gravados.length === 1 ? ' bairro posicionado' : ' bairros posicionados') + ' pela pesquisa do Google. Confira no mapa e ajuste com um clique se precisar.' + (fora.length ? ' Sem resultado em Santo André: ' + fora.join(', ') + '.' : ''), gravados: gravados.length, fora};
   }
@@ -144,6 +153,10 @@ function posicionarNoMapaCPT(p) {
   try { return AplicacaoCPT.executar((d, ctx) => new MapaCPT(ctx).posicionar(p), 'mapa.posicionar'); } finally { lock.releaseLock(); }
 }
 function sugerirBairrosNoMapaCPT() {
-  const lock = LockService.getScriptLock(); if (!lock.tryLock(15000)) throw new Error('Há outro salvamento em andamento. Tente de novo em alguns segundos.');
-  try { return AplicacaoCPT.executar((d, ctx) => new MapaCPT(ctx).sugerirBairros(), 'mapa.sugerir'); } finally { lock.releaseLock(); }
+  // A pesquisa no Google demora: roda sem a trava, para não segurar os salvamentos da equipe. Só a gravação usa a trava.
+  return AplicacaoCPT.executar((d, ctx) => {
+    const m = new MapaCPT(ctx), pesquisa = m.pesquisarBairros();
+    const lock = LockService.getScriptLock(); if (!lock.tryLock(15000)) throw new Error('Há outro salvamento em andamento. Tente de novo em alguns segundos.');
+    try { return m.sugerirBairros(pesquisa); } finally { lock.releaseLock(); }
+  }, 'mapa.sugerir');
 }

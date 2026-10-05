@@ -23,9 +23,9 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
-## Atualização 2.17 — Mapa de Santo André (≈ 10 min)
+## Atualização 2.17.1 — Mapa de Santo André (≈ 10 min)
 
-1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.17.0`) e publique uma **Nova versão**.
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.17.1`) e publique uma **Nova versão**.
 2. Abra a aplicação → **Mapa** (em Consultas e cadastros). **Durante os testes, só você vê esta página.**
 3. Em **Posicionar no mapa**, clique em **Sugerir pontos dos bairros (pesquisa do Google)**. Ele usa a pesquisa de endereços do Google, que já vem com o Apps Script, sem custo e sem chave.
    - Na primeira vez, o Google pode pedir autorização de novo. Aceite com a sua conta.
@@ -43,7 +43,7 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 **Onde ficam os pontos:** obras nas colunas **J:K** da aba Obras (Latitude e Longitude, as mesmas do PAC16). Bairros nas novas colunas **M:N** da aba Bairros. Toda mudança entra no **Histórico de obras**.
 
-**Fundo do mapa:** OpenStreetMap (desenho da CARTO), carregado pelo navegador de cada pessoa. A biblioteca é o Leaflet, também gratuita. Sem internet para a biblioteca, a página mostra as mesmas contagens em lista.
+**Fundo do mapa:** as imagens oficiais do OpenStreetMap, livres também para uso por empresa, com o crédito "colaboradores do OpenStreetMap" no canto. Elas são carregadas pelo navegador de cada pessoa. No tema escuro, recebem um filtro de cor. A biblioteca é o Leaflet, também gratuita. Sem internet para a biblioteca, a página mostra as mesmas contagens em lista.
 
 ---
 
