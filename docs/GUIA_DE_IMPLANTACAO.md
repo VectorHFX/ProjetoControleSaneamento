@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.22.0 — Tema do mês na aparência (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.22.0`) e publique uma **Nova versão**.
+2. No seletor de aparência (topo, à direita) aparece **Mês**, ao lado de Claro e Escuro (nos testes, só para você). É o tema Claro com as cores da campanha de saúde do mês (a mesma do laço do mascote): Outubro Rosa, Novembro Azul… e troca sozinho na virada do mês.
+3. Todas as 12 paletas foram conferidas: o texto e os botões continuam legíveis (contraste de pelo menos 4,5:1).
+4. A escolha fica salva no navegador de cada pessoa. Quem não pode usar ainda e tinha "Mês" salvo volta para o Claro.
+
 ## Atualização 2.21.1 — revisão do Álbum e dos Joguinhos (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.21.1`) e publique uma **Nova versão**.

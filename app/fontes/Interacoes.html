@@ -12,7 +12,10 @@
     filters:{busca:'',procedimento:'',bairro:'',obra:'',pendencia:''},records:[],busy:false};
   let debounce,toastTimer;let activeDocument=null;
   const store={get:k=>{try{return localStorage.getItem(k);}catch(_){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(_){}}};
-  const savedTheme=store.get('cpt.theme');document.documentElement.dataset.theme=savedTheme==='dark'?'dark':'light';
+  // Aparência: Claro, Escuro ou Mês (2.22: o Claro com as cores da campanha de saúde do mês; no período de testes, só o proprietário).
+  const mesSP=()=>new Intl.DateTimeFormat('en-US',{month:'numeric',timeZone:'America/Sao_Paulo'}).format(new Date());
+  function aplicarTema(v){const h=document.documentElement;h.dataset.theme=v==='dark'?'dark':'light';if(v==='mes')h.dataset.campanha=mesSP();else delete h.dataset.campanha;}
+  const savedTheme=store.get('cpt.theme');aplicarTema(savedTheme);
   if(store.get('cpt.motion')==='reduce')document.documentElement.dataset.motion='reduce';
   /*
    * ROTAS — registro único das páginas (2.11). Para criar, mudar ou tirar uma página, mexa só aqui:
@@ -141,7 +144,7 @@
     bar.innerHTML=rotas.slice(0,4).map(r=>{const b=por.get(r),uso=b.querySelector('use'),nome=b.querySelector('span').textContent;return `<button class="tab-item${state.route===r?' active':''}" data-route="${esc(r)}"${state.route===r?' aria-current="page"':''}><svg class="icon" aria-hidden="true"><use href="${esc(uso?uso.getAttribute('href'):'#i-home')}"/></svg><span>${esc(nome)}</span></button>`;}).join('')+
       '<button class="tab-item" id="tabMenu" type="button" aria-controls="navigation" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg><span>Menu</span></button>';
     if(window.CPTRecados&&window.CPTRecados.copiarAvisos)window.CPTRecados.copiarAvisos();}
-  $('theme').value=document.documentElement.dataset.theme;$('month').value=state.mes;
+  $('theme').value=document.documentElement.dataset.campanha?'mes':document.documentElement.dataset.theme;$('month').value=state.mes;
   const pendingReads=new Map();
   function call(nome,arg){
     const read=/^(carregar|buscar|abrir|historico|listar)/.test(nome),key=nome+JSON.stringify(arg??null);
@@ -244,12 +247,17 @@
     const preview=e.target.closest('[data-preview]');if(preview&&/^[A-Za-z0-9_-]{10,}$/.test(preview.dataset.preview)){const frame=document.createElement('iframe');frame.className='media-frame';frame.src='https://drive.google.com/file/d/'+encodeURIComponent(preview.dataset.preview)+'/preview';frame.title='Visualização do arquivo';frame.allow='fullscreen';$('mediaPreview').replaceChildren(frame);return;}
     const a=e.target.closest('[data-action]')?.dataset.action;if(a==='more-records')loadRecords(true);if(a==='retry-records')loadRecords();if(a==='retry-home')loadHome();if(a==='retry-boot')bootstrap();if(a==='noform')toast('O link do formulário ainda não está disponível. Confira a aba Início da base.');if(a==='clear'){state.filters={busca:'',procedimento:'',bairro:'',obra:'',pendencia:''};renderRecords();}});
   $('closeDialog').addEventListener('click',closeDetail);$('detailDialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
-  $('theme').addEventListener('change',e=>{document.documentElement.dataset.theme=e.target.value;store.set('cpt.theme',e.target.value);toast('Aparência salva neste navegador.');});
+  $('theme').addEventListener('change',e=>{aplicarTema(e.target.value);store.set('cpt.theme',e.target.value);toast(e.target.value==='mes'&&window.CPTMascoteV2?'Tema do mês: '+window.CPTMascoteV2.campanha()[0]+'.':'Aparência salva neste navegador.');});
   $('month').addEventListener('change',()=>{if(!/^\d{4}-(0[1-9]|1[0-2])$/.test($('month').value)){toast('Selecione um mês válido.');return;}const r=ROTAS[state.route];if(r&&r.podeSair&&!r.podeSair()){$('month').value=state.mes;return;}state.mes=$('month').value;state.home=null;++state.listRequest;if(r&&r.mes)r.mes();window.CPTInicio.prefetchAgenda(state.mes);loadHome();});
   $('refresh').addEventListener('click',()=>{const r=ROTAS[state.route];if(r&&r.atualizar){r.atualizar();return;}if(state.route==='inicio')window.CPTInicio.prefetchAgenda(state.mes);loadHome(true);});
   window.addEventListener('offline',()=>notice('Você está sem conexão. As consultas precisam de internet; os dados já exibidos continuam na tela.'));
   window.addEventListener('online',()=>{notice('');toast('Conexão restabelecida. Use Atualizar para consultar novamente.');});
-  function configureProfile(p){if(!p)return;state.perfil=p;window.CPT_MASCOTE_V2=!p.emTeste||(p.papeis||[]).includes('administrador');/* elenco chibi: só o proprietário durante os testes */mostrarAvatar();const select=$('roleView'),saved=store.get('cpt.view'),previous=select.value;const views=p.papeis.filter(x=>x!=='administrador');const list=views.length?views:p.papeis;select.innerHTML=list.map(role=>`<option value="${esc(role)}">${esc(window.CPTAgenda.names[role])}</option>`).join('');select.value=list.includes(previous)?previous:list.includes(saved)?saved:list[0];select.disabled=list.length<2;aplicarVisao();$('accountLabel').textContent=p.nome+' · '+p.email;$('accountLabel').title=p.email;}
+  /** Opção "Mês" na aparência: liberada junto com o elenco novo. Quem não pode e tinha "mes" salvo volta ao Claro. */
+  function temaDoMes(pode){const s=$('theme');let o=s.querySelector('option[value=mes]');
+    if(pode&&!o){o=document.createElement('option');o.value='mes';s.appendChild(o);}if(o){o.textContent='Mês';o.title=window.CPTMascoteV2?'Cores da campanha do mês: '+window.CPTMascoteV2.campanha()[0]:'';}
+    if(!pode){if(o)o.remove();if(document.documentElement.dataset.campanha){aplicarTema('light');store.set('cpt.theme','light');}}
+    s.value=document.documentElement.dataset.campanha?'mes':document.documentElement.dataset.theme;}
+  function configureProfile(p){if(!p)return;state.perfil=p;window.CPT_MASCOTE_V2=!p.emTeste||(p.papeis||[]).includes('administrador');/* elenco chibi: só o proprietário durante os testes */temaDoMes(window.CPT_MASCOTE_V2);mostrarAvatar();const select=$('roleView'),saved=store.get('cpt.view'),previous=select.value;const views=p.papeis.filter(x=>x!=='administrador');const list=views.length?views:p.papeis;select.innerHTML=list.map(role=>`<option value="${esc(role)}">${esc(window.CPTAgenda.names[role])}</option>`).join('');select.value=list.includes(previous)?previous:list.includes(saved)?saved:list[0];select.disabled=list.length<2;aplicarVisao();$('accountLabel').textContent=p.nome+' · '+p.email;$('accountLabel').title=p.email;}
   function accessError(message){const r=$('roleView');r.innerHTML='<option value="">Sem acesso</option>';r.disabled=true;$('accountLabel').textContent='Acesso não confirmado';document.querySelectorAll('.nav-item').forEach(b=>{b.hidden=b.dataset.route!=='ajuda';});ajustarGrupos();
     $('view').innerHTML=`<div class="page-intro"><div><div class="eyebrow muted">ACESSO</div><h1>Não conseguimos liberar sua entrada</h1><p>${esc(message)}</p></div></div><section class="panel"><p>Nada foi alterado. Você pode tentar de novo ou conferir em qual etapa o acesso parou e enviar o resultado para a administração técnica.</p><div class="dialog-actions"><button class="button" data-action="retry-boot">Tentar novamente</button><button class="button secondary" data-check-access>Conferir meu acesso</button></div><p id="accessResult" style="white-space:pre-line"></p></section>`;}
   async function bootstrap(){if(window.CPT_BOOT)window.CPT_BOOT.stage='verificando acesso';const r=$('roleView');r.innerHTML='<option value="">Verificando acesso…</option>';r.disabled=true;$('accountLabel').textContent='Verificando acesso…';$('view').innerHTML='<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Verificando seu acesso…</div>';
