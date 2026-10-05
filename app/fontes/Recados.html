@@ -8,6 +8,7 @@
  */
 window.CPTRecados = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, rec = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: '', limite: 50}, rascunhoVinculo = null;
   const LIMITE_CON = 50; // contatos por vez (2.13: linhas); "Mostrar mais" traz o resto aos poucos
   const $ = id => document.getElementById(id);
@@ -116,7 +117,7 @@ window.CPTRecados = (() => {
     const b = ui.norm(filtroCon.busca), lista = con.itens.filter(c => (!filtroCon.tipo || c.tipo === filtroCon.tipo) && (!b || ui.norm([c.nome, c.instituicao, c.bairro, c.etiquetas, c.frente, c.telefone, c.email].join(' ')).includes(b)));
     const vis = lista.slice(0, filtroCon.limite || LIMITE_CON);
     // 2.13: uma linha por contato — Nome · Instituição · Tipo · Bairro, com Ligar e WhatsApp na própria linha.
-    const acoes = c => { const f = fone(c.telefone); return (c.telefone ? `<a class="row-icon" href="tel:${ui.esc(f)}" aria-label="Ligar para ${ui.esc(c.nome || c.instituicao)}" title="Ligar">📞</a>` : '') + (f.length >= 10 ? `<a class="row-icon" href="https://wa.me/55${ui.esc(f.replace(/^55/, ''))}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de ${ui.esc(c.nome || c.instituicao)}" title="WhatsApp">💬</a>` : ''); };
+    const acoes = c => { const f = fone(c.telefone); return (c.telefone ? `<a class="row-icon" href="tel:${ui.esc(f)}" aria-label="Ligar para ${ui.esc(c.nome || c.instituicao)}" title="Ligar">${ic('phone', '📞')}</a>` : '') + (f.length >= 10 ? `<a class="row-icon" href="https://wa.me/55${ui.esc(f.replace(/^55/, ''))}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de ${ui.esc(c.nome || c.instituicao)}" title="WhatsApp">${ic('message', '💬')}</a>` : ''); };
     const lista_ = vis.map(c => `<div class="list-row cor-${ui.esc(c.cor)}" role="button" tabindex="0" data-con-abrir="${ui.esc(c.id)}" aria-label="${ui.esc(c.nome || c.instituicao)}"><span class="c-nome">${ui.esc(c.nome || c.instituicao)}${c.registros && c.registros.length ? ` <small class="muted">· ${c.registros.length} ${c.registros.length === 1 ? 'conversa' : 'conversas'}</small>` : ''}</span><span class="c-inst">${ui.esc(c.nome ? c.instituicao || '—' : '—')}</span><span class="c-tipo">${ui.esc(c.tipo)}</span><span class="c-bairro">${ui.esc([c.bairro, c.frente].filter(Boolean).join(' · ') || '—')}</span><span class="c-acoes">${acoes(c)}</span></div>`).join('');
     const cabCon = '<div class="list-head" aria-hidden="true"><span data-col>Nome</span><span data-col>Instituição</span><span data-col>Tipo</span><span data-col>Bairro</span><span data-col></span></div>';
     const html = ui.intro(...INTRO_C) + `<section class="panel filter-panel"><form id="conFiltro" class="filters"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroCon.busca)}" placeholder="Nome, instituição, bairro, telefone…" maxlength="100"></span></label>

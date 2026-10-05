@@ -6,6 +6,7 @@
  */
 window.CPTSaber = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, s = null, aoMudar = () => {}, enviando = false;
   const $ = id => document.getElementById(id);
   const op = () => 'OP-' + crypto.randomUUID();
@@ -15,7 +16,7 @@ window.CPTSaber = (() => {
   /** Balão do mascote com a curiosidade do dia. */
   function balao(x) {
     s = x; const c = x && x.curiosidade; if (!c) return '';
-    return `<div class="saber-balao" role="note"><span class="saber-kicker">💡 Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${fonte(c.fonte)}</div>`;
+    return `<div class="saber-balao" role="note"><span class="saber-kicker">${ic('bulb', '💡')} Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${fonte(c.fonte)}</div>`;
   }
   function opcoes(q, tipo, resposta) {
     return `<div class="quiz-opcoes" role="group" aria-label="Alternativas">${q.opcoes.map((o, i) => {
@@ -23,17 +24,17 @@ window.CPTSaber = (() => {
       return `<button class="quiz-opcao ${estado}" ${resposta ? 'disabled' : `data-quiz-responder="${tipo}" data-quiz-id="${ui.esc(q.id)}" data-quiz-escolha="${i}"`}><b>${LETRAS[i]}</b><span>${ui.esc(o)}</span></button>`;
     }).join('')}</div>`;
   }
-  const explicacao = r => `<div class="quiz-resultado ${r.acertou ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${r.acertou ? '✓ Acertou!' : '✗ Não foi dessa vez.'}</strong> ${ui.esc(r.explica)} ${fonte(r.fonte)}</div>`;
+  const explicacao = r => `<div class="quiz-resultado ${r.acertou ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${r.acertou ? ic('tick', '✓') + ' Acertou!' : ic('x', '✗') + ' Não foi dessa vez.'}</strong> ${ui.esc(r.explica)} ${fonte(r.fonte)}</div>`;
   function blocoDia() {
     const q = s.quiz.dia, rg = s.quiz.regras; if (!q) return '<p class="empty-line">A pergunta do dia volta em breve.</p>';
     const x = q.pergunta || q.resposta;
-    return `<div class="quiz-dia" id="quizDia"><span class="saber-kicker">❓ Pergunta do dia · ${ui.esc(x.tema)} ${revisar(x)}<small>${rg.pontosDia} pontos se acertar</small></span>
+    return `<div class="quiz-dia" id="quizDia"><span class="saber-kicker">${ic('question', '❓')} Pergunta do dia · ${ui.esc(x.tema)} ${revisar(x)}<small>${rg.pontosDia} pontos se acertar</small></span>
       <p class="quiz-pergunta">${ui.esc(x.pergunta)}</p>${opcoes(x, 'dia', q.resposta)}${q.resposta ? explicacao(q.resposta) + '<p class="small muted">Amanhã tem outra!</p>' : ''}</div>`;
   }
   function blocoSemana() {
     const w = s.quiz.semana, rg = s.quiz.regras; if (!w) return '';
     const fim = w.respondidas >= w.total;
-    return `<div class="quiz-semana"><div><span class="saber-kicker">🏁 Quiz da semana <small>${rg.porSemana} perguntas · ${rg.pontosPergunta} pontos por acerto</small></span>
+    return `<div class="quiz-semana"><div><span class="saber-kicker">${ic('flag', '🏁')} Quiz da semana <small>${rg.porSemana} perguntas · ${rg.pontosPergunta} pontos por acerto</small></span>
       <p class="small">${fim ? `Feito! ${w.acertos} de ${w.total} certas · +${w.pontos} pontos. Na segunda tem outro.` : w.respondidas ? `${w.respondidas} de ${w.total} respondidas · ${w.acertos} certas até aqui.` : 'Teste o que você sabe sobre água, esgoto e resíduos.'}</p></div>
       <span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${w.total}" aria-valuenow="${w.respondidas}" aria-label="Quiz da semana"><span style="width:${w.respondidas / w.total * 100}%"></span></span>
       <button class="button ${fim ? 'ghost' : ''}" data-quiz-semana>${fim ? 'Ver respostas' : w.respondidas ? 'Continuar' : 'Começar'}</button></div>`;
@@ -41,7 +42,7 @@ window.CPTSaber = (() => {
   /** Painel "Saber mais" do Meu espaço. */
   function painel(x) {
     s = x; if (!s) return ''; const m = s.mes;
-    return `<section class="panel home-saber" id="espSaber"><div class="panel-head"><div><span class="card-kicker">🧠 Saber mais</span><h2>Saneamento no dia a dia</h2></div></div>
+    return `<section class="panel home-saber" id="espSaber"><div class="panel-head"><div><span class="card-kicker">${ic('bulb', '🧠')} Saber mais</span><h2>Saneamento no dia a dia</h2></div></div>
       <p class="saber-mes"><i class="saber-laco" aria-hidden="true" ${window.CPTMascoteV2 ? `style="--laco:${ui.esc(window.CPTMascoteV2.campanha()[1])}"` : ''}></i><span><strong>${ui.esc(m.campanha)}</strong> · ${ui.esc(m.tema)}</span></p>
       ${m.datas.map(d => `<p class="saber-data"><strong>${d.dia}/${new Date().toLocaleDateString('pt-BR', {month: '2-digit', timeZone: 'America/Sao_Paulo'})} · ${ui.esc(d.titulo)}</strong> ${ui.esc(d.texto)} ${fonte(d.fonte)}</p>`).join('')}
       ${blocoDia()}${blocoSemana()}</section>`;
@@ -56,7 +57,7 @@ window.CPTSaber = (() => {
     if (ultima) html += `<p class="quiz-pergunta">${ui.esc(ultima.pergunta)}</p>${opcoes(ultima, 'semana', ultima)}${explicacao(ultima)}`;
     if (ultima && !fim) html += '<div class="dialog-actions"><button class="button" data-quiz-proxima>Próxima pergunta</button></div>';
     else if (!ultima && !fim) html += `<p class="small muted">${ui.esc(w.proxima.tema)} ${revisar(w.proxima)}</p><p class="quiz-pergunta">${ui.esc(w.proxima.pergunta)}</p>${opcoes(w.proxima, 'semana')}`;
-    if (fim) html += `<p class="quiz-placar">⭐ +${w.pontos} pontos nesta semana</p><details class="quiz-revisao" ${ultima ? '' : 'open'}><summary>Ver todas as respostas</summary>${w.respostas.map((r, i) => `<div class="quiz-item"><p><strong>${i + 1}.</strong> ${ui.esc(r.pergunta)}</p><p class="small">${r.acertou ? '✓' : '✗'} Certa: <strong>${ui.esc(r.opcoes[r.certa])}</strong>${r.acertou ? '' : ' · você marcou ' + ui.esc(r.opcoes[r.escolha])}</p><p class="small muted">${ui.esc(r.explica)} ${fonte(r.fonte)}</p></div>`).join('')}</details>`;
+    if (fim) html += `<p class="quiz-placar">${ic('star', '⭐')} +${w.pontos} pontos nesta semana</p><details class="quiz-revisao" ${ultima ? '' : 'open'}><summary>Ver todas as respostas</summary>${w.respostas.map((r, i) => `<div class="quiz-item"><p><strong>${i + 1}.</strong> ${ui.esc(r.pergunta)}</p><p class="small">${r.acertou ? ic('tick', '✓') : ic('x', '✗')} Certa: <strong>${ui.esc(r.opcoes[r.certa])}</strong>${r.acertou ? '' : ' · você marcou ' + ui.esc(r.opcoes[r.escolha])}</p><p class="small muted">${ui.esc(r.explica)} ${fonte(r.fonte)}</p></div>`).join('')}</details>`;
     $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal();
   }
   async function responder(b) {

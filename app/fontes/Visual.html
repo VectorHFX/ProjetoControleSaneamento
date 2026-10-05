@@ -6,6 +6,8 @@
  * Movimento com significado: entrada de página, cartões em cascata, contador de pontos, folhas comemorando conquistas e
  * parallax suave no cenário do Meu espaço. Tudo desligado com "Reduzir movimentos" (no app) ou com a preferência do sistema.
  */
+/** Ícone de traço no visual novo; no visual atual (equipe, até liberar) continua o emoji. nome = símbolo #i-nome do Aplicacao.html. */
+window.CPTic = (nome, emoji) => document.documentElement.dataset.visual === 'v3' ? `<svg class="icon ic ic-${nome}" aria-hidden="true"><use href="#i-${nome}"/></svg>` : (emoji || '');
 window.CPTVisual = (() => {
   'use strict';
   const h = document.documentElement;

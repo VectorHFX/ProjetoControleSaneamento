@@ -7,6 +7,7 @@
  */
 window.CPTSocioambiental = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, dados = null;
   const $ = id => document.getElementById(id);
   const rotulo = {sem: 'A preparar', rascunho: 'Rascunho', revisao: 'Em revisão', pronto: 'Pronto'};
@@ -37,7 +38,7 @@ window.CPTSocioambiental = (() => {
     const grupos = ordem.map(i => d.grupos.find(g => g.item === i)).filter(Boolean);
     const pct = t.proprios ? Math.round(t.prontos / t.proprios * 100) : 0;
     ui.view.innerHTML = ui.intro(...INTRO) + `
-      <section class="panel mesa-hero"><p class="home-phrase">${ui.esc(t.frase)}</p><p class="small"><button type="button" class="link-button" data-guia-relato>📝 Como escrever um bom relato</button></p>
+      <section class="panel mesa-hero"><p class="home-phrase">${ui.esc(t.frase)}</p><p class="small"><button type="button" class="link-button" data-guia-relato>${ic('pencil', '📝')} Como escrever um bom relato</button></p>
         <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${t.proprios}" aria-valuenow="${t.prontos}" aria-label="${t.prontos} de ${t.proprios} prontos"><span style="width:${pct}%"></span></div>
         <p class="small muted">${ui.num(t.prontos)} de ${ui.num(t.proprios)} relatos e diagnósticos prontos para o relatório.${t.semPublico ? ' ' + ui.num(t.semPublico) + ' ações sem público informado.' : ''}</p>
         <div class="dialog-actions"><button class="button secondary" id="gerarAnexos">${ui.icon('file')}Gerar anexos do mês</button>${d.anexos ? `<span class="small">Última geração: ${ui.esc(new Date(d.anexos.em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'}))} · ${ui.num(d.anexos.relatos)} relatos · <a href="${ui.esc(d.anexos.doc)}" target="_blank" rel="noopener noreferrer">Documento</a> · <a href="${ui.esc(d.anexos.pdf)}" target="_blank" rel="noopener noreferrer">PDF</a></span>` : ''}</div>

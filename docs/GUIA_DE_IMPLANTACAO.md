@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.25.0 — acabamento do visual novo, página por página (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.25.0`) e publique uma **Nova versão**.
+2. No visual novo (nos testes, só você):
+   - **Ícones de traço** no lugar dos emojis em todas as telas (Meu espaço, Saber mais, Joguinhos, Placar, Álbum, Comunicação, Recados, Gestão, Socioambiental e Entregas). Para a equipe, até liberar, continua tudo como está.
+   - **Cartão de boas-vindas**: selos neutros com o ícone colorido (recado em vermelho, pontos em âmbar, caderno em madeira); a etiqueta "a revisar" ficou discreta; o presente da semana virou um cartão quente, sem tracejado laranja nem brilho piscando.
+   - Saber mais, Joguinhos e Placar no mesmo padrão; o coração do Álbum fica cheio quando a foto é sua; gotinhas da forca e cadeado em traço.
+   - **Como usar** e **Entregas**: os ícones dos cartões seguem a cor do visual (antes tinham azul e laranja fixos). Links de texto no verde de destaque.
+
 ## Atualização 2.24.1 — gota d'água azul no visual novo (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.24.1`) e publique uma **Nova versão**.

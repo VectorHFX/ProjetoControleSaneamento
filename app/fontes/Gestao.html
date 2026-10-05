@@ -7,6 +7,7 @@
  */
 window.CPTGestao = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, painel = null, aba = 'contrato', relatos = null, filtroFrente = {busca: '', andamento: true}, filtroRelato = {busca: '', item: ''};
   let pp = null, ppOp = null, ppSujo = false;
   const $ = id => document.getElementById(id);
@@ -141,7 +142,7 @@ window.CPTGestao = (() => {
   /** Qualidade: o que o relato já tem e o que falta. Sem nota e sem ranking. */
   function qualidade(q) {
     if (!q) return '';
-    return `<ul class="qualidade-chips" aria-label="Conferência do relato">${q.itens.map(i => `<li class="${i.ok ? 'ok' : 'falta'}" title="${ui.esc(i.ok ? i.nome + ': ok' : i.dica)}">${i.ok ? '✓' : '○'} ${ui.esc(i.nome)}</li>`).join('')}</ul>`;
+    return `<ul class="qualidade-chips" aria-label="Conferência do relato">${q.itens.map(i => `<li class="${i.ok ? 'ok' : 'falta'}" title="${ui.esc(i.ok ? i.nome + ': ok' : i.dica)}">${i.ok ? ic('tick', '✓') : ic('circle', '○')} ${ui.esc(i.nome)}</li>`).join('')}</ul>`;
   }
   function devolutivaDe(id) { return devolutivas.devolutivas.find(d => d.registroId === id); }
   function abrirDevolver(id) {
@@ -166,11 +167,11 @@ window.CPTGestao = (() => {
     const rot = {pronto: 'Pronto', rascunho: 'Rascunho', revisao: 'Em revisão'};
     box.innerHTML = `<section class="panel filter-panel"><form id="relatoFiltro" class="filters"><label class="field">Procurar nos relatos<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroRelato.busca)}" placeholder="Atividade, bairro, pessoa ou palavra do relato" maxlength="100"></span></label>
       <label class="field">Item do relatório<select name="item"><option value="">Todos</option>${itens.map(i => `<option ${filtroRelato.item === i ? 'selected' : ''}>${ui.esc(i)}</option>`).join('')}</select></label></form></section>
-      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'relato' : 'relatos'} em ${dias.size} ${dias.size === 1 ? 'dia' : 'dias'}</span><span><button type="button" class="link-button" data-guia-relato>📝 Guia do bom relato</button></span></div>
+      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'relato' : 'relatos'} em ${dias.size} ${dias.size === 1 ? 'dia' : 'dias'}</span><span><button type="button" class="link-button" data-guia-relato>${ic('pencil', '📝')} Guia do bom relato</button></span></div>
       ${[...dias].map(([dia, rs]) => `<section class="relato-day"><h3 class="peek-title">${ui.date(dia)}</h3>${rs.map(r => `<article class="relato-card"><div class="card-top"><span class="badge">Item ${ui.esc(r.item)}</span>${r.situacao ? `<span class="badge ${r.situacao === 'pronto' ? 'status-concluida' : 'status-andamento'}">${rot[r.situacao] || ui.esc(r.situacao)}</span>` : ''}${r.fotos ? `<span class="small muted">${r.fotos} ${r.fotos === 1 ? 'foto' : 'fotos'}</span>` : '<span class="small late-text">sem foto</span>'}</div>
         <h4>${ui.esc(r.atividade)}</h4><p class="small muted">${ui.esc([r.frente || r.bairro, r.publico != null ? r.publico + ' pessoas' : 'público não informado', r.responsavel].filter(Boolean).join(' · '))}</p>
         ${r.resumo ? `<p class="relato-text">${ui.esc(r.resumo)}</p>` : '<p class="small late-text">Relato sem texto no registro.</p>'}${r.objetivo ? `<p class="small"><strong>Objetivo:</strong> ${ui.esc(r.objetivo)}</p>` : ''}
-        ${qualidade(r.qualidade)}${(dv => dv ? `<p class="devolutiva-status small"><strong>${dv.situacao === 'vista' ? '✓ Comentário visto' : '✉ Comentário enviado'}</strong>${dv.resposta ? ' · resposta: ' + ui.esc(dv.resposta) : ''}</p>` : '')(devolutivaDe(r.id))}
+        ${qualidade(r.qualidade)}${(dv => dv ? `<p class="devolutiva-status small"><strong>${dv.situacao === 'vista' ? ic('tick', '✓') + ' Comentário visto' : ic('mail', '✉') + ' Comentário enviado'}</strong>${dv.resposta ? ' · resposta: ' + ui.esc(dv.resposta) : ''}</p>` : '')(devolutivaDe(r.id))}
         <div class="card-bottom"><span>${r.qualidade && devolutivas.podeDevolver ? `<button class="button ghost" data-devolver="${ui.esc(r.id)}">${devolutivaDe(r.id) ? 'Novo comentário' : 'Comentar'}</button>` : ''}</span><span><button class="button ghost" data-record="${ui.esc(r.id)}">Registro completo</button> <button class="button secondary" data-prepare-relato="${ui.esc(r.id)}">Preparar</button></span></div></article>`).join('')}</section>`).join('') || '<p class="muted">Nenhum relato com esse filtro.</p>'}`;
   }
 

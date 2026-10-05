@@ -3,6 +3,7 @@
    base do relatório mensal e pacote de fichas oficiais (ANEXO 4) com .zip. */
 window.CPTFechamento = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, operacao = null, gerando = false, entregas = null;
   const INTRO = ['Entregas do mês', 'Relatório, anexos, Programa Parceiros e atendimentos: o que falta, quem cuida e o prazo de cada um.'];
   const PASSOS = ['afazer', 'preparo', 'revisao', 'entregue'];
@@ -56,7 +57,7 @@ window.CPTFechamento = (() => {
     const box = $('entregasMes'); if (!box || !entregas) return;
     if (entregas.erro) { box.innerHTML = `<div class="notice">${ui.esc(entregas.erro)}</div>`; return; }
     const e = entregas, feitas = e.cartoes.filter(c => c.situacao === 'entregue').length;
-    box.innerHTML = `<div class="entregas-topo"><h2>${feitas === 4 ? 'Tudo entregue em ' + ui.esc(monthName(e.mes)) + ' 🎉' : ui.num(feitas) + ' de 4 entregas feitas'}</h2>
+    box.innerHTML = `<div class="entregas-topo"><h2>${feitas === 4 ? 'Tudo entregue em ' + ui.esc(monthName(e.mes)) + ' ' + ic('sparkle', '🎉') : ui.num(feitas) + ' de 4 entregas feitas'}</h2>
         <div class="entregas-barra" role="meter" aria-valuemin="0" aria-valuemax="4" aria-valuenow="${feitas}" aria-label="${feitas} de 4 entregues"><span style="width:${feitas * 25}%"></span></div>
         ${e.podeAlterar ? '' : '<p class="small muted">Durante os testes, só a administração técnica altera as entregas. Você acompanha por aqui.</p>'}</div>
       <div class="entrega-grid">${e.cartoes.map(cartao).join('')}</div>`;

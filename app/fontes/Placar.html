@@ -5,17 +5,18 @@
  */
 window.CPTPlacar = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null;
   const ddmm = x => x.slice(8, 10) + '/' + x.slice(5, 7);
   function painel(p) {
     if (!p || !ui) return '';
     const pct = Math.min(100, Math.round(p.pontos / p.meta * 100)), max = Math.max(p.meta, ...p.historico.map(h => h.pontos)) || 1;
     const item = (icone, n, um, varios) => `<li><span aria-hidden="true">${icone}</span><strong>${ui.num(n)}</strong> ${n === 1 ? um : varios}</li>`;
-    return `<section class="panel home-placar" id="espPlacar"><div class="panel-head"><div><span class="card-kicker">🏆 Placar da equipe</span><h2>Semana de ${ddmm(p.inicio)}</h2></div><span class="small muted">Só números da equipe toda</span></div>
+    return `<section class="panel home-placar" id="espPlacar"><div class="panel-head"><div><span class="card-kicker">${ic('trophy', '🏆')} Placar da equipe</span><h2>Semana de ${ddmm(p.inicio)}</h2></div><span class="small muted">Só números da equipe toda</span></div>
       <div class="placar-topo"><div class="placar-total"><strong>${ui.num(p.pontos)}</strong><span>de ${ui.num(p.meta)} pontos na meta da semana</span>
         <span class="meter placar-meta" role="meter" aria-valuemin="0" aria-valuemax="${p.meta}" aria-valuenow="${Math.min(p.pontos, p.meta)}" aria-label="Meta da equipe"><span style="width:${pct}%"></span></span>
-        <p class="small">${p.atingiu ? '🎉 Meta da semana batida! Bom trabalho, equipe.' : `Faltam ${ui.num(p.meta - p.pontos)} pontos. Cada tarefa, acerto e vitória conta.`}</p></div>
-      <ul class="placar-itens">${item('✅', p.tarefas, 'tarefa feita', 'tarefas feitas')}${item('❓', p.acertos, 'acerto no quiz', 'acertos no quiz')}${item('🎮', p.vitorias, 'vitória nos joguinhos', 'vitórias nos joguinhos')}${item('❤', p.fotos, 'foto favoritada', 'fotos favoritadas')}</ul></div>
+        <p class="small">${p.atingiu ? ic('sparkle', '🎉') + ' Meta da semana batida! Bom trabalho, equipe.' : `Faltam ${ui.num(p.meta - p.pontos)} pontos. Cada tarefa, acerto e vitória conta.`}</p></div>
+      <ul class="placar-itens">${item(ic('check', '✅'), p.tarefas, 'tarefa feita', 'tarefas feitas')}${item(ic('question', '❓'), p.acertos, 'acerto no quiz', 'acertos no quiz')}${item(ic('game', '🎮'), p.vitorias, 'vitória nos joguinhos', 'vitórias nos joguinhos')}${item(ic('heart', '❤'), p.fotos, 'foto favoritada', 'fotos favoritadas')}</ul></div>
       <div class="placar-semanas" role="img" aria-label="Pontos da equipe nas últimas ${p.historico.length} semanas: ${p.historico.map(h => ddmm(h.inicio) + ' ' + h.pontos).join(', ')}">
         ${p.historico.map(h => `<div class="placar-semana ${h.atual ? 'is-atual' : ''}"><b>${ui.num(h.pontos)}</b><span class="placar-barra"><span style="height:${Math.max(2, h.pontos / max * 100)}%"></span></span><small>${h.atual ? 'esta semana' : ddmm(h.inicio)}</small></div>`).join('')}
 </div></section>`;

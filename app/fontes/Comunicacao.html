@@ -9,6 +9,7 @@
  */
 window.CPTComunicacao = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, aba = 'hoje', hoje = null, lem = null, mat = null, gal = null;
   let filtroLem = 'fazer', filtroMat = {situacao: 'abertos', busca: ''}, filtroGal = {origem: '', busca: '', limite: 24}, selecionadas = new Set();
   const $ = id => document.getElementById(id);
@@ -44,7 +45,7 @@ window.CPTComunicacao = (() => {
   function bloco(n, titulo, conteudo, acao) { return `<section class="panel today-block"><div class="today-head"><span class="today-step" aria-hidden="true">${n}</span><h2>${titulo}</h2>${acao || ''}</div>${conteudo}</section>`; }
   function linhaLembrete(l) {
     const atrasado = l.data < hojeISO();
-    return `<li class="today-row ${atrasado ? 'is-late' : ''}"><span class="kind kind-${l.tipo}">${l.tipo === 'material' ? 'Material' : 'Ação'}</span><span class="row-main"><strong>${ui.esc(l.titulo)}</strong><small>${ui.esc(relativo(l.data))}${l.material ? ' · ' + ui.esc(l.material) : ''}</small></span><button class="button secondary" data-lem-feito="${ui.esc(l.id)}">Feito ✓</button></li>`;
+    return `<li class="today-row ${atrasado ? 'is-late' : ''}"><span class="kind kind-${l.tipo}">${l.tipo === 'material' ? 'Material' : 'Ação'}</span><span class="row-main"><strong>${ui.esc(l.titulo)}</strong><small>${ui.esc(relativo(l.data))}${l.material ? ' · ' + ui.esc(l.material) : ''}</small></span><button class="button secondary" data-lem-feito="${ui.esc(l.id)}">Feito ${ic('tick', '✓')}</button></li>`;
   }
   function desenharHoje() {
     const h = hoje, nome = ((ui.state.perfil || {}).nome || '').split(' ')[0], L = h.lembretes || {atrasados: [], hoje: [], semana: []};
@@ -52,7 +53,7 @@ window.CPTComunicacao = (() => {
     const total = (h.recadosTotal || 0) + lemHoje.length + (h.materiais || []).length;
     const r = h.resumo;
     ui.view.innerHTML = cabecalho() + h.avisos.map(a => `<div class="notice">${ui.esc(a)}</div>`).join('') +
-      `<section class="today-hello"><h2>Olá${nome ? ', ' + ui.esc(nome) : ''}! Hoje é ${ui.esc(dataLonga)}.</h2><p>${total ? 'Você tem <strong>' + total + '</strong> ' + (total === 1 ? 'coisa' : 'coisas') + ' para olhar. Vá de cima para baixo.' : 'Tudo em dia por aqui. 🌿'}</p>
+      `<section class="today-hello"><h2>Olá${nome ? ', ' + ui.esc(nome) : ''}! Hoje é ${ui.esc(dataLonga)}.</h2><p>${total ? 'Você tem <strong>' + total + '</strong> ' + (total === 1 ? 'coisa' : 'coisas') + ' para olhar. Vá de cima para baixo.' : 'Tudo em dia por aqui. ' + ic('leaf', '🌿')}</p>
         <div class="quick-actions"><button class="button" data-lem-novo>${ui.icon('plus')}Novo lembrete</button><button class="button secondary" data-mat-novo>${ui.icon('plus')}Novo material</button><button class="button secondary" data-gal-enviar>Enviar fotos</button><button class="button secondary" data-rec-novo>Mandar recado</button></div></section>` +
       bloco(1, 'Recados para você', (h.recados || []).length ? `<ul class="today-list">${h.recados.map(x => `<li class="today-row is-new"><span class="row-main"><strong>${ui.esc(x.assunto)}</strong><small>De ${ui.esc(x.nomeAutor || x.criadoPor)}${x.importante ? ' · importante' : ''}</small></span><button class="button secondary" data-route="recados">Ler</button></li>`).join('')}</ul>` : '<p class="empty-line">Nenhum recado novo.</p>') +
       bloco(2, 'Lembretes de hoje', lemHoje.length ? `<ul class="today-list">${lemHoje.map(linhaLembrete).join('')}</ul>` : '<p class="empty-line">Nada para hoje.</p>' + (L.semana.length ? `<p class="small muted">Nesta semana: ${L.semana.length} ${L.semana.length === 1 ? 'lembrete' : 'lembretes'}.</p>` : ''), '<button class="button ghost" data-com-aba="lembretes">Ver todos</button>') +
@@ -71,7 +72,7 @@ window.CPTComunicacao = (() => {
     return `<article class="reminder ${feito ? 'is-done' : ''} ${late ? 'is-late' : ''}"><div class="card-top"><span class="kind kind-${l.tipo}">${l.tipo === 'material' ? 'Material de comunicação' : 'Ação socioambiental'}</span><span class="small ${late ? 'late-text' : 'muted'}">${feito ? 'Feito em ' + ui.date(String(l.feitoEm).slice(0, 10)) : ui.esc(relativo(l.data))}</span></div>
       <h3>${ui.esc(l.titulo)}</h3>${l.detalhe ? `<p>${ui.esc(l.detalhe)}</p>` : ''}${l.material ? `<p class="small"><strong>Materiais:</strong> ${ui.esc(l.material)}</p>` : ''}
       <p class="small muted">${ui.esc([l.responsavel ? 'Com ' + nomePessoa(lem.pessoas, l.responsavel) : '', l.evento ? 'Atividade: ' + l.evento.titulo : '', l.frentes.map(f => f === 'comunicacao' ? 'Comunicação' : 'Social').join(' + ')].filter(Boolean).join(' · '))}</p>
-      <div class="card-actions">${feito ? `<button class="button ghost" data-lem-desfazer="${ui.esc(l.id)}">Voltar para pendente</button>` : `<button class="button" data-lem-feito="${ui.esc(l.id)}">Feito ✓</button>`}<button class="button ghost" data-lem-editar="${ui.esc(l.id)}">Editar</button><button class="button ghost" data-lem-recado="${ui.esc(l.id)}">Avisar por recado</button></div></article>`;
+      <div class="card-actions">${feito ? `<button class="button ghost" data-lem-desfazer="${ui.esc(l.id)}">Voltar para pendente</button>` : `<button class="button" data-lem-feito="${ui.esc(l.id)}">Feito ${ic('tick', '✓')}</button>`}<button class="button ghost" data-lem-editar="${ui.esc(l.id)}">Editar</button><button class="button ghost" data-lem-recado="${ui.esc(l.id)}">Avisar por recado</button></div></article>`;
   }
   function desenharLembretes() {
     const h = hojeISO(), pend = lem.itens.filter(l => l.situacao !== 'feito'), d7 = new Date(h + 'T12:00:00Z'); d7.setUTCDate(d7.getUTCDate() + 7); const s7 = d7.toISOString().slice(0, 10);

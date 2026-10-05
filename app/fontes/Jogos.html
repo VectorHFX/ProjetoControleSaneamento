@@ -6,23 +6,24 @@
  */
 window.CPTJogos = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, e = null, aoMudar = () => {}, mascote = () => '', p = null, letras = [], trocas = [], ordem = [], marcada = null, enviando = false, imagem = '';
   const $ = id => document.getElementById(id);
   const op = () => 'OP-' + crypto.randomUUID();
   const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
   const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const INFO = {
-    forca: {nome: 'Forca do saneamento', icone: '💧', meta: n => `${n} dias de checklist pontuado`, texto: 'Adivinhe palavras do nosso trabalho. Cada erro seca uma gotinha.'},
-    quebra: {nome: 'Quebra-cabeça', icone: '🧩', meta: n => `${n} fotos favoritas no Álbum`, texto: 'Monte uma foto do álbum da equipe trocando as peças de lugar.'}};
+    forca: {nome: 'Forca do saneamento', icone: ['drop', '💧'], meta: n => `${n} dias de checklist pontuado`, texto: 'Adivinhe palavras do nosso trabalho. Cada erro seca uma gotinha.'},
+    quebra: {nome: 'Quebra-cabeça', icone: ['puzzle', '🧩'], meta: n => `${n} fotos favoritas no Álbum`, texto: 'Monte uma foto do álbum da equipe trocando as peças de lugar.'}};
   function cartao(jogo) {
     const x = e[jogo], i = INFO[jogo], resta = x.limite - x.partidasHoje;
     const corpo = !x.liberado
       ? `<p class="small">Libera com ${i.meta(x.precisa)}.</p><span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${x.precisa}" aria-valuenow="${Math.min(x.tem, x.precisa)}" aria-label="Progresso para liberar"><span style="width:${Math.min(100, x.tem / x.precisa * 100)}%"></span></span><small class="muted">${Math.min(x.tem, x.precisa)} de ${x.precisa}</small>`
-      : `<p class="small">${i.texto}</p><p class="small muted">${x.aberta ? 'Você tem uma partida em andamento.' : resta > 0 ? `${resta} ${resta === 1 ? 'partida' : 'partidas'} hoje` : 'Partidas de hoje encerradas. Amanhã tem mais!'} · ${x.ganhouPontosHoje ? 'pontos de hoje já ganhos' : '⭐ +' + e.regras.pontos + ' na 1ª vitória do dia'}</p>
+      : `<p class="small">${i.texto}</p><p class="small muted">${x.aberta ? 'Você tem uma partida em andamento.' : resta > 0 ? `${resta} ${resta === 1 ? 'partida' : 'partidas'} hoje` : 'Partidas de hoje encerradas. Amanhã tem mais!'} · ${x.ganhouPontosHoje ? 'pontos de hoje já ganhos' : ic('star', '⭐') + ' +' + e.regras.pontos + ' na 1ª vitória do dia'}</p>
          <button class="button" data-jogo-abrir="${jogo}" ${!x.aberta && resta <= 0 ? 'disabled' : ''}>${x.aberta ? 'Continuar' : 'Jogar'}</button>`;
-    return `<article class="jogo-card ${x.liberado ? '' : 'is-travado'}"><span class="jogo-icone" aria-hidden="true">${x.liberado ? i.icone : '🔒'}</span><div><h3>${i.nome}</h3>${corpo}</div></article>`;
+    return `<article class="jogo-card ${x.liberado ? '' : 'is-travado'}"><span class="jogo-icone" aria-hidden="true">${x.liberado ? ic(...i.icone) : ic('lock', '🔒')}</span><div><h3>${i.nome}</h3>${corpo}</div></article>`;
   }
-  function painel(estado) { e = estado; if (!e) return ''; return `<section class="panel home-jogos" id="espJogos"><div class="panel-head"><div><span class="card-kicker">🎮 Joguinhos</span><h2>Uma pausa rápida</h2></div></div><div class="jogos-grade">${cartao('forca')}${cartao('quebra')}</div></section>`; }
+  function painel(estado) { e = estado; if (!e) return ''; return `<section class="panel home-jogos" id="espJogos"><div class="panel-head"><div><span class="card-kicker">${ic('game', '🎮')} Joguinhos</span><h2>Uma pausa rápida</h2></div></div><div class="jogos-grade">${cartao('forca')}${cartao('quebra')}</div></section>`; }
   function redesenhar() { const el = $('espJogos'); if (el) el.outerHTML = painel(e); }
   function janela(titulo, html) { $('detailType').textContent = 'JOGUINHOS'; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); }
   async function abrir(jogo) {
@@ -37,7 +38,7 @@ window.CPTJogos = (() => {
   function forca(final) {
     const c = contas(), fim = final || c.venceu || c.perdeu;
     const casas = c.w.split('').map(ch => ch === ' ' ? '<span class="forca-espaco"></span>' : `<span class="forca-casa">${letras.includes(norm(ch)) || fim ? ui.esc(ch) : ''}</span>`).join('');
-    const gotas = Array.from({length: p.erros}, (_, i) => `<span class="forca-gota ${i < c.erros ? 'is-seca' : ''}" aria-hidden="true">${i < c.erros ? '🍂' : '💧'}</span>`).join('');
+    const gotas = Array.from({length: p.erros}, (_, i) => `<span class="forca-gota ${i < c.erros ? 'is-seca' : ''}" aria-hidden="true">${i < c.erros ? ic('leaf', '🍂') : ic('drop', '💧')}</span>`).join('');
     janela(INFO.forca.nome, `<p class="forca-dica"><strong>Dica:</strong> ${ui.esc(p.dica)}</p><div class="forca-palavra" aria-label="Palavra">${casas}</div>
       <div class="forca-gotas" role="img" aria-label="${p.erros - c.erros} de ${p.erros} gotinhas">${gotas}</div>
       ${final ? `<div class="quiz-resultado ${final.situacao === 'venceu' ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${ui.esc(final.resultado)}</strong></div>${maisUma('forca')}`

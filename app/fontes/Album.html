@@ -6,6 +6,7 @@
  */
 window.CPTAlbum = (() => {
   'use strict';
+  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, d = null, ticket = 0, enviando = false;
   const $ = id => document.getElementById(id);
   const op = () => 'OP-' + crypto.randomUUID();
@@ -15,17 +16,17 @@ window.CPTAlbum = (() => {
   function cartao(f, tipo) {
     const cheio = d.usadasHoje >= d.porDia && !f.meu;
     return `<figure class="album-foto ${f.meu ? 'is-meu' : ''}" data-album-foto="${ui.esc(f.fileId)}">
-      <button class="album-ver" data-album-ver="${ui.esc(f.fileId)}" aria-label="Ampliar: ${ui.esc(f.legenda)}"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="${thumb(f.fileId)}"><span class="album-sem" aria-hidden="true">📷</span></button>
+      <button class="album-ver" data-album-ver="${ui.esc(f.fileId)}" aria-label="Ampliar: ${ui.esc(f.legenda)}"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="${thumb(f.fileId)}"><span class="album-sem" aria-hidden="true">${ic('photo', '📷')}</span></button>
       <figcaption><span class="album-legenda"><strong>${ui.esc(f.atividade)}</strong><small>${ui.esc([dataCurta(f.data), f.local].filter(Boolean).join(' · '))}</small></span>
-      <button class="album-coracao ${f.meu ? 'is-on' : ''}" data-album-fav="${ui.esc(f.fileId)}" aria-pressed="${f.meu}" ${cheio ? 'aria-disabled="true"' : ''} aria-label="${f.meu ? 'Tirar das favoritas' : 'Favoritar'} (${f.coracoes} ${f.coracoes === 1 ? 'coração' : 'corações'})"><span aria-hidden="true">${f.meu ? '❤' : '♡'}</span><b>${f.coracoes || ''}</b></button></figcaption></figure>`;
+      <button class="album-coracao ${f.meu ? 'is-on' : ''}" data-album-fav="${ui.esc(f.fileId)}" aria-pressed="${f.meu}" ${cheio ? 'aria-disabled="true"' : ''} aria-label="${f.meu ? 'Tirar das favoritas' : 'Favoritar'} (${f.coracoes} ${f.coracoes === 1 ? 'coração' : 'corações'})"><span aria-hidden="true">${f.meu ? ic('heart', '❤') : ic('heart', '♡')}</span><b>${f.coracoes || ''}</b></button></figcaption></figure>`;
   }
   const grade = (lista, tipo, vazio) => lista.length ? `<div class="album-grade ${tipo === 'destaque' ? 'is-destaque' : ''}">${lista.map(f => cartao(f, tipo)).join('')}</div>` : `<p class="empty-line">${vazio}</p>`;
-  function contador() { const n = d.porDia - d.usadasHoje; return `<span class="album-vagas" id="albumVagas">${n > 0 ? `❤ ${n} ${n === 1 ? 'favorita' : 'favoritas'} para escolher hoje` : '❤ Favoritas de hoje escolhidas. Amanhã tem mais!'}</span>`; }
+  function contador() { const n = d.porDia - d.usadasHoje; return `<span class="album-vagas" id="albumVagas">${n > 0 ? `${ic('heart', '❤')} ${n} ${n === 1 ? 'favorita' : 'favoritas'} para escolher hoje` : ic('heart', '❤') + ' Favoritas de hoje escolhidas. Amanhã tem mais!'}</span>`; }
   function desenhar() {
-    ui.view.innerHTML = ui.intro(...INTRO) + `<section class="panel album-topo"><div><span class="card-kicker">⭐ Destaque</span><h2>Fotos da semana</h2><p class="small muted">As mais favoritadas pela equipe nesta semana (segunda a domingo).</p></div>${contador()}</section>
+    ui.view.innerHTML = ui.intro(...INTRO) + `<section class="panel album-topo"><div><span class="card-kicker">${ic('star', '⭐')} Destaque</span><h2>Fotos da semana</h2><p class="small muted">As mais favoritadas pela equipe nesta semana (segunda a domingo).</p></div>${contador()}</section>
       ${grade(d.semana.fotos, 'destaque', 'Ainda sem favoritas nesta semana. Escolha as suas lá embaixo!')}
-      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">📚 Da equipe</span><h2>Álbum do mês</h2></div></div>${grade(d.album, 'album', 'O álbum deste mês ainda está vazio.')}</section>
-      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">📷 Relatos do mês</span><h2>Escolha suas favoritas</h2></div><span class="small muted">${d.fotos.length} ${d.fotos.length === 1 ? 'foto' : 'fotos'}</span></div>${grade(d.fotos, 'fotos', 'Nenhuma foto nos relatos deste mês.')}</section>`;
+      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">${ic('people', '📚')} Da equipe</span><h2>Álbum do mês</h2></div></div>${grade(d.album, 'album', 'O álbum deste mês ainda está vazio.')}</section>
+      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">${ic('photo', '📷')} Relatos do mês</span><h2>Escolha suas favoritas</h2></div><span class="small muted">${d.fotos.length} ${d.fotos.length === 1 ? 'foto' : 'fotos'}</span></div>${grade(d.fotos, 'fotos', 'Nenhuma foto nos relatos deste mês.')}</section>`;
   }
   async function render() {
     const mine = ++ticket;

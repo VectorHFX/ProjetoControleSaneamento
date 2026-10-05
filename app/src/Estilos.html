@@ -1117,4 +1117,60 @@ html[data-visual=v3][data-motion=reduce] :is(.v3-camada,.hero-pet){transform:non
   html[data-visual=v3] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-pulso,dialog[open],.check-list input),html[data-visual=v3] .sidebar-art::before,html[data-visual=v3] .page-intro::after{animation:none!important}
   html[data-visual=v3] :is(.v3-camada,.hero-pet){transform:none!important}
   html[data-visual=v3] :is(.button,.stat-tile,.entry-card,.album-foto,.jogo-card,.nav-item .icon){transition:none!important;transform:none!important}}
+/* ============ 2.25 · Acabamento do visual novo: ícones de traço (no lugar dos emojis) e cores harmonizadas ============ */
+html[data-visual=v3] .ic{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.18em;stroke-width:1.9;flex:none}
+html[data-visual=v3] :is(.card-kicker,.saber-kicker,.peek-title) .ic{color:var(--blue);margin-right:.2em}
+/* Meu espaço · cartão de boas-vindas: selos neutros com ícone colorido */
+html[data-visual=v3] .space-hero .home-chip{background:var(--surface);border:1px solid var(--line);color:var(--ink);box-shadow:0 1px 2px #3a2a1a0a;gap:8px;padding:6px 14px 6px 10px;font-weight:600}
+html[data-visual=v3] .space-hero .home-chip .ic{width:18px;height:18px;padding:3px;border-radius:999px;box-sizing:content-box;background:var(--pale);color:var(--blue)}
+html[data-visual=v3] .space-hero .home-chip.is-alert{background:var(--surface);border-color:color-mix(in srgb,var(--veolia) 30%,var(--line))}
+html[data-visual=v3] .space-hero .home-chip.is-alert .ic{background:color-mix(in srgb,var(--veolia) 12%,var(--surface));color:var(--veolia)}
+html[data-visual=v3] .space-hero .home-chip.is-alert:hover{border-color:var(--veolia)}
+html[data-visual=v3] .space-hero .home-chip .ic-star{background:color-mix(in srgb,var(--accent) 18%,var(--surface));color:#b06f12}
+html[data-visual=v3] .space-hero .home-chip .ic-book{background:var(--tile2);color:#8a6a4a}
+html[data-visual=v3][data-theme=dark] .space-hero .home-chip .ic-star{color:var(--accent)}html[data-visual=v3][data-theme=dark] .space-hero .home-chip .ic-book{color:#d8b48a}
+/* "A revisar": etiqueta discreta de madeira, não um alerta */
+html[data-visual=v3] .saber-revisar{background:var(--tile2);color:#7a5520;border:1px solid color-mix(in srgb,var(--madeira3) 55%,var(--line));font-size:9.5px;letter-spacing:.06em;padding:2px 8px}
+html[data-visual=v3][data-theme=dark] .saber-revisar{color:#e7c48f}
+/* Presente da semana: um cartão quente, sem tracejado nem brilho piscando */
+html[data-visual=v3] .space-hero .gift{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 0;padding:12px 16px;border:1px solid color-mix(in srgb,var(--madeira3) 60%,var(--line));border-radius:14px;background:linear-gradient(180deg,#fffaf0,var(--tile2));color:var(--ink);font-weight:700;box-shadow:0 8px 16px -12px #3a2a1a55;animation:none;transition:transform .18s var(--ease),box-shadow .2s,border-color .2s}
+html[data-visual=v3] .space-hero .gift .ic{width:20px;height:20px;padding:5px;border-radius:10px;box-sizing:content-box;background:var(--terracota);color:#fff}
+html[data-visual=v3] .space-hero .gift:hover{transform:translateY(-1px);border-color:var(--terracota);box-shadow:0 12px 22px -14px #3a2a1a77}
+html[data-visual=v3][data-theme=dark] .space-hero .gift{background:linear-gradient(180deg,#2a241b,#221d16);color:var(--ink)}
+html[data-visual=v3] .space-hero .pet-tools{border-top:1px solid var(--line)}
+html[data-visual=v3] .pill-button .ic{color:var(--blue)}
+/* Balão "Você sabia?" e Saber mais */
+html[data-visual=v3] .saber-balao{border-color:var(--line);box-shadow:0 10px 24px -16px #3a2a1a66}
+html[data-visual=v3] .saber-balao::before{background:var(--surface);border-color:var(--line)}
+html[data-visual=v3] .saber-kicker{color:var(--blue)}
+html[data-visual=v3] .quiz-resultado .ic{width:1.15em;height:1.15em}
+html[data-visual=v3] .quiz-resultado.is-ok strong{color:var(--mint)}html[data-visual=v3] .quiz-resultado.is-nao strong{color:#b8502b}
+html[data-visual=v3] .quiz-opcao b{background:var(--pale);color:var(--blue)}
+html[data-visual=v3] :is(.quiz-dia,.quiz-semana){background:linear-gradient(135deg,color-mix(in srgb,var(--pale) 70%,var(--surface)),var(--surface) 70%);border-color:var(--line)}
+/* Checklist e missões */
+html[data-visual=v3] .check-list .pts .ic{color:#c98a1a}
+html[data-visual=v3] .missao{background:linear-gradient(90deg,color-mix(in srgb,var(--pale) 80%,var(--surface)),var(--surface));border-color:var(--line)}
+html[data-visual=v3] .qualidade-lista .ic,html[data-visual=v3] .qual-itens .ic{color:var(--mint)}
+/* Joguinhos e placar */
+html[data-visual=v3] .jogo-icone .ic{width:26px;height:26px;color:var(--blue)}html[data-visual=v3] .jogo-card.is-travado .jogo-icone .ic{color:var(--muted)}
+html[data-visual=v3] .jogo-card{background:linear-gradient(135deg,color-mix(in srgb,var(--pale) 70%,var(--surface)),var(--surface) 75%);border-color:var(--line)}
+html[data-visual=v3] .jogo-card.is-travado{background:var(--soft)}
+html[data-visual=v3] .forca-gota .ic{width:24px;height:24px;color:#3d9cc9;fill:color-mix(in srgb,#3d9cc9 22%,transparent)}
+html[data-visual=v3] .forca-gota.is-seca .ic{color:#b08a5a;fill:color-mix(in srgb,#b08a5a 25%,transparent)}
+html[data-visual=v3] .placar-itens li{background:var(--surface);border:1px solid var(--line)}
+html[data-visual=v3] .placar-itens .ic{width:18px;height:18px;padding:5px;border-radius:999px;box-sizing:content-box;background:var(--pale);color:var(--blue)}
+html[data-visual=v3] .placar-itens .ic-heart{background:color-mix(in srgb,var(--veolia) 10%,var(--surface));color:var(--veolia)}
+html[data-visual=v3] .placar-itens .ic-game{background:var(--tile2);color:#8a6a4a}
+html[data-visual=v3] .placar-itens .ic-question{background:color-mix(in srgb,var(--accent) 18%,var(--surface));color:#b06f12}
+/* Álbum: coração cheio quando é seu */
+html[data-visual=v3] .album-coracao .ic{width:18px;height:18px}html[data-visual=v3] .album-coracao.is-on .ic{fill:currentColor}
+html[data-visual=v3] .album-coracao{color:var(--veolia)}html[data-visual=v3] .album-vagas .ic{color:var(--veolia);fill:currentColor}
+html[data-visual=v3] .album-sem .ic{width:34px;height:34px;color:var(--muted)}
+/* Contatos e devolutivas */
+html[data-visual=v3] .contact-actions a .ic,html[data-visual=v3] .devolutiva-status .ic{color:var(--blue)}
+/* Ícones dos cartões (Como usar, Fechamento): a cor do visual novo vale mais que a cor fixa antiga do código */
+html[data-visual=v3] .kpi-icon{--accent:var(--blue)!important;--tint:var(--pale)!important;width:42px;height:42px;border-radius:14px;background:var(--tint);color:var(--accent)}
+html[data-visual=v3] .kpi-icon .icon{width:22px;height:22px}
+html[data-visual=v3] .help-grid .panel h2{color:var(--navy)}
+html[data-visual=v3] .link-button{color:var(--blue)}html[data-visual=v3] .link-button .ic{color:currentColor}
 </style>

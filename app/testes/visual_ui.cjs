@@ -25,6 +25,10 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=urso]').click();await p.locator('#espInicio [type=submit]').click();
   await p.locator('.space-hero.v3-cena-host .v3-cena').waitFor();assert.equal(await p.locator('.v3-cena .v3-placa').count(),1);assert.equal(await p.locator('.v3-cena .v3-lumi').count(),2);assert.ok(await p.locator('.v3-cena .v3-brisa path').count()>100,'parede de plantas');
   await foto('visual-meuespaco');
+  // 2.25: ícones de traço no lugar dos emojis (selos, presente, painéis) e nenhum modelo cru na tela.
+  assert.ok(await p.locator('.space-hero .home-chip svg.ic').count()>=3,'selos com ícone');assert.equal(await p.locator('.space-hero .gift svg.ic-gift').count(),1,'presente com ícone');
+  assert.equal(await p.evaluate(()=>document.body.innerHTML.includes('${ic(')),false,'nenhum ícone como texto cru');
+  assert.equal(await p.evaluate(()=>/[\u{1F300}-\u{1FAFF}]/u.test(document.querySelector('.space-hero').textContent)),false,'sem emoji no cartão de boas-vindas');
   await p.locator('#espNova [name=texto]').fill('Conferir a obra');await p.locator('#espNova [type=submit]').click();await p.locator('[data-esp-check]').first().waitFor();
   await p.locator('[data-esp-check]').first().check();await p.waitForFunction(()=>document.querySelector('.v3-folhas'));
   await p.waitForFunction(()=>document.querySelector('#espPontos').textContent.trim()==='10');await p.waitForFunction(()=>!document.querySelector('.v3-folhas'),null,{timeout:4000});
