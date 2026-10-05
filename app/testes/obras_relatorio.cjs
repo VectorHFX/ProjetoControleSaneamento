@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','EntregasDoMesCPT','MissoesCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','EntregasDoMesCPT','MissoesCPT','MapaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -139,6 +139,24 @@ props.set('CPT_ENTREGAS_VERSAO',String(Number(props.get('CPT_ENTREGAS_VERSAO')||
 const rx=run("AplicacaoCPT.executar(d=>({r:PaineisGestaoCPT.relatosDoMes(d,AplicacaoCPT.contexto(),'2026-10').itens.find(x=>x.id==='"+RELX+"')}))").r;
 assert(rx.qualidade,'qualidade calculada pelo arquivo externo');assert.equal(rx.qualidade.faltam,0);ctx.DriveApp.getFileById=getFile;registros.rows.pop();
 registros.rows.pop();atd.rows.pop();email='adm@example.com';
+// Mapa: só contagens por obra e por bairro; pontos por clique (dentro do município) e sugestão pelo Google.
+email='victor@example.com';ctx.relogio('2026-10-07T13:00:00Z');
+registros.rows.push(['REG-'+'9'.repeat(24),'Relato de atividade',new Date('2026-10-06T12:00:00Z'),'2026-10','','4.0','','Jardim','BAI-002','Coletor A [OBR-0001]','OBR-0001','Resp','Social','Oficina',12,'','','oficina','','','{}']);
+atd.rows.push(['P7','P7','','Em andamento',new Date('2026-10-06T12:00:00Z'),'','Fulano de Tal','Buraco','Rua Secreta, 99 - Jardim','','Atd','Atd','','','','','CAC']);
+props.set('CPT_ENTREGAS_VERSAO',String(Number(props.get('CPT_ENTREGAS_VERSAO')||0)+1));
+let mp=run("carregarMapaCPT({periodo:'mes',mes:'2026-10'})");const jardim=mp.bairros.find(x=>x.nome==='Jardim');
+assert.equal(jardim.acoes,1);assert.equal(jardim.pessoas,12);assert.equal(jardim.casos,1,'atendimento no bairro pelo nome no endereço');assert.equal(jardim.lat,null);
+assert(!/Rua Secreta|Fulano|P7/.test(JSON.stringify(mp)),'nenhum endereço, nome ou protocolo sai do servidor');assert.equal(mp.obras.find(o=>o.id==='OBR-0001').acoes>=1,true);
+ctx.m={tipo:'bairro',id:'BAI-002',lat:-23.65,lng:-46.53};assert.match(run('posicionarNoMapaCPT(m)').resultado,/Jardim/);assert.equal(bairros.rows[2][12],-23.65);assert.equal(bairros.rows[0][12],'Latitude');
+ctx.m={tipo:'obra',id:'OBR-0002',lat:-23.66,lng:-46.52};run('posicionarNoMapaCPT(m)');assert.equal(obras.rows[2][9],-23.66);assert.equal(obras.rows[2][10],-46.52);
+ctx.m={tipo:'obra',id:'OBR-0002',lat:-22.9,lng:-43.2};assert.throws(()=>run('posicionarNoMapaCPT(m)'),/fora de Santo André/);
+mp=run("carregarMapaCPT({periodo:'mes',mes:'2026-10'})");assert.equal(mp.bairros.find(x=>x.nome==='Jardim').lat,-23.65,'cache renovado depois de posicionar');
+ctx.Maps={newGeocoder:()=>({setRegion(){return this},setLanguage(){return this},geocode:q=>/Vila Linda/.test(q)?{results:[{geometry:{location:{lat:-23.67,lng:-46.545}}}]}:{results:[{geometry:{location:{lat:-22.9,lng:-43.2}}}]}})};
+let sg=run('sugerirBairrosNoMapaCPT()');assert.equal(sg.gravados,1);assert.match(sg.resultado,/Vila Nova/,'fora do município fica para o clique');assert.equal(bairros.rows[1][12],-23.67);
+email='adm@example.com';props.set('CPT_TRAVA_CONFIG','travada');assert.throws(()=>run("carregarMapaCPT({periodo:'hoje'})"),/período de testes/);props.set('CPT_TRAVA_CONFIG','liberada');
+assert.equal(run("carregarMapaCPT({periodo:'semana'})").periodo.de,'2026-10-01');
+registros.rows.pop();atd.rows.pop();email='adm@example.com';
+console.log('PASS: mapa — contagens por obra e bairro sem endereço/nome/protocolo, ponto por clique (obra J:K, bairro M:N) só dentro do município, sugestão do Google sem gravar fora, cache renovado e travado nos testes.');
 console.log('PASS: qualidade dos relatos (6 critérios com dica), dicas só para quem escreveu, devolutiva privada e travada nos testes, casos de 30+ dias para o Atendimento, preparo a 5 dias do prazo para o Socioambiental.');
 console.log('PASS: "Outra obra" vinculada sem tocar no registro original; obras de hoje (missão às 7h, sugestão do cronograma e de ontem, confirmação da gerência) e comparação ativas × ações por dia e no mês.');
 console.log('PASS: nome de uso e apelidos das obras (únicos, oficial preservado) e bairros editáveis na aplicação, com histórico e marcação para o formulário.');

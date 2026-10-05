@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.16 e Campo 4.0 (4.6)
+# Guia de instalação: Aplicação CPT 2.17 e Campo 4.0 (4.6)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,30 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.17 — Mapa de Santo André (≈ 10 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.17.0`) e publique uma **Nova versão**.
+2. Abra a aplicação → **Mapa** (em Consultas e cadastros). **Durante os testes, só você vê esta página.**
+3. Em **Posicionar no mapa**, clique em **Sugerir pontos dos bairros (pesquisa do Google)**. Ele usa a pesquisa de endereços do Google, que já vem com o Apps Script, sem custo e sem chave.
+   - Na primeira vez, o Google pode pedir autorização de novo. Aceite com a sua conta.
+   - Até 40 bairros por clique. Repita até não sobrar bairro sem ponto.
+   - Bairro que a pesquisa não acha dentro de Santo André fica para o clique.
+4. Confira os pontos no mapa. Para corrigir um bairro ou posicionar uma obra, escolha na lista (○ = sem ponto, ● = já posicionado) e **clique no mapa**.
+
+**O que o mapa mostra:**
+- **Obras** (azul): as **confirmadas hoje** (Obras → Obras de hoje) ficam em laranja e pulsando.
+- **Ações socioambientais** (bolhas verdes por bairro, maiores com mais ações) e **atendimentos** (bolhas vermelhas por obra ou bairro).
+- **Bairros** (pontos cinza).
+- Período: **Hoje**, **7 dias** ou **Mês da competência**. As camadas ligam e desligam.
+
+**Privacidade:** só contagens por obra e por bairro saem do servidor. Nenhum endereço, nome ou protocolo de munícipe vai para a tela. O atendimento entra na obra pela "Frente de obra". Sem obra, entra no bairro cujo nome aparece no endereço. Sem nenhum dos dois, conta como "sem local".
+
+**Onde ficam os pontos:** obras nas colunas **J:K** da aba Obras (Latitude e Longitude, as mesmas do PAC16). Bairros nas novas colunas **M:N** da aba Bairros. Toda mudança entra no **Histórico de obras**.
+
+**Fundo do mapa:** OpenStreetMap (desenho da CARTO), carregado pelo navegador de cada pessoa. A biblioteca é o Leaflet, também gratuita. Sem internet para a biblioteca, a página mostra as mesmas contagens em lista.
+
+---
 
 ## Atualização 2.16.1 — qualidade dos relatos, comentário da gestão e missões por área (≈ 5 min)
 

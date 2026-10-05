@@ -39,6 +39,7 @@
     fechamento:{titulo:'Entregas do mês',busca:'fechamento relatorio anexos fichas zip',icone:'i-check',grupo:'mes',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTFechamento.render(),atualizar:()=>window.CPTFechamento.render(),mes:()=>window.CPTFechamento.render()},
     parceiros:{titulo:'Programa Parceiros',icone:'i-partner',grupo:'mes',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderParceiros(),atualizar:()=>{if(window.CPTGestao.sair())window.CPTGestao.renderParceiros();},mes:()=>window.CPTGestao.renderParceiros(),podeSair:()=>window.CPTGestao.sair()},
     registros:{titulo:'Registros',icone:'i-records',grupo:'consulta',abrir:()=>renderRecords(),mes:()=>{$('view').innerHTML=skeleton();}},
+    mapa:{titulo:'Mapa',busca:'mapa santo andre bairros localizacao',icone:'i-pin',grupo:'consulta',emTeste:true,abrir:()=>window.CPTMapa.render(),atualizar:()=>window.CPTMapa.render(true),mes:()=>window.CPTMapa.render(),aoSair:()=>window.CPTMapa.sair()},
     obras:{titulo:'Obras',icone:'i-pin',grupo:'consulta',abrir:()=>window.CPTObras.render(),atualizar:()=>window.CPTObras.render()},
     contatos:{titulo:'Contatos',icone:'i-contact',grupo:'consulta',abrir:()=>window.CPTRecados.renderContatos(),atualizar:()=>window.CPTRecados.renderContatos()},
     equipe:{titulo:'Equipe e acessos',icone:'i-people',grupo:'consulta',acesso:['administrador'],visoes:GESTAO,abrir:()=>window.CPTAgenda.team(),atualizar:()=>window.CPTAgenda.team()},
@@ -193,7 +194,8 @@
     socioambiental:'Mesa do relatório, lembretes com a Comunicação, preparo de relatos e diagnósticos, fechamento e as ferramentas comuns.',comunicacao:'Seu dia (recados, lembretes, materiais e galeria), mesa do relatório, fechamento e as ferramentas comuns.',
     gestao:'Tudo: painel do contrato e das frentes, Programa Parceiros, mesa do relatório, fechamento e auditoria.',administrativo:'Tudo: painel do contrato e das frentes, Programa Parceiros, mesa do relatório, fechamento e auditoria.'};
   /** Permissão real (papéis da conta). A visão só pode esconder; nunca mostra o que a conta não tem. */
-  function permitido(route){const r=ROTAS[route];if(!r)return false;const p=state.perfil?.papeis||[];return !r.acesso||p.some(x=>r.acesso.includes(x));}
+  /** emTeste: página nova, só para o proprietário enquanto o período de testes estiver ligado. */
+  function permitido(route){const r=ROTAS[route];if(!r)return false;const p=state.perfil?.papeis||[];if(r.emTeste&&state.perfil?.emTeste&&!p.includes('administrador'))return false;return !r.acesso||p.some(x=>r.acesso.includes(x));}
   function visao(){return $('roleView').value||'atendimento';}
   function podeVer(route){const r=ROTAS[route];return permitido(route)&&(!r.visoes||r.visoes.includes(visao()));}
   function aplicarVisao(){const v=visao(),varias=$('roleView').options.length>1;document.documentElement.dataset.visao=v;
@@ -274,6 +276,7 @@
   if(!window.CPTComunicacao||!window.CPTRecados)throw new Error('Componentes Comunicacao.html ou Recados.html ausentes. Confira os arquivos da versão 2.8.0.');
   window.CPTComunicacao.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});window.CPTRecados.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
   if(!window.CPTEspaco)throw new Error('Componente MeuEspaco.html ausente. Confira os arquivos da versão 2.9.0.');window.CPTEspaco.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,podeVer,view:$('view')});
+  if(window.CPTMapa)window.CPTMapa.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   window.CPTObras.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTFechamento.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTSocioambiental.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   bootstrap();
 })();

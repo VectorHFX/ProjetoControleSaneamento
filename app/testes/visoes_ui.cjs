@@ -11,12 +11,12 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.goto(url('?latencia=40'));await p.locator('.report-items').waitFor();
   // Proprietário: faixa da visão aparece e a lateral é a do Administrativo.
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Administrativo/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','obras','contatos','equipe','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','comunicacao','socioambiental','fechamento','parceiros','registros','mapa','obras','contatos','equipe','ajuda']);
   // Ver como Atendimento: cor, lateral, atalhos e auditoria.
   await p.selectOption('#viewSwitch','atendimento');await espaco();await irInicio();
   assert.equal(await p.getAttribute('html','data-visao'),'atendimento');
   assert.match(await p.locator('#viewBanner').textContent(),/Tela de Atendimento/);
-  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','mapa','obras','contatos','ajuda']);
   assert.match(await p.locator('.home-hero .eyebrow').textContent(),/TELA DE ATENDIMENTO/);
   const semRelatorio=async v=>assert.equal(await p.locator('.report-items, .panel-tipos').count(),0,'"Para o relatório" fora da visão '+v);
   await semRelatorio('atendimento');
@@ -26,7 +26,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.locator('[data-atd-modo=casos]').click();await p.locator('#caseFilters').waitFor();
   // Ver como Comercialização: só ferramentas comuns.
   await p.selectOption('#viewSwitch','comercializacao');await espaco();await irInicio();
-  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','obras','contatos','ajuda']);
+  assert.deepEqual(await nav(),['meuespaco','inicio','atendimentos','recados','cronograma','registros','mapa','obras','contatos','ajuda']);
   assert.ok(!(await p.locator('.shortcuts').textContent()).includes('Auditoria'));
   await semRelatorio('comercializacao');
   // "Para o relatório" fica nas visões que preparam o relatório.

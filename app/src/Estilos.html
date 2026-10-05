@@ -808,4 +808,25 @@ html[data-theme=dark] .qualidade-chips li.ok{background:#233c35;color:#99dcc5;bo
 .guia-falta{font-size:10px;font-weight:700;color:var(--blue);border:1px dashed var(--blue);border-radius:20px;padding:1px 7px;margin-left:6px}
 .guia-exemplo{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;line-height:1.6;font-size:13px}
 .missao.t-devolutiva .missao-alvo{border-color:#c17a1f;box-shadow:inset 0 0 0 4px var(--surface),inset 0 0 0 11px #c17a1f}
+
+/* 2.17 · Mapa de Santo André. */
+.mapa-barra{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:14px}
+.mapa-camadas{display:flex;flex-wrap:wrap;gap:6px 14px}.mapa-camada{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}.mapa-camada input{accent-color:var(--blue)}
+.bola{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--cor);opacity:.85;vertical-align:middle;margin-right:4px;flex:none}
+.mapa-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.mapa-canvas{height:min(68vh,640px);min-height:380px;border-radius:var(--radius,16px);border:1px solid var(--line);overflow:hidden;background:var(--bg);position:relative;z-index:0}
+.mapa-canvas.is-posicionando,.mapa-canvas.is-posicionando .leaflet-container{cursor:crosshair}
+.mapa-canvas.is-posicionando{outline:3px solid var(--blue);outline-offset:-3px}
+.mapa-carregando{display:flex;gap:8px;align-items:center;justify-content:center;height:100%;color:var(--muted)}
+.mapa-lista{padding:16px;overflow:auto;height:100%}
+.mapa-lado{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius,16px);padding:16px;display:grid;gap:10px}
+.mapa-totais{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0}.mapa-totais dt{font-size:10px;color:var(--muted);font-weight:650}.mapa-totais dd{font-size:22px;font-weight:750;margin:0}
+.mapa-sub{font-size:12px;letter-spacing:.3px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.mapa-mini{list-style:none;padding:0;margin:0;display:grid;gap:4px;font-size:12px}.mapa-mini li{display:flex;gap:6px;align-items:center}.mapa-mini li strong{margin-left:auto}
+.mapa-posicionar summary{cursor:pointer;display:grid;gap:2px;font-size:12px}.mapa-posicionar select{width:100%;font-size:12px}.mapa-posicionar .button{font-size:12px;width:100%;margin-top:6px}
+.leaflet-container{font:inherit}.leaflet-tooltip{font-size:12px;border-radius:8px}
+.mapa-obra-hoje{animation:mapaPulso 2.4s ease-in-out infinite}
+@keyframes mapaPulso{0%,100%{stroke-width:2;stroke-opacity:1}50%{stroke-width:7;stroke-opacity:.35}}
+html[data-motion=reduce] .mapa-obra-hoje{animation:none}@media (prefers-reduced-motion:reduce){.mapa-obra-hoje{animation:none}}
+@media (max-width:1000px){.mapa-wrap{grid-template-columns:1fr}.mapa-canvas{height:60vh}}
 </style>

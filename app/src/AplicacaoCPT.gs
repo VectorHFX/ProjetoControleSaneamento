@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.16.1';
+const VERSAO_CPT = '2.17.0';
 
 /**
  * Cada planilha é aberta uma vez por execução e reaproveitada (o equivalente a um "pool" de conexões no Apps Script).
@@ -37,7 +37,9 @@ class AplicacaoCPT {
     const email = this.conta(), c = this.config();
     if (c.dominio && !email.endsWith('@' + c.dominio)) throw new Error('Esta aplicação é exclusiva para contas @' + c.dominio + '. Você entrou como ' + email + '.');
     if (typeof ObrasDoDiaCPT !== 'undefined') ObrasDoDiaCPT.iniciar(c); // vínculos de "outra obra" são relidos uma vez nesta execução
-    return {email: email, config: c, perfil: PerfisCPT.obter(email, c)};
+    // emTeste: a tela esconde as páginas novas (marcadas emTeste nas ROTAS) de quem não é o proprietário até liberar.
+    const perfil = PerfisCPT.obter(email, c); perfil.emTeste = PerfisCPT.travada();
+    return {email: email, config: c, perfil};
   }
   static contexto() {
     const ctx = this.identidade();
@@ -78,7 +80,7 @@ function instalarAplicacaoCPT() {
  */
 function doGet() {
   // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
-  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT]; }
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, RelatorioMensalCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, EntregasDoMesCPT, EntregasCPT, ConectoresCPT, ProgramaParceirosCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, ComunicacaoHojeCPT, GaleriaCPT, PessoalCPT]; }
   catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
   const t = HtmlService.createTemplateFromFile('Aplicacao');
   t.inicial = dadosIniciaisCPT_();
@@ -96,7 +98,7 @@ function dadosIniciaisCPT_() {
   return JSON.stringify(inicial).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos', 'Socioambiental', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Entregas', 'Obras', 'Fechamento', 'Inicio', 'Atendimentos', 'Socioambiental', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 

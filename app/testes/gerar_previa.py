@@ -1,7 +1,7 @@
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
 mock=r'''<script>
-const perfilDemo={email:'victor@example.com',nome:'Victor Xavier',ativo:true,papeis:['administrador','administrativo','gestao','atendimento','socioambiental','comunicacao','comercializacao']};
+const perfilDemo={email:'victor@example.com',nome:'Victor Xavier',ativo:true,emTeste:true,papeis:['administrador','administrativo','gestao','atendimento','socioambiental','comunicacao','comercializacao']};
 let obsDemo=[];let obrasDemo=[{id:'OBR-0117',nome:'Viela Sanitária x Carijós – Obra Córrego',bairros:['Jardim do Estádio','Vila Linda'],noFormulario:true,noFormularioAgora:true,situacao:'Em andamento',inicioObra:'2026-08-19',inicioComunicacao:'2026-08-19',termino:'',publico:'C',impacto:'Alto',observacao:'Ampliação da rede de esgoto.',atualizadoEm:new Date(Date.now()-864e5).toISOString(),logradouroPAC16:'Viela Sanitária',metodoPAC16:'Vala',tipo:'Rede coletora',endereco:'',latitude:null,longitude:null,nomeUso:'Viela Carijós',apelidos:['Obra do córrego grande'],exibir:'Viela Carijós'},{id:'OBR-0074',nome:'Córrego Apiaí – Margem Esquerda Orquídea',bairros:['Vila Linda'],noFormulario:true,noFormularioAgora:true,situacao:'Paralisada',inicioObra:'2026-07-16',inicioComunicacao:'2026-07-16',termino:'',publico:'A, B',impacto:'Médio',observacao:'',atualizadoEm:new Date(Date.now()-12*864e5).toISOString(),logradouroPAC16:'',metodoPAC16:'',tipo:'',endereco:'Rua das Orquídeas',latitude:null,longitude:null,nomeUso:'',apelidos:[],exibir:'Córrego Apiaí – Margem Esquerda Orquídea'}];let bairrosDemo=[{id:'BAI-001',nome:'Jardim do Estádio',noFormulario:true,apelidos:[]},{id:'BAI-002',nome:'Vila Assunção',noFormulario:true,apelidos:[]},{id:'BAI-003',nome:'Vila Linda',noFormulario:true,apelidos:['V. Linda']}];
 const equipeDemo=[perfilDemo,{email:'paula@example.com',nome:'Comunicadora de exemplo',ativo:true,papeis:['comunicacao']},{email:'social@example.com',nome:'Equipe social de exemplo',ativo:true,papeis:['socioambiental']}];
 let entregaDemo=null;
@@ -19,6 +19,15 @@ if(nome==='listarObservacoesCPT')return {protocolo:p.protocolo,itens:obsDemo.fil
 if(nome==='adicionarObservacaoCPT'){const o={id:'OBS-'+crypto.randomUUID(),protocolo:p.protocolo,consultado:p.protocolo,em:new Date().toISOString(),autor:perfilDemo.email,nome:perfilDemo.nome,canal:p.canal,texto:p.texto};obsDemo.push(o);return {resultado:'Observação registrada no caso '+p.protocolo+'.',observacao:o};}
 if(nome==='conferirMeuAcessoCPT')return {etapas:[{nome:'Conta Google',ok:true,mensagem:'alguem@veolia.com'},{nome:'Cadastro na aplicação',ok:false,mensagem:'Conta não cadastrada.'}]};
 if(nome==='salvarBairroCPT'){const b={id:p.id||'BAI-'+String(100+bairrosDemo.length),nome:p.nome,noFormulario:p.noFormulario,apelidos:p.apelidos||[]};bairrosDemo=bairrosDemo.filter(x=>x.id!==b.id).concat([b]).sort((x,y)=>x.nome.localeCompare(y.nome,'pt-BR'));return {resultado:'Bairro salvo apenas nesta prévia.',bairro:b};}
+window.CPT_MAPA=window.CPT_MAPA||{pts:{'BAI-002':[-23.6575,-46.5290],'BAI-003':[-23.6700,-46.5450]},obraPts:{'OBR-0117':[-23.6620,-46.5330]}};
+const MAPAobras=()=>obrasDemo.map(o=>{const pt=window.CPT_MAPA.obraPts[o.id];return {id:o.id,nome:o.exibir||o.nome,situacao:o.situacao,lat:pt?pt[0]:null,lng:pt?pt[1]:null,hoje:o.id==='OBR-0117',acoes:o.id==='OBR-0117'?6:0,pessoas:o.id==='OBR-0117'?80:0,casos:o.id==='OBR-0117'?2:1};});
+const MAPAbairros=()=>bairrosDemo.map((b,i)=>{const pt=window.CPT_MAPA.pts[b.id];return {id:b.id,nome:b.nome,lat:pt?pt[0]:null,lng:pt?pt[1]:null,acoes:[4,9,6][i]||0,pessoas:[40,120,70][i]||0,casos:[0,3,2][i]||0};});
+if(nome==='carregarMapaCPT'){const dono=!new URLSearchParams(location.search).get('perfil');if(!dono)throw new Error('O mapa está reservado à administração técnica durante o período de testes.');const hoje=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date());
+  const per=p.periodo==='hoje'?{tipo:'hoje',de:hoje,ate:hoje}:p.periodo==='semana'?{tipo:'semana',de:hoje,ate:hoje}:{tipo:'mes',de:p.mes+'-01',ate:p.mes+'-30'};const k=p.periodo==='hoje'?0.3:p.periodo==='semana'?0.6:1;
+  const bs=MAPAbairros().map(b=>({...b,acoes:Math.round(b.acoes*k),pessoas:Math.round(b.pessoas*k),casos:Math.round(b.casos*k)})),os=MAPAobras();
+  return {periodo:per,obras:os,bairros:bs,semLocal:{acoes:1,casos:1},semPonto:{obras:os.filter(o=>o.lat==null).length,bairros:bs.filter(b=>b.lat==null).length},totais:{acoes:bs.reduce((s,b)=>s+b.acoes,0)+1,pessoas:bs.reduce((s,b)=>s+b.pessoas,0),casos:bs.reduce((s,b)=>s+b.casos,0)+3},podePosicionar:dono,centro:[-23.6639,-46.5383],limites:{latMin:-23.86,latMax:-23.55,lngMin:-46.60,lngMax:-46.24}};}
+if(nome==='posicionarNoMapaCPT'){if(p.lat<-23.86||p.lat>-23.55||p.lng<-46.60||p.lng>-46.24)throw new Error('O ponto ficou fora de Santo André. Aproxime o mapa e clique de novo.');(p.tipo==='obra'?window.CPT_MAPA.obraPts:window.CPT_MAPA.pts)[p.id]=[p.lat,p.lng];return {resultado:'Ponto salvo (prévia).',lat:p.lat,lng:p.lng};}
+if(nome==='sugerirBairrosNoMapaCPT'){window.CPT_MAPA.pts['BAI-001']=[-23.6480,-46.5520];return {resultado:'1 bairro posicionado pela pesquisa do Google (prévia).',gravados:1,fora:[]};}
 window.CPT_ENT=window.CPT_ENT||{itens:{},zip:false};
 const ENTq=new URLSearchParams(location.search).get('perfil'),ENTdono=!ENTq,ENTnomes={afazer:'A fazer',preparo:'Em preparo',revisao:'Em revisão',entregue:'Entregue'};
 const ENTtipos=[['relatorio','Relatório mensal','Base do relatório (itens 1 a 13), gerada aqui embaixo.',''],['anexos','Anexos do relatório','ANEXO 1, 2 e 3, gerados na Mesa Socioambiental.','socioambiental'],['parceiros','Programa Parceiros','Respostas publicadas na máscara oficial.','parceiros'],['atendimentos','Atendimentos','Fichas oficiais do mês (abertas e concluídas no período) e o .zip.','']];
@@ -166,6 +175,7 @@ s=s.replace("<script>window.CPT_INICIAL=<?!= inicial ?>;</script>","<script>if(n
 s=s.replace("<?!= incluirCPT_('Inicio'); ?>",(root/'src/Inicio.html').read_text())
 s=s.replace("<?!= incluirCPT_('Atendimentos'); ?>",(root/'src/Atendimentos.html').read_text())
 s=s.replace("<?!= incluirCPT_('Obras'); ?>",(root/'src/Obras.html').read_text())
+s=s.replace("<?!= incluirCPT_('Mapa'); ?>",(root/'src/Mapa.html').read_text())
 s=s.replace("<?!= incluirCPT_('Fechamento'); ?>",(root/'src/Fechamento.html').read_text())
 s=s.replace("<?!= incluirCPT_('Socioambiental'); ?>",(root/'src/Socioambiental.html').read_text())
 s=s.replace("<?!= incluirCPT_('Gestao'); ?>",(root/'src/Gestao.html').read_text())

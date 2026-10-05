@@ -16,7 +16,7 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 
 | Pasta | O que é | Instalar? |
 |---|---|---|
-| `app/` | **Aplicação CPT** (web app, versão 2.16.1). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
+| `app/` | **Aplicação CPT** (web app, versão 2.17.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
 | `campo40/` | **Procedimentos de Campo 4.0** (4.2.0): formulário → Base, abertura de casos com protocolo e ligação com o formulário de Execução da engenharia. `src/` é permanente; `migracao_executada/` já rodou e fica só para rastreio. | Sim, no projeto do Campo 4.0 |
 | `atualizador/` | **CPT • Atualizador**: projeto pequeno que traz o código do GitHub para a Aplicação e o Campo 4.0, com versão de segurança | Sim, uma vez (ver ATUALIZACAO_AUTOMATICA.md) |
 | `docs/` | Diagnóstico, plano, guia de implantação e, em `referencia/`, os requisitos originais e os modelos oficiais (Orientador, relato ilustrado, layout da ficha). | — |
@@ -40,7 +40,7 @@ bash app/testes/rodar_tudo.sh          # tudo
 bash app/testes/rodar_tudo.sh rapido   # sem as telas (não precisa de navegador)
 ```
 
-Os testes de tela usam o Chromium em `/tmp/cpt-chromium` e a prévia gerada por `app/testes/gerar_previa.py`. Para rodar um só: `node app/testes/<nome>.cjs`.
+Os testes de tela usam o Chromium em `/tmp/cpt-chromium` e a prévia gerada por `app/testes/gerar_previa.py`. Para rodar um só: `node app/testes/<nome>.cjs`. O teste do mapa usa o Leaflet real se ele estiver em `/tmp/cpt-leaflet` (`npm pack leaflet@1.9.4` e copie `dist/leaflet.js` e `dist/leaflet.css`); sem ele, testa só a lista.
 
 Ao editar `app/fontes/*.html`, recompile para `app/src/` com `node app/testes/compilar.cjs` (requer Babel; veja o cabeçalho do arquivo).
 
