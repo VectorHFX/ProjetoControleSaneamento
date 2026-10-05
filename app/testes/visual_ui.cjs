@@ -63,6 +63,11 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('[data-esp-check]').first().check();await p.waitForFunction(()=>document.querySelector('#espPontos').textContent.trim()==='10');await p.waitForTimeout(200);
   assert.equal(await p.locator('.v3-folhas').count(),0,'sem folhas voando');
   await p.evaluate(()=>localStorage.removeItem('cpt.motion'));
+  // 2.26.4: notebook com zoom (1280×600): nome da página numa linha, itens do dia a dia acima do jardim, sem rolagem lateral.
+  await p.setViewportSize({width:1280,height:600});await p.reload();await p.locator('#navigation .nav-item').first().waitFor();await p.waitForTimeout(500);
+  assert.ok((await p.locator('#pageLabel').boundingBox()).height<24,'nome da página numa linha');
+  assert.ok(await p.evaluate(()=>{const art=document.querySelector('.sidebar-art').getBoundingClientRect().top;return [...document.querySelectorAll('.nav-group[data-grupo=dia] .nav-item:not([hidden]),#navigation>.nav-item:not([hidden])')].slice(0,7).every(b=>b.getBoundingClientRect().bottom<=art+1);}),'itens do dia a dia acima do jardim');
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral no notebook');
   // 6. Celular: sem rolagem lateral.
   await p.setViewportSize({width:390,height:844});await p.reload();await p.locator('#view').waitFor();await p.waitForTimeout(500);
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral no celular');

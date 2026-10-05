@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.4 — tela de notebook (ThinkPad) mais folgada (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.4`) e publique uma **Nova versão**. Só estilos; nada muda nos dados.
+2. **Computador**: o nome da página no topo não quebra mais em três linhas; a busca encolhe para caber; as etiquetas dos cartões das Entregas ("A fazer") ficam numa linha.
+3. **Telas baixas** (até 820 px de altura útil — notebook com zoom do Windows em 125–150%): menu lateral mais compacto (todos os itens do dia a dia aparecem), jardim do menu numa faixa fina, topo mais baixo, menos espaço em cima da página e entre os blocos; na Visão do mês os botões vão para a direita do cabeçalho, como na tela grande.
+4. Tela grande, tablet e celular: sem mudança.
+
 ## Atualização 2.26.3 — miniaturas do Álbum sempre aparecem (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.3`) e publique uma **Nova versão**. Nenhum arquivo novo, nenhuma autorização nova.

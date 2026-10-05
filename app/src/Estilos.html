@@ -1279,4 +1279,19 @@ html[data-visual=v3][data-theme=dark] .quadro-tela svg,html[data-visual=v3][data
 html[data-visual=v3][data-theme=dark] .caderno .caderno-folha{background:#f1e7d3}
 html[data-visual=v3] .caderno .card-kicker .ic{color:#8a5a34}
 html[data-theme=dark] .controle-situacao{background:#4a3a20;color:#f2cf8a}html[data-theme=dark] .controle-situacao.is-atrasada{background:#4d2620;color:#f4b3a3}html[data-theme=dark] .controle-situacao.is-feita{background:#1f3a2c;color:#9fd8b4}
+/* 2.26.4: telas de notebook (ex.: ThinkPad com zoom do Windows em 125–150%, ~1280×600 úteis). Só no computador; celular e tablet não mudam. */
+@media(min-width:801px){.topbar .breadcrumb{flex:1 1 auto;min-width:0;white-space:nowrap}.topbar .breadcrumb strong{overflow:hidden;text-overflow:ellipsis}.topbar .search-trigger{flex:1 1 200px;max-width:380px}.entrega-card .badge{white-space:nowrap}}
+@media(min-width:801px) and (max-width:1440px){.workspace>main,main{padding-left:28px;padding-right:28px}.topbar{padding:0 22px;gap:12px}.month-label{font-size:12px}}
+@media(min-width:801px) and (max-height:820px){
+  .sidebar{padding-top:14px}.sidebar .identity{padding-bottom:10px}.sidebar .identity-name{font-size:26px}.sidebar .nav-caption{padding-top:6px;padding-bottom:2px}
+  .sidebar .nav-item{min-height:38px;padding:6px 12px;margin:1px 0}.sidebar-art{display:none}.sidebar-foot{padding-top:6px}
+  .topbar{height:58px}main{padding-top:18px}
+  .view-banner{margin-bottom:12px}.painel-tabs,.segmented.painel-tabs{margin-bottom:12px}
+  .home-hero{padding:18px 24px;margin-bottom:14px}.home-hero h1{font-size:clamp(24px,2.6vw,32px);margin:2px 0 4px}
+  .shortcuts{margin-bottom:14px}.shortcut{padding:9px 12px}
+  .page-intro{margin-bottom:14px}
+  html[data-visual=v3] .sidebar-art{display:block;height:34px}html[data-visual=v3] .sidebar-art::before{height:62px;bottom:-10px}
+}
+/* Cabeçalho da Visão do mês: botões à direita quando cabe (como na tela grande), em vez de empilhar embaixo. */
+@media(min-width:1180px) and (max-height:820px){.home-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;column-gap:24px}.home-hero .hero-actions{justify-content:flex-end}}
 </style>
