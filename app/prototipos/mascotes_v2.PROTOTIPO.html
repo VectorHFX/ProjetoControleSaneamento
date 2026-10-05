@@ -1,176 +1,199 @@
 <!doctype html>
 <!--
   PROTÓTIPO DESCARTÁVEL — não vai para o Apps Script.
-  Rodada 2 (bloco D, issue #5). O Victor escolheu o estilo C (geométrico sóbrio) e pediu personalidade no corpo:
-  cada bicho com seu tipo físico. Aqui está o elenco todo no estilo C, com o kit EPI inicial.
-  A barra de baixo (ou ← →) troca a expressão do elenco inteiro. ?expr=feliz|surpreso|pensativo|dormindo|comemorando
+  Rodada 3 (bloco D, issue #5). O Victor mandou referências chibi (elenco com contorno marrom, personagens estilo
+  Animal Crossing, panda-vermelho POM, figurinhas do sapinho) e pediu "um chibizinho assim", mantendo a personalidade
+  de corpo de cada bicho. Duas versões chibi: A (traço marrom) e B (pintado, luz e sombra suaves).
+  Barra de baixo (ou ← →): troca a versão. Botões de cima: expressão do elenco inteiro. ?v=A|B&expr=...
 -->
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mascotes v2 · elenco (estilo C)</title>
+<title>Mascotes v2 · chibi</title>
 <style>
-:root{--bg:#f3f6f5;--surface:#fff;--ink:#17262f;--muted:#5d6f78;--line:#dde6e3}
-:root[data-theme=dark]{--bg:#121a1e;--surface:#1b252a;--ink:#e8eef0;--muted:#9fb1b8;--line:#2b3a40}
+:root{--bg:#f4f1ea;--surface:#fffdf8;--ink:#3b2f27;--muted:#7d6e62;--line:#e6ddd0}
+:root[data-theme=dark]{--bg:#1b1916;--surface:#26221e;--ink:#efe7dc;--muted:#b3a597;--line:#3a332c}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px 16px 110px}
 h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 14px;max-width:820px}
-.opts{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 18px;font-size:13px}.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;font-size:13px;align-items:center}.opts label{display:flex;gap:6px;align-items:center;cursor:pointer;margin-right:10px}
+.opts button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit}.opts button.on{background:#3b2f27;color:#fff;border-color:#3b2f27}
+:root[data-theme=dark] .opts button.on{background:#efe7dc;color:#1b1916}
 h2{font-size:14px;margin:18px 0 8px;color:var(--muted);letter-spacing:.3px;text-transform:uppercase}
 .elenco{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.cel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 8px 12px;text-align:center}
-.cel svg{width:100%;height:auto;max-height:230px}.cel b{display:block;font-size:14px}.cel small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
+.cel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:8px 8px 12px;text-align:center}
+.cel svg{width:100%;height:auto;max-height:240px}.cel b{display:block;font-size:14px}.cel small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
 .dupla{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-.barra{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:#101820;color:#fff;border-radius:999px;padding:8px 10px;box-shadow:0 10px 30px #0006;z-index:9;font-size:14px}
-.barra button{background:#ffffff1f;color:#fff;border:0;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}.barra span{min-width:190px;text-align:center;font-weight:650}
+.barra{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:#2a211b;color:#fff;border-radius:999px;padding:8px 10px;box-shadow:0 10px 30px #0006;z-index:9;font-size:14px}
+.barra button{background:#ffffff1f;color:#fff;border:0;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}.barra span{min-width:230px;text-align:center;font-weight:650}
 @media (max-width:820px){.elenco{grid-template-columns:repeat(2,minmax(0,1fr))}.dupla{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.anima .m-all{animation:resp 3.2s ease-in-out infinite;transform-origin:50% 100%}@keyframes resp{50%{transform:scale(1.015,.985)}}
+.anima .m-all{animation:resp 3.2s ease-in-out infinite;transform-origin:50% 92%}@keyframes resp{50%{transform:scale(1.02,.98)}}
 @media (prefers-reduced-motion:reduce){.anima .m-all{animation:none}}
 </style></head><body>
-<h1>Mascotes v2 · o elenco no estilo C</h1>
-<p class="sub">Protótipo descartável, rodada 2. Mesmo estilo (sem contorno, sombra em dois tons, rosto mínimo), mas cada bicho tem o corpo do seu jeito. Troque a expressão de todos na barra de baixo. Embaixo, urso e águia nas 5 expressões.</p>
-<div class="opts"><label><input type="checkbox" id="epi" checked> Kit EPI inicial</label><label><input type="checkbox" id="escuro"> Tema escuro</label><label><input type="checkbox" id="anima" checked> Respiração</label></div>
+<h1>Mascotes v2 · chibi</h1>
+<p class="sub">Protótipo descartável, rodada 3. Os mesmos bichos, cada um com o seu corpo, agora em chibi: cabeça grande, corpinho de feijão, olhinhos de ponto e cores suaves. A barra de baixo troca entre o <b>traço marrom</b> e o <b>pintado</b>. Os botões abaixo trocam a expressão de todos.</p>
+<div class="opts" id="opts"></div>
 <div class="elenco" id="elenco"></div>
 <h2>Urso · todas as expressões</h2><div class="dupla" id="urso"></div>
 <h2>Águia · todas as expressões</h2><div class="dupla" id="aguia"></div>
-<div class="barra"><button id="ant" aria-label="Expressão anterior">‹</button><span id="rotulo"></span><button id="prox" aria-label="Próxima expressão">›</button></div>
+<h2>Sapinho · todas as expressões</h2><div class="dupla" id="sapo"></div>
+<div class="barra"><button id="ant" aria-label="Versão anterior">‹</button><span id="rotulo"></span><button id="prox" aria-label="Próxima versão">›</button></div>
 <script>
 'use strict';
+const VERSOES = {A: {nome: 'A · Chibi com traço marrom', traco: '#5b3f2c', w: 3.2}, B: {nome: 'B · Chibi pintado (luz e sombra)', traco: null, w: 0}};
 const EXPR = [['feliz', 'Feliz'], ['surpreso', 'Surpreso'], ['pensativo', 'Pensativo'], ['dormindo', 'Dormindo'], ['comemorando', 'Comemorando']];
-const EPI = {capacete: '#f5c242', colete: '#f07a1e', faixa: '#e9eef0', luva: '#7c8a93', bota: '#1b1e21'}, K = '#1a1f24';
-// ---------- formas (tudo vira path, para a sombra em dois tons funcionar igual em qualquer forma) ----------
-const circ = (x, y, r) => `M${x - r},${y} a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0 Z`;
+const EPI = {capacete: '#f6c84c', colete: '#f28a3a', faixa: '#fff4dc', luva: '#9aa6ad', bota: '#3a3431'}, OLHO = '#3a2a20', BOCHECHA = '#f4a6a0';
+let V = VERSOES.A, ID = '', uid = 0;
+// ---------- formas ----------
 const ell = (x, y, rx, ry) => `M${x - rx},${y} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0 Z`;
-const rr = (x, y, w, h, r) => `M${x + r},${y} h${w - 2 * r} a${r},${r} 0 0 1 ${r},${r} v${h - 2 * r} a${r},${r} 0 0 1 ${-r},${r} h${-(w - 2 * r)} a${r},${r} 0 0 1 ${-r},${-r} v${-(h - 2 * r)} a${r},${r} 0 0 1 ${r},${-r} Z`;
-let uid = 0, ID = '';
-const forma = (d, cor, sombra = true) => `<path d="${d}" fill="${cor}"/>` + (sombra ? `<path d="${d}" fill="#000" opacity=".09" clip-path="url(#${ID}d)"/>` : '');
-const traco = (d, cor, w) => `<path d="${d}" fill="none" stroke="${cor}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-
-// ---------- rosto (estilo C: olho em cápsula, sobrancelha fina) ----------
-function olhos(e, cx, cy, d, o = {}) {
-  if (e === 'dormindo') return traco(`M${cx - d - 7},${cy} q7,5 14,0 M${cx + d - 7},${cy} q7,5 14,0`, K, 3.2);
-  if (e === 'comemorando' || e === 'feliz') return traco(`M${cx - d - 7},${cy + 3} q7,-9 14,0 M${cx + d - 7},${cy + 3} q7,-9 14,0`, K, 3.4);
-  const s = e === 'surpreso', h = (o.calmo ? 9 : s ? 18 : 14), dx = e === 'pensativo' ? 3 : 0, dy = e === 'pensativo' ? -4 : 0;
-  const um = x => (o.iris ? `<rect x="${x - 6 + dx}" y="${cy - h / 2 - 3 + dy}" width="12" height="${h + 6}" rx="6" fill="${o.iris}"/>` : '') + `<rect x="${x - 3.5 + dx}" y="${cy - h / 2 + dy}" width="7" height="${h}" rx="3.5" fill="${K}"/>`;
-  return um(cx - d) + um(cx + d) + (o.calmo && !s ? traco(`M${cx - d - 8},${cy - 5} h16 M${cx + d - 8},${cy - 5} h16`, o.palpebra || '#00000055', 4) : '');
+const circ = (x, y, r) => ell(x, y, r, r);
+function capsula(x1, y1, x2, y2, w) { const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, r = w / 2, nx = -dy / L * r, ny = dx / L * r;
+  return `M${x1 + nx},${y1 + ny} L${x2 + nx},${y2 + ny} A${r},${r} 0 0 1 ${x2 - nx},${y2 - ny} L${x1 - nx},${y1 - ny} A${r},${r} 0 0 1 ${x1 + nx},${y1 + ny} Z`; }
+/** Uma forma: no A, com contorno marrom; no B, sem contorno e com luz em cima e sombra embaixo. */
+function f(d, cor, o = {}) {
+  if (V.traco) return `<path d="${d}" fill="${cor}" stroke="${V.traco}" stroke-width="${o.w || V.w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  return `<path d="${d}" fill="${cor}"/>` + (o.liso ? '' : `<path d="${d}" fill="url(#${ID}g)"/>`);
 }
-function sobrancelhas(e, cx, cy, d, forte) {
-  const k = '#1a1f24aa';
-  if (forte) { const inc = e === 'surpreso' ? -6 : e === 'pensativo' ? 3 : e === 'dormindo' ? 0 : e === 'comemorando' ? -3 : 4, y = cy - 14;
-    return traco(`M${cx - d - 11},${y - inc} L${cx - d + 9},${y + inc * .6} M${cx + d + 11},${y - (e === 'pensativo' ? inc + 7 : inc)} L${cx + d - 9},${y + inc * .6}`, k, 4); }
-  if (e === 'surpreso') return traco(`M${cx - d - 6},${cy - 16} q6,-5 12,0 M${cx + d - 6},${cy - 16} q6,-5 12,0`, k, 3);
-  if (e === 'pensativo') return traco(`M${cx - d - 6},${cy - 12} l12,-2 M${cx + d - 6},${cy - 18} q6,-5 12,1`, k, 3);
+const linha = (d, w = 2.6, cor = OLHO) => `<path d="${d}" fill="none" stroke="${cor}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+// ---------- rosto chibi ----------
+function olhos(e, cx, cy, d, o = {}) {
+  const L = cx - d, R = cx + d;
+  if (e === 'dormindo') return linha(`M${L - 6},${cy} q6,4 12,0 M${R - 6},${cy} q6,4 12,0`);
+  if (e === 'feliz') return linha(`M${L - 6},${cy + 2} q6,-8 12,0 M${R - 6},${cy + 2} q6,-8 12,0`);
+  if (e === 'comemorando') return linha(`M${L - 6},${cy - 5} l10,5 l-10,5 M${R + 6},${cy - 5} l-10,5 l10,5`, 2.8);
+  if (e === 'surpreso') return [L, R].map(x => `<circle cx="${x}" cy="${cy}" r="${o.grande ? 9 : 7.5}" fill="#fff" stroke="${OLHO}" stroke-width="2.2"/><circle cx="${x}" cy="${cy}" r="${o.grande ? 4.5 : 3.6}" fill="${OLHO}"/>`).join('');
+  const dx = e === 'pensativo' ? 3 : 0, dy = e === 'pensativo' ? -3 : 0, r = o.grande ? 7 : 4.6;
+  return [L, R].map(x => (o.iris ? `<circle cx="${x + dx}" cy="${cy + dy}" r="${r + 2.6}" fill="${o.iris}"/>` : '') + `<ellipse cx="${x + dx}" cy="${cy + dy}" rx="${r * .9}" ry="${r * 1.08}" fill="${OLHO}"/><circle cx="${x + dx + r * .3}" cy="${cy + dy - r * .4}" r="${r * .32}" fill="#fff"/>`).join('');
+}
+function bochechas(e, cx, cy, d) { return e === 'dormindo' ? '' : `<ellipse cx="${cx - d - 4}" cy="${cy + 11}" rx="7" ry="4" fill="${BOCHECHA}" opacity=".75"/><ellipse cx="${cx + d + 4}" cy="${cy + 11}" rx="7" ry="4" fill="${BOCHECHA}" opacity=".75"/>`; }
+function boquinha(e, cx, cy, tipo) {
+  if (e === 'surpreso') return `<ellipse cx="${cx}" cy="${cy + 4}" rx="3.6" ry="4.6" fill="${OLHO}"/>`;
+  if (e === 'comemorando') return `<path d="M${cx - 8},${cy} Q${cx},${cy + 13} ${cx + 8},${cy} Z" fill="${OLHO}"/><path d="M${cx - 4},${cy + 6} q4,4 8,0" fill="#ef7f86"/>`;
+  if (e === 'pensativo') return linha(`M${cx - 4},${cy + 4} q4,-1 8,-3`, 2.2);
+  if (e === 'dormindo') return linha(`M${cx - 3},${cy + 3} q3,2 6,0`, 2.2);
+  if (tipo === 'lingua') return linha(`M${cx - 7},${cy} q3.5,4 7,0 q3.5,4 7,0`, 2.2) + `<path d="M${cx - 3},${cy + 2} q3,9 6,0 Z" fill="#ef7f86"/>`;
+  return linha(`M${cx - 6},${cy} q3,4 6,0 q3,4 6,0`, 2.2);
+}
+function extras(e, cx, topo, lado) {
+  const k = V.traco || '#6b5446';
+  if (e === 'surpreso') return linha(`M${lado},${topo + 2} v12`, 3.4, '#e86a3a') + `<circle cx="${lado}" cy="${topo + 22}" r="2" fill="#e86a3a"/>`;
+  if (e === 'pensativo') return `<text x="${cx + 44}" y="${topo + 6}" font-size="20" font-weight="800" fill="${k}" opacity=".75">?</text><text x="${cx + 60}" y="${topo - 10}" font-size="13" font-weight="800" fill="${k}" opacity=".55">?</text>`;
+  if (e === 'dormindo') return `<text x="${cx + 44}" y="${topo + 8}" font-size="19" font-weight="800" fill="${k}" opacity=".6">z</text><text x="${cx + 58}" y="${topo - 8}" font-size="13" font-weight="800" fill="${k}" opacity=".45">z</text>`;
+  if (e === 'comemorando') return linha(`M${cx - 52},${topo + 4} l-9,-7 M${cx - 42},${topo - 8} l-4,-11 M${cx + 52},${topo + 4} l9,-7 M${cx + 42},${topo - 8} l4,-11 M${cx},${topo - 14} v-10`, 2.8, '#f2b632');
   return '';
 }
-function boca(e, cx, cy, tipo) {
-  if (tipo === 'gato') { const b = e === 'surpreso' ? `<ellipse cx="${cx}" cy="${cy + 8}" rx="4" ry="5" fill="${K}"/>` : e === 'comemorando' ? `<path d="M${cx - 8},${cy + 3} Q${cx},${cy + 16} ${cx + 8},${cy + 3} Z" fill="${K}"/>` : traco(`M${cx - 7},${cy + 3} q3.5,5 7,0 q3.5,5 7,0`, K, 2.6);
-    return b + traco(`M${cx - 18},${cy} h-16 M${cx - 18},${cy + 6} l-15,4 M${cx + 18},${cy} h16 M${cx + 18},${cy + 6} l15,4`, '#00000040', 1.8); }
-  if (tipo === 'cachorro' && (e === 'feliz' || e === 'comemorando')) return `<path d="M${cx - 10},${cy + 3} Q${cx},${cy + 16} ${cx + 10},${cy + 3} Z" fill="${K}"/><path d="M${cx - 5},${cy + 9} q5,14 10,0 Z" fill="#e66b6b"/>`;
-  if (tipo === 'sapo') { if (e === 'surpreso') return `<ellipse cx="${cx}" cy="${cy + 4}" rx="9" ry="7" fill="${K}"/>`; if (e === 'comemorando') return `<path d="M${cx - 30},${cy} Q${cx},${cy + 22} ${cx + 30},${cy} Z" fill="${K}"/><path d="M${cx - 10},${cy + 10} q10,6 20,0" fill="#e66b6b"/>`;
-    return traco(e === 'pensativo' ? `M${cx - 24},${cy + 2} q24,4 46,-4` : e === 'dormindo' ? `M${cx - 20},${cy + 2} q20,6 40,0` : `M${cx - 30},${cy} q30,16 60,0`, K, 3); }
-  if (e === 'surpreso') return `<ellipse cx="${cx}" cy="${cy + 8}" rx="5" ry="6.5" fill="${K}"/>`;
-  if (e === 'dormindo') return traco(`M${cx - 4},${cy + 7} q4,3 8,0`, K, 2.6);
-  if (e === 'pensativo') return traco(`M${cx - 6},${cy + 8} q6,-1 11,-3`, K, 2.8);
-  if (e === 'comemorando') return `<path d="M${cx - 10},${cy + 3} Q${cx},${cy + 19} ${cx + 10},${cy + 3} Z" fill="${K}"/><path d="M${cx - 5},${cy + 11} q5,4 10,0" fill="#e66b6b"/>`;
-  return traco(`M${cx - 9},${cy + 4} q4.5,6 9,0 q4.5,6 9,0`, K, 2.8);
-}
-function bico(e, cx, cy, cor, tipo) {
-  const aberto = ['surpreso', 'comemorando', 'feliz'].includes(e);
-  if (tipo === 'pato') return (aberto ? `<path d="M${cx - 16},${cy + 6} Q${cx},${cy + (e === 'feliz' ? 16 : 22)} ${cx + 16},${cy + 6} Z" fill="#c9661f"/>` : '') + forma(rr(cx - 22, cy - 6, 44, 16, 8), cor) + `<circle cx="${cx - 6}" cy="${cy - 1}" r="1.6" fill="#7a3a10"/><circle cx="${cx + 6}" cy="${cy - 1}" r="1.6" fill="#7a3a10"/>`;
-  return (aberto ? `<path d="M${cx - 9},${cy + 9} Q${cx},${cy + (e === 'feliz' ? 18 : 24)} ${cx + 9},${cy + 9} Z" fill="#c9852a"/>` : '') +
-    forma(`M${cx - 19},${cy - 1} Q${cx},${cy - 15} ${cx + 19},${cy - 1} Q${cx + 16},${cy + 14} ${cx + 3},${cy + 25} Q${cx - 2},${cy + 27} ${cx - 4},${cy + 21} Q${cx - 15},${cy + 13} ${cx - 19},${cy - 1} Z`, cor) +
-    `<path d="M${cx - 2},${cy + 17} Q${cx + 4},${cy + 19} ${cx + 3},${cy + 25} Q${cx - 2},${cy + 27} ${cx - 4},${cy + 21} Z" fill="#b97a22"/>`;
-}
 
-// ---------- o elenco: cada um com seu corpo ----------
-/** Cada espécie diz onde fica cada parte; o EPI se adapta (capacete na cabeça, colete no tronco, luva na mão, bota no pé). */
+// ---------- o elenco chibi (cada um com seu corpo) ----------
+/**
+ * cab: cabeça (path), rosto: {x, y, d} olhos; corpo: path; pes; ombros [[x,y],[x,y]] e tamanho dos braços; capacete {x, y, r}.
+ * Corpo chibi: cabeça ~45% da altura, corpo curto. Personalidade no formato do corpo.
+ */
 const ELENCO = {
-  urso: {nome: 'Urso', jeito: 'Gordinho e acolhedor: barriga redonda, braço grosso, perna curta.', c: {p: '#9a6a43', cl: '#d8b48a', e: '#5e3f27'},
-    cab: {x: 100, y: 86, r: 50}, tronco: ell(100, 178, 54, 44), barriga: ell(100, 188, 34, 30), pernas: [[72, 206, 26, 24], [102, 206, 26, 24]], ombro: [[54, 162], [146, 162]], braco: 26,
-    antes(c) { return forma(circ(58, 46, 17), c.p) + `<circle cx="58" cy="46" r="9" fill="${c.cl}"/>` + forma(circ(142, 46, 17), c.p) + `<circle cx="142" cy="46" r="9" fill="${c.cl}"/>`; },
-    rosto(e, c) { return `<path d="${ell(100, 104, 26, 19)}" fill="${c.cl}"/><path d="M91,96 h18 q0,9 -9,11 q-9,-2 -9,-11 Z" fill="${c.e}"/>` + olhos(e, 100, 80, 19) + sobrancelhas(e, 100, 80, 19) + boca(e, 100, 104); }},
-  aguia: {nome: 'Águia', jeito: 'Fortinha e decidida: ombro largo, peito em V, asa grossa. Branca e preta.', c: {p: '#2a2624', cl: '#f7f5f0', b: '#f0b43a'},
-    cab: {x: 100, y: 88, r: 44}, tronco: 'M44,140 Q100,122 156,140 Q154,180 130,208 Q100,220 70,208 Q46,180 44,140 Z', pernas: [[80, 204, 13, 24, '#f0b43a'], [107, 204, 13, 24, '#f0b43a']], ombro: [[50, 146], [150, 146]], asa: true,
-    peito: 'M78,134 Q100,148 122,134 L100,176 Z',
-    antes(c) { return forma(`M128,54 l26,-10 l-7,17 l17,0 l-19,17 Z`, c.cl) + forma(rr(80, 116, 40, 22, 10), c.cl); },
-    rosto(e, c) { return traco('M62,118 q12,9 24,3 q12,9 24,0 q12,9 24,-3', '#d9d4ca', 3) + olhos(e, 100, 82, 18, {iris: '#f2c94c'}) + sobrancelhas(e, 100, 82, 18, true) + bico(e, 100, 98, c.b); }},
-  gato: {nome: 'Gato', jeito: 'Esguio e elegante: corpo fino, rabo enrolado, listras. Laranja, como a equipe gostou.', c: {p: '#e98a3a', cl: '#fbe3c4', e: '#c46a22'},
-    cab: {x: 100, y: 88, r: 44}, tronco: ell(100, 182, 32, 42), barriga: ell(100, 190, 18, 28), pernas: [[82, 210, 16, 22], [102, 210, 16, 22]], ombro: [[72, 160], [128, 160]], braco: 15,
-    antes(c) { return traco('M126,206 C170,200 172,150 150,146 C140,145 140,158 150,160', c.p, 11) + traco('M150,146 C140,145 140,158 150,160', c.e, 11) +
-      forma('M62,66 L66,30 L92,50 Z', c.p) + forma('M138,66 L134,30 L108,50 Z', c.p) + `<path d="M68,56 L70,40 L84,51 Z" fill="${c.cl}"/><path d="M132,56 L130,40 L116,51 Z" fill="${c.cl}"/>`; },
-    rosto(e, c) { return traco('M92,50 l2,9 M100,48 v10 M108,50 l-2,9', c.e, 3.4) + `<path d="${ell(100, 104, 20, 13)}" fill="${c.cl}"/><path d="M95,98 h10 l-5,6 Z" fill="#d46a6a"/>` + olhos(e, 100, 86, 18) + sobrancelhas(e, 100, 86, 18) + boca(e, 100, 102, 'gato'); }},
-  cachorro: {nome: 'Cachorro', jeito: 'Vira-lata caramelo atlético: peito firme, orelha caída, rabo abanando.', c: {p: '#c9893f', cl: '#f1d2a4', e: '#6b4423'},
-    cab: {x: 100, y: 86, r: 47}, tronco: 'M58,150 Q100,134 142,150 Q146,196 122,216 Q100,222 78,216 Q54,196 58,150 Z', barriga: ell(100, 186, 22, 26), pernas: [[76, 206, 21, 24], [103, 206, 21, 24]], ombro: [[60, 156], [140, 156]], braco: 20,
-    antes(c) { return traco('M138,196 C162,190 168,168 160,154', c.p, 10); },
-    depoisCab(c) { return forma(ell(58, 96, 15, 27), c.e) + forma(ell(142, 96, 15, 27), c.e); },
-    rosto(e, c) { return `<path d="${ell(100, 104, 24, 17)}" fill="${c.cl}"/><path d="${ell(100, 96, 10, 7)}" fill="${K}"/>` + `<circle cx="80" cy="62" r="5" fill="${c.cl}" opacity=".9"/>` + olhos(e, 100, 80, 18) + sobrancelhas(e, 100, 80, 18) + boca(e, 100, 104, 'cachorro'); }},
-  pato: {nome: 'Pato', jeito: 'Baixinho e em pera: peito estufado, pouca perna, muito jeito.', c: {p: '#f4f1e6', cl: '#ffffff', b: '#f08a2c'},
-    cab: {x: 100, y: 98, r: 40}, tronco: 'M68,150 Q100,134 132,150 Q164,200 132,222 Q100,232 68,222 Q36,200 68,150 Z', pernas: [[84, 218, 12, 12, '#f08a2c'], [104, 218, 12, 12, '#f08a2c']], ombro: [[70, 168], [130, 168]], asa: true, asaPequena: true, corAsa: '#e6e0cf',
-    antes(c) { return forma('M96,60 q-4,-14 8,-16 q-6,8 2,14 Z', c.p); },
-    rosto(e, c) { return olhos(e, 100, 92, 17) + sobrancelhas(e, 100, 92, 17) + bico(e, 100, 112, c.b, 'pato'); }},
-  capivara: {nome: 'Capivara', jeito: 'Largona e tranquila: corpo de barril, focinho quadrado, olhar de quem está em paz.', c: {p: '#8b6a4e', cl: '#a98463', e: '#4f3a2a'},
-    cab: {x: 100, y: 84, r: 44, forma: rr(54, 44, 92, 80, 36)}, tronco: rr(44, 132, 112, 92, 42), pernas: [[66, 208, 26, 22], [108, 208, 26, 22]], ombro: [[50, 160], [150, 160]], braco: 22,
-    antes(c) { return forma(circ(68, 50, 9), c.e) + forma(circ(132, 50, 9), c.e); },
-    rosto(e, c) { return forma(rr(68, 86, 64, 36, 16), c.cl, false) + `<rect x="86" y="92" width="6" height="9" rx="3" fill="${c.e}"/><rect x="108" y="92" width="6" height="9" rx="3" fill="${c.e}"/>` + olhos(e, 100, 72, 22, {calmo: true, palpebra: c.p}) + sobrancelhas(e, 100, 72, 22) + boca(e, 100, 106); }},
-  sapo: {nome: 'Sapinho', jeito: 'Atarracado e expressivo: cabeça larga colada no corpo, olhos no alto, boca de ponta a ponta.', c: {p: '#6dbb5a', cl: '#d6efb0', e: '#3f7a35'},
-    cab: {x: 100, y: 108, r: 56, forma: ell(100, 108, 60, 40)}, tronco: ell(100, 176, 48, 38), barriga: ell(100, 182, 32, 26), pernas: [[66, 206, 28, 18], [106, 206, 28, 18]], ombro: [[58, 168], [142, 168]], braco: 16, capaceteY: 60, capaceteR: 24,
-    antes(c) { return forma(ell(58, 212, 18, 10), c.p) + forma(ell(142, 212, 18, 10), c.p); },
-    depoisCab(c, e) { const o = x => forma(circ(x, 74, 19), c.p) + (e === 'dormindo' || e === 'feliz' || e === 'comemorando' ? '' : `<circle cx="${x}" cy="72" r="12" fill="#fff"/>`); return o(72) + o(128) + olhos(e, 100, 72, 28); },
-    rosto(e, c) { return sobrancelhas(e, 100, 72, 28) + boca(e, 100, 116, 'sapo') + `<circle cx="90" cy="102" r="2" fill="${c.e}"/><circle cx="110" cy="102" r="2" fill="${c.e}"/>`; }},
-  gota: {nome: "Gota d'água", jeito: 'O próprio saneamento: o corpo inteiro é a gota, braço e perna curtinhos.', c: {p: '#4aa3df', cl: '#bfe3f7', e: '#2a6f9e'},
-    cab: {x: 100, y: 150, r: 52, forma: 'M100,34 C100,34 154,108 154,150 A54,54 0 0 1 46,150 C46,108 100,34 100,34 Z'}, sem_tronco: true, colete: [168, 204], pernas: [[80, 200, 14, 22], [106, 200, 14, 22]], ombro: [[54, 166], [146, 166]], braco: 11, capaceteY: 82, capaceteR: 30,
-    rosto(e, c) { return `<path d="${ell(76, 110, 9, 16)}" fill="#fff" opacity=".45"/>` + olhos(e, 100, 140, 18) + sobrancelhas(e, 100, 140, 18) + boca(e, 100, 160); }}};
+  urso: {nome: 'Urso', jeito: 'Gordinho: corpo largo de pera, barriga clara, braço curto.', c: {p: '#b58256', cl: '#efd7b4', e: '#5b3f2c'},
+    cab: ell(100, 86, 58, 48), rosto: {x: 100, y: 88, d: 27}, capacete: {x: 100, y: 52, r: 32},
+    corpo: 'M66,128 C46,150 44,196 64,212 Q100,226 136,212 C156,196 154,150 134,128 Z', barriga: ell(100, 180, 30, 26), pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
+    atras(c) { return f(circ(56, 46, 16), c.p) + f(circ(144, 46, 16), c.p) + `<circle cx="56" cy="46" r="8" fill="${c.cl}"/><circle cx="144" cy="46" r="8" fill="${c.cl}"/>`; },
+    focinho(e, c) { return f(ell(100, 104, 18, 12), c.cl, {liso: 1}) + `<path d="${ell(100, 99, 6, 4)}" fill="${c.e}"/>` + boquinha(e, 100, 105); }},
+  aguia: {nome: 'Águia', jeito: 'Fortinha: peito largo, ombros fortes, asas grossas. Branca e preta.', c: {p: '#4a403b', cl: '#fdfbf6', b: '#f4b94c'},
+    cab: ell(100, 84, 52, 46), corCab: 'cl', rosto: {x: 100, y: 84, d: 24, iris: '#f6d36a', forte: true}, capacete: {x: 100, y: 50, r: 30},
+    corpo: 'M50,138 C48,128 152,128 150,138 C152,178 136,212 100,216 C64,212 48,178 50,138 Z', peito: 'M74,136 Q100,150 126,136 L100,178 Z', pes: [[84, 216, 12, 7, '#f4b94c'], [116, 216, 12, 7, '#f4b94c']], ombros: [[56, 146], [144, 146]], asa: 1.1, mao: 32,
+    atras(c) { return f('M134,52 l20,-12 l-4,15 l14,2 l-16,12 Z', c.cl); },
+    focinho(e, c) { const aberto = ['surpreso', 'comemorando', 'feliz'].includes(e);
+      return (aberto ? `<path d="M93,103 Q100,${e === 'feliz' ? 111 : 116} 107,103 Z" fill="#c9852a"/>` : '') + f('M88,94 Q100,86 112,94 Q110,106 101,112 Q99,113 98,111 Q90,104 88,94 Z', c.b, {w: 2.6}); }},
+  gato: {nome: 'Gato', jeito: 'Esguio: corpo fino e alto, rabo comprido, listrinhas. Laranja.', c: {p: '#f2a65e', cl: '#fff2e0', e: '#d9853a'},
+    cab: ell(100, 90, 52, 44), rosto: {x: 100, y: 92, d: 24}, capacete: {x: 100, y: 58, r: 28},
+    corpo: 'M76,128 C68,160 68,198 78,212 Q100,222 122,212 C132,198 132,160 124,128 Z', barriga: ell(100, 184, 15, 22), pes: [[88, 216, 11, 7], [112, 216, 11, 7]], ombros: [[78, 148], [122, 148]], braco: 13, mao: 30,
+    atras(c) { return f('M120,204 C158,206 168,166 150,150', c.p, {w: 3}).replace('fill="' + c.p + '"', 'fill="none"') + linha('M120,204 C158,206 168,166 150,150', 11, c.p) + (V.traco ? '' : '') +
+      f('M58,72 L60,40 L86,56 Z', c.p) + f('M142,72 L140,40 L114,56 Z', c.p) + `<path d="M64,62 L65,48 L78,57 Z" fill="${c.cl}"/><path d="M136,62 L135,48 L122,57 Z" fill="${c.cl}"/>`; },
+    focinho(e, c) { return linha('M92,58 l2,7 M100,56 v8 M108,58 l-2,7', 2.8, c.e) + `<path d="M97,99 h6 l-3,3.5 Z" fill="#e08a8a"/>` + boquinha(e, 100, 104) + linha('M70,100 h-12 M70,105 l-11,3 M130,100 h12 M130,105 l11,3', 1.6, '#00000033'); }},
+  cachorro: {nome: 'Cachorro', jeito: 'Caramelo atlético: peito firme, orelha caída, rabinho pra cima.', c: {p: '#dba46a', cl: '#f8e6cb', e: '#a7703f'},
+    cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 52, r: 30},
+    corpo: 'M66,130 C58,160 60,198 72,212 Q100,224 128,212 C140,198 142,160 134,130 Z', barriga: ell(100, 182, 20, 24), pes: [[84, 216, 13, 8], [116, 216, 13, 8]], ombros: [[66, 150], [134, 150]], braco: 15, mao: 31,
+    atras(c) { return linha('M132,196 C152,194 158,176 150,162', 10, c.p); },
+    depoisCab(c) { return f('M50,70 C38,84 40,112 54,116 C62,104 62,84 62,72 Z', c.e) + f('M150,70 C162,84 160,112 146,116 C138,104 138,84 138,72 Z', c.e); },
+    focinho(e, c) { return f(ell(100, 104, 17, 12), c.cl, {liso: 1}) + `<path d="${ell(100, 98, 6.5, 4.5)}" fill="#3a2a20"/>` + boquinha(e, 100, 105, e === 'feliz' ? 'lingua' : '') + `<circle cx="76" cy="72" r="5" fill="${c.cl}"/>`; }},
+  pato: {nome: 'Pato', jeito: 'Baixinho de pera: pescoço nenhum, bumbum largo, pezinho laranja.', c: {p: '#fbf6ea', cl: '#ffffff', b: '#f3a94a'},
+    cab: ell(100, 98, 46, 40), rosto: {x: 100, y: 92, d: 21}, capacete: {x: 100, y: 66, r: 26},
+    corpo: 'M70,132 C40,170 46,212 84,218 Q100,222 116,218 C154,212 160,170 130,132 Z', pes: [[86, 220, 12, 6, '#f3a94a'], [114, 220, 12, 6, '#f3a94a']], ombros: [[70, 160], [130, 160]], asa: .7, mao: 22,
+    atras(c) { return f('M96,62 q-3,-12 7,-14 q-5,7 1,12 Z', c.p); },
+    focinho(e, c) { const aberto = ['surpreso', 'comemorando'].includes(e);
+      return (aberto ? `<path d="M86,112 Q100,124 114,112 Z" fill="#d07a2a"/>` : '') + f('M82,104 Q100,96 118,104 Q118,114 100,115 Q82,114 82,104 Z', c.b, {w: 2.6}); }},
+  capivara: {nome: 'Capivara', jeito: 'Largona e tranquila: cabeça de caixinha, corpo de barril, olhar em paz.', c: {p: '#b58a63', cl: '#8f6a4b', e: '#6b4a32'},
+    cab: 'M52,76 C52,46 76,40 100,40 C124,40 148,46 148,76 L148,104 C148,126 128,132 100,132 C72,132 52,126 52,104 Z', rosto: {x: 100, y: 80, d: 26, calmo: true}, capacete: {x: 100, y: 46, r: 30},
+    corpo: 'M60,130 C46,150 46,200 64,212 Q100,224 136,212 C154,200 154,150 140,130 Z', pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
+    atras(c) { return f(circ(66, 46, 9), c.e) + f(circ(134, 46, 9), c.e); },
+    focinho(e, c) { return f('M74,96 Q74,88 100,88 Q126,88 126,96 L126,110 Q126,124 100,124 Q74,124 74,110 Z', c.cl, {liso: 1}) + `<ellipse cx="91" cy="100" rx="2.6" ry="4" fill="${c.e}"/><ellipse cx="109" cy="100" rx="2.6" ry="4" fill="${c.e}"/>` + boquinha(e, 100, 112); }},
+  sapo: {nome: 'Sapinho', jeito: 'Atarracado, de figurinha: cabeça e corpo num bloco só, olhos em cima, boca enorme.', c: {p: '#93cf72', cl: '#f4f8e6', e: '#5e9a45'},
+    cab: 'M46,98 C46,70 56,56 70,56 C78,56 84,62 88,66 L112,66 C116,62 122,56 130,56 C144,56 154,70 154,98 L154,170 C154,206 136,216 100,216 C64,216 46,206 46,170 Z', semCorpo: true,
+    rosto: {x: 100, y: 80, d: 30, grande: true}, capacete: {x: 100, y: 60, r: 17}, barriga: 'M66,150 C66,132 134,132 134,150 L134,178 C134,200 66,200 66,178 Z',
+    pes: [[78, 218, 16, 7], [122, 218, 16, 7]], ombros: [[56, 140], [144, 140]], braco: 15, mao: 28, boca: 112,
+    focinho(e, c) { if (e === 'comemorando') return `<path d="M72,106 Q100,138 128,106 Z" fill="${OLHO}"/><path d="M86,118 q14,10 28,0" fill="#ef7f86"/>`;
+      if (e === 'surpreso') return `<path d="${ell(100, 112, 12, 10)}" fill="${OLHO}"/><path d="${ell(100, 116, 7, 4)}" fill="#ef7f86"/>`;
+      if (e === 'feliz') return `<path d="M76,104 Q100,126 124,104 Z" fill="${OLHO}"/><path d="M88,114 q12,7 24,0" fill="#ef7f86"/>`;
+      return linha(e === 'pensativo' ? 'M80,110 q20,4 40,-4' : 'M82,108 q18,8 36,0', 2.8); }},
+  gota: {nome: "Gota d'água", jeito: 'O próprio saneamento: corpo de gota, braço e perna curtinhos, brilho de água.', c: {p: '#7cc0ea', cl: '#d8eefb', e: '#3f87b8'},
+    cab: 'M100,36 C100,36 154,104 154,150 A54,54 0 0 1 46,150 C46,104 100,36 100,36 Z', semCorpo: true, rosto: {x: 100, y: 150, d: 22}, capacete: {x: 100, y: 84, r: 22},
+    pes: [[86, 206, 11, 7], [114, 206, 11, 7]], ombros: [[52, 160], [148, 160]], braco: 11, mao: 22, boca: 164, colete: 178,
+    depoisCab(c) { return `<path d="${ell(74, 118, 8, 15)}" fill="#fff" opacity=".55"/><path d="${circ(80, 98, 3.5)}" fill="#fff" opacity=".6"/>`; },
+    focinho(e) { return boquinha(e, 100, 166); }}};
 
 function mascote(chave, e, epi) {
-  const S = ELENCO[chave], c = S.c; ID = 'm' + (++uid);
-  const H = S.cab, pose = e === 'comemorando' ? 'cima' : e === 'pensativo' ? 'queixo' : 'baixo', partes = [];
-  const troncoD = S.sem_tronco ? H.forma : S.tronco;
-  partes.push(`<defs><clipPath id="${ID}d"><rect x="100" y="0" width="100" height="240"/></clipPath><clipPath id="${ID}t"><path d="${troncoD}"/></clipPath></defs>`);
-  if (S.antes) partes.push(S.antes(c, e));
-  // pernas e botas
-  S.pernas.forEach(([x, y, w, h, cor]) => { partes.push(forma(rr(x, y, w, h, Math.min(8, w / 2)), cor || c.p)); if (epi) partes.push(`<path d="${rr(x - 3, y + h - 12, w + 6, 14, 5)}" fill="${EPI.bota}"/><rect x="${x - 4}" y="${y + h}" width="${w + 8}" height="4" rx="2" fill="#000a"/>`); });
-  // braços (ou asas) e mãos
-  const mao = (lado) => { const [sx, sy] = S.ombro[lado < 0 ? 0 : 1];
-    if (pose === 'cima') return [sx + lado * 16, sy - 40]; if (pose === 'queixo' && lado > 0) return [H.x + 18, H.y + (S.cab.forma ? 22 : H.r * .62)]; return [sx + lado * 10, sy + 30]; };
-  const braco = lado => { const [sx, sy] = S.ombro[lado < 0 ? 0 : 1], [mx, my] = mao(lado); let b;
-    if (S.asa) { const g = S.asaPequena ? .6 : 1; b = forma(`M${sx - lado * 8},${sy - 8} Q${(sx + mx) / 2 + lado * 30 * g},${(sy + my) / 2 - 6} ${mx + lado * 4},${my + 2} l${-lado * 8},8 l${-lado * 3},-10 l${-lado * 8},7 l${-lado * 2},-10 Q${(sx + mx) / 2},${(sy + my) / 2 + 4} ${sx - lado * 8},${sy + 18} Z`, S.corAsa || c.p); }
-    else b = `<path d="M${sx},${sy} L${mx},${my}" stroke="${c.p}" stroke-width="${S.braco}" stroke-linecap="round" fill="none"/>` + (lado > 0 ? `<path d="M${sx},${sy} L${mx},${my}" stroke="#000" stroke-opacity=".09" stroke-width="${S.braco}" stroke-linecap="round" fill="none"/>` : '');
-    return b + (epi ? `<circle cx="${mx}" cy="${my}" r="${Math.max(8, S.braco * .42)}" fill="${EPI.luva}"/>` : `<circle cx="${mx}" cy="${my}" r="${Math.max(7, S.braco * .38)}" fill="${S.asa ? c.p : c.cl}"/>`); };
-  partes.push(braco(-1));
-  // tronco, barriga, colete
-  if (!S.sem_tronco) { partes.push(forma(S.tronco, c.p)); if (S.barriga) partes.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) partes.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
-  const coleteNoTronco = () => { const [y0, y1] = S.colete || [0, 0], t = S.sem_tronco;
-    return `<g clip-path="url(#${ID}t)"><path d="M30,${t ? y0 : 120} H170 V${t ? y1 : 206} Q100,${t ? y1 + 12 : 216} 30,${t ? y1 : 206} Z" fill="${EPI.colete}"/>${t ? '' : `<path d="M100,170 L84,118 L116,118 Z" fill="${S.peito ? c.cl : c.p}"/>`}
-      <rect x="30" y="${t ? y0 + 12 : 178}" width="140" height="6" fill="${EPI.faixa}"/><rect x="30" y="${t ? y0 + 24 : 190}" width="140" height="6" fill="${EPI.faixa}"/><rect x="99" y="${t ? y0 : 168}" width="2" height="40" fill="#00000026"/></g>`; };
-  if (epi && !S.sem_tronco) partes.push(coleteNoTronco());
+  const S = ELENCO[chave], c = S.c, R = S.rosto; ID = 'm' + (++uid);
+  const pose = e === 'comemorando' ? 'cima' : e === 'pensativo' ? 'queixo' : 'baixo', P = [];
+  P.push(`<defs><linearGradient id="${ID}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a2410" stop-opacity=".18"/></linearGradient>
+    <clipPath id="${ID}t"><path d="${S.semCorpo ? S.cab : S.corpo}"/></clipPath></defs>`);
+  if (!V.traco) P.push(`<ellipse cx="100" cy="226" rx="${S.semCorpo && chave === 'gota' ? 40 : 52}" ry="7" fill="#3a2410" opacity=".12"/>`);
+  if (S.atras) P.push(S.atras(c, e));
+  // pezinhos (ou botas)
+  S.pes.forEach(([x, y, rx, ry, cor]) => P.push(f(ell(x, y, rx, ry), epi ? EPI.bota : (cor || c.p))));
+  // braços
+  const mao = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1];
+    if (pose === 'cima') return [sx + lado * 14, sy - S.mao]; if (pose === 'queixo' && lado > 0) return [R.x + 16, R.y + (S.boca ? S.boca - R.y - 4 : 22)]; return [sx + lado * 8, sy + S.mao * .8]; };
+  const braco = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1], [mx, my] = mao(lado);
+    if (S.asa) { const g = S.asa; return f(`M${sx - lado * 6},${sy - 8} Q${(sx + mx) / 2 + lado * 22 * g},${(sy + my) / 2 - 6} ${mx},${my} l${-lado * 6},5 l${-lado * 2},-8 l${-lado * 6},4 Q${(sx + mx) / 2 + lado * 2},${(sy + my) / 2 + 2} ${sx - lado * 6},${sy + 14 * g} Z`, c.p) + (epi ? f(circ(mx, my, 6.5), EPI.luva) : ''); }
+    return f(capsula(sx, sy, mx, my, S.braco), c.p) + (epi ? f(circ(mx, my, S.braco * .52), EPI.luva) : ''); };
+  // corpo
+  if (!S.semCorpo) { P.push(f(S.corpo, c.p)); if (S.barriga) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) P.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
+  const colete = () => { const y0 = S.semCorpo ? (S.colete || 138) : 120, y1 = S.semCorpo ? y0 + 34 : 186;
+    return `<g clip-path="url(#${ID}t)"><path d="M30,${y0} H170 V${y1} Q100,${y1 + 10} 30,${y1} Z" fill="${EPI.colete}"/>${S.semCorpo ? '' : `<path d="M100,160 L86,120 L114,120 Z" fill="${S.peito ? c.cl : c.p}"/>`}
+      <rect x="30" y="${S.semCorpo ? y0 + 14 : 166}" width="140" height="6" rx="3" fill="${EPI.faixa}"/>${V.traco ? `<path d="M30,${y1} Q100,${y1 + 10} 170,${y1}" fill="none" stroke="${V.traco}" stroke-width="2.4"/>` : ''}</g>`; };
+  if (epi && !S.semCorpo) P.push(colete());
   // cabeça
-  partes.push(forma(H.forma || circ(H.x, H.y, H.r), S.sem_tronco ? c.p : (chave === 'aguia' ? c.cl : c.p)));
-  if (epi && S.sem_tronco) partes.push(coleteNoTronco());
-  if (S.depoisCab) partes.push(S.depoisCab(c, e));
-  partes.push(braco(1));
-  partes.push(S.rosto(e, c));
-  // capacete
-  if (epi) { const cy = S.capaceteY || (H.y - H.r * .52), r = S.capaceteR || H.r * .86;
-    partes.push(forma(`M${H.x - r},${cy} A${r},${r * .72} 0 0 1 ${H.x + r},${cy} Z`, EPI.capacete) + `<rect x="${H.x - 5}" y="${cy - r * .7}" width="10" height="${r * .68}" rx="4" fill="#00000018"/>` + forma(rr(H.x - r * 1.12, cy - 4, r * 2.24, 9, 4.5), EPI.capacete)); }
-  // extras do humor
-  const tx = H.x + (H.r || 50) * 1.02, ty = (S.capaceteY || H.y - 10) + 10;
-  if (e === 'dormindo') partes.push(`<text x="${tx}" y="${ty}" font-size="22" font-weight="800" fill="${K}" opacity=".5">z</text><text x="${tx + 12}" y="${ty - 18}" font-size="15" font-weight="800" fill="${K}" opacity=".35">z</text>`);
-  if (e === 'surpreso') partes.push(`<text x="${tx}" y="${ty}" font-size="30" font-weight="900" fill="#e0632a">!</text>`);
-  if (e === 'pensativo') partes.push(`<circle cx="${H.x - (H.r || 50) - 4}" cy="${ty - 22}" r="4" fill="${K}" opacity=".3"/><circle cx="${H.x - (H.r || 50) - 14}" cy="${ty - 40}" r="6" fill="${K}" opacity=".3"/>`);
-  if (e === 'comemorando') ['#f5c242', '#2e9e7d', '#e0632a', '#4b8fd6', '#d65b9b', '#f5c242'].forEach((cor, i) => partes.push(`<rect x="${22 + i * 30}" y="${6 + (i % 3) * 12}" width="7" height="12" rx="2" fill="${cor}" transform="rotate(${i * 37} ${25 + i * 30} ${12 + (i % 3) * 12})"/>`));
-  return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${S.nome} ${e}"><g class="m-all">${partes.join('')}</g></svg>`;
+  P.push(f(S.cab, S.corCab ? c[S.corCab] : c.p));
+  if (S.barriga && S.semCorpo) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`);
+  if (epi && S.semCorpo) P.push(colete());
+  if (S.depoisCab) P.push(S.depoisCab(c, e));
+  if (chave === 'sapo') { // olhos do sapinho nos calombos de cima
+    if (!['feliz', 'comemorando', 'dormindo'].includes(e)) P.push(`<circle cx="70" cy="80" r="11" fill="#fff"/><circle cx="130" cy="80" r="11" fill="#fff"/>`);
+  }
+  P.push(olhos(e, R.x, R.y, R.d, R));
+  if (R.forte) P.push(linha(`M${R.x - R.d - 9},${R.y - 13 + (e === 'surpreso' ? -3 : 0)} l14,${e === 'surpreso' ? 0 : 4} M${R.x + R.d + 9},${R.y - 13 + (e === 'surpreso' ? -3 : 0)} l-14,${e === 'surpreso' ? 0 : 4}`, 3));
+  if (R.calmo && !['feliz', 'comemorando', 'dormindo', 'surpreso'].includes(e)) P.push(linha(`M${R.x - R.d - 6},${R.y - 4} h12 M${R.x + R.d - 6},${R.y - 4} h12`, 3.4, c.p));
+  P.push(bochechas(e, R.x, R.y + (chave === 'sapo' ? 14 : 0), R.d + (chave === 'sapo' ? 6 : 0)));
+  P.push(S.focinho(e, c));
+  P.push(braco(-1), braco(1));
+  // capacete pequeno, como os chapeuzinhos das referências
+  if (epi) { const k = S.capacete; P.push(f(`M${k.x - k.r},${k.y} A${k.r},${k.r * .78} 0 0 1 ${k.x + k.r},${k.y} Z`, EPI.capacete) + f(`M${k.x - k.r * 1.25},${k.y} h${k.r * 2.5} a3,3 0 0 1 0,6 h${-k.r * 2.5} a3,3 0 0 1 0,-6 Z`, EPI.capacete) + `<rect x="${k.x - 3}" y="${k.y - k.r * .72}" width="6" height="${k.r * .7}" rx="3" fill="#00000016"/>`); }
+  P.push(extras(e, R.x, S.capacete.y - 14, R.x + 58));
+  return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${S.nome} ${e}"><g class="m-all">${P.join('')}</g></svg>`;
 }
 
-let expr = new URLSearchParams(location.search).get('expr') || 'feliz'; if (!EXPR.some(x => x[0] === expr)) expr = 'feliz';
-function desenhar() {
-  const epi = document.getElementById('epi').checked;
-  document.documentElement.dataset.theme = document.getElementById('escuro').checked ? 'dark' : 'light';
-  document.body.classList.toggle('anima', document.getElementById('anima').checked);
-  document.getElementById('elenco').innerHTML = Object.keys(ELENCO).map(k => `<div class="cel">${mascote(k, expr, epi)}<b>${ELENCO[k].nome}</b><small>${ELENCO[k].jeito}</small></div>`).join('');
-  for (const k of ['urso', 'aguia']) document.getElementById(k).innerHTML = EXPR.map(([e, t]) => `<div class="cel">${mascote(k, e, epi)}<small>${t}</small></div>`).join('');
-  document.getElementById('rotulo').textContent = 'Expressão: ' + EXPR.find(x => x[0] === expr)[1];
-  history.replaceState(null, '', '?expr=' + expr);
+const q = new URLSearchParams(location.search);
+let versao = VERSOES[q.get('v')] ? q.get('v') : 'A', expr = EXPR.some(x => x[0] === q.get('expr')) ? q.get('expr') : 'feliz', epi = true, escuro = false, anima = true;
+function opcoes() {
+  document.getElementById('opts').innerHTML = EXPR.map(([k, t]) => `<button data-expr="${k}" class="${k === expr ? 'on' : ''}">${t}</button>`).join('') +
+    `<span style="width:12px"></span><label><input type="checkbox" data-op="epi" ${epi ? 'checked' : ''}> Kit EPI</label><label><input type="checkbox" data-op="escuro" ${escuro ? 'checked' : ''}> Tema escuro</label><label><input type="checkbox" data-op="anima" ${anima ? 'checked' : ''}> Respiração</label>`;
 }
-function mudar(p) { const i = EXPR.findIndex(x => x[0] === expr); expr = EXPR[(i + p + EXPR.length) % EXPR.length][0]; desenhar(); }
+function desenhar() {
+  V = VERSOES[versao]; opcoes();
+  document.documentElement.dataset.theme = escuro ? 'dark' : 'light'; document.body.classList.toggle('anima', anima);
+  document.getElementById('elenco').innerHTML = Object.keys(ELENCO).map(k => `<div class="cel">${mascote(k, expr, epi)}<b>${ELENCO[k].nome}</b><small>${ELENCO[k].jeito}</small></div>`).join('');
+  for (const k of ['urso', 'aguia', 'sapo']) document.getElementById(k).innerHTML = EXPR.map(([e, t]) => `<div class="cel">${mascote(k, e, epi)}<small>${t}</small></div>`).join('');
+  document.getElementById('rotulo').textContent = V.nome;
+  history.replaceState(null, '', '?v=' + versao + '&expr=' + expr);
+}
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-expr]'); if (b) { expr = b.dataset.expr; desenhar(); } });
+document.addEventListener('change', ev => { const o = ev.target.dataset.op; if (!o) return; if (o === 'epi') epi = ev.target.checked; if (o === 'escuro') escuro = ev.target.checked; if (o === 'anima') anima = ev.target.checked; desenhar(); });
+const mudar = p => { const ks = Object.keys(VERSOES); versao = ks[(ks.indexOf(versao) + p + ks.length) % ks.length]; desenhar(); };
 document.getElementById('ant').onclick = () => mudar(-1); document.getElementById('prox').onclick = () => mudar(1);
 document.addEventListener('keydown', ev => { if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if (ev.key === 'ArrowLeft') mudar(-1); if (ev.key === 'ArrowRight') mudar(1); });
-['epi', 'escuro', 'anima'].forEach(i => document.getElementById(i).onchange = desenhar);
 desenhar();
 </script></body></html>
