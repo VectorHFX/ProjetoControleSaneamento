@@ -8,8 +8,9 @@
  */
 class GaleriaCPT {
   static pode(p) { return PerfisCPT.gerencia(p) || p.papeis.some(x => ['comunicacao', 'socioambiental'].includes(x)); }
-  constructor(ctx) {
-    if (!GaleriaCPT.pode(ctx.perfil)) throw new Error('A galeria é da Comunicação, do Socioambiental e da Gestão.');
+  /** album: o Álbum da equipe (AlbumCPT) só lê as fotos do mês, para qualquer pessoa da equipe (decisão do Victor, 2.20). */
+  constructor(ctx, album) {
+    if (!album && !GaleriaCPT.pode(ctx.perfil)) throw new Error('A galeria é da Comunicação, do Socioambiental e da Gestão.');
     this.ctx = ctx; this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil); this.col = new ColecaoCPT(ctx, 'Mídias extras', 'MID');
   }
   static legenda(data, atividade, local) { return [RelatorioMensalCPT.br(data), atividade, local].filter(Boolean).join(' - '); }

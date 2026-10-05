@@ -1,0 +1,77 @@
+<script>
+/*
+ * Álbum da equipe 2.20.0 — fotos favoritas dos relatos (até 2 por pessoa por dia), álbum do mês e "Fotos da semana".
+ * Destaque de fotos, não de pessoas: a tela mostra quantos corações cada foto tem, nunca quem favoritou.
+ * As miniaturas vêm do Drive (quem vê precisa de leitura na pasta das fotos); sem acesso, aparece um quadro no lugar.
+ */
+window.CPTAlbum = (() => {
+  'use strict';
+  let ui = null, d = null, ticket = 0, enviando = false;
+  const $ = id => document.getElementById(id);
+  const op = () => 'OP-' + crypto.randomUUID();
+  const INTRO = ['Álbum da equipe', 'Cada pessoa escolhe até 2 fotos favoritas por dia, entre as fotos dos relatos do mês. As mais favoritadas da semana viram destaque. Ninguém vê quem favoritou.'];
+  const thumb = (id, sz) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (sz || 400);
+  const dataCurta = x => x ? x.slice(8, 10) + '/' + x.slice(5, 7) : '';
+  function cartao(f, tipo) {
+    const cheio = d.usadasHoje >= d.porDia && !f.meu;
+    return `<figure class="album-foto ${f.meu ? 'is-meu' : ''}" data-album-foto="${ui.esc(f.fileId)}">
+      <button class="album-ver" data-album-ver="${ui.esc(f.fileId)}" aria-label="Ampliar: ${ui.esc(f.legenda)}"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="${thumb(f.fileId)}"><span class="album-sem" aria-hidden="true">📷</span></button>
+      <figcaption><span class="album-legenda"><strong>${ui.esc(f.atividade)}</strong><small>${ui.esc([dataCurta(f.data), f.local].filter(Boolean).join(' · '))}</small></span>
+      <button class="album-coracao ${f.meu ? 'is-on' : ''}" data-album-fav="${ui.esc(f.fileId)}" aria-pressed="${f.meu}" ${cheio ? 'aria-disabled="true"' : ''} aria-label="${f.meu ? 'Tirar das favoritas' : 'Favoritar'} (${f.coracoes} ${f.coracoes === 1 ? 'coração' : 'corações'})"><span aria-hidden="true">${f.meu ? '❤' : '♡'}</span><b>${f.coracoes || ''}</b></button></figcaption></figure>`;
+  }
+  const grade = (lista, tipo, vazio) => lista.length ? `<div class="album-grade ${tipo === 'destaque' ? 'is-destaque' : ''}">${lista.map(f => cartao(f, tipo)).join('')}</div>` : `<p class="empty-line">${vazio}</p>`;
+  function contador() { const n = d.porDia - d.usadasHoje; return `<span class="album-vagas" id="albumVagas">${n > 0 ? `❤ ${n} ${n === 1 ? 'favorita' : 'favoritas'} para escolher hoje` : '❤ Favoritas de hoje escolhidas. Amanhã tem mais!'}</span>`; }
+  function desenhar() {
+    ui.view.innerHTML = ui.intro(...INTRO) + `<section class="panel album-topo"><div><span class="card-kicker">⭐ Destaque</span><h2>Fotos da semana</h2><p class="small muted">As mais favoritadas pela equipe nesta semana (segunda a domingo).</p></div>${contador()}</section>
+      ${grade(d.semana.fotos, 'destaque', 'Ainda sem favoritas nesta semana. Escolha as suas lá embaixo!')}
+      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">📚 Da equipe</span><h2>Álbum do mês</h2></div></div>${grade(d.album, 'album', 'O álbum deste mês ainda está vazio.')}</section>
+      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">📷 Relatos do mês</span><h2>Escolha suas favoritas</h2></div><span class="small muted">${d.fotos.length} ${d.fotos.length === 1 ? 'foto' : 'fotos'}</span></div>${grade(d.fotos, 'fotos', 'Nenhuma foto nos relatos deste mês.')}</section>`;
+  }
+  async function render() {
+    const mine = ++ticket;
+    ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Abrindo o álbum…</div><div class="album-grade" aria-hidden="true">' + '<div class="skeleton album-skel"></div>'.repeat(6) + '</div>';
+    try { const r = await ui.call('carregarAlbumCPT', {mes: ui.state.mes}); if (mine !== ticket || ui.state.route !== 'album') return; d = r; desenhar(); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  /** Atualiza o coração da foto em todas as grades (destaque, álbum e fotos do mês) sem recarregar a página. */
+  function aplicar(r) {
+    d.usadasHoje = r.usadasHoje;
+    [d.semana.fotos, d.album, d.fotos].forEach(l => l.forEach(f => { if (f.fileId === r.fileId) { f.meu = r.meu; f.coracoes = r.coracoes; } }));
+    const f = d.fotos.find(x => x.fileId === r.fileId);
+    // a favorita nova entra no álbum do mês e no destaque da semana; sem corações, sai dos dois
+    if (r.meu && f && !d.album.some(x => x.fileId === r.fileId)) d.album.push({...f});
+    if (r.meu && f && !d.semana.fotos.some(x => x.fileId === r.fileId)) d.semana.fotos.push({...f});
+    if (!r.coracoes) { d.album = d.album.filter(x => x.fileId !== r.fileId); d.semana.fotos = d.semana.fotos.filter(x => x.fileId !== r.fileId); }
+    const ordem = (a, b) => b.coracoes - a.coracoes || String(b.data).localeCompare(String(a.data));
+    d.album.sort(ordem); d.semana.fotos = d.semana.fotos.sort(ordem).slice(0, 6);
+    desenhar();
+  }
+  async function favoritar(b) {
+    if (enviando) return; const fileId = b.dataset.albumFav, f = d.fotos.find(x => x.fileId === fileId) || d.album.find(x => x.fileId === fileId) || d.semana.fotos.find(x => x.fileId === fileId);
+    if (!f) return;
+    if (!f.meu && d.usadasHoje >= d.porDia) { ui.toast('Você já escolheu ' + d.porDia + ' favoritas hoje. Amanhã tem mais!'); return; }
+    enviando = true; b.classList.add('is-enviando');
+    try { const r = await ui.call('favoritarAlbumCPT', {fileId, ativo: !f.meu, mes: f.data ? f.data.slice(0, 7) : ui.state.mes, operacaoId: op()}); ui.toast(r.resultado); aplicar(r); }
+    catch (e) { ui.toast(e.message); b.classList.remove('is-enviando'); }
+    finally { enviando = false; }
+  }
+  function ampliar(fileId) {
+    const f = d.fotos.find(x => x.fileId === fileId) || d.album.find(x => x.fileId === fileId) || d.semana.fotos.find(x => x.fileId === fileId); if (!f) return;
+    $('detailType').textContent = 'ÁLBUM DA EQUIPE'; $('detailTitle').textContent = f.atividade;
+    $('detailContent').innerHTML = `<figure class="album-grande"><img decoding="async" referrerpolicy="no-referrer" alt="${ui.esc(f.legenda)}" src="${thumb(f.fileId, 1200)}"><figcaption>${ui.esc(f.legenda)}</figcaption></figure>
+      <div class="dialog-actions"><a class="button ghost" href="https://drive.google.com/file/d/${encodeURIComponent(f.fileId)}/view" target="_blank" rel="noopener noreferrer">Abrir no Drive ↗</a></div>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', e => {
+      if (ui.state.route !== 'album' || !d) return;
+      const b = e.target.closest('[data-album-fav]'); if (b) { favoritar(b); return; }
+      const v = e.target.closest('[data-album-ver]'); if (v) ampliar(v.dataset.albumVer);
+    });
+    // Miniatura que não abre (sem acesso à pasta no Drive): mostra o quadro no lugar da imagem quebrada.
+    document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.album-foto')) t.closest('.album-foto').classList.add('sem-imagem'); }, true);
+  }
+  return {init, render};
+})();
+</script>

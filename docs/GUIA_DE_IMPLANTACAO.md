@@ -23,6 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.20.0 — Álbum da equipe: favoritas e Fotos da semana (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.20.0`) e publique uma **Nova versão**. Chegam `AlbumCPT.gs` e `Album.html`.
+2. No menu **Dia a dia** aparece **Álbum da equipe** (nos testes, só para você):
+   - **Fotos da semana**: as mais favoritadas pela equipe de segunda a domingo (até 6), com o número de corações.
+   - **Álbum do mês**: todas as fotos do mês que alguém favoritou.
+   - **Escolha suas favoritas**: as fotos dos relatos do mês (as mesmas da galeria, sem vídeos). Cada pessoa escolhe **até 2 por dia**; desmarcar uma de hoje libera a vaga.
+   - Ninguém vê quem favoritou: é um destaque de fotos, não de pessoas.
+3. As favoritas ficam na aba nova **Álbum** da planilha de dados da aplicação.
+4. **Antes de liberar para a equipe** (`liberarConfiguracaoCPT`): as miniaturas vêm do Drive e só aparecem para quem tem leitura na pasta das fotos dos relatos. Hoje, Atendimento e Comercialização podem não ter esse acesso; sem ele, a foto aparece como um quadro com 📷. Decida se a pasta deve ser compartilhada com a equipe (a aplicação não muda compartilhamentos sozinha).
+
 ## Atualização 2.19.1 — revisão dos mascotes: como as peças vestem cada personagem (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.19.1`) e publique uma **Nova versão**.

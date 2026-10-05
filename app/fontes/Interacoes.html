@@ -31,6 +31,7 @@
     // Painel da gestão: abas Contrato/Frentes/Relatos dentro da Visão do mês (fora do menu; o item marcado é a Visão do mês).
     painel:{titulo:'Visão do mês',icone:'i-chart',menu:'inicio',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderPainel(),atualizar:()=>window.CPTGestao.renderPainel(true),mes:()=>window.CPTGestao.renderPainel()},
     atendimentos:{titulo:'Atendimentos',icone:'i-case',grupo:'dia',abrir:()=>window.CPTAtendimentos.render(),atualizar:()=>window.CPTAtendimentos.atualizar()},
+    album:{titulo:'Álbum da equipe',busca:'album fotos favoritas foto da semana',icone:'i-photo',grupo:'dia',emTeste:true,abrir:()=>window.CPTAlbum.render(),atualizar:()=>window.CPTAlbum.render(),mes:()=>window.CPTAlbum.render()},
     recados:{titulo:'Recados',icone:'i-message',grupo:'dia',abrir:()=>window.CPTRecados.render(),atualizar:()=>window.CPTRecados.render()},
     cronograma:{titulo:'Cronograma',icone:'i-calendar',grupo:'dia',abrir:()=>window.CPTAgenda.render(),atualizar:()=>window.CPTAgenda.render(),mes:()=>window.CPTAgenda.render()},
     comunicacao:{titulo:'Comunicação',icone:'i-megaphone',grupo:'dia',acesso:['administrador','administrativo','gestao','comunicacao'],visoes:['comunicacao',...GESTAO],abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar(),mes:()=>window.CPTComunicacao.render()},
@@ -277,6 +278,7 @@
   window.CPTComunicacao.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});window.CPTRecados.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
   if(!window.CPTEspaco)throw new Error('Componente MeuEspaco.html ausente. Confira os arquivos da versão 2.9.0.');window.CPTEspaco.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,podeVer,view:$('view')});
   if(window.CPTSaber)window.CPTSaber.init({call,esc,toast});
+  if(window.CPTAlbum)window.CPTAlbum.init({call,esc,toast,intro,state,view:$('view')});
   if(window.CPTMapa)window.CPTMapa.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   window.CPTObras.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTFechamento.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});window.CPTSocioambiental.init({call,esc,date,num,intro,toast,icon,norm,state,navigate,view:$('view')});
   bootstrap();

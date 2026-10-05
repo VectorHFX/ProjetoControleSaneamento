@@ -156,6 +156,15 @@ const quizEstado=()=>{const w=ESP.quiz.semana;return {regras:{pontosDia:2,pontos
 const cur=SAB.curiosidades[Number(hojeE.slice(8))%SAB.curiosidades.length],mesN=Number(hojeE.slice(5,7));
 const saberE=()=>ESPdono?{curiosidade:{id:cur.id,tema:SAB.temas[cur.tema],texto:cur.texto,fonte:fonteS(cur.fonte),revisar:true},mes:{campanha:SAB.campanhas[mesN-1][0],tema:SAB.campanhas[mesN-1][1],datas:SAB.datas.filter(d=>d[0]===mesN).map(([,d,t,c])=>{const x=SAB.curiosidades.find(y=>y.id===c);return {dia:d,titulo:t,texto:x.texto,fonte:fonteS(x.fonte)};})},quiz:quizEstado()}:undefined;
 const espPontos=()=>{const ck=Object.values(ESP.listas).reduce((a,l)=>a+Math.min(8,l.itens.filter(t=>t.pontuado).length)*10,0),qz=quizPts(),g=ck+qz,c=ESP.perfil?ESP.perfil.compras.reduce((a,x)=>a+x.preco,0):0;return {ganhos:g,gastos:c,saldo:g-c,checklist:ck,quiz:qz};};
+if(!ESP.alb)ESP.alb={meus:{},outros:{FOTODEMO00000000000002:3,FOTODEMO00000000000005:2,FOTODEMO00000000000008:1}};
+const albFotos=m=>Array.from({length:30},(_,i)=>({fileId:'FOTODEMO'+String(i).padStart(14,'0'),data:m+'-'+String(28-i%20).padStart(2,'0'),atividade:['Oficina de horta','Diálogo com moradores','Mutirão de limpeza'][i%3],local:['Vila Linda','Jardim do Estádio'][i%2],video:i===3})).filter(f=>!f.video).map(f=>({...f,legenda:f.data.split('-').reverse().join('/')+' - '+f.atividade+' - '+f.local}));
+const albGrupo=f=>{const m=ESP.alb.meus[f.fileId],c=(ESP.alb.outros[f.fileId]||0)+(m?1:0);return {...f,coracoes:c,meu:!!m};};
+const albUsadas=()=>Object.values(ESP.alb.meus).filter(x=>x===hojeE).length;
+if(nome==='carregarAlbumCPT'){if(!ESPdono)throw new Error('O álbum está reservado à administração técnica durante o período de testes.');const fs=albFotos(p.mes).map(albGrupo),fav=fs.filter(f=>f.coracoes).sort((a,b)=>b.coracoes-a.coracoes);
+  return {mes:p.mes,hoje:hojeE,porDia:2,usadasHoje:albUsadas(),minhas:Object.keys(ESP.alb.meus).length,semana:{semana:'atual',fotos:fav.slice(0,6)},album:fav,fotos:fs};}
+if(nome==='favoritarAlbumCPT'){if(!ESPdono)throw new Error('O álbum está reservado à administração técnica durante o período de testes.');
+  if(p.ativo){if(ESP.alb.meus[p.fileId])throw new Error('Essa foto já está nas suas favoritas.');if(albUsadas()>=2)throw new Error('Você já escolheu 2 favoritas hoje. Amanhã tem mais!');ESP.alb.meus[p.fileId]=hojeE;}else delete ESP.alb.meus[p.fileId];
+  const g=albGrupo({fileId:p.fileId});return {resultado:p.ativo?'Foto no álbum da equipe! ❤':'Foto tirada das suas favoritas.',fileId:p.fileId,meu:g.meu,coracoes:g.coracoes,usadasHoje:albUsadas(),minhas:Object.keys(ESP.alb.meus).length,mes:p.mes};}
 if(nome==='responderQuizCPT'){if(!ESPdono)throw new Error('O quiz está reservado à administração técnica durante o período de testes.');const q=p.tipo==='dia'?QD:QS[ESP.quiz.semana.length];if(!q)throw new Error('Você já fez o quiz desta semana. Na segunda tem outro!');if(p.tipo==='dia'&&ESP.quiz.dia)throw new Error('Você já respondeu a pergunta de hoje. Volte amanhã!');
   if(p.id!==q.id)throw new Error('A pergunta mudou. Atualize a página.');const r={id:q.id,escolha:p.escolha,acertou:p.escolha===q.certa};if(p.tipo==='dia')ESP.quiz.dia=r;else ESP.quiz.semana.push(r);
   return {resultado:r.acertou?'Acertou! +'+(p.tipo==='dia'?2:10)+' pontos':'Quase! Veja a explicação.',resposta:resS(r),estado:quizEstado(),pontos:espPontos()};}
@@ -197,6 +206,7 @@ s=s.replace("<?!= incluirCPT_('Recados'); ?>",(root/'src/Recados.html').read_tex
 s=s.replace("<?!= incluirCPT_('MeuEspaco'); ?>",(root/'src/MeuEspaco.html').read_text())
 s=s.replace("<?!= incluirCPT_('Mascotes'); ?>",(root/'src/Mascotes.html').read_text())
 s=s.replace("<?!= incluirCPT_('Saber'); ?>",(root/'src/Saber.html').read_text())
+s=s.replace("<?!= incluirCPT_('Album'); ?>",(root/'src/Album.html').read_text())
 import subprocess,json
 cat=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={catalogo:PessoalCPT.catalogo,especies:PessoalCPT.especiesAntigas,especiesNovas:PessoalCPT.especiesNovas,classicos:PessoalCPT.classicos,precoClassico:PessoalCPT.precoClassico,kit:PessoalCPT.kit,cores:PessoalCPT.cores,slots:PessoalCPT.slots};',c);console.log(JSON.stringify(c.x))",str(root/'src/PessoalCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
 s=s.replace('__CATALOGO__',cat)

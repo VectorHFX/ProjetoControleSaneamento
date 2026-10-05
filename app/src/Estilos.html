@@ -859,4 +859,25 @@ html[data-motion=reduce] .mapa-obra-hoje{animation:none}@media (prefers-reduced-
 .quiz-revisao summary{cursor:pointer;font-weight:700;font-size:13px}.quiz-item{padding:10px 0;border-top:1px solid var(--line)}.quiz-item p{margin:2px 0}
 @media (max-width:640px){.quiz-opcoes{grid-template-columns:1fr}.quiz-semana{grid-template-columns:1fr}.saber-balao::before{display:none}}
 @media (prefers-reduced-motion:reduce){.quiz-opcao{transition:none}.quiz-opcao:not([disabled]):hover{transform:none}}
+/* 2.20 · Álbum da equipe: fotos favoritas, álbum do mês e Fotos da semana. */
+.album-topo{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}.album-topo h2{margin:2px 0;font-family:var(--font-display)}.album-topo p{margin:0}
+.album-vagas{padding:8px 14px;border-radius:999px;background:var(--pale);color:var(--blue);font-weight:700;font-size:13px}
+.album-bloco{margin-top:22px}
+.album-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.album-grade.is-destaque{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.album-skel{aspect-ratio:4/3;border-radius:16px}
+.album-foto{margin:0;border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s}
+.album-foto:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}.album-foto.is-meu{border-color:var(--coral)}
+.album-ver{position:relative;display:block;padding:0;border:0;background:var(--soft);cursor:zoom-in;aspect-ratio:4/3;overflow:hidden}
+.album-ver img{width:100%;height:100%;object-fit:cover;display:block}
+.album-sem{display:none;position:absolute;inset:0;place-items:center;font-size:30px;background:linear-gradient(135deg,var(--pale),var(--soft))}
+.album-foto.sem-imagem .album-ver img{visibility:hidden}.album-foto.sem-imagem .album-sem{display:grid}
+.album-foto figcaption{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px}
+.album-legenda{display:grid;min-width:0}.album-legenda strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.album-legenda small{font-size:11px;color:var(--muted)}
+.album-coracao{display:inline-flex;gap:4px;align-items:center;min-height:36px;min-width:44px;justify-content:center;padding:4px 10px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--coral);font:inherit;font-size:16px;cursor:pointer;transition:transform .15s,background .15s}
+.album-coracao b{font-size:12px;color:var(--ink)}.album-coracao.is-on{background:color-mix(in srgb,var(--coral) 16%,var(--surface));border-color:var(--coral)}
+.album-coracao:hover{transform:scale(1.06)}.album-coracao[aria-disabled=true]{opacity:.5}.album-coracao.is-enviando{opacity:.6}.album-coracao:focus-visible,.album-ver:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.album-grande{margin:0}.album-grande img{width:100%;max-height:70vh;object-fit:contain;border-radius:12px;background:var(--soft)}.album-grande figcaption{margin-top:8px;font-size:13px;color:var(--muted)}
+@media (max-width:640px){.album-grade,.album-grade.is-destaque{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.album-legenda small{display:none}}
+@media (prefers-reduced-motion:reduce){.album-foto,.album-coracao{transition:none}.album-foto:hover,.album-coracao:hover{transform:none}}
 </style>
