@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.28.0 — cronograma colorido, feriados, planilha Excel e impressão nova (≈ 3 min)
+
+1. Rode a atualização pelo **Cloud Shell**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.28.0`) e publique uma **Nova versão**. Não há planilha nova nem permissão nova: tudo é feito no navegador.
+2. **Calendário**: cartões menores e tingidos com a cor da frente (bolinhas com todas as frentes envolvidas), título em até 2 linhas e só os primeiros nomes ("Victor, Andreia, Carlos +5"; a lista completa aparece ao passar o mouse e no detalhe). Planejadas com contorno tracejado. Sábado e domingo mais estreitos; hoje em destaque.
+3. **Feriados** aparecem sozinhos no calendário, na lista, na planilha e na impressão: nacionais (inclusive Sexta-feira Santa e Consciência Negra), 9/7 (estadual de SP), 8/4 Aniversário de Santo André (Lei municipal 4.148/1973) e Corpus Christi (Decreto municipal 16.465/2013). Carnaval aparece como ponto facultativo. São calculados pela aplicação — nada é lido de agenda externa.
+4. **Exportar seleção → Baixar planilha (Excel)**: um arquivo `.xlsx` com duas abas. **Calendário** é o mês em grade, com a bolinha colorida de cada frente e os feriados em vermelho. **Atividades** tem uma linha por atividade, cabeçalho fixo, filtro e data de verdade. Abre no Excel; no Google Planilhas, use Arquivo → Importar (ou abra o arquivo pelo Drive). O CSV simples continua lá.
+5. **Imprimir / salvar PDF**: a 1ª página é o calendário do mês, colorido; as seguintes trazem a descrição de cada atividade, dia a dia, com a coluna de data larga (data numa linha, dia da semana e horário embaixo). As cores saem na impressão mesmo sem marcar "Gráficos de plano de fundo".
+
 ## Atualização 2.27.1 — menos rolagem em Obras e no Meu espaço (≈ 3 min)
 
 1. Rode a atualização pelo **Cloud Shell** como sempre, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.27.1`) e publique uma **Nova versão** (se a atualização não publicou). Não há planilha nova nem permissão nova.

@@ -14,7 +14,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.saber-balao').waitFor();const balao=await p.locator('.saber-balao').textContent();assert.match(balao,/Você sabia\?[\s\S]*Por que importa:[\s\S]*(Fonte:|Prática da equipe)/);
   assert.equal(await p.locator('.saber-balao a[target=_blank][rel=noopener]').count(),balao.includes('Fonte:')?1:0);
   assert.equal(await p.locator('.saber-balao .saber-revisar').count(),1,'marca "a revisar" para o proprietário');
-  // 2.27.1: o quiz fica na aba "Quiz e curiosidades" (ponto laranja enquanto a pergunta do dia espera).
+  // 2.27.1: o quiz fica na aba "Quiz e saber" (ponto laranja enquanto a pergunta do dia espera).
   assert.equal(await p.locator('.home-saber').isVisible(),false,'quiz fora da aba Meu dia');assert.equal(await p.locator('#espTab-saber .tab-dot').count(),1);
   await p.locator('[data-esp-parte=saber]').click();await p.locator('.home-saber').waitFor();assert.equal(await p.locator('#espLista').isVisible(),false);
   assert.match(await p.locator('.home-saber .saber-mes').textContent(),/(Janeiro|Fevereiro|Março|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)/);
