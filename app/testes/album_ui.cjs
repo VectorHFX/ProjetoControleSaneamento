@@ -16,6 +16,8 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.goto(url('?latencia=20'));await p.locator('.nav-item[data-route=album]').first().click();
   await p.locator('.album-topo').waitFor();assert.equal(await p.locator('#pageLabel').textContent(),'Álbum da equipe');
   assert.equal(await p.locator('.album-grade.is-destaque .album-foto').count(),3,'três fotos já favoritadas pela equipe');
+  // 2.26.2: escolha entre as fotos do mês e dos dois meses anteriores, separadas por mês.
+  assert.equal(await p.locator('.album-bloco .album-mes').count(),3,'três meses de fotos');assert.ok(await p.locator('.album-bloco .album-mes').nth(2).locator('xpath=following-sibling::div[1]').locator('.album-foto').count()>0,'fotos do mês mais antigo');
   assert.match(await p.locator('.album-grade.is-destaque .album-foto').first().textContent(),/3/,'mais favoritada primeiro');
   assert.doesNotMatch(await p.locator('#view').textContent(),/Victor|Paula|@example/,'ninguém aparece como quem favoritou');
   await p.waitForFunction(()=>document.querySelector('.album-foto.sem-imagem'));assert.ok(await p.locator('.album-foto.sem-imagem').count()>=1,'sem acesso à foto: quadro no lugar');

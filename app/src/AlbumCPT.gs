@@ -9,6 +9,9 @@
 class AlbumCPT {
   static get porDia() { return 2; }
   static get destaques() { return 6; }
+  /** 2.26.2: "Escolha suas favoritas" mostra o mês escolhido e os dois anteriores (mais fotos para escolher, mais leitura da base). */
+  static get mesesAtras() { return 2; }
+  static mesesAte(mes) { const out = []; let [a, m] = mes.split('-').map(Number); for (let i = 0; i <= AlbumCPT.mesesAtras; i++) { out.push(a + '-' + String(m).padStart(2, '0')); if (--m < 1) { m = 12; a--; } } return out; }
   static pode(perfil) { return PessoalCPT.novo(perfil); }
   constructor(ctx) {
     if (!AlbumCPT.pode(ctx.perfil)) throw new Error('O álbum está reservado à administração técnica durante o período de testes.');
@@ -23,6 +26,11 @@ class AlbumCPT {
     if (!this.ctx.base) this.ctx.base = planilhaCPT_(this.ctx.config.baseId);
     return new GaleriaCPT(this.ctx, true).listar(mes).itens.filter(x => !x.video).map(x => ({fileId: x.fileId, data: x.data, atividade: x.atividade, local: x.local, legenda: x.legenda}));
   }
+  /** Fotos do mês e dos meses anteriores (sem vídeos), da mais nova para a mais antiga. */
+  fotosRecentes(mes) {
+    if (!this.ctx.base) this.ctx.base = planilhaCPT_(this.ctx.config.baseId);
+    return new GaleriaCPT(this.ctx, true).periodo(AlbumCPT.mesesAte(mes)).filter(x => !x.video).map(x => ({fileId: x.fileId, data: x.data, atividade: x.atividade, local: x.local, legenda: x.legenda}));
+  }
   /** Agrupa favoritas por foto: quantos corações e se uma delas é minha (sem dizer de quem são as outras). */
   agrupar(lista) {
     const m = new Map(), eu = 'ALB-' + this.email + '-';
@@ -36,8 +44,10 @@ class AlbumCPT {
     const grupos = new Map(this.agrupar(ativos).map(g => [g.fileId, g]));
     return {mes, hoje: this.hoje, porDia: AlbumCPT.porDia, usadasHoje: this.usadasHoje(), minhas: this.meus().length,
       semana: {semana, fotos: this.agrupar(daSemana).slice(0, AlbumCPT.destaques)},
-      album: this.agrupar(ativos.filter(x => String(x.data).slice(0, 7) === mes)),
-      fotos: this.fotos(mes).map(f => { const g = grupos.get(f.fileId); return {...f, coracoes: g ? g.coracoes : 0, meu: !!(g && g.meu)}; })};
+      // 2.26.2: entra no álbum do mês a foto do mês e também a foto antiga favoritada neste mês.
+      album: this.agrupar(ativos.filter(x => String(x.data).slice(0, 7) === mes || String(x.dia || '').slice(0, 7) === mes)),
+      meses: AlbumCPT.mesesAte(mes),
+      fotos: this.fotosRecentes(mes).map(f => { const g = grupos.get(f.fileId); return {...f, coracoes: g ? g.coracoes : 0, meu: !!(g && g.meu)}; })};
   }
   /** 2.26: foto do quadro na parede do Meu espaço — a mais favoritada da semana (ou dos últimos 30 dias). Só a foto e a legenda. */
   quadro() {

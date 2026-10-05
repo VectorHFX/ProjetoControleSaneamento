@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.2 — Álbum com as fotos dos meses anteriores (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.2`) e publique uma **Nova versão**. Nenhum arquivo novo.
+2. **Álbum da equipe → Escolha suas favoritas** mostra as fotos dos relatos do mês escolhido **e dos dois meses anteriores**, separadas por mês (mais novas primeiro). No começo do mês o álbum não fica mais vazio.
+3. Uma foto antiga favoritada agora entra no **Álbum do mês** em que foi escolhida (e continua no álbum do mês da foto).
+4. Custo: a primeira abertura da hora lê três meses da base (numa leitura só); depois fica guardado por 1 hora, renovado sozinho quando entra registro novo.
+
 ## Atualização 2.26.1 — mascote do tamanho certo e páginas do fechamento mais leves (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.1`) e publique uma **Nova versão**. Nenhum arquivo novo.

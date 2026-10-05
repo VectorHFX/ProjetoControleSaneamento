@@ -44,7 +44,9 @@ email='atd@example.com';assert.throws(()=>run("carregarAlbumCPT({mes:'2026-09'})
 assert.equal(books.get('agenda').getSheetByName('Álbum'),null,'ninguém além do proprietário cria a aba');
 // 2. Proprietário: fotos do mês sem vídeo; 2 favoritas por dia; desmarcar libera a vaga de hoje.
 email='victor@example.com';let d=run("carregarAlbumCPT({mes:'2026-09'})");
-assert.deepEqual(d.fotos.map(f=>f.fileId).sort(),[F1,F2,F3].sort(),'só fotos do mês, sem vídeo e sem repetir');assert.equal(d.usadasHoje,0);assert.deepEqual(d.album,[]);
+// 2.26.2: o mês escolhido e os dois anteriores (a foto de agosto aparece), sem vídeo e sem repetir; mais novas primeiro.
+assert.deepEqual(d.fotos.map(f=>f.fileId).sort(),[F1,F2,F3,'FOTOAGOSTO000000000000001'].sort(),'fotos do mês e dos anteriores, sem vídeo e sem repetir');assert.deepEqual(d.meses,['2026-09','2026-08','2026-07']);assert.equal(d.fotos[d.fotos.length-1].fileId,'FOTOAGOSTO000000000000001');
+assert.deepEqual(run("carregarAlbumCPT({mes:'2026-01'})").meses,['2026-01','2025-12','2025-11'],'virada do ano');assert.equal(d.usadasHoje,0);assert.deepEqual(d.album,[]);
 assert.throws(()=>fav(VID,true),/não está na galeria/);assert.throws(()=>fav('FOTOAGOSTO000000000000001',true),/não está na galeria/,'foto de outro mês não entra pelo mês errado');
 assert.throws(()=>fav('../x',true),/Foto inválida/);
 let r=fav(F1,true);assert.equal(r.meu,true);assert.equal(r.coracoes,1);assert.equal(r.usadasHoje,1);assert.throws(()=>fav(F1,true),/já está nas suas favoritas/);
@@ -63,6 +65,11 @@ assert.deepEqual(d.album.map(f=>f.fileId),[F1,F3]);assert.ok(d.album.every(f=>f.
 const txt=JSON.stringify(d);for(const e of ['victor@example.com','com@example.com','Paula','Victor'])assert.ok(!txt.includes(e),'álbum não diz quem favoritou: '+e);
 email='social@example.com';d=run("carregarAlbumCPT({mes:'2026-09'})");assert.ok(d.album.every(f=>!f.meu));assert.equal(d.fotos.find(f=>f.fileId===F1).coracoes,3);
 assert.deepEqual(run("carregarAlbumCPT({mes:'2026-08'})").album,[],'álbum do mês só com fotos do mês');
+// 2.26.2: foto antiga favoritada hoje entra no álbum do mês da foto e no álbum do mês em que foi favoritada.
+email='social@example.com';fav('FOTOAGOSTO000000000000001',true,'2026-08');const mesHoje=d.hoje.slice(0,7);
+assert.ok(run("carregarAlbumCPT({mes:'2026-08'})").album.some(f=>f.fileId==='FOTOAGOSTO000000000000001'),'no mês da foto');
+ctx.mh=mesHoje;assert.ok(run('carregarAlbumCPT({mes:mh})').album.some(f=>f.fileId==='FOTOAGOSTO000000000000001'),'no mês em que foi favoritada');
+fav('FOTOAGOSTO000000000000001',false,'2026-08');
 // 2.26: o quadro na parede do Meu espaço é a foto mais favoritada da semana (só foto e legenda, sem quem favoritou).
 const qd=run('carregarMeuEspacoCPT()').quadro;assert.equal(qd.fileId,F1);assert.ok(qd.legenda);assert.ok(!JSON.stringify(qd).includes('@'));
 props.delete('CPT_TRAVA_CONFIG');

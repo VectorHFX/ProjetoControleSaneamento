@@ -24,9 +24,17 @@ class GaleriaCPT {
     const itens = extras.concat(doFormulario).sort((x, y) => y.data.localeCompare(x.data));
     return {mes, itens, pasta: this.pastaUrl(), podeEnviar: true};
   }
-  /** Lê só a coluna de detalhes das linhas do mês (faixas contínuas) e extrai os arquivos das perguntas de foto/vídeo. */
+  /** 2.26.2: fotos de vários meses (o Álbum volta até dois meses atrás), numa leitura só da base; cache de 1 h por conjunto de meses. */
+  periodo(meses) {
+    meses.forEach(m => this.dados.mes(m));
+    const a = this.dados.registros(), alvo = new Set(meses), chave = 'galeria:' + this.ctx.base.getId() + ':' + meses.join(',') + ':' + a.getLastRow();
+    const doFormulario = CacheCPT.obter(chave, 3600, () => this.doFormulario(a, meses));
+    const extras = this.col.itens().filter(x => !x.arquivado && alvo.has(String(x.data).slice(0, 7))).map(x => ({fileId: x.fileId, data: x.data, atividade: x.atividade, local: x.local, legenda: x.legenda, video: x.video, origem: 'Extra'}));
+    return extras.concat(doFormulario).sort((x, y) => y.data.localeCompare(x.data));
+  }
+  /** Lê só a coluna de detalhes das linhas do mês (faixas contínuas) e extrai os arquivos das perguntas de foto/vídeo. mes: um mês ou uma lista. */
   doFormulario(a, mes) {
-    const base = this.dados.ler(a, 14), idx = []; base.forEach((r, i) => { if (r[0] && this.dados.mesCelula(r[3]) === mes) idx.push(i); });
+    const alvo = new Set([].concat(mes)), base = this.dados.ler(a, 14), idx = []; base.forEach((r, i) => { if (r[0] && alvo.has(this.dados.mesCelula(r[3]))) idx.push(i); });
     const out = [], vistos = new Set();
     for (let i = 0; i < idx.length;) {
       let j = i; while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++;

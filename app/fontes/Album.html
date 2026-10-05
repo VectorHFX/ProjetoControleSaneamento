@@ -10,7 +10,7 @@ window.CPTAlbum = (() => {
   let ui = null, d = null, ticket = 0, enviando = false;
   const $ = id => document.getElementById(id);
   const op = () => 'OP-' + crypto.randomUUID();
-  const INTRO = ['Álbum da equipe', 'Cada pessoa escolhe até 2 fotos favoritas por dia, entre as fotos dos relatos do mês. As mais favoritadas da semana viram destaque. Ninguém vê quem favoritou.'];
+  const INTRO = ['Álbum da equipe', 'Cada pessoa escolhe até 2 fotos favoritas por dia, entre as fotos dos relatos do mês e dos dois meses anteriores. As mais favoritadas da semana viram destaque. Ninguém vê quem favoritou.'];
   const thumb = (id, sz) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (sz || 400);
   const dataCurta = x => x ? x.slice(8, 10) + '/' + x.slice(5, 7) : '';
   function cartao(f, tipo) {
@@ -26,7 +26,14 @@ window.CPTAlbum = (() => {
     ui.view.innerHTML = ui.intro(...INTRO) + `<section class="panel album-topo"><div><span class="card-kicker">${ic('star', '⭐')} Destaque</span><h2>Fotos da semana</h2><p class="small muted">As mais favoritadas pela equipe nesta semana (segunda a domingo).</p></div>${contador()}</section>
       ${grade(d.semana.fotos, 'destaque', 'Ainda sem favoritas nesta semana. Escolha as suas lá embaixo!')}
       <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">${ic('people', '📚')} Da equipe</span><h2>Álbum do mês</h2></div></div>${grade(d.album, 'album', 'O álbum deste mês ainda está vazio.')}</section>
-      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">${ic('photo', '📷')} Relatos do mês</span><h2>Escolha suas favoritas</h2></div><span class="small muted">${d.fotos.length} ${d.fotos.length === 1 ? 'foto' : 'fotos'}</span></div>${grade(d.fotos, 'fotos', 'Nenhuma foto nos relatos deste mês.')}</section>`;
+      <section class="panel album-bloco"><div class="panel-head"><div><span class="card-kicker">${ic('photo', '📷')} Relatos dos últimos meses</span><h2>Escolha suas favoritas</h2></div><span class="small muted">${d.fotos.length} ${d.fotos.length === 1 ? 'foto' : 'fotos'}</span></div>${porMes()}</section>`;
+  }
+  /** 2.26.2: as fotos do mês escolhido e dos dois anteriores, separadas por mês (mais novas primeiro). */
+  const nomeMes = m => { const s = new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'}); return s.charAt(0).toUpperCase() + s.slice(1); };
+  function porMes() {
+    const meses = d.meses && d.meses.length ? d.meses : [d.mes];
+    return meses.map(m => { const l = d.fotos.filter(f => String(f.data).slice(0, 7) === m);
+      return `<h3 class="album-mes">${ui.esc(nomeMes(m))} <span class="small muted">· ${l.length} ${l.length === 1 ? 'foto' : 'fotos'}</span></h3>${grade(l, 'fotos', 'Nenhuma foto nos relatos deste mês.')}`; }).join('');
   }
   async function render() {
     const mine = ++ticket;
