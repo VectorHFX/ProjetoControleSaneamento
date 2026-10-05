@@ -1,6 +1,9 @@
 /**
  * PessoalCPT 2.10.0. "Meu espaço": mascote, caderno e checklist de cada pessoa.
  * 2.10: capivara entre os mascotes e cor de cada mascote (lista fixa de cores, trocar a cor é livre e não gasta nada).
+ * 2.18: elenco chibi (urso, águia, gato, cachorro, pato, capivara, sapinho, gota); dinossauro e abelha viram clássicos (150 pontos);
+ *       kit EPI inicial (capacete branco, colete, luvas, bota preta) de todo mundo e já vestido nos mascotes novos.
+ *       Período de testes: o elenco novo é só do proprietário (PessoalCPT.novo).
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
  *
  * Regras das recompensas (calculadas no servidor; nada é concedido duas vezes):
@@ -12,20 +15,32 @@
  * - Recompensa resgatada fica registrada pela chave (semana:AAAA-Snn, caderno:5, caderno:10…): repetir não duplica.
  */
 class PessoalCPT {
-  static get especies() { return {gato: 'Gato', aguia: 'Águia', pato: 'Pato', dinossauro: 'Dinossauro', abelha: 'Abelha', cachorro: 'Cachorro', capivara: 'Capivara'}; }
+  /** Elenco anterior (quem ainda não está no elenco novo durante os testes continua com este). */
+  static get especiesAntigas() { return {gato: 'Gato', aguia: 'Águia', pato: 'Pato', dinossauro: 'Dinossauro', abelha: 'Abelha', cachorro: 'Cachorro', capivara: 'Capivara'}; }
+  /** 2.18: elenco chibi. Dinossauro e abelha viram clássicos: 150 pontos na loja, e quem já tem continua com eles. */
+  static get especiesNovas() { return {urso: 'Urso', aguia: 'Águia', gato: 'Gato', cachorro: 'Cachorro', pato: 'Pato', capivara: 'Capivara', sapo: 'Sapinho', gota: "Gota d'água"}; }
+  static get classicos() { return {dinossauro: 'Dinossauro', abelha: 'Abelha'}; }
+  static get precoClassico() { return 150; }
+  /** Kit EPI inicial: de todo mundo (não precisa ganhar) e já vestido em cada mascote novo. */
+  static get kit() { return {cabeca: 'capacete-branco', corpo: 'colete', luvas: 'luvas', pes: 'bota-preta'}; }
+  /** Elenco novo: para todos depois de liberarConfiguracaoCPT; antes, só para o proprietário. */
+  static novo(perfil) { return !PerfisCPT.travada() || perfil.papeis.includes('administrador'); }
+  static especiesPara(perfil) { return PessoalCPT.novo(perfil) ? PessoalCPT.especiesNovas : PessoalCPT.especiesAntigas; }
+  static get especies() { return PessoalCPT.especiesAntigas; }
   /** Cores possíveis do mascote. Sem cor escolhida, cada espécie usa a sua (o gato é laranja). */
   static get cores() {
     return {laranja: 'Laranja', caramelo: 'Caramelo', marrom: 'Marrom', creme: 'Creme', cinza: 'Cinza', grafite: 'Grafite', branco: 'Branco',
       amarelo: 'Amarelo', verde: 'Verde', azul: 'Azul', lilas: 'Lilás', rosa: 'Rosa'};
   }
   static cor(v) { return v === '' || v == null ? '' : ColecaoCPT.opcao(v, Object.keys(PessoalCPT.cores), 'cor do mascote'); }
-  static get slots() { return {cabeca: 'Cabeça', rosto: 'Rosto', pescoco: 'Pescoço', corpo: 'Roupa', costas: 'Costas', mao: 'Na mão', pes: 'Pés'}; }
+  static get slots() { return {cabeca: 'Cabeça', rosto: 'Rosto', pescoco: 'Pescoço', corpo: 'Roupa', costas: 'Costas', luvas: 'Luvas', mao: 'Na mão', pes: 'Pés'}; }
   /** [id, nome, parte, grupo, preço em pontos (0 = peça comum, ganha por semana ou caderno)] */
   static get catalogo() {
     return [
       ['capacete-amarelo', 'Capacete amarelo', 'cabeca', 'EPI', 0], ['capacete-branco', 'Capacete branco', 'cabeca', 'EPI', 0],
       ['colete', 'Colete refletivo', 'corpo', 'EPI', 0], ['oculos-protecao', 'Óculos de proteção', 'rosto', 'EPI', 0],
       ['abafador', 'Protetor auricular', 'cabeca', 'EPI', 0], ['botina', 'Botina de segurança', 'pes', 'EPI', 0],
+      ['luvas', 'Luvas de proteção', 'luvas', 'EPI', 0], ['bota-preta', 'Bota preta', 'pes', 'EPI', 0],
       ['camisa-timao', 'Camisa alvinegra listrada (Timão)', 'corpo', 'Futebol', 0], ['camisa-verdao', 'Camisa verde (Verdão)', 'corpo', 'Futebol', 0],
       ['camisa-tricolor', 'Camisa tricolor (São Paulo)', 'corpo', 'Futebol', 0], ['camisa-peixe', 'Camisa branca (Peixe)', 'corpo', 'Futebol', 0],
       ['camisa-cpt', 'Camiseta da equipe CPT', 'corpo', 'Roupas', 0],
@@ -77,7 +92,9 @@ class PessoalCPT {
 
   carregar(p) {
     const dia = ColecaoCPT.data((p && p.data) || this.hoje, 'data', true), perfil = this.perfil(), notas = this.minhasNotas();
-    const out = {hoje: this.hoje, data: dia, perfil, catalogo: PessoalCPT.catalogo, especies: PessoalCPT.especies, cores: PessoalCPT.cores, slots: PessoalCPT.slots,
+    const novoElenco = PessoalCPT.novo(this.ctx.perfil), kit = Object.values(PessoalCPT.kit);
+    const out = {hoje: this.hoje, data: dia, perfil, novoElenco, kit: novoElenco ? kit : [], classicos: novoElenco ? PessoalCPT.classicos : {}, precoClassico: PessoalCPT.precoClassico,
+      catalogo: PessoalCPT.catalogo.filter(x => novoElenco || !['luvas', 'bota-preta'].includes(x.id)), especies: PessoalCPT.especiesPara(this.ctx.perfil), cores: PessoalCPT.cores, slots: PessoalCPT.slots,
       pontos: this.pontos(perfil), pendentes: this.pendentes(perfil), nota: this.nota(dia), lista: this.lista(dia),
       caderno: {dias: this.diasEscritos(), porPeca: PessoalCPT.diasPorPeca, minimo: PessoalCPT.minimoCaderno,
         recentes: notas.filter(n => String(n.texto || '').trim()).map(n => ({data: n.id.slice(-10), trecho: String(n.texto).trim().slice(0, 90)})).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 12)},
@@ -94,8 +111,8 @@ class PessoalCPT {
     let novo, resultado;
     if (acao === 'iniciar') {
       if (atual) return {resultado: 'Seu mascote já está aqui.', perfil: atual};
-      ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.especies), 'mascote');
-      novo = {mascotes: [{especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: {}, cor: PessoalCPT.cor(p.cor)}], ativo: 0, pecas: [], resgates: {}, compras: []};
+      ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.especiesPara(this.ctx.perfil)), 'mascote');
+      novo = {mascotes: [{especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: this.kitInicial(), cor: PessoalCPT.cor(p.cor)}], ativo: 0, pecas: [], resgates: {}, compras: []};
       resultado = 'Bem-vindo(a), ' + novo.mascotes[0].nome + '!';
     } else {
       novo = JSON.parse(JSON.stringify(atual)); const m = novo.mascotes[novo.ativo];
@@ -105,17 +122,17 @@ class PessoalCPT {
       else if (acao === 'vestir') {
         const slot = ColecaoCPT.opcao(p.slot, Object.keys(PessoalCPT.slots), 'parte');
         if (!p.item) { delete m.equipado[slot]; resultado = 'Peça guardada.'; }
-        else { const it = PessoalCPT.item(p.item); if (!it || it.slot !== slot || !novo.pecas.includes(it.id)) throw new Error('Essa peça ainda não é sua.'); m.equipado[slot] = it.id; resultado = it.nome + ' no ' + m.nome + '!'; }
+        else { const it = PessoalCPT.item(p.item); if (!it || it.slot !== slot || !(novo.pecas.includes(it.id) || this.doKit(it.id))) throw new Error('Essa peça ainda não é sua.'); m.equipado[slot] = it.id; resultado = it.nome + ' no ' + m.nome + '!'; }
       } else if (acao === 'resgatar') {
         const pend = this.pendentes(atual).find(x => x.chave === p.chave); if (!pend) throw new Error('Esse presente já foi resgatado.');
         if (p.escolha === 'mascote') {
           if (pend.tipo !== 'semana') throw new Error('Mascote novo é só no presente da semana.');
-          ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.especies), 'mascote');
+          ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.especiesPara(this.ctx.perfil)), 'mascote');
           if (novo.mascotes.some(x => x.especie === p.especie)) throw new Error('Você já tem esse mascote. Escolha outro.');
-          novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: {}, cor: PessoalCPT.cor(p.cor)}); novo.ativo = novo.mascotes.length - 1; resultado = 'Chegou ' + novo.mascotes[novo.ativo].nome + '!';
+          novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: this.kitInicial(), cor: PessoalCPT.cor(p.cor)}); novo.ativo = novo.mascotes.length - 1; resultado = 'Chegou ' + novo.mascotes[novo.ativo].nome + '!';
         } else {
           const it = PessoalCPT.item(p.item); if (!it || it.preco) throw new Error('Escolha uma peça comum.');
-          if (novo.pecas.includes(it.id)) throw new Error('Você já tem essa peça. Escolha outra.');
+          if (novo.pecas.includes(it.id) || this.doKit(it.id)) throw new Error('Você já tem essa peça. Escolha outra.');
           novo.pecas.push(it.id); m.equipado[it.slot] = it.id; resultado = 'Peça nova: ' + it.nome + '!';
         }
         novo.resgates[p.chave] = {em: new Date().toISOString(), escolha: p.escolha === 'mascote' ? 'mascote:' + p.especie : 'peca:' + p.item};
@@ -124,11 +141,23 @@ class PessoalCPT {
         if (novo.pecas.includes(it.id)) throw new Error('Você já tem essa peça.');
         if (this.pontos(atual).saldo < it.preco) throw new Error('Faltam pontos: complete tarefas do seu checklist.');
         novo.pecas.push(it.id); novo.compras.push({item: it.id, preco: it.preco, em: new Date().toISOString()}); m.equipado[it.slot] = it.id; resultado = 'Peça exclusiva: ' + it.nome + '!';
+      } else if (acao === 'comprarClassico') {
+        // Clássicos (dinossauro e abelha): 150 pontos. Período de testes: só com o elenco novo (proprietário).
+        if (!PessoalCPT.novo(this.ctx.perfil)) throw new Error('Os clássicos chegam junto com o elenco novo.');
+        ColecaoCPT.opcao(p.especie, Object.keys(PessoalCPT.classicos), 'clássico');
+        if (novo.mascotes.some(x => x.especie === p.especie)) throw new Error('Você já tem esse mascote.');
+        if (this.pontos(atual).saldo < PessoalCPT.precoClassico) throw new Error('Faltam pontos: complete tarefas do seu checklist.');
+        novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: this.kitInicial(), cor: ''}); novo.ativo = novo.mascotes.length - 1;
+        novo.compras.push({item: 'mascote:' + p.especie, preco: PessoalCPT.precoClassico, em: new Date().toISOString()}); resultado = 'Clássico de volta: ' + novo.mascotes[novo.ativo].nome + '!';
       } else throw new Error('Ação inválida.');
     }
     const e = this.perfis.gravar(novo, atual ? Number(p.versao) : 0, p.operacaoId, this.idPerfil);
     return {resultado, perfil: e, pontos: this.pontos(e), pendentes: this.pendentes(e)};
   }
+  /** Mascote novo já vem com o kit EPI (só no elenco novo). */
+  kitInicial() { return PessoalCPT.novo(this.ctx.perfil) ? {...PessoalCPT.kit} : {}; }
+  /** Peças do kit são de todo mundo no elenco novo. */
+  doKit(id) { return PessoalCPT.novo(this.ctx.perfil) && Object.values(PessoalCPT.kit).includes(id); }
   salvarNota(p) {
     p = p || {}; const dia = ColecaoCPT.data(p.data, 'data', true); if (dia > this.hoje) throw new Error('O caderno é para hoje e dias anteriores. Para planejar, use o checklist.');
     const id = this.idDia('CAD', dia), antes = this.diasEscritos();

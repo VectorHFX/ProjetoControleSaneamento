@@ -89,5 +89,18 @@ console.log('PASS: checklist e loja — 10 pontos por tarefa uma única vez, at�
 email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.perfil,null);assert.equal(d.caderno.dias,0);assert.equal(d.pontos.ganhos,0);assert.equal(d.nota.texto,'');
 ctx.n={data:hoje,texto:'Anotação da Ana, só dela mesmo.',versao:0,operacaoId:op()};run('salvarNotaCPT(n)');
 email='com@example.com';assert.equal(run('carregarMeuEspacoCPT()').nota.texto,'Editando de novo a mesma anotação do dia','a nota da outra pessoa não aparece');
+// 2.18: elenco chibi e kit EPI — no período de testes, só o proprietário.
+email='com@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(d.especies.dinossauro&&!d.especies.urso,'quem não é o proprietário continua com o elenco anterior');assert.deepEqual(d.kit,[]);assert.deepEqual(d.classicos,{});
+assert.throws(()=>masc({acao:'comprarClassico',especie:'abelha',nome:'Mel',versao:d.perfil.versao}),/chegam junto com o elenco novo/);
+assert.throws(()=>masc({acao:'vestir',slot:'luvas',item:'luvas',versao:d.perfil.versao}),/ainda não é sua/);
+email='victor@example.com';d=run('carregarMeuEspacoCPT()');assert.ok(d.especies.urso&&d.especies.sapo&&d.especies.gota&&!d.especies.dinossauro);assert.deepEqual([...d.kit].sort(),['bota-preta','capacete-branco','colete','luvas']);
+r=masc({acao:'iniciar',especie:'urso',nome:'Tonico'});assert.deepEqual({...r.perfil.mascotes[0].equipado},{cabeca:'capacete-branco',corpo:'colete',luvas:'luvas',pes:'bota-preta'},'mascote novo já vem com o kit');
+r=masc({acao:'vestir',slot:'luvas',item:'',versao:r.perfil.versao});r=masc({acao:'vestir',slot:'luvas',item:'luvas',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[0].equipado.luvas,'luvas','kit é de todo mundo');
+assert.throws(()=>masc({acao:'comprarClassico',especie:'dinossauro',nome:'Rex',versao:r.perfil.versao}),/Faltam pontos/);
+const oito=k=>Array.from({length:8},(_,i)=>({id:'T-'+k+i,texto:'Tarefa '+i,feito:true}));lista(1,oito('a'));lista(2,oito('b'));
+r=masc({acao:'comprarClassico',especie:'dinossauro',nome:'Rex',versao:r.perfil.versao});assert.equal(r.perfil.mascotes.length,2);assert.equal(r.perfil.mascotes[1].especie,'dinossauro');assert.equal(r.pontos.saldo,10);
+assert.throws(()=>masc({acao:'comprarClassico',especie:'dinossauro',nome:'Rex',versao:r.perfil.versao}),/já tem/);
+assert.throws(()=>masc({acao:'comprarClassico',especie:'abelha',nome:'Mel',versao:r.perfil.versao}),/Faltam pontos/);
+console.log('PASS: elenco chibi e kit EPI — elenco novo só do proprietário nos testes, mascote novo já com o kit, kit sem precisar ganhar, clássicos por 150 pontos (sem repetir).');
 assert.equal(locked,false);
 console.log('PASS: privacidade — caderno, checklist, pontos e mascote são de cada conta; ninguém lê o espaço do outro pela aplicação.');

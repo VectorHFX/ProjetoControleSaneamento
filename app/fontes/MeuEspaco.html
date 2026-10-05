@@ -15,7 +15,7 @@ window.CPTMascote = (() => {
   /** Mistura duas cores (#rrggbb): t = 0 devolve a primeira, 1 a segunda. Usada para sombra, contorno e brilho. */
   const mix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
   const camisa = (id, clip) => {
-    const r = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`, base = (c, extra) => `<g clip-path="url(#${clip})">${r(36, 92, 88, 50, c)}${extra || ''}</g>`;
+    const r = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`, base = (c, extra) => clip ? `<g clip-path="url(#${clip})">${r(36, 92, 88, 50, c)}${extra || ''}</g>` : r(36, 92, 88, 50, c) + (extra || '');
     return {
       'camisa-timao': base('#fafafa', [48, 60, 72, 84, 96, 108].map(x => r(x, 92, 6, 50, '#1b1b1b')).join('')),
       'camisa-verdao': base('#1e7a3c', '<path d="M68 96 L80 108 L92 96" fill="none" stroke="#fff" stroke-width="4"/>'),
@@ -91,7 +91,8 @@ window.CPTMascote = (() => {
   }
   /** Cor de amostra (para o seletor de cores). */
   function amostra(chave) { return (CORES[chave] || [])[0] || ''; }
-  return {desenhar, amostra, temDesenho: id => !!PECAS[id] || !!camisa(id, 'x')};
+  // peca/camisa: desenho cru de cada peça (sem recorte), reaproveitado pelo elenco chibi (Mascotes.html).
+  return {desenhar, amostra, temDesenho: id => !!PECAS[id] || !!camisa(id, 'x'), peca: id => PECAS[id] ? PECAS[id]() : '', camisa: id => camisa(id, null)};
 })();
 
 /*
@@ -128,12 +129,24 @@ window.CPTEspaco = (() => {
   const store = {get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} }, del: k => { try { localStorage.removeItem(k); } catch (_) {} }};
   const op = () => 'OP-' + crypto.randomUUID();
   const M = () => d.perfil.mascotes[d.perfil.ativo];
-  const desenho = (m, tam) => window.CPTMascote.desenhar(m.especie, m.equipado, tam, m.nome, m.cor);
+  const desenho = (m, tam, expr) => window.CPTMascote.desenhar(m.especie, m.equipado, tam, m.nome, m.cor, expr);
+  /** Humor do mascote (elenco novo): dorme à noite, comemora pontos, se surpreende com comentário da gestão, fica feliz com o checklist completo. */
+  let comemorarAte = 0;
+  function humor() {
+    const h = Number(new Intl.DateTimeFormat('pt-BR', {hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo'}).format(new Date()));
+    if (comemorarAte > Date.now()) return 'comemorando';
+    if (h >= 21 || h < 6) return 'dormindo';
+    if ((d.missoes || []).some(x => x.tipo === 'devolutiva')) return 'surpreso';
+    const it = (d.lista && d.lista.itens || []).filter(t => !t.removido);
+    return it.length && it.every(t => t.feito) ? 'feliz' : 'normal';
+  }
+  function atualizarHumor() { const el = document.querySelector('.hero-pet .mascot-art'); if (el && d && d.perfil) el.innerHTML = desenho(M(), 220, humor()); }
+  function comemorar() { comemorarAte = Date.now() + 3200; atualizarHumor(); setTimeout(atualizarHumor, 3300); }
   const dataLonga = x => new Date(x + 'T12:00:00Z').toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'});
   const somaDias = (x, n) => { const t = new Date(x + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
   const dialogo = (tipo, titulo, html) => { $('detailType').textContent = tipo; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); };
   const fechar = () => { if ($('detailDialog').open) $('closeDialog').click(); };
-  const SUGESTAO = {pato: 'Cleber', gato: 'Mingau', cachorro: 'Paçoca', aguia: 'Tietê', dinossauro: 'Rex', abelha: 'Mel', capivara: 'Capitu'};
+  const SUGESTAO = {pato: 'Cleber', gato: 'Mingau', cachorro: 'Paçoca', aguia: 'Tietê', dinossauro: 'Rex', abelha: 'Mel', capivara: 'Capitu', urso: 'Tonico', sapo: 'Bento', gota: 'Gotinha'};
   // Cenário da página inicial: céu, sol, morros, casinhas e o rio (cores pelo tema, em CSS).
   const CENA = `<svg class="hero-scene" viewBox="0 0 1200 300" preserveAspectRatio="xMinYMax slice" aria-hidden="true"><defs><linearGradient id="ceuCPT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="sc-sky1"/><stop offset="1" class="sc-sky2"/></linearGradient></defs>
     <rect width="1200" height="300" fill="url(#ceuCPT)"/><circle class="sc-sun" cx="40" cy="46" r="26"/><g class="sc-cloud"><ellipse cx="150" cy="52" rx="40" ry="13"/><ellipse cx="174" cy="44" rx="24" ry="11"/><ellipse cx="1080" cy="40" rx="40" ry="13"/><ellipse cx="1104" cy="32" rx="24" ry="11"/></g>
@@ -160,7 +173,7 @@ window.CPTEspaco = (() => {
     const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
     const chip = (icone, texto, extra) => `<span class="home-chip" ${extra || ''}>${icone}<span>${texto}</span></span>`;
     ui.view.innerHTML = `<section class="space-hero mascot-stage">${CENA}
-        <div class="hero-pet"><div class="mascot-art">${desenho(m, 220)}</div>
+        <div class="hero-pet"><div class="mascot-art">${desenho(m, 220, humor())}</div>
           <div class="pet-plate"><h2 class="mascot-name">${ui.esc(m.nome)} <button class="link-button" data-esp-nomear aria-label="Mudar o nome">mudar nome</button></h2><p class="small">${ui.esc(d.especies[m.especie])} de ${ui.esc(nome || 'você')}</p></div></div>
         <div class="hero-copy"><span class="hero-date">${ui.esc(dataLonga(d.hoje))}</span><h1 class="hero-title">${saudacao}${nome ? ', ' + ui.esc(nome) : ''}!</h1>
           <p class="hero-sub">${ui.esc(m.nome)} está torcendo por você hoje.</p>
@@ -254,7 +267,7 @@ window.CPTEspaco = (() => {
   let missoesTicket = 0;
   async function carregarMissoes() {
     if (dia !== d.hoje) return; const mine = ++missoesTicket;
-    try { const r = await ui.call('missoesCPT'); if (mine !== missoesTicket || !d) return; d.missoes = r.missoes || []; desenharMissoes(); } catch (_) {}
+    try { const r = await ui.call('missoesCPT'); if (mine !== missoesTicket || !d) return; d.missoes = r.missoes || []; desenharMissoes(); atualizarHumor(); } catch (_) {}
   }
   function desenharLista() {
     desenharMissoes();
@@ -264,7 +277,7 @@ window.CPTEspaco = (() => {
   function salvarLista() {
     const pedido = {data: dia, itens: d.lista.itens.filter(t => !t.removido).map(({id, texto, feito}) => ({id, texto, feito}))};
     fila = fila.then(async () => {
-      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; desenharLista(); } d.pontos = r.pontos; const s = $('espPontos'); if (s) s.textContent = ui.num(r.pontos.saldo); if (/pontos!/.test(r.resultado)) ui.toast(r.resultado); }
+      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; desenharLista(); } d.pontos = r.pontos; const s = $('espPontos'); if (s) s.textContent = ui.num(r.pontos.saldo); if (/pontos!/.test(r.resultado)) { ui.toast(r.resultado); comemorar(); } else atualizarHumor(); }
       catch (e) { ui.toast('Checklist não salvou: ' + e.message); render(true); }
     });
   }
@@ -296,11 +309,12 @@ window.CPTEspaco = (() => {
     catch (e) { const b = $('espErro'); if (b) { b.hidden = false; b.textContent = e.message; } else ui.toast(e.message); return false; }
   }
   function guardaRoupa() {
-    const m = M(), meus = new Set(d.perfil.pecas), it = d.catalogo.filter(x => x.slot === guardaAba);
+    const m = M(), meus = new Set(d.perfil.pecas.concat(d.kit || [])), it = d.catalogo.filter(x => x.slot === guardaAba);
     const comuns = it.filter(x => !x.preco && meus.has(x.id)), exclusivas = it.filter(x => x.preco);
     const carta = (x, acao) => `<button class="wardrobe-item ${m.equipado[x.slot] === x.id ? 'is-on' : ''}" ${acao}>${window.CPTMascote.desenhar(m.especie, {...m.equipado, [x.slot]: x.id}, 84, x.nome, m.cor)}<span>${ui.esc(x.nome)}</span>${x.preco ? `<small>${meus.has(x.id) ? 'Sua' : '⭐ ' + x.preco + ' pontos'}</small>` : ''}</button>`;
     dialogo('GUARDA-ROUPA', 'Guarda-roupa de ' + m.nome, `<div id="espErro" class="notice" hidden></div><div class="segmented painel-tabs wardrobe-tabs">${Object.entries(d.slots).map(([k, n]) => `<button class="${guardaAba === k ? 'chosen' : ''}" data-esp-aba="${k}">${n}</button>`).join('')}</div>
       <h3 class="answers-head">Suas peças</h3><div class="wardrobe">${m.equipado[guardaAba] ? `<button class="wardrobe-item" data-esp-tirar="${guardaAba}">${window.CPTMascote.desenhar(m.especie, {...m.equipado, [guardaAba]: ''}, 84, 'Sem peça', m.cor)}<span>Sem nada</span></button>` : ''}${comuns.concat(exclusivas.filter(x => meus.has(x.id))).map(x => carta(x, `data-esp-vestir="${x.id}"`)).join('') || '<p class="empty-line">Você ainda não tem peças aqui. Ganhe no presente da semana ou no caderno.</p>'}</div>
+      ${Object.keys(d.classicos || {}).some(k => !d.perfil.mascotes.some(x => x.especie === k)) ? `<h3 class="answers-head">Clássicos <small class="muted">(os primeiros mascotes do app · ⭐ ${d.precoClassico} pontos cada)</small></h3><div class="wardrobe">${Object.entries(d.classicos).filter(([k]) => !d.perfil.mascotes.some(x => x.especie === k)).map(([k, n]) => `<button class="wardrobe-item" data-esp-classico="${k}" ${d.pontos.saldo < d.precoClassico ? 'aria-disabled="true"' : ''}>${window.CPTMascote.desenhar(k, {}, 84, n)}<span>${ui.esc(n)}</span><small>⭐ ${d.precoClassico} pontos</small></button>`).join('')}</div>` : ''}
       ${exclusivas.some(x => !meus.has(x.id)) ? `<h3 class="answers-head">Exclusivas por pontos <small class="muted">(você tem ⭐ ${ui.num(d.pontos.saldo)})</small></h3><div class="wardrobe">${exclusivas.filter(x => !meus.has(x.id)).map(x => carta(x, `data-esp-comprar="${x.id}" ${d.pontos.saldo < x.preco ? 'aria-disabled="true"' : ''}`)).join('')}</div>` : ''}`);
   }
   function presente(chave, modo) {
@@ -331,6 +345,8 @@ window.CPTEspaco = (() => {
       const cl = t.closest('[data-esp-colorir]'); if (cl) { if ((M().cor || '') !== cl.dataset.espColorir && await mascote({acao: 'colorir', cor: cl.dataset.espColorir})) { fechar(); desenhar(); } else if ((M().cor || '') === cl.dataset.espColorir) fechar(); return; }
       const ab = t.closest('[data-esp-aba]'); if (ab) { guardaAba = ab.dataset.espAba; guardaRoupa(); return; }
       const ve = t.closest('[data-esp-vestir]'); if (ve) { const it = d.catalogo.find(x => x.id === ve.dataset.espVestir); if (await mascote({acao: 'vestir', slot: it.slot, item: it.id})) { guardaRoupa(); desenhar(); } return; }
+      const cl2 = t.closest('[data-esp-classico]'); if (cl2) { const k = cl2.dataset.espClassico; if (d.pontos.saldo < d.precoClassico) { ui.toast('Faltam ' + (d.precoClassico - d.pontos.saldo) + ' pontos. Complete tarefas do checklist.'); return; }
+        const nome = prompt('Nome para o seu ' + d.classicos[k].toLowerCase() + ' (usa ' + d.precoClassico + ' pontos):', SUGESTAO[k] || d.classicos[k]); if (nome && nome.trim() && await mascote({acao: 'comprarClassico', especie: k, nome: nome.trim()})) { fechar(); desenhar(); } return; }
       const ti = t.closest('[data-esp-tirar]'); if (ti) { if (await mascote({acao: 'vestir', slot: ti.dataset.espTirar, item: ''})) { guardaRoupa(); desenhar(); } return; }
       const co = t.closest('[data-esp-comprar]'); if (co) { const it = d.catalogo.find(x => x.id === co.dataset.espComprar); if (d.pontos.saldo < it.preco) { ui.toast('Faltam ' + (it.preco - d.pontos.saldo) + ' pontos. Complete tarefas do checklist.'); return; } if (confirm('Usar ' + it.preco + ' pontos em "' + it.nome + '"?') && await mascote({acao: 'comprar', item: it.id})) { guardaRoupa(); desenhar(); } return; }
       if (t.closest('[data-esp-trocar]')) { dialogo('MASCOTES', 'Seus mascotes', `<div class="pet-picker">${d.perfil.mascotes.map((m, i) => `<button class="pet-option ${i === d.perfil.ativo ? 'is-picked' : ''}" data-esp-ativar="${i}">${desenho(m, 100)}<span>${ui.esc(m.nome)}</span></button>`).join('')}</div>`); return; }

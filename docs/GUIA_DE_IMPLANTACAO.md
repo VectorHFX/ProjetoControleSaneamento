@@ -1,4 +1,4 @@
-# Guia de instalação: Aplicação CPT 2.17 e Campo 4.0 (4.6)
+# Guia de instalação: Aplicação CPT 2.18 e Campo 4.0 (4.6)
 
 **Meta:** tudo no ar até segunda, 05/10/2026, antes de a equipe começar.
 **Tempo total:** cerca de 2h, em quatro blocos. Os **Blocos 2 e 3 devem ser feitos na mesma sentada** (domingo à noite ou segunda cedo). Assim o sistema antigo e o novo não abrem casos ao mesmo tempo.
@@ -22,6 +22,21 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 ---
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
+
+## Atualização 2.18 — mascotes novos (elenco chibi) e kit EPI (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.18.0`) e publique uma **Nova versão**. O atualizador traz o arquivo novo `Mascotes.html`.
+
+**O que muda no Meu espaço:**
+- **Elenco chibi:** urso, águia, gato, cachorro, pato, capivara, sapinho e gota d'água. Cada um tem o seu corpo (urso gordinho, águia fortinha, gato esguio…).
+- **Clássicos:** dinossauro e abelha saem da escolha inicial e vão para a loja do guarda-roupa por **150 pontos**. Quem já tem continua com eles, no desenho novo.
+- **Kit EPI inicial:** capacete **branco**, colete, luvas e bota preta são de todo mundo (não precisa ganhar). Todo mascote novo já chega vestido com eles. Os mascotes que já existem continuam com a roupa que têm, e o kit fica disponível no guarda-roupa.
+- As **peças que as pessoas já ganharam ou compraram** continuam valendo e encaixam no corpo de cada bicho.
+- **Humor do mascote:** dorme depois das 21h, comemora quando uma tarefa do checklist vale pontos, fica surpreso quando chega comentário da gestão e feliz com o checklist completo.
+
+**Durante os testes, só você vê o elenco novo.** As demais pessoas continuam com os mascotes e a escolha de antes até `liberarConfiguracaoCPT`. Ao liberar, todos passam a ver o elenco novo, e quem tinha o mascote antigo vê o mesmo bicho no desenho novo.
+
+---
 
 ## Atualização 2.17.1 — Mapa de Santo André (≈ 10 min)
 

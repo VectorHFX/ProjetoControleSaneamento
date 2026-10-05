@@ -7,7 +7,10 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const toast=async re=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source);
   const espaco=async()=>{await p.locator('.nav-item[data-route=meuespaco]').click();await p.locator('.welcome-pets, .mascot-stage').first().waitFor();
     if(await p.locator('.welcome-pets').count()){await p.locator('[data-esp-especie=gato]').click();await p.locator('#espInicio [type=submit]').click();await p.locator('.mascot-stage').waitFor();}};
-  await p.goto(url('?latencia=20'));await espaco();
+  await p.goto(url('?latencia=20'));await p.locator('.nav-item[data-route=meuespaco]').click();await p.locator('.welcome-pets').waitFor();
+  // 2.18: o proprietário escolhe no elenco chibi (8 bichos) e o mascote já vem com o kit EPI (capacete branco).
+  assert.equal(await p.locator('.pet-option').count(),8);assert.equal(await p.locator('.pet-option svg.chibi').count(),8);assert.equal(await p.locator('[data-esp-especie=sapo]').count(),1);
+  await espaco();assert.equal(await p.locator('.hero-pet svg.chibi').count(),1);assert.ok(await p.locator('.hero-pet svg.chibi path[fill="#f7f5ef"]').count()>0,'capacete branco do kit');
   // Duas missões para a gerência; cada uma leva direto à parte certa de Obras.
   await p.locator('.missao.t-rota').first().waitFor();assert.equal(await p.locator('.missao.t-rota').count(),2);
   await p.locator('.missao[data-missao=obras-hoje] .button').click();await p.locator('#obrasHojeForm').waitFor();
