@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.26.6 — número curto do caso ("Caso 17") (≈ 3 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.6`) e publique uma **Nova versão**. Nenhum arquivo novo; o Campo 4.0 não muda.
+2. **Como a equipe já fala**: cada caso aparece como **"Caso 17"** (os últimos números do protocolo `ATD20260017`) na lista de Atendimentos, no título da ficha, na Auditoria, nas Frentes de serviço e na busca (Ctrl K). O protocolo completo continua logo abaixo.
+3. **Buscar**: digitar `17`, `caso 17` ou `#17` acha o caso direto (na página Atendimentos e no Ctrl K). O protocolo completo também continua funcionando.
+4. **O protocolo oficial não mudou** (ATD + ano + sequência): ele está nas fichas no modelo Sabesp, nos nomes dos arquivos, nas notas da planilha oficial dos Anexos e no Painel da Execução; trocar quebraria esses vínculos. O número curto é só a forma de mostrar e de achar.
+5. **Virada do ano**: a sequência do protocolo recomeça em janeiro. Se o mesmo número existir em dois anos, o caso aparece com o ano — **"Caso 17/26"** e **"Caso 17/27"** — e a busca aceita `17/26`.
+
 ## Atualização 2.26.5 — Galeria da Comunicação mostra as fotos sem depender da pasta (≈ 3 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.26.5`) e publique uma **Nova versão**. Nenhum arquivo novo, nenhuma autorização nova.

@@ -23,8 +23,8 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.waitForFunction(()=>document.querySelector('.nav-item.active')?.dataset.route==='fechamento');assert.equal(await fechado('mes'),false,'grupo abre ao entrar numa página dele');
   assert.equal(await p.locator('#searchDialog[open]').count(),0);
   // Busca: protocolo → abre a ficha.
-  await p.locator('#searchOpen').click();await p.locator('#searchInput').fill('DEMO-102');await p.locator('.search-item',{hasText:'DEMO-102'}).first().waitFor();
-  await p.locator('.search-item',{hasText:'DEMO-102'}).first().click();await p.locator('.case-status').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'atendimentos');
+  await p.locator('#searchOpen').click();await p.locator('#searchInput').fill('caso 14');await p.locator('.search-item',{hasText:'Caso 14'}).first().waitFor();
+  await p.locator('.search-item',{hasText:'Caso 14'}).first().click();await p.locator('.case-status').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'atendimentos');
   await p.locator('#closeDialog').click();
   // Busca: ação "Novo contato" → abre o formulário; obra → filtra a lista de obras.
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('novo contato');await p.locator('.search-item',{hasText:'Novo contato'}).waitFor();await p.keyboard.press('Enter');

@@ -81,7 +81,7 @@ class PaineisGestaoCPT {
     fichas.forEach(c => {
       const k = PaineisGestaoCPT.chaveObra(c.obra); if (!k || /nao se aplica/.test(k)) return;
       const o = porNome.get(k); const f = o ? frentes.get(o.id) || frente(o.id, o.exibir) : (!c.concluido || c.abertura.startsWith(mes) ? frente('', c.obra) : null); if (!f) return;
-      if (!c.concluido) { f.casosAbertos++; f.casos.push({protocolo: c.protocolo, assunto: c.assunto, dias: c.dias, status: c.status}); }
+      if (!c.concluido) { f.casosAbertos++; f.casos.push({caso: c.caso || '', protocolo: c.protocolo, assunto: c.assunto, dias: c.dias, status: c.status}); }
       if (c.abertura.startsWith(mes)) f.casosMes++;
     });
     const lista = [...frentes.values()].map(f => ({...f, diasSemRegistro: f.ultimo ? Math.round((Date.parse(hoje + 'T12:00:00Z') - Date.parse(f.ultimo + 'T12:00:00Z')) / 864e5) : null,

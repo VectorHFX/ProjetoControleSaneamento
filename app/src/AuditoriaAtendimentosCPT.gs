@@ -38,7 +38,7 @@ class AuditoriaAtendimentosCPT {
     });
     const abertos = casos.filter(c => !c.concluido), achados = {};
     AuditoriaAtendimentosCPT.verificacoes.forEach(v => achados[v.id] = []);
-    const item = (c, detalhe) => ({protocolo: c.protocolo, nome: c.nome, assunto: c.assunto, dias: c.dias, area: c.area, status: c.concluido ? 'Concluído' : c.status, detalhe});
+    const item = (c, detalhe) => ({caso: c.caso || '', protocolo: c.protocolo, nome: c.nome, assunto: c.assunto, dias: c.dias, area: c.area, status: c.concluido ? 'Concluído' : c.status, detalhe});
     abertos.forEach(c => {
       if (/receb/.test(N(c.status)) && c.dias != null && c.dias > L.semAcaoDias) achados.recebidaParada.push(item(c, c.dias + ' dias como Recebida'));
       if (c.dias != null && c.dias > L.prazoDias) achados.prazo.push(item(c, c.dias + ' dias em aberto'));

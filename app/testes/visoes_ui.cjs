@@ -22,7 +22,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await semRelatorio('atendimento');
   await p.locator('.shortcut',{hasText:'Auditoria das fichas'}).click();await p.locator('.audit-item').first().waitFor();
   assert.match(await p.locator('#view').textContent(),/Recebidos sem nenhuma ação há mais de 3 dias/);assert.equal(await p.locator('.audit-item[open]').count(),2);
-  await p.locator('.audit-item[open] [data-case]').first().click();await p.waitForFunction(()=>/DEMO-10/.test(document.querySelector('#detailTitle').textContent));await p.locator('#closeDialog').click();
+  await p.locator('.audit-item[open] [data-case]').first().click();await p.waitForFunction(()=>/Caso 1\d/.test(document.querySelector('#detailTitle').textContent));await p.locator('#closeDialog').click();
   await p.locator('[data-atd-modo=casos]').click();await p.locator('#caseFilters').waitFor();
   // Ver como Comercialização: só ferramentas comuns.
   await p.selectOption('#viewSwitch','comercializacao');await espaco();await irInicio();
@@ -43,7 +43,7 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.locator('#frenteFiltro [name=busca]').fill('viela');await p.waitForFunction(()=>document.querySelectorAll('.front-card').length===1);assert.equal(await p.locator('#frenteFiltro [name=busca]').inputValue(),'viela','filtro com espera curta mantém o texto');
   assert.equal(await p.evaluate(()=>document.activeElement.name),'busca','foco mantido no filtro');
   await p.locator('[data-frente]').first().click();await p.waitForFunction(()=>document.querySelector('#detailType').textContent==='FRENTE DE SERVIÇO');
-  assert.match(await p.locator('#detailContent').textContent(),/DEMO-102/);await p.locator('#closeDialog').click();
+  assert.match(await p.locator('#detailContent').textContent(),/ATD20260014/);await p.locator('#closeDialog').click();
   await p.locator('[role=tab][data-painel-aba=relatos]').click();await p.locator('.relato-card').first().waitFor();
   assert.equal(await p.locator('.relato-card').count(),2);assert.match(await p.locator('#relatosResumo').textContent(),/sem foto/);
   // Programa Parceiros: sugestões, salvar, publicar, imprimir.

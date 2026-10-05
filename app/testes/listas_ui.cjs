@@ -8,34 +8,36 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Atendimentos: uma linha por caso, com as colunas combinadas.
   await p.goto(url('?inicial=1&latencia=20'));await p.locator('.report-items').waitFor();
   await p.locator('.nav-item[data-route=atendimentos]').click();await p.locator('#caseResults .list-row').first().waitFor();
-  assert.deepEqual(await p.$$eval('#caseResults .list-head [data-col]',l=>l.map(x=>x.textContent.trim())),['Protocolo','Nome','Assunto','Situação','Com quem está','Dias','Próxima ação']);
-  const linha=p.locator('#caseResults .list-row',{hasText:'DEMO-104'});
+  assert.deepEqual(await p.$$eval('#caseResults .list-head [data-col]',l=>l.map(x=>x.textContent.trim())),['Caso','Nome','Assunto','Situação','Com quem está','Dias','Próxima ação']);
+  const linha=p.locator('#caseResults .list-row',{hasText:'ATD20260016'});
   assert.match(await linha.textContent(),/Pessoa de exemplo 5/);assert.match(await linha.textContent(),/Conferir o retorno/);
   assert.equal(await linha.locator('.dias').textContent(),'64');assert.match(await linha.locator('.dias').getAttribute('class'),/vermelho/);
-  assert.match(await p.locator('#caseResults .list-row',{hasText:'DEMO-103'}).locator('.dias').getAttribute('class'),/amarelo/);
-  assert.match(await p.locator('#caseResults .list-row',{hasText:'DEMO-105'}).locator('.dias').getAttribute('class'),/verde/);
+  assert.match(await p.locator('#caseResults .list-row',{hasText:'ATD20260015'}).locator('.dias').getAttribute('class'),/amarelo/);
+  assert.match(await p.locator('#caseResults .list-row',{hasText:'ATD20260017'}).locator('.dias').getAttribute('class'),/verde/);
   // Computador: clicar abre o painel ao lado (a lista continua clicável) e marca a linha aberta.
   await linha.click();await p.locator('#detailDialog.is-side[open] .case-status').waitFor();
-  assert.match(await linha.getAttribute('class'),/is-open/);assert.match(await p.locator('#detailTitle').textContent(),/DEMO-104/);
+  assert.match(await linha.getAttribute('class'),/is-open/);assert.match(await p.locator('#detailTitle').textContent(),/Caso 16(?!\d)/);
   const box=await p.locator('#detailDialog').boundingBox();assert.ok(box.x>500,'painel à direita');
-  await p.locator('#caseResults .list-row',{hasText:'DEMO-105'}).click();await p.waitForFunction(()=>/DEMO-105/.test(document.querySelector('#detailTitle').textContent));
-  assert.equal(await p.locator('#caseResults .list-row.is-open').count(),1);assert.match(await p.locator('#caseResults .list-row.is-open').textContent(),/DEMO-105/);
+  await p.locator('#caseResults .list-row',{hasText:'ATD20260017'}).click();await p.waitForFunction(()=>/Caso 17(?!\d)/.test(document.querySelector('#detailTitle').textContent));
+  assert.equal(await p.locator('#caseResults .list-row.is-open').count(),1);assert.match(await p.locator('#caseResults .list-row.is-open').textContent(),/Caso 17(?!\d)/);
   // Teclado: ↓/J próximo, ↑/K anterior, Esc fecha (e tira o destaque).
-  await p.keyboard.press('ArrowDown');await p.waitForFunction(()=>/DEMO-106/.test(document.querySelector('#detailTitle').textContent));
-  await p.keyboard.press('k');await p.waitForFunction(()=>/DEMO-105/.test(document.querySelector('#detailTitle').textContent));
-  await p.keyboard.press('j');await p.waitForFunction(()=>/DEMO-106/.test(document.querySelector('#detailTitle').textContent));
+  await p.keyboard.press('ArrowDown');await p.waitForFunction(()=>/Caso 18(?!\d)/.test(document.querySelector('#detailTitle').textContent));
+  await p.keyboard.press('k');await p.waitForFunction(()=>/Caso 17(?!\d)/.test(document.querySelector('#detailTitle').textContent));
+  await p.keyboard.press('j');await p.waitForFunction(()=>/Caso 18(?!\d)/.test(document.querySelector('#detailTitle').textContent));
+  // 2.26.6: a lista mostra "Caso N" com o protocolo embaixo, e o detalhe mostra o protocolo oficial.
+  assert.match(await p.locator('#caseResults .list-row',{hasText:'ATD20260017'}).locator('.c-caso').textContent(),/^Caso 17$/);assert.match(await p.locator('#detailContent').textContent(),/Protocolo ATD20260018/);
   await p.keyboard.press('Escape');await p.waitForFunction(()=>!document.querySelector('#detailDialog').open);
   assert.equal(await p.locator('.list-row.is-open').count(),0);assert.equal(await p.evaluate(()=>document.body.classList.contains('detail-side')),false);
   // Fechar pelo ✕ também.
   await linha.click();await p.locator('#detailDialog.is-side[open]').waitFor();await p.locator('#closeDialog').click();await p.waitForFunction(()=>!document.querySelector('#detailDialog').open);
   // Tela média: janela por cima (sem painel ao lado). Enter numa linha com foco também abre.
-  await p.setViewportSize({width:1000,height:800});await p.locator('#caseResults .list-row',{hasText:'DEMO-103'}).focus();await p.keyboard.press('Enter');
+  await p.setViewportSize({width:1000,height:800});await p.locator('#caseResults .list-row',{hasText:'ATD20260015'}).focus();await p.keyboard.press('Enter');
   await p.locator('#detailDialog[open] .case-status').waitFor();assert.equal(await p.evaluate(()=>document.querySelector('#detailDialog').classList.contains('is-side')),false,'janela por cima');
   await p.locator('#closeDialog').click();
   // Celular: linha em duas faixas (protocolo e nome / situação, dias, com quem está), sem rolagem lateral, janela por cima.
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(300);
   assert(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral');
-  const r=await p.locator('#caseResults .list-row',{hasText:'DEMO-104'}),cel=n=>r.locator(n).boundingBox();
+  const r=await p.locator('#caseResults .list-row',{hasText:'ATD20260016'}),cel=n=>r.locator(n).boundingBox();
   const prot=await cel('.c-prot'),sit=await cel('.c-sit'),dias=await cel('.c-dias');assert.ok(sit.y>prot.y+8,'situação na segunda faixa');assert.ok(Math.abs(dias.y-sit.y)<12,'dias na mesma faixa da situação');
   assert.equal(await p.locator('#caseResults .list-head').isVisible(),false,'cabeçalho escondido no celular');
   await r.click();await p.locator('#detailDialog[open] .case-status').waitFor();assert.equal(await p.evaluate(()=>document.querySelector('#detailDialog').classList.contains('is-side')),false);

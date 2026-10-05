@@ -25,7 +25,7 @@ window.CPTAtendimentos = (() => {
     if (!conduz()) modo = 'casos';
     if (modo === 'auditoria') { renderAuditoria(); return; }
     ui.view.innerHTML = ui.intro('Atendimentos', 'Cada ficha nasce do formulário com um protocolo. Acompanhe, registre a execução e finalize por aqui.') + abas() +
-      `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
+      `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Nº do caso (ex.: 17), protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
       <label class="field">Situação<select name="estado"><option value="" ${!filtro.estado ? 'selected' : ''}>Todos os casos</option><option value="abertos" ${filtro.estado === 'abertos' ? 'selected' : ''}>Em aberto</option><option value="concluidos" ${filtro.estado === 'concluidos' ? 'selected' : ''}>Concluídos</option></select></label>
       <label class="field">Com quem está<select name="com"><option value="">Todos</option>${['Execução', 'Atendimento'].map(x => `<option ${filtro.com === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
       <button type="submit" class="button">${ui.icon('search')}Buscar</button></form></section><div class="results-head"><span id="caseCount">Consultando atendimentos…</span><span>Protocolos ATD + ano + número</span></div><div id="caseResults" class="list-table cases-table"></div><div id="moreCases" class="load-more"></div>`;
@@ -36,14 +36,14 @@ window.CPTAtendimentos = (() => {
     carregar();
   }
   // 2.13: uma linha por caso (mais casos por tela). Clicar abre o detalhe (painel ao lado no computador).
-  const COLUNAS = ['Protocolo', 'Nome', 'Assunto', 'Situação', 'Com quem está', 'Dias', 'Próxima ação'];
+  const COLUNAS = ['Caso', 'Nome', 'Assunto', 'Situação', 'Com quem está', 'Dias', 'Próxima ação'];
   const cabecalho = () => `<div class="list-head" aria-hidden="true">${COLUNAS.map(c => `<span data-col>${c}</span>`).join('')}</div>`;
   /** Dias em aberto: até 29 verde, 30 a 59 amarelo, 60 ou mais vermelho (as mesmas faixas do Painel da Execução). */
   const tomDias = d => d == null ? '' : d >= 60 ? 'vermelho' : d >= 30 ? 'amarelo' : 'verde';
   function linha(r) {
     const situacao = r.concluido ? 'Concluído' : r.status || 'Em aberto';
-    return `<div class="list-row" role="button" tabindex="0" data-case="${ui.esc(r.protocolo)}" aria-label="${ui.esc(r.protocolo + ', ' + (r.nome || 'nome não informado') + ', ' + situacao)}">
-      <span class="c-prot">${ui.esc(r.protocolo)}</span><span class="c-nome">${ui.esc(r.nome || 'Nome não informado')}</span><span class="c-assunto">${ui.esc(r.assunto || '—')}</span>
+    return `<div class="list-row" role="button" tabindex="0" data-case="${ui.esc(r.protocolo)}" aria-label="${ui.esc((r.caso ? r.caso + ', protocolo ' : '') + r.protocolo + ', ' + (r.nome || 'nome não informado') + ', ' + situacao)}">
+      <span class="c-prot">${r.caso ? `<b class="c-caso">${ui.esc(r.caso)}</b><small>${ui.esc(r.protocolo)}</small>` : ui.esc(r.protocolo)}</span><span class="c-nome">${ui.esc(r.nome || 'Nome não informado')}</span><span class="c-assunto">${ui.esc(r.assunto || '—')}</span>
       <span class="c-sit"><i class="status-dot ${corStatus(r)}" aria-hidden="true"></i>${ui.esc(situacao)}</span><span class="c-com">${ui.esc(r.concluido ? '—' : r.area || '—')}</span>
       <span class="c-dias"><b class="dias ${r.concluido ? '' : tomDias(r.dias)}">${r.dias == null ? '—' : ui.esc(String(r.dias))}</b></span><span class="c-prox">${ui.esc(!r.concluido && r.proximaAcao ? r.proximaAcao : '—')}</span></div>`;
   }
@@ -66,7 +66,7 @@ window.CPTAtendimentos = (() => {
       const d = await ui.call('auditarAtendimentosCPT', {atualizar}); if (mine !== ticket || ui.state.route !== 'atendimentos' || modo !== 'auditoria') return;
       auditoria = d; const n = d.numeros, G = window.CPTGestao;
       const ponto = v => !v.quantidade ? 'is-ok' : v.grave ? 'is-bad' : 'is-warn';
-      const lista = v => v.itens.length ? `<ul class="audit-cases">${v.itens.map(x => `<li><button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.protocolo)} · ${ui.esc(x.nome || 'Nome não informado')}</strong><small>${ui.esc([x.assunto, x.detalhe, x.area ? 'Com ' + x.area : ''].filter(Boolean).join(' · '))}</small></button></li>`).join('')}</ul>${v.quantidade > v.itens.length ? `<p class="small muted">Mostrando ${v.itens.length} de ${v.quantidade}, dos mais antigos para os mais novos.</p>` : ''}` : '<p class="ok-line">Nenhum caso nesta situação.</p>';
+      const lista = v => v.itens.length ? `<ul class="audit-cases">${v.itens.map(x => `<li><button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.caso ? x.caso + ' (' + x.protocolo + ')' : x.protocolo)} · ${ui.esc(x.nome || 'Nome não informado')}</strong><small>${ui.esc([x.assunto, x.detalhe, x.area ? 'Com ' + x.area : ''].filter(Boolean).join(' · '))}</small></button></li>`).join('')}</ul>${v.quantidade > v.itens.length ? `<p class="small muted">Mostrando ${v.itens.length} de ${v.quantidade}, dos mais antigos para os mais novos.</p>` : ''}` : '<p class="ok-line">Nenhum caso nesta situação.</p>';
       ui.view.innerHTML = intro + `<section class="stat-row" aria-label="Números da carteira">
           <div class="stat-tile"><span class="stat-label">Em aberto</span><span class="stat-value">${ui.num(n.abertos)}</span><span class="stat-note">${ui.num(n.total)} casos principais no total.</span></div>
           <div class="stat-tile"><span class="stat-label">Pedem ação já</span><span class="stat-value">${ui.num(d.pendencias)}</span><span class="stat-note">Recebidos parados e casos acima de 30 dias.</span></div>
@@ -80,7 +80,7 @@ window.CPTAtendimentos = (() => {
           <section class="panel"><div class="panel-head"><div><h2>Com quem estão</h2><p>Casos em aberto por área.</p></div></div>${G.barrasH(n.porArea, 'Nenhum caso em aberto.')}</section>
           <section class="panel"><div class="panel-head"><div><h2>Tipos de manifestação</h2><p>Casos em aberto.</p></div></div>${G.barrasH(n.porTipo, 'Nenhum caso em aberto.')}</section>
           <section class="panel"><div class="panel-head"><div><h2>Por onde chegaram</h2><p>Canal, últimos seis meses.</p></div></div>${G.barrasH(n.porCanal, 'Sem casos no período.')}</section>
-          <section class="panel"><div class="panel-head"><div><h2>Mais antigos em aberto</h2></div></div>${n.maisAntigos.length ? `<div class="mini-list">${n.maisAntigos.map(x => `<button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.protocolo)} · ${ui.esc(x.assunto || 'Assunto não informado')}</strong><small>${ui.esc(x.detalhe)}${x.area ? ' · com ' + ui.esc(x.area) : ''}</small></button>`).join('')}</div>` : '<p class="ok-line">Nenhum caso em aberto.</p>'}</section>
+          <section class="panel"><div class="panel-head"><div><h2>Mais antigos em aberto</h2></div></div>${n.maisAntigos.length ? `<div class="mini-list">${n.maisAntigos.map(x => `<button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.caso ? x.caso + ' (' + x.protocolo + ')' : x.protocolo)} · ${ui.esc(x.assunto || 'Assunto não informado')}</strong><small>${ui.esc(x.detalhe)}${x.area ? ' · com ' + ui.esc(x.area) : ''}</small></button>`).join('')}</div>` : '<p class="ok-line">Nenhum caso em aberto.</p>'}</section>
         </div><p class="small muted painel-foot">Conferido em ${new Date(d.atualizadoEm).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'})}. Use Atualizar no topo para conferir de novo.</p>`;
     } catch (e) { if (mine === ticket) ui.view.innerHTML = intro + `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
@@ -96,8 +96,8 @@ window.CPTAtendimentos = (() => {
   }
   function desenhar(rascunhos = {}) {
     const d = aberto, f = d.ficha, a = d.abertura, conc = f.concluido, docs = [['Abrir ficha', f.documento], ['Abrir PDF', f.pdf]].filter(([, u]) => ui.safeURL(u));
-    $('detailTitle').textContent = f.protocolo + ' · ' + (f.nome || 'Atendimento');
-    $('detailContent').innerHTML = `<div class="case-status"><span class="badge ${corStatus(f)}">${ui.esc(conc ? 'Concluído' : f.status)}</span><span class="badge">${ui.esc(d.procedencia)}</span>${!conc && f.proximaAcao ? `<span class="small">Próxima ação: <strong>${ui.esc(f.proximaAcao)}</strong> · ${ui.esc(f.area || '')}</span>` : ''}</div>
+    $('detailTitle').textContent = (f.caso || f.protocolo) + ' · ' + (f.nome || 'Atendimento');
+    $('detailContent').innerHTML = `<div class="case-status">${f.caso ? `<span class="small">Protocolo <strong>${ui.esc(f.protocolo)}</strong></span>` : ''}<span class="badge ${corStatus(f)}">${ui.esc(conc ? 'Concluído' : f.status)}</span><span class="badge">${ui.esc(d.procedencia)}</span>${!conc && f.proximaAcao ? `<span class="small">Próxima ação: <strong>${ui.esc(f.proximaAcao)}</strong> · ${ui.esc(f.area || '')}</span>` : ''}</div>
       ${docs.length ? `<div class="dialog-actions">${docs.map(([l, u]) => `<a class="button secondary" href="${ui.esc(ui.safeURL(u))}" target="_blank" rel="noopener noreferrer">${ui.icon('file')}${l}</a>`).join('')}</div>` : ''}
       ${d.protocoloConsultado !== f.protocolo ? `<div class="notice">O protocolo ${ui.esc(d.protocoloConsultado)} está incorporado à ficha principal ${ui.esc(f.protocolo)}.</div>` : ''}
       <div class="case-actions" role="group" aria-label="Ações do caso">

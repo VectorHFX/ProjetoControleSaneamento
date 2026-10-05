@@ -240,7 +240,15 @@ assert.equal(run("abrirAtendimentoCPT('ATD20260008')").ficha.protocolo,'ATD20260
 assert.ok(movs.rows.filter(x=>x[3]==='Vínculo de protocolos').length===2,'movimentação nos dois protocolos');
 // Filtro "com quem está" e dias em aberto
 let lista=run("buscarAtendimentosCPT({estado:'abertos',com:'Execução'})");assert.ok(lista.itens.every(x=>x.area==='Execução'&&!x.concluido));assert.ok(lista.itens.some(x=>x.protocolo==='ATD20260007'));assert.ok(!lista.itens.some(x=>x.protocolo==='ATD20260008'));
-assert.ok(lista.itens.find(x=>x.protocolo==='ATD20260007').dias>100);assert.throws(()=>run("buscarAtendimentosCPT({com:'Outro'})"),/inválido/);
+assert.ok(lista.itens.find(x=>x.protocolo==='ATD20260007').dias>100);
+// 2.26.6: número curto do caso ("Caso 7"), busca por "7", "caso 7", "#7" e "7/26"; o ano aparece só quando o número se repete em outro ano.
+assert.equal(lista.itens.find(x=>x.protocolo==='ATD20260007').caso,'Caso 7');
+for(const b of ['7','caso 7','Caso 07','#7','7/26','7/2026']){const r=run("buscarAtendimentosCPT({busca:"+JSON.stringify(b)+"})");assert.deepEqual(r.itens.map(x=>x.protocolo),['ATD20260007'],'busca '+b);}
+assert.equal(run("buscarAtendimentosCPT({busca:'7/25'})").itens.length,0,'ano errado não acha');assert.ok(run("buscarAtendimentosCPT({busca:'ATD20260007'})").itens.some(x=>x.protocolo==='ATD20260007'),'protocolo completo continua');
+assert.equal(run("DadosDaAplicacao.buscaCaso('Rua 7 de setembro')"),null,'texto com número não vira busca por caso');assert.equal(run("DadosDaAplicacao.numeroCaso('DEMO-1')"),null);
+vm.runInContext("var dCaso=new DadosDaAplicacao(planilhaCPT_(AplicacaoCPT.config().baseId),{papeis:['administrador']});dCaso._anosCaso=new Map([[7,new Set(['2025','2026'])],[8,new Set(['2026'])]]);",ctx);
+assert.equal(run("dCaso.caso('ATD20260007')"),'Caso 7/26');assert.equal(run("dCaso.caso('ATD20250007')"),'Caso 7/25');assert.equal(run("dCaso.caso('ATD20260008')"),'Caso 8');
+assert.equal(run("dCaso.caso('ATD20260007')"),'Caso 7/26');assert.equal(run("dCaso.caso('ATD20250007')"),'Caso 7/25');assert.equal(run("dCaso.caso('ATD20260008')"),'Caso 8');assert.throws(()=>run("buscarAtendimentosCPT({com:'Outro'})"),/inválido/);
 // Ficha oficial: preenche o modelo, gera PDF, guarda links e só refaz quando muda.
 const textos=[];let copias=0,pdfs=0;const movidos=[];
 const cell=()=>{const c={clear:()=>c,setVerticalAlignment:()=>c,appendParagraph:t=>{const p={appendText:x=>{textos.push(x);const tx={setFontFamily:()=>tx,setFontSize:()=>tx,setBold:()=>tx,setForegroundColor:()=>tx,setUnderline:()=>tx,setLinkUrl:()=>tx};return tx},setSpacingAfter:()=>p,setLineSpacing:()=>p,setAlignment:()=>p,appendInlineImage:()=>({getWidth:()=>800,getHeight:()=>600,setWidth(){},setHeight(){}})};if(t)textos.push(t);return p},appendTable:()=>({setBorderWidth(){return this},setBorderColor(){return this},getCell:()=>cell()})};return c};

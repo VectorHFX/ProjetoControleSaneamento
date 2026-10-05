@@ -29,7 +29,19 @@ class DadosDaAplicacao {
   registro(r) { return {id:this.texto(r[0]),procedimento:this.texto(r[1]),data:this.data(r[2]),mes:this.mesCelula(r[3]),origem:this.texto(r[5]),bairro:this.texto(r[7]),bairroId:this.texto(r[8]),obra:this.texto(r[9]),obraId:this.texto(r[10]),responsavel:this.texto(r[11]),area:this.texto(r[12]),atividade:this.texto(r[13]),publico:r[14] === '' ? null : /^\d+$/.test(String(r[14])) ? Number(r[14]) : null,protocolo:this.texto(r[15]),conferencia:this.texto(r[18])}; }
   encerrado(r) { return /conclu|encerrad|finaliz/.test(DadosDaAplicacao.norm(r[3])); }
   principal(r) { return !!r[0] && (!r[1] || r[1] === r[0]) && !/incorporad|mesclad/.test(DadosDaAplicacao.norm(r[2])); }
-  atendimento(r) { return {protocolo:this.texto(r[0]),principal:this.texto(r[1] || r[0]),status:this.texto(r[3]),abertura:this.data(r[4]),conclusao:this.data(r[5]),nome:this.texto(r[6]),assunto:this.texto(r[7]),endereco:this.texto(r[8]),obra:this.texto(r[9]),area:this.texto(r[10]),responsavel:this.texto(r[11]),proximaAcao:this.texto(r[12]),atualizacao:DadosDaAplicacao.json(r[13]),documento:this.url(r[14]),pdf:this.url(r[15]),origem:this.texto(r[16]),concluido:this.encerrado(r),incorporado:!this.principal(r),dias:this.dias(r)}; }
+  /** 2.26.6: número curto do caso ("Caso 17") a partir do protocolo ATD+ano+sequência; o protocolo continua o identificador oficial. */
+  static numeroCaso(p) { const m = String(p || '').match(/^ATD(\d{4})(\d{4})$/); return m ? {ano: m[1], n: Number(m[2])} : null; }
+  /** Busca por número de caso: "17", "caso 17", "#17", "17/25". null se o texto não é um número de caso. */
+  static buscaCaso(t) { const m = DadosDaAplicacao.norm(t).match(/^(?:caso\s*|#\s*)?0*(\d{1,4})(?:\s*\/\s*(\d{2}|\d{4}))?$/); return m ? {n: Number(m[1]), ano: m[2] ? (m[2].length === 2 ? '20' + m[2] : m[2]) : ''} : null; }
+  /** Anos em que cada número aparece (a sequência do protocolo recomeça a cada ano): uma leitura da coluna A por pedido. */
+  anosPorNumero() {
+    if (this._anosCaso) return this._anosCaso; const a = this.atendimentos(), n = a.getLastRow() - 1, m = new Map();
+    if (n > 0) a.getRange(2, 1, n, 1).getValues().forEach(([p]) => { const c = DadosDaAplicacao.numeroCaso(p); if (c) { if (!m.has(c.n)) m.set(c.n, new Set()); m.get(c.n).add(c.ano); } });
+    return (this._anosCaso = m);
+  }
+  /** "Caso 17"; com o ano ("Caso 17/25") só quando o mesmo número existe em mais de um ano. */
+  caso(p) { const c = DadosDaAplicacao.numeroCaso(p); if (!c) return ''; const anos = this.anosPorNumero().get(c.n); return 'Caso ' + c.n + (anos && anos.size > 1 ? '/' + c.ano.slice(2) : ''); }
+  atendimento(r) { return {caso:this.caso(r[0]),protocolo:this.texto(r[0]),principal:this.texto(r[1] || r[0]),status:this.texto(r[3]),abertura:this.data(r[4]),conclusao:this.data(r[5]),nome:this.texto(r[6]),assunto:this.texto(r[7]),endereco:this.texto(r[8]),obra:this.texto(r[9]),area:this.texto(r[10]),responsavel:this.texto(r[11]),proximaAcao:this.texto(r[12]),atualizacao:DadosDaAplicacao.json(r[13]),documento:this.url(r[14]),pdf:this.url(r[15]),origem:this.texto(r[16]),concluido:this.encerrado(r),incorporado:!this.principal(r),dias:this.dias(r)}; }
   /** Dias corridos em aberto (até a conclusão, se concluído). */
   dias(r) { const a=r[4] instanceof Date?r[4]:null; if(!a)return null; const fim=this.encerrado(r)&&r[5] instanceof Date?r[5]:new Date(); return Math.max(0,Math.floor((fim-a)/864e5)); }
   url(v) { const s = String(v || ''); return /^https:\/\/(?:docs|drive)\.google\.com\//i.test(s) ? s : ''; }
@@ -150,8 +162,10 @@ class DadosDaAplicacao {
     p=p||{};const f=this.filtros(p);if(f.estado&&!['abertos','concluidos'].includes(f.estado))throw new Error('Situação inválida.');if(f.com&&!['Execução','Atendimento'].includes(f.com))throw new Error('Filtro inválido.');
     const todos=this.ler(this.atendimentos(),18), associados=new Map(), porId=new Map(todos.map(r=>[String(r[0]),r]));
     todos.forEach(r=>{let atual=r, vistos=new Set();while(atual&&atual[1]&&atual[1]!==atual[0]){if(vistos.has(atual[0]))return;vistos.add(atual[0]);atual=porId.get(String(atual[1]));}if(atual)associados.set(String(atual[0]),(associados.get(String(atual[0]))||'')+' '+r[0]);});
+    // 2.26.6: "17", "caso 17" ou "17/25" acham o caso pelo número (o próprio protocolo ou um incorporado a ele).
+    const bc=f.busca?DadosDaAplicacao.buscaCaso(f.busca):null,ehCaso=p=>{const c=DadosDaAplicacao.numeroCaso(p);return !!c&&c.n===bc.n&&(!bc.ano||c.ano===bc.ano);};
     const selecionados=todos.filter(r=>this.principal(r)&&(!f.estado||(f.estado==='concluidos')===this.encerrado(r))&&(!f.com||(!this.encerrado(r)&&String(r[10])===f.com))&&
-      (!f.busca||DadosDaAplicacao.norm(r[17]+' '+r[0]+' '+r[6]+' '+r[7]+' '+r[8]+' '+(associados.get(String(r[0]))||'')).includes(DadosDaAplicacao.norm(f.busca))));
+      (!f.busca||(bc?[String(r[0])].concat(String(associados.get(String(r[0]))||'').split(' ').filter(Boolean)).some(ehCaso):DadosDaAplicacao.norm(r[17]+' '+r[0]+' '+r[6]+' '+r[7]+' '+r[8]+' '+(associados.get(String(r[0]))||'')).includes(DadosDaAplicacao.norm(f.busca)))));
     // Com filtro de responsável, os mais antigos primeiro (fila de trabalho); sem filtro, os mais novos.
     selecionados.sort((a,b)=>f.com?String(a[0]).localeCompare(String(b[0])):String(b[0]).localeCompare(String(a[0])));
     const pagina=p.pagina==null?0:Number(p.pagina);if(!Number.isInteger(pagina)||pagina<0)throw new Error('Página inválida.');
