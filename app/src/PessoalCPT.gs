@@ -4,6 +4,7 @@
  * 2.18: elenco chibi (urso, águia, gato, cachorro, pato, capivara, sapinho, gota); dinossauro e abelha viram clássicos (150 pontos);
  *       kit EPI inicial (capacete branco, colete, luvas, bota preta) de todo mundo e já vestido nos mascotes novos.
  *       Período de testes: o elenco novo é só do proprietário (PessoalCPT.novo).
+ * 2.21: pontos dos joguinhos (JogosCPT) também somam; painel de joguinhos no Meu espaço.
  * 2.19: pontos do quiz (QuizCPT) somam aos do checklist; "Saber mais" no Meu espaço (curiosidade do dia, campanha do mês, quiz).
  * Privacidade: cada pessoa só lê e grava o próprio espaço (pelo e-mail da conta). Nem a Gestão vê pela aplicação.
  *
@@ -80,8 +81,8 @@ class PessoalCPT {
   diasEscritos() { return this.minhasNotas().filter(n => String(n.texto || '').trim().length >= PessoalCPT.minimoCaderno).length; }
   pontos(perfil) {
     const checklist = this.minhasListas().reduce((s, l) => s + Math.min(PessoalCPT.tarefasPontuadasPorDia, (l.itens || []).filter(t => t.pontuado).length) * PessoalCPT.pontosPorTarefa, 0);
-    const quiz = QuizCPT.pontos(this.ctx), ganhos = checklist + quiz, gastos = perfil ? (perfil.compras || []).reduce((s, c) => s + c.preco, 0) : 0;
-    return {ganhos, gastos, saldo: ganhos - gastos, checklist, quiz};
+    const quiz = QuizCPT.pontos(this.ctx), jogos = JogosCPT.pontos(this.ctx), ganhos = checklist + quiz + jogos, gastos = perfil ? (perfil.compras || []).reduce((s, c) => s + c.preco, 0) : 0;
+    return {ganhos, gastos, saldo: ganhos - gastos, checklist, quiz, jogos};
   }
   pendentes(perfil) {
     if (!perfil) return [];
@@ -105,6 +106,7 @@ class PessoalCPT {
       proximos: this.minhasListas().filter(l => l.id.slice(-10) > this.hoje && (l.itens || []).some(t => !t.feito)).map(l => ({data: l.id.slice(-10), pendentes: l.itens.filter(t => !t.feito).length})).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 5),
       regras: {pontosPorTarefa: PessoalCPT.pontosPorTarefa, tarefasPorDia: PessoalCPT.tarefasPontuadasPorDia}};
     if (QuizCPT.pode(this.ctx.perfil)) out.saber = this.saber();
+    if (JogosCPT.pode(this.ctx.perfil)) out.jogos = JogosCPT.de(this.ctx).estado();
     try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
     return out;
   }

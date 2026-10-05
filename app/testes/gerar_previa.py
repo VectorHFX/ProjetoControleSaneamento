@@ -150,7 +150,7 @@ if(!ESP.quiz)ESP.quiz={dia:null,semana:[]};
 const SAB=__CONTEUDO__,fonteS=k=>({nome:SAB.fontes[k][0],url:SAB.fontes[k][1]}),semR=q=>({id:q.id,tema:SAB.temas[q.tema],pergunta:q.pergunta,opcoes:q.opcoes,revisar:true});
 const resS=r=>{const q=SAB.perguntas.find(x=>x.id===r.id);return {...semR(q),escolha:r.escolha,acertou:r.acertou,certa:q.certa,explica:q.explica,fonte:fonteS(q.fonte)};};
 const QD=SAB.perguntas[(Number(hojeE.slice(8))*7)%SAB.perguntas.length],QS=SAB.perguntas.filter(q=>q.id!==QD.id).slice(10,15);
-const quizPts=()=>(ESP.quiz.dia&&ESP.quiz.dia.acertou?2:0)+ESP.quiz.semana.filter(r=>r.acertou).length*10;
+const quizPts=()=>(ESP.jog?ESP.jog.forca.concat(ESP.jog.quebra).reduce((a,x)=>a+x.pontos,0):0)+(ESP.quiz.dia&&ESP.quiz.dia.acertou?2:0)+ESP.quiz.semana.filter(r=>r.acertou).length*10;
 const quizEstado=()=>{const w=ESP.quiz.semana;return {regras:{pontosDia:2,pontosPergunta:10,porSemana:5},dia:{data:hojeE,versao:ESP.quiz.dia?1:0,pergunta:ESP.quiz.dia?null:semR(QD),resposta:ESP.quiz.dia?resS(ESP.quiz.dia):null},
   semana:{semana:'atual',versao:w.length,total:5,respondidas:w.length,acertos:w.filter(r=>r.acertou).length,pontos:w.filter(r=>r.acertou).length*10,indice:w.length,proxima:w.length<5?semR(QS[w.length]):null,respostas:w.map(resS)}};};
 const cur=SAB.curiosidades[Number(hojeE.slice(8))%SAB.curiosidades.length],mesN=Number(hojeE.slice(5,7));
@@ -165,13 +165,27 @@ if(nome==='carregarAlbumCPT'){if(!ESPdono)throw new Error('O álbum está reserv
 if(nome==='favoritarAlbumCPT'){if(!ESPdono)throw new Error('O álbum está reservado à administração técnica durante o período de testes.');
   if(p.ativo){if(ESP.alb.meus[p.fileId])throw new Error('Essa foto já está nas suas favoritas.');if(albUsadas()>=2)throw new Error('Você já escolheu 2 favoritas hoje. Amanhã tem mais!');ESP.alb.meus[p.fileId]=hojeE;}else delete ESP.alb.meus[p.fileId];
   const g=albGrupo({fileId:p.fileId});return {resultado:p.ativo?'Foto no álbum da equipe! ❤':'Foto tirada das suas favoritas.',fileId:p.fileId,meu:g.meu,coracoes:g.coracoes,usadasHoje:albUsadas(),minhas:Object.keys(ESP.alb.meus).length,mes:p.mes};}
+if(!ESP.jog)ESP.jog={forca:[],quebra:[]};
+const JOG=__JOGOS__,jogEstado=()=>{const um=(j,tem,precisa)=>{const h=ESP.jog[j];return {liberado:tem>=precisa,tem,precisa,partidasHoje:h.length,limite:3,vitoriasHoje:h.filter(x=>x.situacao==='venceu').length,ganhouPontosHoje:h.some(x=>x.pontos>0),aberta:h.some(x=>x.situacao==='jogando')};};
+  return {forca:um('forca',6,5),quebra:um('quebra',Object.keys(ESP.alb?ESP.alb.meus:{}).length+9,10),regras:{pontos:5,erros:6}};};
+const jogPts=()=>ESP.jog.forca.concat(ESP.jog.quebra).reduce((a,x)=>a+x.pontos,0);
+if(nome==='iniciarJogoCPT'){if(!ESPdono)throw new Error('Os joguinhos estão reservados à administração técnica durante o período de testes.');const e=jogEstado()[p.jogo];if(!e.liberado)throw new Error(p.jogo==='forca'?'A forca libera com 5 dias de checklist.':'O quebra-cabeça libera com 10 fotos favoritadas no Álbum (você tem '+e.tem+').');
+  let x=ESP.jog[p.jogo].find(y=>y.situacao==='jogando');if(!x){if(e.partidasHoje>=3)throw new Error('Você já jogou 3 partidas hoje. Amanhã tem mais!');const n=ESP.jog[p.jogo].length;
+    x={id:'JOG-'+p.jogo+'-'+n,jogo:p.jogo,n:n+1,situacao:'jogando',pontos:0,palavra:JOG.palavras[(n*7+3)%JOG.palavras.length],ordem:[[4,0,7,2,8,1,6,3,5],[1,2,0,4,5,3,8,6,7],[8,7,6,5,4,3,2,1,0]][n%3],foto:n%2?{fileId:'FOTODEMO00000000000002',legenda:'Mutirão de limpeza'}:null};ESP.jog[p.jogo].push(x);}
+  const t=x.jogo==='forca'?{id:x.id,jogo:'forca',situacao:x.situacao,n:x.n,dica:x.palavra[1],codigo:x.palavra[0].split('').reverse().map(c=>c.charCodeAt(0)+7),erros:6}:{id:x.id,jogo:'quebra',situacao:x.situacao,n:x.n,ordem:x.ordem,foto:x.foto};
+  return {partida:t,estado:jogEstado()};}
+if(nome==='terminarJogoCPT'){const x=ESP.jog.forca.concat(ESP.jog.quebra).find(y=>y.id===p.partida);if(!x||x.situacao!=='jogando')throw new Error('Essa partida já terminou.');let venceu;
+  if(x.jogo==='forca'){const nm=v=>v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase(),alvo=new Set(nm(x.palavra[0]).replace(/[^A-Z]/g,'')),vis=new Set();let err=0;venceu=false;for(const l of p.letras){vis.add(l);if(!alvo.has(l))err++;if(err>=6)break;if([...alvo].every(a=>vis.has(a))){venceu=true;break;}}}
+  else{const o=x.ordem.slice();p.trocas.forEach(([a,b])=>{[o[a],o[b]]=[o[b],o[a]];});venceu=o.every((v,i)=>v===i);}
+  const ja=ESP.jog[x.jogo].some(y=>y.pontos>0);x.situacao=venceu?'venceu':'perdeu';x.pontos=venceu&&!ja?5:0;
+  return {resultado:venceu?(x.pontos?'Venceu! +5 pontos':'Venceu!'):x.jogo==='forca'?'Não foi dessa vez: a palavra era '+x.palavra[0]+'.':'Partida encerrada.',situacao:x.situacao,pontosGanhos:x.pontos,palavra:x.jogo==='forca'?x.palavra[0]:undefined,estado:jogEstado(),pontos:espPontos()};}
 if(nome==='responderQuizCPT'){if(!ESPdono)throw new Error('O quiz está reservado à administração técnica durante o período de testes.');const q=p.tipo==='dia'?QD:QS[ESP.quiz.semana.length];if(!q)throw new Error('Você já fez o quiz desta semana. Na segunda tem outro!');if(p.tipo==='dia'&&ESP.quiz.dia)throw new Error('Você já respondeu a pergunta de hoje. Volte amanhã!');
   if(p.id!==q.id)throw new Error('A pergunta mudou. Atualize a página.');const r={id:q.id,escolha:p.escolha,acertou:p.escolha===q.certa};if(p.tipo==='dia')ESP.quiz.dia=r;else ESP.quiz.semana.push(r);
   return {resultado:r.acertou?'Acertou! +'+(p.tipo==='dia'?2:10)+' pontos':'Quase! Veja a explicação.',resposta:resS(r),estado:quizEstado(),pontos:espPontos()};}
 const espDias=()=>Object.values(ESP.notas).filter(n=>n.texto.trim().length>=20).length;
 const espPend=()=>{if(!ESP.perfil)return [];const r=ESP.perfil.resgates,out=[];if(!r['semana:atual'])out.push({chave:'semana:atual',tipo:'semana',titulo:'Presente da semana',texto:'Escolha um mascote novo ou uma peça.'});for(let i=1;i<=Math.floor(espDias()/5);i++)if(!r['caderno:'+i*5])out.push({chave:'caderno:'+i*5,tipo:'caderno',titulo:i*5+' dias de caderno',texto:'Escolha uma peça nova.'});return out;};
 if(nome==='carregarMeuEspacoCPT'){const dia=(p&&p.data)||hojeE,n=ESP.notas[dia],l=ESP.listas[dia];return {hoje:hojeE,data:dia,perfil:ESP.perfil,novoElenco:ESPdono,kit:ESPdono?Object.values(CAT.kit):[],classicos:ESPdono?CAT.classicos:{},precoClassico:CAT.precoClassico,catalogo:CAT.catalogo.filter(x=>ESPdono||!['luvas','bota-preta','camisa-veolia','laco-do-mes'].includes(x.id)),especies:ESPdono?CAT.especiesNovas:CAT.especies,cores:CAT.cores,slots:CAT.slots,pontos:espPontos(),pendentes:espPend(),nota:n?{data:dia,...n}:{data:dia,texto:'',versao:0},lista:l?{data:dia,...l}:{data:dia,itens:[],versao:0},
-  caderno:{dias:espDias(),porPeca:5,minimo:20,recentes:Object.entries(ESP.notas).filter(([,n])=>n.texto.trim()).map(([d,n])=>({data:d,trecho:n.texto.slice(0,90)}))},proximos:[],regras:{pontosPorTarefa:10,tarefasPorDia:8},trabalho:{recados:1,lembretes:2},saber:saberE()};}
+  caderno:{dias:espDias(),porPeca:5,minimo:20,recentes:Object.entries(ESP.notas).filter(([,n])=>n.texto.trim()).map(([d,n])=>({data:d,trecho:n.texto.slice(0,90)}))},proximos:[],regras:{pontosPorTarefa:10,tarefasPorDia:8},trabalho:{recados:1,lembretes:2},saber:saberE(),jogos:ESPdono?jogEstado():undefined};}
 if(nome==='salvarMascoteCPT'){let pf=ESP.perfil?JSON.parse(JSON.stringify(ESP.perfil)):null,res='';if(p.acao==='iniciar'){if(!p.nome)throw new Error('Preencha: nome do mascote.');pf={mascotes:[{especie:p.especie,nome:p.nome,equipado:ESPdono?{...CAT.kit}:{},cor:p.cor||''}],ativo:0,pecas:[],resgates:{},compras:[],versao:0};res='Bem-vindo(a), '+p.nome+'!';}else{const m=pf.mascotes[pf.ativo];
   if(p.acao==='nomear'){m.nome=p.nome;res='Agora seu mascote se chama '+p.nome+'.';}
   if(p.acao==='colorir'){if(p.cor&&!CAT.cores[p.cor])throw new Error('Escolha uma opção válida em cor do mascote.');m.cor=p.cor||'';res=m.cor?m.nome+' agora está '+CAT.cores[m.cor].toLowerCase()+'.':m.nome+' voltou à cor original.';}
@@ -207,9 +221,12 @@ s=s.replace("<?!= incluirCPT_('MeuEspaco'); ?>",(root/'src/MeuEspaco.html').read
 s=s.replace("<?!= incluirCPT_('Mascotes'); ?>",(root/'src/Mascotes.html').read_text())
 s=s.replace("<?!= incluirCPT_('Saber'); ?>",(root/'src/Saber.html').read_text())
 s=s.replace("<?!= incluirCPT_('Album'); ?>",(root/'src/Album.html').read_text())
+s=s.replace("<?!= incluirCPT_('Jogos'); ?>",(root/'src/Jogos.html').read_text())
 import subprocess,json
 cat=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={catalogo:PessoalCPT.catalogo,especies:PessoalCPT.especiesAntigas,especiesNovas:PessoalCPT.especiesNovas,classicos:PessoalCPT.classicos,precoClassico:PessoalCPT.precoClassico,kit:PessoalCPT.kit,cores:PessoalCPT.cores,slots:PessoalCPT.slots};',c);console.log(JSON.stringify(c.x))",str(root/'src/PessoalCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
 s=s.replace('__CATALOGO__',cat)
 cont=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={fontes:ConteudoSaneamentoCPT.fontes,temas:ConteudoSaneamentoCPT.temas,curiosidades:ConteudoSaneamentoCPT.curiosidades,perguntas:ConteudoSaneamentoCPT.perguntas,campanhas:ConteudoSaneamentoCPT.campanhas,datas:ConteudoSaneamentoCPT.datas};',c);console.log(JSON.stringify(c.x))",str(root/'src/ConteudoSaneamentoCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
 s=s.replace('__CONTEUDO__',cont)
+jog=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={palavras:JogosCPT.palavras};',c);console.log(JSON.stringify(c.x))",str(root/'src/JogosCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
+s=s.replace('__JOGOS__',jog)
 (root/'previa/CPT_Previa_1_2_1.html').write_text(s)

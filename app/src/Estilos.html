@@ -880,4 +880,28 @@ html[data-motion=reduce] .mapa-obra-hoje{animation:none}@media (prefers-reduced-
 .album-grande{margin:0}.album-grande img{width:100%;max-height:70vh;object-fit:contain;border-radius:12px;background:var(--soft)}.album-grande figcaption{margin-top:8px;font-size:13px;color:var(--muted)}
 @media (max-width:640px){.album-grade,.album-grade.is-destaque{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.album-legenda small{display:none}}
 @media (prefers-reduced-motion:reduce){.album-foto,.album-coracao{transition:none}.album-foto:hover,.album-coracao:hover{transform:none}}
+/* 2.21 · Joguinhos: forca do saneamento e quebra-cabeça. */
+.home-jogos{grid-column:1/-1}
+.jogos-grade{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.jogo-card{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(135deg,var(--pale),transparent 75%)}
+.jogo-card h3{margin:0 0 4px;font-family:var(--font-display);font-size:17px}.jogo-card p{margin:4px 0 8px}.jogo-card .meter{display:block;margin:6px 0 4px}
+.jogo-card.is-travado{background:var(--soft)}.jogo-card.is-travado h3{color:var(--muted)}
+.jogo-icone{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:var(--surface);font-size:28px;flex:none;box-shadow:var(--shadow)}
+.forca-dica{margin:0 0 14px;font-size:14px;line-height:1.5}
+.forca-palavra{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0 14px}
+.forca-casa{display:grid;place-items:center;width:30px;height:40px;border-bottom:3px solid var(--blue);font:800 22px var(--font-display);color:var(--ink)}
+.forca-espaco{width:16px}
+.forca-gotas{display:flex;gap:6px;justify-content:center;font-size:22px;margin-bottom:14px}.forca-gota.is-seca{filter:grayscale(.3);opacity:.75}
+.forca-teclado{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px}
+.forca-tecla{min-height:42px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:700 15px var(--font-ui);cursor:pointer}
+.forca-tecla:not([disabled]):hover{border-color:var(--blue)}.forca-tecla.is-certa{background:color-mix(in srgb,var(--mint) 22%,var(--surface));border-color:var(--mint)}
+.forca-tecla.is-errada{background:var(--soft);color:var(--muted);text-decoration:line-through}.forca-tecla:focus-visible,.quebra-peca:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.quebra-tabuleiro{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:min(100%,420px);aspect-ratio:1;margin:8px auto 12px;padding:4px;border-radius:14px;background:var(--line)}
+.quebra-tabuleiro.is-pronto{gap:0;padding:0;overflow:hidden}
+.quebra-peca{position:relative;border:0;border-radius:8px;background-color:var(--soft);background-size:300% 300%;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.quebra-tabuleiro.is-pronto .quebra-peca{border-radius:0}.quebra-peca small{position:absolute;left:5px;top:3px;font:700 11px var(--font-ui);color:#fff;text-shadow:0 1px 2px #0009}
+.quebra-tabuleiro.is-pronto .quebra-peca small{display:none}
+.quebra-peca.is-marcada{box-shadow:0 0 0 4px var(--accent);transform:scale(.95);z-index:1}
+@media (max-width:640px){.jogos-grade{grid-template-columns:1fr}.forca-teclado{grid-template-columns:repeat(7,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){.quebra-peca{transition:none}}
 </style>

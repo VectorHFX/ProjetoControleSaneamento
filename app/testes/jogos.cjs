@@ -1,4 +1,4 @@
-// Álbum da equipe (2.20): favoritas (2 por dia), álbum do mês e Fotos da semana, com serviços Google simulados. node app/testes/album.cjs
+// Joguinhos (2.21): forca e quebra-cabeça, metas, limite por dia e pontos conferidos no servidor. node app/testes/jogos.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('crypto');
 let email='victor@example.com',locked=false;
 const pessoa=(e,n,papeis)=>['CPT_PESSOA:'+e,JSON.stringify({email:e,nome:n,papeis,ativo:true,versao:1})];
@@ -36,32 +36,42 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
 vm.createContext(ctx);
 for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','RelatorioMensalCPT','CicloAtendimentoCPT','GaleriaCPT','AlbumCPT','JogosCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
-registros.rows.push(reg(4,'2026-09-10','Mutirão de limpeza',[{titulo:'Fotos',tipo:'FILE_UPLOAD',valor:[foto('FOTOSET0000000000000000003')]}]));
-const F1='FOTOSET0000000000000000001',F2='FOTOSET0000000000000000002',F3='FOTOSET0000000000000000003',VID='VIDEOSET000000000000000001';
-const fav=(fileId,ativo,mes='2026-09')=>{ctx.p={fileId,ativo,mes,operacaoId:op()};return run('favoritarAlbumCPT(p)');};
-// 1. Trava de testes: só o proprietário.
-email='atd@example.com';assert.throws(()=>run("carregarAlbumCPT({mes:'2026-09'})"),/reservado à administração técnica/);assert.throws(()=>fav(F1,true),/reservado à administração técnica/);
-assert.equal(books.get('agenda').getSheetByName('Álbum'),null,'ninguém além do proprietário cria a aba');
-// 2. Proprietário: fotos do mês sem vídeo; 2 favoritas por dia; desmarcar libera a vaga de hoje.
-email='victor@example.com';let d=run("carregarAlbumCPT({mes:'2026-09'})");
-assert.deepEqual(d.fotos.map(f=>f.fileId).sort(),[F1,F2,F3].sort(),'só fotos do mês, sem vídeo e sem repetir');assert.equal(d.usadasHoje,0);assert.deepEqual(d.album,[]);
-assert.throws(()=>fav(VID,true),/não está na galeria/);assert.throws(()=>fav('FOTOAGOSTO000000000000001',true),/não está na galeria/,'foto de outro mês não entra pelo mês errado');
-assert.throws(()=>fav('../x',true),/Foto inválida/);
-let r=fav(F1,true);assert.equal(r.meu,true);assert.equal(r.coracoes,1);assert.equal(r.usadasHoje,1);assert.throws(()=>fav(F1,true),/já está nas suas favoritas/);
-ctx.p={fileId:F2,ativo:true,mes:'2026-09',operacaoId:op()};const opRep={...ctx.p};assert.equal(run('favoritarAlbumCPT(p)').usadasHoje,2);ctx.p=opRep;assert.equal(run('favoritarAlbumCPT(p)').usadasHoje,2,'mesma operação não grava de novo');
-fav(F2,false);
-r=fav(F2,true);assert.equal(r.usadasHoje,2);assert.throws(()=>fav(F3,true),/já escolheu 2 favoritas hoje/);
-r=fav(F2,false);assert.equal(r.meu,false);assert.equal(r.usadasHoje,1);r=fav(F3,true);assert.equal(r.usadasHoje,2,'desmarcar a de hoje liberou a vaga');
-assert.throws(()=>fav(F2,false),/já não está/);
-console.log('PASS: favoritas — só o proprietário nos testes, só fotos da galeria do mês (sem vídeo), 2 por dia, desmarcar a de hoje libera a vaga.');
-// 3. Álbum da equipe e Fotos da semana: destaque das fotos, sem dizer quem favoritou.
-props.set('CPT_TRAVA_CONFIG','liberada');
-email='com@example.com';fav(F1,true);email='atd@example.com';fav(F1,true);fav(F3,true);
-d=run("carregarAlbumCPT({mes:'2026-09'})");assert.equal(d.usadasHoje,2);
-assert.deepEqual(d.semana.fotos.map(f=>[f.fileId,f.coracoes]),[[F1,3],[F3,2]],'mais favoritadas da semana primeiro');
-assert.deepEqual(d.album.map(f=>f.fileId),[F1,F3]);assert.ok(d.album.every(f=>f.meu),'atd marcou as duas');
-const txt=JSON.stringify(d);for(const e of ['victor@example.com','com@example.com','Paula','Victor'])assert.ok(!txt.includes(e),'álbum não diz quem favoritou: '+e);
-email='social@example.com';d=run("carregarAlbumCPT({mes:'2026-09'})");assert.ok(d.album.every(f=>!f.meu));assert.equal(d.fotos.find(f=>f.fileId===F1).coracoes,3);
-assert.deepEqual(run("carregarAlbumCPT({mes:'2026-08'})").album,[],'álbum do mês só com fotos do mês');
-props.delete('CPT_TRAVA_CONFIG');
-console.log('PASS: álbum da equipe — todos veem o álbum do mês e as Fotos da semana (mais favoritadas primeiro), sem nomes de quem favoritou.');
+const ini=jogo=>{ctx.p={jogo,operacaoId:op()};return run('iniciarJogoCPT(p)');},fim=(partida,o)=>{ctx.p={partida,...o,operacaoId:op()};return run('terminarJogoCPT(p)');};
+const palavra=c=>c.map(n=>String.fromCharCode(n-7)).reverse().join(''),norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+const letrasDe=w=>[...new Set(norm(w).replace(/[^A-Z]/g,''))];
+// 1. Trava de testes.
+email='atd@example.com';assert.equal(run('carregarMeuEspacoCPT()').jogos,undefined);assert.throws(()=>ini('forca'),/reservado à administração técnica/);
+// 2. Metas: forca com 5 dias de checklist pontuado.
+email='victor@example.com';let d=run('carregarMeuEspacoCPT()');assert.equal(d.jogos.forca.liberado,false);assert.equal(d.jogos.quebra.liberado,false);
+assert.throws(()=>ini('forca'),/libera com 5 dias de checklist \(você tem 0\)/);
+for(let k=1;k<=5;k++){ctx.p={data:mais(-k),itens:[{id:'T-teste'+k,texto:'Tarefa',feito:true}],versao:0,operacaoId:op()};run('salvarChecklistCPT(p)');}
+ctx.p={data:mais(3),itens:[{id:'T-futuro',texto:'Planejada',feito:true}],versao:0,operacaoId:op()};run('salvarChecklistCPT(p)');
+d=run('carregarMeuEspacoCPT()');assert.equal(d.jogos.forca.tem,5,'dia futuro não conta');assert.equal(d.jogos.forca.liberado,true);const antes=d.pontos.saldo;
+// 3. Forca: vence (+5), vence de novo (sem pontos), perde (mostra a palavra), limite de 3.
+let r=ini('forca');const p1=r.partida;assert.equal(p1.palavra,undefined,'palavra não vai em texto');assert.ok(p1.dica&&p1.codigo.length);
+assert.equal(ini('forca').partida.id,p1.id,'abrir de novo continua a mesma partida');
+const w1=palavra(p1.codigo);assert.ok(run('JogosCPT.palavras').some(x=>x[0]===w1));
+assert.throws(()=>fim(p1.id,{letras:['A','A']}),/Jogada inválida/);
+r=fim(p1.id,{letras:letrasDe(w1)});assert.equal(r.situacao,'venceu');assert.equal(r.pontosGanhos,5);assert.equal(r.pontos.jogos,5);assert.equal(r.pontos.saldo,antes+5);
+assert.throws(()=>fim(p1.id,{letras:letrasDe(w1)}),/já terminou/);
+const p2=ini('forca').partida,w2=palavra(p2.codigo);assert.notEqual(w2,w1,'palavra nova');
+// erros antes de completar contam: 6 letras erradas primeiro = perdeu, mesmo que as certas venham depois
+const erradas=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(l=>!letrasDe(w2).includes(l)).slice(0,6);
+r=fim(p2.id,{letras:erradas.concat(letrasDe(w2)).slice(0,26)});assert.equal(r.situacao,'perdeu');assert.equal(r.palavra,w2);assert.match(r.resultado,/a palavra era/);
+const p3=ini('forca').partida;r=fim(p3.id,{letras:letrasDe(palavra(p3.codigo))});assert.equal(r.situacao,'venceu');assert.equal(r.pontosGanhos,0,'só a primeira vitória do dia pontua');
+assert.throws(()=>ini('forca'),/já jogou 3 partidas hoje/);
+console.log('PASS: forca — libera com 5 dias de checklist pontuado, palavra só em código, servidor refaz as letras (6 erros antes de completar = perdeu), 1ª vitória do dia +5, limite de 3.');
+// 4. Quebra-cabeça: 10 favoritas; servidor refaz as trocas.
+assert.throws(()=>ini('quebra'),/10 fotos favoritadas no Álbum \(você tem 0\)/);
+vm.runInContext(`(()=>{const c=new ColecaoCPT(AplicacaoCPT.identidade(),'Álbum','ALB');for(let i=0;i<11;i++)c.gravar({fileId:'FOTOALBUM'+String(i).padStart(12,'0'),ativo:i<10,dia:'2026-09-0'+(i%9+1),legenda:'Foto '+i},0,'OP-album-teste-'+i,'ALB-victor@example.com-FOTOALBUM'+String(i).padStart(12,'0'));})()`,ctx);
+d=run('carregarMeuEspacoCPT()');assert.equal(d.jogos.quebra.tem,10,'favorita desmarcada não conta para a meta');
+const q=ini('quebra').partida;assert.equal(q.ordem.length,9);assert.ok(!q.ordem.every((v,i)=>v===i),'nunca começa resolvido');assert.match(q.foto.fileId,/^FOTOALBUM/);
+const resolver=o=>{o=o.slice();const t=[];for(let i=0;i<9;i++){const j=o.indexOf(i);if(j!==i){t.push([i,j]);[o[i],o[j]]=[o[j],o[i]];}}return t;};
+assert.throws(()=>fim(q.id,{trocas:[[0,9]]}),/Jogada inválida/);
+r=fim(q.id,{trocas:resolver(q.ordem)});assert.equal(r.situacao,'venceu');assert.equal(r.pontosGanhos,5);assert.equal(r.pontos.jogos,10);
+const q2=ini('quebra').partida;r=fim(q2.id,{trocas:[]});assert.equal(r.situacao,'perdeu','sem resolver não vence');
+console.log('PASS: quebra-cabeça — libera com 10 favoritas, foto do álbum da equipe, servidor refaz as trocas, 1ª vitória do dia +5.');
+// 5. Privacidade: ninguém termina a partida de outra pessoa; pontos de jogo são de cada conta.
+props.set('CPT_TRAVA_CONFIG','liberada');const q3=ini('quebra').partida;email='com@example.com';
+assert.throws(()=>fim(q3.id,{trocas:resolver(q3.ordem)}),/Partida não encontrada/);assert.equal(run('carregarMeuEspacoCPT()').pontos.jogos,0);props.delete('CPT_TRAVA_CONFIG');
+console.log('PASS: privacidade — partida e pontos dos joguinhos são de cada conta.');

@@ -1,0 +1,92 @@
+<script>
+/*
+ * Joguinhos 2.21.0 — forca do saneamento e quebra-cabeça, no Meu espaço, desbloqueados por metas (JogosCPT).
+ * Jogam na hora (sem esperar o servidor a cada letra ou troca); no fim, o servidor refaz a partida e decide os pontos.
+ * Uso pelo Meu espaço: CPTJogos.painel(estado), CPTJogos.aoMudar(fn) e CPTJogos.mascote(fn) (desenho para o quebra-cabeça sem foto).
+ */
+window.CPTJogos = (() => {
+  'use strict';
+  let ui = null, e = null, aoMudar = () => {}, mascote = () => '', p = null, letras = [], trocas = [], ordem = [], marcada = null, enviando = false, imagem = '';
+  const $ = id => document.getElementById(id);
+  const op = () => 'OP-' + crypto.randomUUID();
+  const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const INFO = {
+    forca: {nome: 'Forca do saneamento', icone: '💧', meta: n => `${n} dias de checklist pontuado`, texto: 'Adivinhe palavras do nosso trabalho. Cada erro seca uma gotinha.'},
+    quebra: {nome: 'Quebra-cabeça', icone: '🧩', meta: n => `${n} fotos favoritas no Álbum`, texto: 'Monte uma foto do álbum da equipe trocando as peças de lugar.'}};
+  function cartao(jogo) {
+    const x = e[jogo], i = INFO[jogo], resta = x.limite - x.partidasHoje;
+    const corpo = !x.liberado
+      ? `<p class="small">Libera com ${i.meta(x.precisa)}.</p><span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${x.precisa}" aria-valuenow="${Math.min(x.tem, x.precisa)}" aria-label="Progresso para liberar"><span style="width:${Math.min(100, x.tem / x.precisa * 100)}%"></span></span><small class="muted">${Math.min(x.tem, x.precisa)} de ${x.precisa}</small>`
+      : `<p class="small">${i.texto}</p><p class="small muted">${x.aberta ? 'Você tem uma partida em andamento.' : resta > 0 ? `${resta} ${resta === 1 ? 'partida' : 'partidas'} hoje` : 'Partidas de hoje encerradas. Amanhã tem mais!'} · ${x.ganhouPontosHoje ? 'pontos de hoje já ganhos' : '⭐ +' + e.regras.pontos + ' na 1ª vitória do dia'}</p>
+         <button class="button" data-jogo-abrir="${jogo}" ${!x.aberta && resta <= 0 ? 'disabled' : ''}>${x.aberta ? 'Continuar' : 'Jogar'}</button>`;
+    return `<article class="jogo-card ${x.liberado ? '' : 'is-travado'}"><span class="jogo-icone" aria-hidden="true">${x.liberado ? i.icone : '🔒'}</span><div><h3>${i.nome}</h3>${corpo}</div></article>`;
+  }
+  function painel(estado) { e = estado; if (!e) return ''; return `<section class="panel home-jogos" id="espJogos"><div class="panel-head"><div><span class="card-kicker">🎮 Joguinhos</span><h2>Uma pausa rápida</h2></div></div><div class="jogos-grade">${cartao('forca')}${cartao('quebra')}</div></section>`; }
+  function redesenhar() { const el = $('espJogos'); if (el) el.outerHTML = painel(e); }
+  function janela(titulo, html) { $('detailType').textContent = 'JOGUINHOS'; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); }
+  async function abrir(jogo) {
+    if (enviando) return; enviando = true;
+    try { const r = await ui.call('iniciarJogoCPT', {jogo, operacaoId: op()}); e = r.estado; p = r.partida; redesenhar(); letras = []; trocas = []; marcada = null;
+      if (jogo === 'forca') forca(); else { ordem = p.ordem.slice(); await prepararImagem(); quebra(); } }
+    catch (err) { ui.toast(err.message); } finally { enviando = false; }
+  }
+  // ---------- Forca ----------
+  const palavra = () => p.codigo.map(n => String.fromCharCode(n - 7)).reverse().join('');
+  function contas() { const w = palavra(), alvo = new Set(norm(w).replace(/[^A-Z]/g, '')), erros = letras.filter(l => !alvo.has(l)).length; return {w, alvo, erros, venceu: [...alvo].every(a => letras.includes(a)), perdeu: erros >= p.erros}; }
+  function forca(final) {
+    const c = contas(), fim = final || c.venceu || c.perdeu;
+    const casas = c.w.split('').map(ch => ch === ' ' ? '<span class="forca-espaco"></span>' : `<span class="forca-casa">${letras.includes(norm(ch)) || fim ? ui.esc(ch) : ''}</span>`).join('');
+    const gotas = Array.from({length: p.erros}, (_, i) => `<span class="forca-gota ${i < c.erros ? 'is-seca' : ''}" aria-hidden="true">${i < c.erros ? '🍂' : '💧'}</span>`).join('');
+    janela(INFO.forca.nome, `<p class="forca-dica"><strong>Dica:</strong> ${ui.esc(p.dica)}</p><div class="forca-palavra" aria-label="Palavra">${casas}</div>
+      <div class="forca-gotas" role="img" aria-label="${p.erros - c.erros} de ${p.erros} gotinhas">${gotas}</div>
+      ${final ? `<div class="quiz-resultado ${final.situacao === 'venceu' ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${ui.esc(final.resultado)}</strong></div>${maisUma('forca')}`
+        : `<div class="forca-teclado">${LETRAS.map(l => `<button class="forca-tecla ${letras.includes(l) ? (c.alvo.has(l) ? 'is-certa' : 'is-errada') : ''}" data-forca-letra="${l}" ${letras.includes(l) || fim ? 'disabled' : ''}>${l}</button>`).join('')}</div>`}`);
+    if (!final && fim) terminar({letras});
+  }
+  // ---------- Quebra-cabeça ----------
+  function prepararImagem() {
+    const fallback = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(mascote() || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 3"><rect width="3" height="3" fill="#7cc0ea"/></svg>');
+    if (!p.foto) { imagem = fallback; return Promise.resolve(); }
+    const url = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(p.foto.fileId) + '&sz=w600';
+    // foto sem acesso (ou que demora mais de 6 s) vira o mascote
+    return new Promise(res => { let feito = false; const fim = u => { if (!feito) { feito = true; imagem = u; res(); } };
+      const im = new Image(); im.referrerPolicy = 'no-referrer'; im.onload = () => fim(url); im.onerror = () => fim(fallback); im.src = url; setTimeout(() => fim(fallback), 6000); });
+  }
+  const resolvido = () => ordem.every((v, i) => v === i);
+  function quebra(final) {
+    const fim = final || resolvido();
+    const pecas = ordem.map((v, i) => `<button class="quebra-peca ${marcada === i ? 'is-marcada' : ''} ${v === i ? 'is-no-lugar' : ''}" data-quebra-peca="${i}" ${fim ? 'disabled' : ''} aria-label="Peça ${v + 1} na casa ${i + 1}" style="background-image:url('${imagem.replace(/'/g, '%27')}');background-position:${(v % 3) * 50}% ${Math.floor(v / 3) * 50}%"><small>${v + 1}</small></button>`).join('');
+    janela(INFO.quebra.nome, `<p class="small muted">${p.foto ? ui.esc(p.foto.legenda || 'Foto do álbum da equipe') : 'Seu mascote'} · toque em duas peças para trocar · ${trocas.length} ${trocas.length === 1 ? 'troca' : 'trocas'}</p>
+      <div class="quebra-tabuleiro ${fim ? 'is-pronto' : ''}">${pecas}</div>
+      ${final ? `<div class="quiz-resultado ${final.situacao === 'venceu' ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${ui.esc(final.resultado)}</strong></div>${maisUma('quebra')}`
+        : `<div class="dialog-actions"><button class="button ghost" data-quebra-desistir>Desistir desta partida</button></div>`}`);
+    if (!final && resolvido()) terminar({trocas});
+  }
+  function maisUma(jogo) { const x = e[jogo]; return x.partidasHoje < x.limite ? `<div class="dialog-actions"><button class="button" data-jogo-abrir="${jogo}">Jogar de novo (${x.limite - x.partidasHoje} hoje)</button></div>` : '<p class="small muted">Partidas de hoje encerradas. Amanhã tem mais!</p>'; }
+  async function terminar(jogada) {
+    if (enviando) return; enviando = true; const jogo = p.jogo;
+    try { const r = await ui.call('terminarJogoCPT', {partida: p.id, ...jogada, operacaoId: op()}); e = r.estado; redesenhar(); ui.toast(r.resultado); aoMudar({pontos: r.pontos, venceu: r.situacao === 'venceu'});
+      if (jogo === 'forca') forca(r); else quebra(r); }
+    catch (err) { ui.toast(err.message); } finally { enviando = false; }
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', ev => {
+      const a = ev.target.closest('[data-jogo-abrir]'); if (a) { abrir(a.dataset.jogoAbrir); return; }
+      const l = ev.target.closest('[data-forca-letra]'); if (l && p && p.jogo === 'forca' && !enviando) { if (!letras.includes(l.dataset.forcaLetra)) { letras.push(l.dataset.forcaLetra); forca(); } return; }
+      const q = ev.target.closest('[data-quebra-peca]'); if (q && p && p.jogo === 'quebra' && !enviando) {
+        const i = Number(q.dataset.quebraPeca);
+        if (marcada === null) marcada = i; else if (marcada === i) marcada = null; else { [ordem[marcada], ordem[i]] = [ordem[i], ordem[marcada]]; trocas.push([marcada, i]); marcada = null; }
+        quebra(); return; }
+      if (ev.target.closest('[data-quebra-desistir]') && p) terminar({trocas});
+    });
+    // Teclado físico na forca.
+    document.addEventListener('keydown', ev => {
+      if (!p || p.jogo !== 'forca' || !$('detailDialog').open || enviando || !document.querySelector('.forca-teclado')) return;
+      const L = norm(ev.key); if (/^[A-Z]$/.test(L) && !letras.includes(L)) { letras.push(L); forca(); }
+    });
+  }
+  return {init, painel, aoMudar: fn => { aoMudar = fn; }, mascote: fn => { mascote = fn; }};
+})();
+</script>

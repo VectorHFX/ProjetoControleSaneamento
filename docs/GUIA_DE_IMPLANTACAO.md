@@ -23,6 +23,16 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.21.0 — Joguinhos: forca do saneamento e quebra-cabeça (≈ 5 min)
+
+1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.21.0`) e publique uma **Nova versão**. Chegam `JogosCPT.gs` e `Jogos.html`.
+2. No **Meu espaço** aparece o painel **Joguinhos** (nos testes, só para você):
+   - **Forca do saneamento**: libera com **5 dias de checklist pontuado**. 40 palavras do nosso trabalho, cada uma com dica; até 6 erros (cada erro seca uma gotinha). Funciona também com o teclado.
+   - **Quebra-cabeça**: libera com **10 fotos favoritas** (ativas) no Álbum. Usa uma foto do álbum da equipe; sem foto (ou sem acesso a ela), usa o seu mascote. Toque em duas peças para trocar.
+   - **Limite**: 3 partidas por dia de cada jogo. A **primeira vitória do dia** em cada jogo vale **5 pontos**, que somam aos do checklist e do quiz na loja.
+   - O servidor refaz a partida (letras da forca, trocas do quebra-cabeça) antes de dar os pontos.
+3. As partidas ficam na aba nova **Jogos** da planilha de dados da aplicação.
+
 ## Atualização 2.20.0 — Álbum da equipe: favoritas e Fotos da semana (≈ 5 min)
 
 1. Rode **`atualizarTudoCPT`**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.20.0`) e publique uma **Nova versão**. Chegam `AlbumCPT.gs` e `Album.html`.
