@@ -1,5 +1,7 @@
 # Gestão CPT 3.2 — fechamento
 
+> **06/10/2026 — e-mails a cada foto do RDAS.** A rotina "acesso às mídias" deste painel compartilhava cada foto com os gestores (`addViewer`), e o Google manda um e-mail "compartilhado com você" a cada compartilhamento. Para parar **no Google**: abra a planilha da Gestão → **Extensões → Apps Script** → escolha **`pausarAcessoMidiasGestao`** → **Executar** (com a conta que mantém o gatilho). Neste repositório a rotina ficou desligada de vez (`pgSincronizarAcessosMidias_` não faz nada).
+
 ## Instalar no painel que você já usa
 
 1. Abra **Extensões → Apps Script** na planilha da Gestão.

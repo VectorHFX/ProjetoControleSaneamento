@@ -815,6 +815,9 @@ function pgConcederVisualizacao_(f,email){
  return 'concedido';
 }
 function pgSincronizarAcessosMidias_(){
+ // DESLIGADA em 06/10/2026: cada addViewer fazia o Google mandar um e-mail "compartilhado com você" aos gestores,
+ // uma vez por foto do RDAS. Não reative. Para desligar no Google, rode pausarAcessoMidiasGestao no projeto do Painel.
+ return null;
  const p=PropertiesService.getScriptProperties(),cfg=JSON.parse(p.getProperty('PG_ACESSO_MIDIAS')||'null');if(!cfg||!cfg.ativo||cfg.owner!==Session.getEffectiveUser().getEmail())return null;
  const lock=LockService.getScriptLock();if(!lock.tryLock(500))return {ocupado:true};
  try{
