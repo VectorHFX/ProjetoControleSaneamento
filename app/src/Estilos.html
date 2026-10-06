@@ -1409,4 +1409,8 @@ html[data-motion=reduce] .spinner,html[data-motion=reduce] .home-cards.acabou-de
 .chip-opcao{position:relative;display:inline-flex}.chip-opcao input{position:absolute;opacity:0;width:1px;height:1px}
 .chip-opcao span{display:inline-flex;align-items:center;min-height:34px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer}
 .chip-opcao input:checked+span{border-color:var(--blue);background:var(--pale);color:var(--blue);font-weight:650}.chip-opcao input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+/* 2.31.1: caixas de texto com a letra da aplicação (antes algumas vinham com a letra de máquina do navegador). */
+textarea{font:inherit;color:var(--ink)}
+:where(.field) textarea{font-weight:400;font-size:14px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);resize:vertical;line-height:1.55}
+#noteForm{margin-top:12px;display:grid;gap:4px}#noteForm .button{justify-self:start;margin-top:6px}#caseNotes{margin-top:16px}
 </style>

@@ -23,6 +23,12 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.31.1 — acabamento do visual (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.31.1`, Nova versão).
+2. Caixas de texto com a letra da aplicação (algumas, como a observação do caso, vinham com a letra de máquina do navegador) e espaçamento do bloco de observações.
+3. **Prévia:** `?liberada=1` mostra a tela como na produção depois de liberar para a equipe (todos no visual novo). Sem ele, a prévia simula o período de testes, em que só o proprietário tem o visual novo — por isso um print com `?perfil=…` aparecia no visual antigo.
+
 ## Atualização 2.31.0 — Atendimentos para todo o time (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.31.0`, Nova versão).
