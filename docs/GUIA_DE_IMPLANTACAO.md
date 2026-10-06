@@ -23,6 +23,16 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.32.1 — revisão das entregas 2.31 e 2.32 (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.32.1`, Nova versão).
+2. O que a revisão encontrou e corrigiu:
+   - **Material:** com a situação diferente de "Concluído", os campos de conclusão (data de publicação, onde, alcance, quantidade) não vão mais junto ao salvar. Assim um material em aberto não fica com data de publicação antiga, que o jogava para o mês errado.
+   - **Nova atividade:** a situação "Cancelada" só aparece ao editar. Criar já cancelada pedia um motivo sem ter onde escrever.
+   - **Como usar:** a lista "O que está disponível" foi atualizada (dizia que recados, contatos e caderno ainda viriam).
+   - **Obras:** quem digitava na busca de obras e trocava de página logo em seguida (menos de um quarto de segundo) via a tela de Obras voltar por cima da página nova. Corrigido.
+3. Conferido sem mudança: só Atendimento, Comunicação, Gestão e Administrativo finalizam, reabrem, corrigem e mesclam; todo o time vê a ficha completa e observa; o recado da observação não impede a observação de ser salva se falhar.
+
 ## Atualização 2.32.0 — formulários simples (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.32.0`, Nova versão).

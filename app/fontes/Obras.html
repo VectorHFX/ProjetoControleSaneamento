@@ -62,7 +62,7 @@ window.CPTObras = (() => {
       ${maisBotao(lista.length - mostrar, POR_VEZ, 'data-obra-mais')}`;
     const f = $('obraFiltros');
     f.addEventListener('change', () => { filtro = Object.fromEntries(new FormData(f)); mostrar = POR_VEZ; draw(); });
-    f.elements.busca.addEventListener('input', e => { filtro.busca = e.target.value; mostrar = POR_VEZ; clearTimeout(f._t); f._t = setTimeout(() => { const pos = e.target.selectionStart; draw(); const i = $('obraFiltros').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }, 250); });
+    f.elements.busca.addEventListener('input', e => { filtro.busca = e.target.value; mostrar = POR_VEZ; clearTimeout(f._t); f._t = setTimeout(() => { if (ui.state.route !== 'obras' || !f.isConnected) return; const pos = e.target.selectionStart; draw(); const i = $('obraFiltros').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }, 250); });
   }
   function linha(o) {
     const atraso = ['Em andamento', 'Paralisada'].includes(o.situacao) && (dias(o.atualizadoEm) ?? 99) > 7;
