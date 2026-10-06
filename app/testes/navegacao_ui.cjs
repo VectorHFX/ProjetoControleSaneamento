@@ -5,13 +5,13 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const p=await b.newPage({viewport:{width:1366,height:900}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q;
   const fechado=g=>p.evaluate(g=>document.querySelector('.nav-group[data-grupo="'+g+'"]').classList.contains('is-closed'),g);
-  // Gestão/administrativo (muitas páginas): grupos do mês e de consultas começam recolhidos; "Dia a dia" sempre aberto.
+  // 2.29: Gestão/administrativo (muitas páginas): Ferramentas extras e Administração começam recolhidos; o topo e Ferramentas sempre abertos.
   await p.goto(url('?inicial=1&latencia=20'));await p.locator('.panel-dias').waitFor();
-  assert.equal(await p.locator('.nav-group[data-grupo=mes]').count(),0,'grupo Fechamento do mês saiu');assert.equal(await fechado('consulta'),true);assert.equal(await p.locator('.nav-item[data-route=atendimentos]').isVisible(),true);
+  assert.equal(await p.locator('.nav-group[data-grupo=mes]').count(),0,'grupo Fechamento do mês saiu');assert.equal(await p.locator('.nav-group[data-grupo=dia] .nav-caption').count(),0,'topo sem título');assert.equal(await fechado('admin'),true);assert.equal(await p.locator('.nav-item[data-route=registros]').isVisible(),true,'Ferramentas sempre aberto');assert.equal(await fechado('extras'),true);assert.equal(await p.locator('.nav-item[data-route=atendimentos]').isVisible(),true);
   assert.equal(await p.locator('.nav-item[data-route=obras]').isVisible(),false,'obras escondida no grupo recolhido');
-  await p.locator('.nav-group[data-grupo=consulta] .nav-group-head').click();assert.equal(await p.locator('.nav-item[data-route=obras]').isVisible(),true);
-  assert.equal(await p.locator('.nav-group[data-grupo=consulta] .nav-group-head').getAttribute('aria-expanded'),'true');
-  await p.reload();await p.locator('.panel-dias').waitFor();assert.equal(await fechado('consulta'),false,'escolha lembrada');
+  await p.locator('.nav-group[data-grupo=extras] .nav-group-head').click();assert.equal(await p.locator('.nav-item[data-route=obras]').isVisible(),true);
+  assert.equal(await p.locator('.nav-group[data-grupo=extras] .nav-group-head').getAttribute('aria-expanded'),'true');
+  await p.reload();await p.locator('.panel-dias').waitFor();assert.equal(await fechado('extras'),false,'escolha lembrada');
   // Cabeçalho compacto: título numa linha; explicação no ⓘ.
   await p.locator('.nav-item[data-route=atendimentos]').click();await p.locator('.page-intro.is-compact h1').waitFor();
   assert.equal(await p.locator('.intro-info p').isVisible(),false);await p.locator('.intro-info summary').click();assert.equal(await p.locator('.intro-info p').isVisible(),true);
@@ -20,7 +20,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Busca: Ctrl+K → página.
   await p.keyboard.press('Control+k');await p.locator('#searchDialog[open]').waitFor();await p.locator('#searchInput').fill('organog');
   await p.waitForFunction(()=>/Organograma/.test(document.querySelector('.search-item.is-sel')?.textContent||''));await p.keyboard.press('Enter');
-  await p.waitForFunction(()=>document.querySelector('.nav-item.active')?.dataset.route==='organograma');assert.equal(await fechado('consulta'),false,'grupo abre ao entrar numa página dele');
+  await p.waitForFunction(()=>document.querySelector('.nav-item.active')?.dataset.route==='organograma');assert.equal(await fechado('extras'),false,'grupo abre ao entrar numa página dele');
   assert.equal(await p.locator('#searchDialog[open]').count(),0);
   // Busca: protocolo → abre a ficha.
   await p.locator('#searchOpen').click();await p.locator('#searchInput').fill('caso 14');await p.locator('.search-item',{hasText:'Caso 14'}).first().waitFor();
@@ -41,15 +41,15 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.keyboard.press('Control+k');await p.locator('#searchInput').fill('');await p.keyboard.press('ArrowDown');assert.equal(await p.locator('.search-item').nth(1).getAttribute('aria-selected'),'true');
   await p.keyboard.press('Escape');assert.equal(await p.locator('#searchDialog[open]').count(),0);
   // Registro único (ROTAS): toda página do menu abre, com o título do registro e sem erro (quem tem todos os cargos).
-  for(const g of ['consulta'])if(await fechado(g))await p.locator('.nav-group[data-grupo='+g+'] .nav-group-head').click();
+  for(const g of ['extras','admin'])if(await fechado(g))await p.locator('.nav-group[data-grupo='+g+'] .nav-group-head').click();
   const rotas=await p.$$eval('#navigation .nav-item',l=>l.filter(x=>!x.hidden).map(x=>[x.dataset.route,x.querySelector('span').textContent]));
-  assert.equal(rotas.length,15,'menu completo do proprietário (com Mapa, Álbum, Organograma e Revisão do conteúdo): '+rotas.length);
+  assert.equal(rotas.length,16,'menu completo do proprietário (2.29: sem Álbum e Comunicação; com Galeria, Materiais e Conectores): '+rotas.length);
   for(const [r,titulo] of rotas){await p.locator('.nav-item[data-route='+r+']').click();await p.waitForFunction(r=>document.querySelector('.nav-item.active')?.dataset.route===r,r);
     assert.equal(await p.locator('#pageLabel').textContent(),titulo,'título de '+r);await p.waitForTimeout(250);}
   assert.deepEqual(errors,[],'nenhuma página com erro');
   // Pessoa com um cargo (poucas páginas): grupos abertos, sem nada escondido.
   await p.evaluate(()=>localStorage.removeItem('cpt.menu'));await p.goto(url('?perfil=atendimento&latencia=20'));await p.locator('.nav-item[data-route=obras]').waitFor();
-  assert.equal(await fechado('consulta'),false);
+  assert.equal(await fechado('extras'),false);
   // Socioambiental (não é gestão): grupos abertos — as páginas de consulta (Registros) não ficam escondidas.
   await p.evaluate(()=>localStorage.removeItem('cpt.menu'));await p.goto(url('?perfil=socioambiental&latencia=20'));await p.locator('.nav-item[data-route=registros]').waitFor({state:'attached'});
   assert.equal(await p.locator('.nav-item[data-route=socioambiental]').count(),0,'Mesa do relatório saiu');assert.equal(await p.locator('.nav-item[data-route=registros]').isVisible(),true);

@@ -1,7 +1,7 @@
 /**
  * JogosCPT 2.21.0. Joguinhos do Meu espaço, desbloqueados por metas:
  * - Forca do saneamento: libera com 5 dias de checklist pontuado. Palavras do nosso trabalho, com dica. Até 6 erros.
- * - Quebra-cabeça: libera com 10 fotos favoritas (ativas) no Álbum. Foto do álbum da equipe (ou o seu mascote), 3×3, trocando peças.
+ * - Quebra-cabeça: libera com 15 dias de checklist (2.29: o Álbum saiu). A foto do seu quadro (ou o seu mascote), 3×3, trocando peças.
  * Limite: 3 partidas por dia de cada jogo. A primeira vitória do dia em cada jogo vale 5 pontos (somados em PessoalCPT.pontos).
  * O servidor confere o resultado: refaz as letras da forca e as trocas do quebra-cabeça (não basta dizer "ganhei").
  * Partida começada e não terminada continua (abrir de novo não gasta outra). Coleção "Jogos" (JOG-email-dia-jogo-n).
@@ -11,7 +11,7 @@ class JogosCPT {
   static get partidasPorDia() { return 3; }
   static get pontosVitoria() { return 5; }
   static get erros() { return 6; }
-  static get metas() { return {forca: 5, quebra: 10}; }
+  static get metas() { return {forca: 5, quebra: 15}; }
   static pode(perfil) { return PessoalCPT.novo(perfil); }
   /** [palavra, dica] */
   static get palavras() {
@@ -42,13 +42,12 @@ class JogosCPT {
   constructor(ctx) { this.ctx = ctx; this.email = ctx.email; this.hoje = ColecaoCPT.hoje(); this.col = ColecaoCPT.de(ctx, 'Jogos', 'JOG'); }
   minhas() { const p = 'JOG-' + this.email + '-'; return this.col.itens().filter(x => x.id.startsWith(p)); }
   deHoje(jogo) { return this.minhas().filter(x => x.dia === this.hoje && x.jogo === jogo).sort((a, b) => a.n - b.n); }
-  /** Metas: dias de checklist com tarefa pontuada (até hoje) e fotos já favoritadas no Álbum. */
+  /** Metas: dias de checklist com tarefa pontuada (até hoje), para os dois jogos. */
   progresso() {
     if (this._prog) return this._prog;
-    const pre = 'CHK-' + this.email + '-', alb = 'ALB-' + this.email + '-';
+    const pre = 'CHK-' + this.email + '-';
     const dias = ColecaoCPT.de(this.ctx, 'Checklist', 'CHK').itens().filter(l => l.id.startsWith(pre) && l.id.slice(-10) <= this.hoje && (l.itens || []).some(t => t.pontuado)).length;
-    const favoritas = ColecaoCPT.de(this.ctx, 'Álbum', 'ALB').itens().filter(x => x.ativo && x.id.startsWith(alb)).length; // só as ativas: marcar e desmarcar não infla a meta
-    return (this._prog = {forca: dias, quebra: favoritas});
+    return (this._prog = {forca: dias, quebra: dias});
   }
   estado() {
     const p = this.progresso(), um = jogo => { const h = this.deHoje(jogo), aberta = h.find(x => x.situacao === 'jogando');
@@ -60,7 +59,7 @@ class JogosCPT {
   iniciar(p) {
     p = p || {}; PerfisCPT.exigirConfiguracao(this.ctx.perfil, 'Os joguinhos'); if (!JogosCPT.pode(this.ctx.perfil)) throw new Error('Os joguinhos ainda não estão disponíveis.');
     const jogo = ColecaoCPT.opcao(p.jogo, ['forca', 'quebra'], 'jogo'), e = this.estado()[jogo];
-    if (!e.liberado) throw new Error(jogo === 'forca' ? 'A forca libera com ' + e.precisa + ' dias de checklist (você tem ' + e.tem + ').' : 'O quebra-cabeça libera com ' + e.precisa + ' fotos favoritadas no Álbum (você tem ' + e.tem + ').');
+    if (!e.liberado) throw new Error(jogo === 'forca' ? 'A forca libera com ' + e.precisa + ' dias de checklist (você tem ' + e.tem + ').' : 'O quebra-cabeça libera com ' + e.precisa + ' dias de checklist (você tem ' + e.tem + ').');
     let x = this.deHoje(jogo).find(y => y.situacao === 'jogando');
     if (!x) {
       const ja = this.col.porOperacao(p.operacaoId);
@@ -82,12 +81,10 @@ class JogosCPT {
     const livres = todas.filter(w => !usadas.has(w)), lista = livres.length ? livres : todas;
     return lista[semente % lista.length];
   }
-  /** Foto do álbum da equipe (favoritada por alguém); sem fotos, o quebra-cabeça usa o mascote da pessoa. */
-  escolherFoto(semente) {
-    const fotos = ColecaoCPT.de(this.ctx, 'Álbum', 'ALB').itens().filter(x => x.ativo && x.fileId), vistos = new Map();
-    fotos.forEach(f => vistos.set(f.fileId, {fileId: f.fileId, legenda: f.legenda || f.atividade || ''}));
-    const lista = [...vistos.values()].sort((a, b) => a.fileId.localeCompare(b.fileId));
-    return lista.length ? lista[semente % lista.length] : null;
+  /** A foto do quadro da pessoa (escolhida no Meu espaço); sem foto, o quebra-cabeça usa o mascote. */
+  escolherFoto() {
+    const q = (new PessoalCPT(this.ctx).perfil() || {}).quadro;
+    return q && q.tipo === 'foto' && q.fileId ? {fileId: q.fileId, legenda: q.legenda || ''} : null;
   }
   /** Ordem inicial 3×3 (nunca já resolvida), a partir da semente. */
   static embaralhar(semente) {
@@ -99,7 +96,7 @@ class JogosCPT {
   paraTela(x) {
     const base = {id: x.id, jogo: x.jogo, situacao: x.situacao, n: x.n, versao: x.versao};
     if (x.jogo === 'forca') { const dica = (JogosCPT.palavras.find(w => w[0] === x.palavra) || [])[1] || ''; return {...base, dica, codigo: x.palavra.split('').reverse().map(c => c.charCodeAt(0) + 7), erros: JogosCPT.erros}; }
-    return {...base, ordem: x.ordem, foto: x.foto};
+    return {...base, ordem: x.ordem, foto: x.foto ? {...x.foto, imagem: GaleriaCPT.miniatura(x.foto.fileId)} : null};
   }
   /** Termina a partida: o servidor refaz a jogada e decide se venceu. */
   terminar(p) {

@@ -35,17 +35,17 @@ class MateriaisCPT {
   static pode(p) { return PerfisCPT.gerencia(p) || p.papeis.includes('comunicacao'); }
   static get tipos() { return ['Publicação em rede social', 'Matéria na mídia (jornal, rádio, TV, site)', 'Material impresso', 'Vídeo', 'Arte / peça digital', 'Apresentação', 'Referência / pasta de arquivos', 'Outro']; }
   static get situacoes() { return {afazer: 'A fazer', producao: 'Em produção', concluido: 'Concluído'}; }
-  constructor(ctx) {
-    if (!MateriaisCPT.pode(ctx.perfil)) throw new Error('A pasta de materiais é da Comunicação e da Gestão.');
-    this.ctx = ctx; this.col = new ColecaoCPT(ctx, 'Materiais', 'MAT');
+  // 2.29: Materiais é Ferramenta extra — todo o time vê; criar, editar e concluir continua com a Comunicação e a Gestão.
+  constructor(ctx) { this.ctx = ctx; this.col = new ColecaoCPT(ctx, 'Materiais', 'MAT');
   }
   /** Competência do material: quando foi publicado/entregue; antes disso, o prazo. */
   static mes(m) { return String(m.publicadoEm || m.prazo || m.criadoEm || '').slice(0, 7); }
   listar(mes) {
     const itens = this.col.itens().filter(m => !m.arquivado).sort((a, b) => (a.situacao === 'concluido') - (b.situacao === 'concluido') || (a.prazo || '9999').localeCompare(b.prazo || '9999'));
-    return {itens, pessoas: ColecaoCPT.pessoas(this.ctx), tipos: MateriaisCPT.tipos, situacoes: MateriaisCPT.situacoes, resumo: MateriaisCPT.resumo(itens, mes), hoje: ColecaoCPT.hoje()};
+    return {itens, pessoas: ColecaoCPT.pessoas(this.ctx), tipos: MateriaisCPT.tipos, situacoes: MateriaisCPT.situacoes, resumo: MateriaisCPT.resumo(itens, mes), hoje: ColecaoCPT.hoje(), podeEditar: MateriaisCPT.pode(this.ctx.perfil)};
   }
   salvar(p) {
+    if (!MateriaisCPT.pode(this.ctx.perfil)) throw new Error('Criar e editar materiais é da Comunicação e da Gestão.');
     p = p || {}; const antigo = p.id ? this.col.obter(String(p.id)) : null; if (p.id && !antigo) throw new Error('Material não encontrado.');
     const T = ColecaoCPT.texto, pessoas = ColecaoCPT.pessoas(this.ctx).map(x => x.email);
     if (p.responsavel && !pessoas.includes(p.responsavel)) throw new Error('Escolha o responsável na lista.');
@@ -68,31 +68,8 @@ class MateriaisCPT {
   }
 }
 
-class ComunicacaoHojeCPT {
-  constructor(ctx) { this.ctx = ctx; }
-  carregar() {
-    const hoje = ColecaoCPT.hoje(), d = new Date(hoje + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 7); const semana = d.toISOString().slice(0, 10), mes = hoje.slice(0, 7), out = {hoje, avisos: []};
-    try { const r = new RecadosCPT(this.ctx); out.recados = r.naoLidos().map(x => r.publico(x)).slice(0, 5); out.recadosTotal = r.naoLidos().length; } catch (e) { out.avisos.push('Recados: ' + e.message); }
-    if (LembretesCPT.pode(this.ctx.perfil)) try {
-      const l = new LembretesCPT(this.ctx).listar().itens.filter(x => x.situacao !== 'feito');
-      out.lembretes = {atrasados: l.filter(x => x.data < hoje), hoje: l.filter(x => x.data === hoje), semana: l.filter(x => x.data > hoje && x.data <= semana)};
-    } catch (e) { out.avisos.push('Lembretes: ' + e.message); }
-    try {
-      const meses = [...new Set([mes, semana.slice(0, 7)])], c = new CronogramaCPT(this.ctx);
-      out.agenda = meses.flatMap(m => c.listar({mes: m}).itens).filter(e => e.status !== 'cancelada' && e.data >= hoje && e.data <= semana && e.frentes.some(f => ['socioambiental', 'comunicacao'].includes(f)))
-        .map(e => ({id: e.id, titulo: e.titulo, data: e.data, inicio: e.inicio, obra: e.obra, bairro: e.bairro, frentes: e.frentes, natureza: e.natureza}));
-    } catch (e) { out.avisos.push('Cronograma: ' + e.message); }
-    if (MateriaisCPT.pode(this.ctx.perfil)) try {
-      const m = new MateriaisCPT(this.ctx).listar(mes);
-      out.materiais = m.itens.filter(x => x.situacao !== 'concluido' && (!x.prazo || x.prazo <= semana)).slice(0, 6); out.resumo = m.resumo;
-    } catch (e) { out.avisos.push('Materiais: ' + e.message); }
-    return out;
-  }
-}
-
 function listarLembretesCPT() { return ColecaoCPT.executar('lembretes.listar', ctx => new LembretesCPT(ctx).listar()); }
 function salvarLembreteCPT(p) { return ColecaoCPT.executar('lembretes.salvar', ctx => new LembretesCPT(ctx).salvar(p), true); }
 function concluirLembreteCPT(p) { return ColecaoCPT.executar('lembretes.concluir', ctx => new LembretesCPT(ctx).concluir(p), true); }
 function listarMateriaisCPT(mes) { return ColecaoCPT.executar('materiais.listar', ctx => new MateriaisCPT(ctx).listar(/^\d{4}-\d{2}$/.test(String(mes)) ? String(mes) : ColecaoCPT.hoje().slice(0, 7))); }
 function salvarMaterialCPT(p) { return ColecaoCPT.executar('materiais.salvar', ctx => new MateriaisCPT(ctx).salvar(p), true); }
-function carregarComunicacaoHojeCPT() { return ColecaoCPT.executar('comunicacao.hoje', ctx => new ComunicacaoHojeCPT(ctx).carregar()); }

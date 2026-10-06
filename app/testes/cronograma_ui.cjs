@@ -7,7 +7,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),path=requi
   const f=await p.evaluate(()=>[window.CPTAgenda.feriados(2026),window.CPTAgenda.feriados(2025)]);
   assert.equal(f[0]['2026-10-12'].nome,'Nossa Senhora Aparecida');assert.equal(f[0]['2026-04-03'].nome,'Sexta-feira Santa');assert.equal(f[0]['2026-02-16'].tipo,'facultativo');assert.equal(f[0]['2026-06-04'].nome,'Corpus Christi');
   assert.equal(f[0]['2026-04-08'].tipo,'municipal');assert.equal(f[0]['2026-07-09'].tipo,'estadual');assert.equal(f[0]['2026-11-20'].tipo,'nacional');assert.equal(f[1]['2025-04-18'].nome,'Sexta-feira Santa');assert.equal(f[1]['2025-06-19'].nome,'Corpus Christi');
-  await p.locator('.nav-item[data-route=cronograma]').click();await p.locator('.calendar-grid').waitFor();
+  // 2.29: o Cronograma fica dentro da Visão do mês (aba).
+  await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=cronograma]').first().click();await p.locator('.calendar-grid').waitFor();
+  assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio','no menu, a Visão do mês fica marcada');assert.equal(await p.locator('[data-painel-aba=cronograma]').getAttribute('aria-selected'),'true');
   await p.locator('#month').fill('2026-10');await p.locator('#month').dispatchEvent('change');
   await p.locator('.calendar-cell.holiday').first().waitFor();
   assert.match(await p.locator('.calendar-cell.holiday').first().textContent(),/^12[\s\S]*Nossa Senhora Aparecida/);

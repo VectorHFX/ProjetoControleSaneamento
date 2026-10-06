@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.29.0 — menu novo, Ferramentas e o Álbum sai (≈ 5 min)
+
+1. Rode a atualização pelo **Cloud Shell**. A conferência mostra em **"Remover (aposentados)"** também `AlbumCPT` e `Album`: são apagados do projeto no Google de propósito. Execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.29.0`) e publique uma **Nova versão**.
+2. **Menu novo:** Meu espaço, Recados, Lembretes, Visão do mês e Atendimentos no topo; **Ferramentas** (Relatos); **Ferramentas extras** (Mapa, Galeria, Obras, Organograma, Contatos, Materiais); **Administração** (só a conta proprietária); Como usar. Recados e Lembretes entram no Meu espaço na próxima entrega.
+3. **Cronograma** agora é uma aba da **Visão do mês** (Resumo do mês · Cronograma; Gestão e Administrativo também Contrato · Frentes · Relatos).
+4. **A página Comunicação saiu** (e o "Hoje"): Galeria e Materiais viraram ferramentas para **todo o time ver**. Enviar fotos continua com Comunicação, Socioambiental e Gestão; criar e editar materiais, com Comunicação e Gestão.
+5. **O Álbum da equipe saiu.** O **quadro atrás do mascote** agora é escolhido por cada pessoa (toque no quadro): 4 desenhos prontos ou uma foto da Galeria. O **quebra-cabeça** libera com 15 dias de checklist e usa a foto do seu quadro (sem foto, o mascote). O placar não conta mais fotos favoritadas. As favoritas antigas continuam guardadas na planilha (aba Álbum), sem uso.
+
 ## Atualização 2.28.0 — cronograma colorido, feriados, planilha Excel e impressão nova (≈ 3 min)
 
 1. Rode a atualização pelo **Cloud Shell**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.28.0`) e publique uma **Nova versão**. Não há planilha nova nem permissão nova: tudo é feito no navegador.

@@ -34,6 +34,8 @@ class PessoalCPT {
   /** 2.26: cores especiais de pelagem, compradas uma vez por pontos (depois trocar é livre). */
   static get coresEspeciais() { return {menta: 'Menta', coral: 'Coral', dourado: 'Dourado', noite: 'Azul-noite'}; }
   static get precoCor() { return 120; }
+  /** 2.29: quadro atrás do mascote — cada pessoa escolhe um desenho pronto ou uma foto da Galeria. */
+  static get paisagens() { return {'santo-andre': 'Santo André', rio: 'Beira do rio', 'por-do-sol': 'Pôr do sol', noite: 'Noite estrelada'}; }
   /** Kit EPI inicial: de todo mundo (não precisa ganhar) e já vestido em cada mascote novo. */
   static get kit() { return {cabeca: 'capacete-branco', corpo: 'colete', luvas: 'luvas', pes: 'bota-preta', broche: 'laco-do-mes'}; }
   /** Elenco novo: para todos depois de liberarConfiguracaoCPT; antes, só para o proprietário. */
@@ -123,7 +125,7 @@ class PessoalCPT {
       regras: {pontosPorTarefa: PessoalCPT.pontosPorTarefa, tarefasPorDia: PessoalCPT.tarefasPontuadasPorDia}};
     if (QuizCPT.pode(this.ctx.perfil)) out.saber = this.saber();
     if (JogosCPT.pode(this.ctx.perfil)) out.jogos = JogosCPT.de(this.ctx).estado();
-    if (AlbumCPT.pode(this.ctx.perfil)) { try { out.quadro = new AlbumCPT(this.ctx).quadro(); } catch (e) { console.warn('Quadro: ' + e.message); } }
+    out.quadro = this.quadro(perfil); out.paisagens = PessoalCPT.paisagens;
     if (PlacarCPT.pode(this.ctx.perfil)) { try { out.placar = new PlacarCPT(this.ctx).carregar(); } catch (e) { console.warn('Placar: ' + e.message); } }
     try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
     return out;
@@ -133,7 +135,13 @@ class PessoalCPT {
     return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx, this.hoje), quiz: QuizCPT.de(this.ctx).estado()};
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }
-  /** Ações do mascote: iniciar, nomear, colorir, ativar, vestir, resgatar, comprar. Tudo sobre o próprio perfil. */
+  /** Quadro escolhido (sem escolha: o desenho de Santo André). Foto: a miniatura vem pela aplicação (vale para quem não abre a pasta no Drive). */
+  quadro(perfil) {
+    const q = perfil && perfil.quadro;
+    if (q && q.tipo === 'foto' && q.fileId) { const imagem = GaleriaCPT.miniatura(q.fileId); if (imagem) return {tipo: 'foto', fileId: q.fileId, legenda: q.legenda || '', imagem}; }
+    return {tipo: 'paisagem', paisagem: q && PessoalCPT.paisagens[q.paisagem] ? q.paisagem : 'santo-andre'};
+  }
+  /** Ações do mascote: iniciar, nomear, colorir, ativar, vestir, resgatar, comprar, quadro. Tudo sobre o próprio perfil. */
   mascote(p) {
     p = p || {}; const atual = this.perfil(), acao = p.acao;
     if (!atual && acao !== 'iniciar') throw new Error('Escolha seu primeiro mascote.');
@@ -186,6 +194,12 @@ class PessoalCPT {
         if (this.pontos(atual).saldo < PessoalCPT.precoClassico) throw new Error('Faltam pontos: complete tarefas do seu checklist ou responda o quiz.');
         novo.mascotes.push({especie: p.especie, nome: PessoalCPT.nome(p.nome), equipado: this.kitInicial(), cor: ''}); novo.ativo = novo.mascotes.length - 1;
         novo.compras.push({item: 'mascote:' + p.especie, preco: PessoalCPT.precoClassico, em: new Date().toISOString()}); resultado = 'Clássico de volta: ' + novo.mascotes[novo.ativo].nome + '!';
+      } else if (acao === 'quadro') {
+        if (p.tipo === 'foto') {
+          const id = String(p.fileId || ''); if (!/^[\w-]{10,80}$/.test(id)) throw new Error('Foto inválida.');
+          if (!GaleriaCPT.miniatura(id)) throw new Error('Essa foto não abriu. Escolha outra da Galeria.');
+          novo.quadro = {tipo: 'foto', fileId: id, legenda: ColecaoCPT.texto(p.legenda, 120, 'legenda')}; resultado = 'Foto nova no quadro!';
+        } else { novo.quadro = {tipo: 'paisagem', paisagem: ColecaoCPT.opcao(p.paisagem, Object.keys(PessoalCPT.paisagens), 'desenho')}; resultado = 'Quadro trocado: ' + PessoalCPT.paisagens[novo.quadro.paisagem] + '.'; }
       } else throw new Error('Ação inválida.');
     }
     const e = this.perfis.gravar(novo, atual ? Number(p.versao) : 0, p.operacaoId, this.idPerfil);

@@ -55,10 +55,10 @@ sincronizar() {
   local f
   for f in "$CFG/repo/$pasta"/*.gs "$CFG/repo/$pasta"/*.html; do [ -e "$f" ] && cp "$f" "$w/src/"; done
   if [ "$publicar" = sim ] && [ -e "$CFG/repo/$pasta/appsscript.json" ]; then cp "$CFG/repo/$pasta/appsscript.json" "$w/src/"; fi
-  # Aposentados (2.27): saíram da aplicação de propósito; apagar no Google para que não continuem funcionando.
+  # Aposentados (2.27; 2.29: Álbum): saíram da aplicação de propósito; apagar no Google para que não continuem funcionando.
   local removeu="" a
   if [ "$pasta" = app/src ]; then
-    for a in RelatorioMensalCPT.gs EntregasDoMesCPT.gs AnexosRelatorioCPT.gs ProgramaParceirosCPT.gs EntregasCPT.gs Fechamento.html Socioambiental.html Entregas.html; do
+    for a in RelatorioMensalCPT.gs EntregasDoMesCPT.gs AnexosRelatorioCPT.gs ProgramaParceirosCPT.gs EntregasCPT.gs Fechamento.html Socioambiental.html Entregas.html AlbumCPT.gs Album.html; do
       [ -e "$CFG/repo/$pasta/$a" ] && continue
       [ -e "$w/src/$a" ] && rm -f "$w/src/$a" && removeu="$removeu $a"
     done

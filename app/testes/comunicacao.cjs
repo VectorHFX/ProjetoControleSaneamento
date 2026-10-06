@@ -1,4 +1,4 @@
-// Recados, Contatos, Lembretes, Materiais, "Hoje" e Galeria com serviços Google simulados. node app/testes/comunicacao.cjs
+// Recados, Contatos, Lembretes, Materiais e Galeria com serviços Google simulados. node app/testes/comunicacao.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),crypto=require('crypto');
 let email='victor@example.com',locked=false;
 const pessoa=(e,n,papeis)=>['CPT_PESSOA:'+e,JSON.stringify({email:e,nome:n,papeis,ativo:true,versao:1})];
@@ -63,14 +63,14 @@ assert.throws(()=>run("salvarContatoCPT({nome:'',instituicao:'',tipo:'Outro',ope
 console.log('PASS: contatos — todos cadastram, edição restrita, duplicado avisado, conflito de versão, conversas preservadas na edição.');
 
 // 3. Lembretes (Social + Comunicação) e materiais (Comunicação); resumo do mês.
-email='atd@example.com';assert.throws(()=>run('listarLembretesCPT()'),/Socioambiental, da Comunicação/);assert.throws(()=>run('listarMateriaisCPT()'),/Comunicação e da Gestão/);
+email='atd@example.com';assert.throws(()=>run('listarLembretesCPT()'),/Socioambiental, da Comunicação/);const ma=run('listarMateriaisCPT()');assert.equal(ma.podeEditar,false,'2.29: todo o time vê os materiais');assert.throws(()=>run("salvarMaterialCPT({titulo:'x',tipo:'Outro',situacao:'afazer',operacaoId:'"+op()+"'})"),/Comunicação e da Gestão/);
 email='social@example.com';ctx.l={tipo:'material',titulo:'Levar panfletos',data:hoje,material:'200 panfletos',frentes:['comunicacao','x'],operacaoId:op(),evento:{id:'AG-1',titulo:'Ação na escola',data:mais(2)}};
 const l1=run('salvarLembreteCPT(l)').lembrete;assert.deepEqual(l1.frentes,['comunicacao']);
 run("salvarLembreteCPT({tipo:'acao',titulo:'Divulgar',data:'"+mais(-2)+"',operacaoId:'"+op()+"'})");run("salvarLembreteCPT({tipo:'acao',titulo:'Depois',data:'"+mais(20)+"',operacaoId:'"+op()+"'})");
 assert.throws(()=>run("salvarLembreteCPT({tipo:'acao',titulo:'',data:'"+hoje+"',operacaoId:'"+op()+"'})"),/o que lembrar/);
 email='com@example.com';assert.equal(run('contarAvisosCPT()').lembretes,2,'hoje + atrasado');
 run("concluirLembreteCPT({id:'"+l1.id+"',operacaoId:'"+op()+"'})");assert.equal(run('contarAvisosCPT()').lembretes,1);
-email='social@example.com';assert.throws(()=>run('listarMateriaisCPT()'),/Comunicação e da Gestão/);
+email='social@example.com';assert.equal(run('listarMateriaisCPT()').podeEditar,false);
 email='com@example.com';
 assert.throws(()=>run("salvarMaterialCPT({titulo:'Post',tipo:'Publicação em rede social',url:'javascript:alert(1)',operacaoId:'"+op()+"'})"),/https/);
 assert.throws(()=>run("salvarMaterialCPT({titulo:'Post',tipo:'Publicação em rede social',alcance:'muita',operacaoId:'"+op()+"'})"),/números inteiros/);
@@ -83,16 +83,11 @@ const m=run("listarMateriaisCPT('2026-09')");assert.equal(m.resumo.publicacoes,2
 assert.equal(m.itens[0].situacao,'producao','em aberto primeiro');
 console.log('PASS: lembretes compartilhados Social/Comunicação (avisos de hoje e atrasados, feito), materiais com link seguro, números validados e resumo do mês só com concluídos pela data de publicação.');
 
-// 4. "Hoje": recados, lembretes, ações da semana do Social/Comunicação, materiais com prazo.
+// 4. (2.29: a página "Hoje" da Comunicação saiu.)
 email='social@example.com';run("enviarRecadoCPT({para:{frentes:[],pessoas:['com@example.com']},assunto:'Banner',texto:'Pode ser amanhã?',operacaoId:'"+op()+"'})");
-email='com@example.com';const h=run('carregarComunicacaoHojeCPT()');
-assert.equal(h.recados.length,1);assert.equal(h.lembretes.atrasados.length,1);assert.equal(h.lembretes.hoje.length,0);assert.deepEqual(h.agenda.map(e=>e.id),['AG-1'],'só ações do Social/Comunicação na semana');
-assert.deepEqual(h.materiais.map(x=>x.titulo),['Banner da feira']);assert.deepEqual(h.avisos,[]);
-email='atd@example.com';const ha=run('carregarComunicacaoHojeCPT()');assert.equal(ha.lembretes,undefined);assert.equal(ha.materiais,undefined);
-console.log('PASS: "Hoje" com só o que pede ação (recados novos, lembretes atrasados, ações do Social/Comunicação na semana, materiais com prazo), respeitando o acesso de cada cargo.');
 
 // 5. Galeria: fotos do mês pelos registros (sem repetir), extras com envio idempotente, pacote só com fotos da galeria.
-email='atd@example.com';assert.throws(()=>run("listarGaleriaCPT({mes:'2026-09'})"),/Comunicação, do Socioambiental/);
+email='atd@example.com';assert.equal(run("listarGaleriaCPT({mes:'2026-09'})").podeEnviar,false,'2.29: todo o time vê a galeria; enviar não');assert.throws(()=>run("enviarFotoGaleriaCPT({data:'2026-09-07',atividade:'x',mime:'image/jpeg',base64:'AA==',operacaoId:'"+op()+"'})"),/Comunicação, do Socioambiental/);
 // Formato real do Formulário 4.0 (2.13.1): foto como código puro do arquivo, lista de anexos (arquivoId) e detalhes guardados num arquivo à parte.
 const regBruto=(i,data,ativ,detalhes)=>{const r=reg(i,data,ativ,[]);r[20]=JSON.stringify(detalhes);return r;};
 registros.rows.push(regBruto(7,'2026-09-08','Plantão 4.0',{campos:[{titulo:'Fotos da atividade',tipo:'FILE_UPLOAD',valor:['FOTO40CODIGOPURO0000000001']}]}),
@@ -107,7 +102,7 @@ assert.equal(g.itens.find(i=>i.fileId==='VIDEOSET000000000000000001').video,true
 ['FOTOSET0000000000000000001','FOTOSET0000000000000000002','VIDEOSET000000000000000001','ARQUIVOFORA00000000000001'].forEach(id=>{if(!arquivos.has(id))arquivos.set(id,arquivo(id,id.startsWith('VIDEO')?'video/mp4':'image/jpeg'));});
 ctx.m={mes:'2026-09',ids:['FOTOSET0000000000000000001','VIDEOSET000000000000000001','ARQUIVOFORA00000000000001','x']};const gm=run('miniaturasGaleriaCPT(m)').miniaturas;
 assert.deepEqual(Object.keys(gm).sort(),['FOTOSET0000000000000000001','VIDEOSET000000000000000001'],'só arquivos da galeria do mês');assert.equal(gm.FOTOSET0000000000000000001,'data:image/jpeg;base64,AQID');
-email='atd@example.com';assert.throws(()=>run('miniaturasGaleriaCPT(m)'),/Comunicação, do Socioambiental/);email='com@example.com';assert.equal(g.itens[0].legenda.split(' - ')[0].length,10);
+email='atd@example.com';assert.deepEqual(Object.keys(run('miniaturasGaleriaCPT(m)').miniaturas).sort(),Object.keys(gm).sort(),'2.29: todo o time vê as miniaturas da galeria');email='com@example.com';assert.equal(g.itens[0].legenda.split(' - ')[0].length,10);
 ctx.f={data:'2026-09-07',atividade:'Feira de saúde',local:'Praça',mime:'image/jpeg',base64:Buffer.from('foto').toString('base64'),operacaoId:op()};
 const e1=run('enviarFotoGaleriaCPT(f)');assert.equal(e1.item.legenda,'07/09/2026 - Feira de saúde - Praça');run('enviarFotoGaleriaCPT(f)');assert.equal(criados,1,'repetir o envio não cria outro arquivo');
 assert.throws(()=>run("enviarFotoGaleriaCPT({data:'2026-09-07',atividade:'x',mime:'video/mp4',base64:'AA==',operacaoId:'"+op()+"'})"),/JPG, PNG ou WEBP/);

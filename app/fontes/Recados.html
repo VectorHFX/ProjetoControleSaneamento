@@ -25,7 +25,7 @@ window.CPTRecados = (() => {
   /** Números de recados e lembretes na lateral e na barra de atalhos do celular. */
   function marcar() {
     if (!avisos) return;
-    [['recados', avisos.recados], ['comunicacao', avisos.lembretes], ['lembretes', avisos.lembretes]].forEach(([rota, n]) => {
+    [['recados', avisos.recados], ['lembretes', avisos.lembretes]].forEach(([rota, n]) => {
       document.querySelectorAll('.nav-item[data-route="' + rota + '"], .tab-item[data-route="' + rota + '"]').forEach(b => {
         let s = b.querySelector('.nav-badge'); if (!n) { if (s) s.remove(); return; }
         if (!s) { s = document.createElement('span'); s.className = 'nav-badge'; b.append(s); } s.textContent = n > 99 ? '99+' : n; s.setAttribute('aria-label', n + (rota === 'recados' ? ' recados novos' : ' lembretes para hoje ou atrasados'));

@@ -18,7 +18,7 @@ class AtualizadorCPT {
     return {
       aplicacao: {nome: 'Aplicação CPT', pasta: 'app/src', scriptId: '1B2gVRbnDP9E4tdecW7lknY5Wq8QlRbmjXXenx-8cOPQX0wBmePmWUhML', publicar: true,
         // 2.27: fechamento do relatório retirado da aplicação (base do relatório, anexos, entregas do mês, Programa Parceiros, mesa).
-        aposentados: ['RelatorioMensalCPT', 'EntregasDoMesCPT', 'AnexosRelatorioCPT', 'ProgramaParceirosCPT', 'EntregasCPT', 'Fechamento', 'Socioambiental', 'Entregas']},
+        aposentados: ['RelatorioMensalCPT', 'EntregasDoMesCPT', 'AnexosRelatorioCPT', 'ProgramaParceirosCPT', 'EntregasCPT', 'Fechamento', 'Socioambiental', 'Entregas', 'AlbumCPT', 'Album']},
       campo40: {nome: 'Campo 4.0', pasta: 'campo40/src', scriptId: '', publicar: false}
     };
   }

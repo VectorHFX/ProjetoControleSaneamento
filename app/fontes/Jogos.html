@@ -14,7 +14,7 @@ window.CPTJogos = (() => {
   const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const INFO = {
     forca: {nome: 'Forca do saneamento', icone: ['drop', '💧'], meta: n => `${n} dias de checklist pontuado`, texto: 'Adivinhe palavras do nosso trabalho. Cada erro seca uma gotinha.'},
-    quebra: {nome: 'Quebra-cabeça', icone: ['puzzle', '🧩'], meta: n => `${n} fotos favoritas no Álbum`, texto: 'Monte uma foto do álbum da equipe trocando as peças de lugar.'}};
+    quebra: {nome: 'Quebra-cabeça', icone: ['puzzle', '🧩'], meta: n => `${n} dias de checklist`, texto: 'Monte a foto do seu quadro (ou o seu mascote) trocando as peças de lugar.'}};
   function cartao(jogo) {
     const x = e[jogo], i = INFO[jogo], resta = x.limite - x.partidasHoje;
     const corpo = !x.liberado
@@ -49,7 +49,7 @@ window.CPTJogos = (() => {
   function prepararImagem() {
     const fallback = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(mascote() || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 3"><rect width="3" height="3" fill="#7cc0ea"/></svg>');
     if (!p.foto) { imagem = fallback; return Promise.resolve(); }
-    const url = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(p.foto.fileId) + '&sz=w600';
+    const url = p.foto.imagem || 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(p.foto.fileId) + '&sz=w600';
     // foto sem acesso (ou que demora mais de 6 s) vira o mascote
     return new Promise(res => { let feito = false; const fim = u => { if (!feito) { feito = true; imagem = u; res(); } };
       const im = new Image(); im.referrerPolicy = 'no-referrer'; im.onload = () => fim(url); im.onerror = () => fim(fallback); im.src = url; setTimeout(() => fim(fallback), 6000); });
@@ -58,7 +58,7 @@ window.CPTJogos = (() => {
   function quebra(final) {
     const fim = final || resolvido();
     const pecas = ordem.map((v, i) => `<button class="quebra-peca ${marcada === i ? 'is-marcada' : ''} ${v === i ? 'is-no-lugar' : ''}" data-quebra-peca="${i}" ${fim ? 'disabled' : ''} aria-label="Peça ${v + 1} na casa ${i + 1}" style="background-image:url('${imagem.replace(/'/g, '%27')}');background-position:${(v % 3) * 50}% ${Math.floor(v / 3) * 50}%"><small>${v + 1}</small></button>`).join('');
-    janela(INFO.quebra.nome, `<p class="small muted">${p.foto ? ui.esc(p.foto.legenda || 'Foto do álbum da equipe') : 'Seu mascote'} · toque em duas peças para trocar · ${trocas.length} ${trocas.length === 1 ? 'troca' : 'trocas'}</p>
+    janela(INFO.quebra.nome, `<p class="small muted">${p.foto ? ui.esc(p.foto.legenda || 'Foto do seu quadro') : 'Seu mascote'} · toque em duas peças para trocar · ${trocas.length} ${trocas.length === 1 ? 'troca' : 'trocas'}</p>
       <div class="quebra-tabuleiro ${fim ? 'is-pronto' : ''}">${pecas}</div>
       ${final ? `<div class="quiz-resultado ${final.situacao === 'venceu' ? 'is-ok' : 'is-nao'}" aria-live="polite"><strong>${ui.esc(final.resultado)}</strong></div>${maisUma('quebra')}`
         : `<div class="dialog-actions"><button class="button ghost" data-quebra-desistir>Desistir desta partida</button></div>`}`);

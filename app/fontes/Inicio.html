@@ -79,8 +79,8 @@ window.CPTInicio = (() => {
     const mapa = {
       atendimento: [b('atendimentos', 'Casos em aberto', ui.num(k.abertos) + ' em tratativa', 'abertos'), b('atendimentos', 'Auditoria das fichas', 'O que conferir na carteira', 'auditoria'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('obras', 'Obras e endereços', 'Frentes de serviço')],
       socioambiental: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('lembretes', 'Lembretes', 'Ações e materiais com a Comunicação'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
-      comunicacao: [b('comunicacao', 'Meu dia', 'O que fazer hoje', 'hoje'), b('comunicacao', 'Lembretes', 'Ações e materiais', 'lembretes'), b('comunicacao', 'Materiais e links', 'Prazos e publicações', 'materiais'), b('comunicacao', 'Galeria', 'Fotos do mês', 'galeria')],
-      comercializacao: [b('obras', 'Obras e endereços', 'Onde estão as frentes'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('atendimentos', 'Consultar atendimentos', 'Casos e observações'), b('registros', 'Registros', 'O que a equipe registrou')],
+      comunicacao: [b('materiais', 'Materiais', 'Prazos e publicações'), b('galeria', 'Galeria', 'Fotos do mês'), b('lembretes', 'Lembretes', 'Ações e materiais'), b('recados', 'Recados', 'Avisar outra frente')],
+      comercializacao: [b('obras', 'Obras e endereços', 'Onde estão as frentes'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('atendimentos', 'Consultar atendimentos', 'Casos e observações'), b('registros', 'Relatos', 'O que a equipe registrou')],
       gestao: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('obras', 'Obras e frentes', 'Catálogo e obras de hoje'), b('cronograma', 'Cronograma', 'Agenda da equipe')]
     };
     mapa.administrativo = mapa.gestao;
@@ -88,8 +88,8 @@ window.CPTInicio = (() => {
     return lista.length ? `<nav class="shortcuts" aria-label="Atalhos do seu trabalho">${lista.join('')}</nav>` : '';
   }
   function render(d) {
-    // Gestão e Administrativo: abas do painel no topo da Visão do mês (Resumo · Contrato · Frentes · Relatos).
-    const abasMes = ui.podeVer('painel') && window.CPTGestao && window.CPTGestao.abas ? window.CPTGestao.abas('resumo') : '';
+    // 2.29: abas da Visão do mês para todos (Resumo · Cronograma); Gestão e Administrativo também Contrato · Frentes · Relatos.
+    const abasMes = window.CPTGestao && window.CPTGestao.abas ? window.CPTGestao.abas('resumo') : '';
     if (!d) { ui.view.innerHTML = abasMes + '<div class="loading-label"><span class="spinner" aria-hidden="true"></span>Buscando as informações do mês…</div><div class="skeleton hero-loading"></div><div class="kpis">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; return; }
     const k = d.indicadores, s = d.satisfacao || {mes: 0, meta: 60, semana: null}, perfil = ui.state.perfil || d.perfil, nome = (perfil?.nome || '').split(' ')[0];
     const visao = ui.visao();

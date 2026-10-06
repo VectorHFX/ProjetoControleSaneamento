@@ -3,7 +3,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
 (async()=>{
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
   const p=await b.newPage({viewport:{width:1366,height:900}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
-  await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});
+  await p.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({extras:true,admin:true}));}catch(_){}});
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q;
   // Atendimentos: uma linha por caso, com as colunas combinadas.
   await p.goto(url('?inicial=1&latencia=20'));await p.locator('.panel-dias').waitFor();

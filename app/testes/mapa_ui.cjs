@@ -6,7 +6,7 @@ const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
 (async()=>{
   const b=await chromium.launch({executablePath:'/tmp/cpt-chromium',args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer','--no-zygote','--single-process']});
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+(q||'');
-  const pg=await b.newPage({viewport:{width:1366,height:900}});await pg.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});
+  const pg=await b.newPage({viewport:{width:1366,height:900}});await pg.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({extras:true,admin:true}));}catch(_){}});
   pg.errors=[];pg.on('pageerror',e=>pg.errors.push(e.message));await pg.route('**/tile.openstreetmap.org/**',r=>r.fulfill({status:200,contentType:'image/png',body:PNG}));
   // Uma página só (o Chromium em processo único não abre outra): troca a rota da biblioteca entre as fases.
   const nova=async servir=>{await pg.unroute('https://unpkg.com/**');

@@ -34,7 +34,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','GaleriaCPT','AlbumCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','ObrasCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','GaleriaCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 const ini=jogo=>{ctx.p={jogo,operacaoId:op()};return run('iniciarJogoCPT(p)');},fim=(partida,o)=>{ctx.p={partida,...o,operacaoId:op()};return run('terminarJogoCPT(p)');};
 const palavra=c=>c.map(n=>String.fromCharCode(n-7)).reverse().join(''),norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
@@ -61,16 +61,22 @@ r=fim(p2.id,{letras:erradas.concat(letrasDe(w2)).slice(0,26)});assert.equal(r.si
 const p3=ini('forca').partida;r=fim(p3.id,{letras:letrasDe(palavra(p3.codigo))});assert.equal(r.situacao,'venceu');assert.equal(r.pontosGanhos,0,'só a primeira vitória do dia pontua');
 assert.throws(()=>ini('forca'),/já jogou 3 partidas hoje/);
 console.log('PASS: forca — libera com 5 dias de checklist pontuado, palavra só em código, servidor refaz as letras (6 erros antes de completar = perdeu), 1ª vitória do dia +5, limite de 3.');
-// 4. Quebra-cabeça: 10 favoritas; servidor refaz as trocas.
-assert.throws(()=>ini('quebra'),/10 fotos favoritadas no Álbum \(você tem 0\)/);
-vm.runInContext(`(()=>{const c=new ColecaoCPT(AplicacaoCPT.identidade(),'Álbum','ALB');for(let i=0;i<11;i++)c.gravar({fileId:'FOTOALBUM'+String(i).padStart(12,'0'),ativo:i<10,dia:'2026-09-0'+(i%9+1),legenda:'Foto '+i},0,'OP-album-teste-'+i,'ALB-victor@example.com-FOTOALBUM'+String(i).padStart(12,'0'));})()`,ctx);
-d=run('carregarMeuEspacoCPT()');assert.equal(d.jogos.quebra.tem,10,'favorita desmarcada não conta para a meta');
-const q=ini('quebra').partida;assert.equal(q.ordem.length,9);assert.ok(!q.ordem.every((v,i)=>v===i),'nunca começa resolvido');assert.match(q.foto.fileId,/^FOTOALBUM/);
+// 4. Quebra-cabeça (2.29): libera com 15 dias de checklist; a foto é a do quadro da pessoa (sem foto, o mascote).
+assert.throws(()=>ini('quebra'),/15 dias de checklist \(você tem 5\)/);
+for(let k=6;k<=15;k++){ctx.p={data:mais(-k),itens:[{id:'T-quebra'+k,texto:'Tarefa',feito:true}],versao:0,operacaoId:op()};run('salvarChecklistCPT(p)');}
+d=run('carregarMeuEspacoCPT()');assert.equal(d.jogos.quebra.tem,15);assert.equal(d.quadro.tipo,'paisagem','sem escolha: o desenho de Santo André');assert.equal(d.quadro.paisagem,'santo-andre');
+if(!d.perfil){ctx.p={acao:'iniciar',especie:'gato',nome:'Mingau',operacaoId:op()};run('salvarMascoteCPT(p)');d=run('carregarMeuEspacoCPT()');}
+arquivos.get('FOTOSET0000000000000000001').getThumbnail=()=>({getContentType:()=>'image/png',getBytes:()=>[1,2,3]});
+ctx.p={acao:'quadro',tipo:'foto',fileId:'FOTOSEMACESSO00000000001',legenda:'x',versao:d.perfil.versao,operacaoId:op()};assert.throws(()=>run('salvarMascoteCPT(p)'),/não abriu/);
+ctx.p={acao:'quadro',tipo:'paisagem',paisagem:'lua',versao:d.perfil.versao,operacaoId:op()};assert.throws(()=>run('salvarMascoteCPT(p)'),/desenho/);
+ctx.p={acao:'quadro',tipo:'foto',fileId:'FOTOSET0000000000000000001',legenda:'Oficina de horta',versao:d.perfil.versao,operacaoId:op()};run('salvarMascoteCPT(p)');
+d=run('carregarMeuEspacoCPT()');assert.equal(d.quadro.tipo,'foto');assert.equal(d.quadro.legenda,'Oficina de horta');assert.match(d.quadro.imagem,/^data:image\/png;base64,/);
+const q=ini('quebra').partida;assert.equal(q.ordem.length,9);assert.ok(!q.ordem.every((v,i)=>v===i),'nunca começa resolvido');assert.equal(q.foto.fileId,'FOTOSET0000000000000000001');assert.match(q.foto.imagem,/^data:image/);
 const resolver=o=>{o=o.slice();const t=[];for(let i=0;i<9;i++){const j=o.indexOf(i);if(j!==i){t.push([i,j]);[o[i],o[j]]=[o[j],o[i]];}}return t;};
 assert.throws(()=>fim(q.id,{trocas:[[0,9]]}),/Jogada inválida/);
 r=fim(q.id,{trocas:resolver(q.ordem)});assert.equal(r.situacao,'venceu');assert.equal(r.pontosGanhos,5);assert.equal(r.pontos.jogos,10);
 const q2=ini('quebra').partida;r=fim(q2.id,{trocas:[]});assert.equal(r.situacao,'perdeu','sem resolver não vence');
-console.log('PASS: quebra-cabeça — libera com 10 favoritas, foto do álbum da equipe, servidor refaz as trocas, 1ª vitória do dia +5.');
+console.log('PASS: quebra-cabeça e quadro — libera com 15 dias de checklist, quadro com desenho ou foto da Galeria (miniatura pela aplicação), foto do quadro no jogo, servidor refaz as trocas, 1ª vitória do dia +5.');
 // 5. Privacidade: ninguém termina a partida de outra pessoa; pontos de jogo são de cada conta.
 props.set('CPT_TRAVA_CONFIG','liberada');const q3=ini('quebra').partida;email='com@example.com';
 assert.throws(()=>fim(q3.id,{trocas:resolver(q3.ordem)}),/Partida não encontrada/);assert.equal(run('carregarMeuEspacoCPT()').pontos.jogos,0);props.delete('CPT_TRAVA_CONFIG');
@@ -83,4 +89,4 @@ assert.equal(pl.historico.length,4);assert.ok(pl.historico[3].atual);assert.equa
 props.set('CPT_TRAVA_CONFIG','liberada');email='com@example.com';const pl2=run('carregarMeuEspacoCPT()').placar;props.delete('CPT_TRAVA_CONFIG');
 assert.deepEqual(pl2,pl,'o placar é o mesmo para todos');
 const txt=JSON.stringify(pl);for(const e of ['victor','com@','Victor','Paula','atd@'])assert.ok(!txt.includes(e),'placar não mostra pessoas: '+e);
-console.log('PASS: placar da equipe — só o proprietário nos testes, totais da semana (tarefas, acertos, vitórias, fotos) e 4 semanas, igual para todos, sem nomes.');
+console.log('PASS: placar da equipe — só o proprietário nos testes, totais da semana (tarefas, acertos e vitórias) e 4 semanas, igual para todos, sem nomes.');

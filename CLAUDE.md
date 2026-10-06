@@ -20,6 +20,8 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 
 ## Combinados com o Victor
 
-- **Trava de testes:** toda ação nova que altera dados começa liberada **só para o proprietário** (papel `administrador`) e travada para todos os outros, até `liberarConfiguracaoCPT` (`PerfisCPT.exigirConfiguracao`). Nunca travar a conta proprietária.
+- **Trava de testes — PAUSADA (06/10/2026):** enquanto a equipe ainda não usa a aplicação, ações novas já nascem abertas a todos. Volta a valer quando o Victor disser. Regra (quando ativa): toda ação nova que altera dados começa liberada **só para o proprietário** (papel `administrador`) até `liberarConfiguracaoCPT` (`PerfisCPT.exigirConfiguracao`). Nunca travar a conta proprietária.
+- **Simples e direta:** poucos campos, bem definidos; o opcional fica em "Mais detalhes"; nada de passos a mais. Vale para toda tela nova ou alterada (e ajuda no desempenho).
+- **Ficha de atendimento:** completa para todo o time (inclusive contato do morador) e todos podem fazer observação; finalizar e mesclar fichas só Atendimento, Comunicação, Gestão e Administrativo.
 - **Revisão a cada duas entregas:** depois de duas entregas, auditar as duas (correção, funcionamento, desempenho) antes de seguir.
 - Não gerar coisa demais de uma vez; uma entrega por bloco, com testes e prévia.

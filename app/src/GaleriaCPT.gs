@@ -8,9 +8,8 @@
  */
 class GaleriaCPT {
   static pode(p) { return PerfisCPT.gerencia(p) || p.papeis.some(x => ['comunicacao', 'socioambiental'].includes(x)); }
-  /** album: o Álbum da equipe (AlbumCPT) só lê as fotos do mês, para qualquer pessoa da equipe (decisão do Victor, 2.20). */
-  constructor(ctx, album) {
-    if (!album && !GaleriaCPT.pode(ctx.perfil)) throw new Error('A galeria é da Comunicação, do Socioambiental e da Gestão.');
+  /** 2.29: a Galeria é Ferramenta extra — todo o time vê as fotos; enviar continua com Comunicação, Socioambiental e Gestão. */
+  constructor(ctx) {
     this.ctx = ctx; this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil); this.col = new ColecaoCPT(ctx, 'Mídias extras', 'MID');
   }
   static legenda(data, atividade, local) { return [DadosDaAplicacao.br(data), atividade, local].filter(Boolean).join(' - '); }
@@ -22,7 +21,7 @@ class GaleriaCPT {
     const extras = this.col.itens().filter(x => !x.arquivado && String(x.data).slice(0, 7) === mes).map(x => ({fileId: x.fileId, data: x.data, atividade: x.atividade, local: x.local, legenda: x.legenda,
       responsavel: x.nomeAutor || x.criadoPor, video: x.video, origem: 'Extra', id: x.id}));
     const itens = extras.concat(doFormulario).sort((x, y) => y.data.localeCompare(x.data));
-    return {mes, itens, pasta: this.pastaUrl(), podeEnviar: true};
+    return {mes, itens, pasta: this.pastaUrl(), podeEnviar: GaleriaCPT.pode(this.ctx.perfil)};
   }
   /** 2.26.2: fotos de vários meses (o Álbum volta até dois meses atrás), numa leitura só da base; cache de 1 h por conjunto de meses. */
   periodo(meses) {
@@ -59,7 +58,7 @@ class GaleriaCPT {
   }
   /** 2.26.5: miniatura (data URL) pela conta da aplicação, com cache de 6 h. '' se o arquivo não é foto/vídeo ou não abre. */
   static miniatura(id) {
-    const chave = 'album:mini:' + id, salvo = CacheCPT.ler(chave); if (salvo) return salvo.u;
+    const chave = 'galeria:mini:' + id, salvo = CacheCPT.ler(chave); if (salvo) return salvo.u;
     try {
       const f = DriveApp.getFileById(id); if (!/^(image|video)\//.test(f.getMimeType())) return '';
       const b = f.getThumbnail(); if (!b) return '';
@@ -78,6 +77,7 @@ class GaleriaCPT {
   pastaUrl() { const c = AplicacaoCPT.config(); return c.pastaExtrasId ? 'https://drive.google.com/drive/folders/' + c.pastaExtrasId : ''; }
   /** Uma foto por chamada. Se a conexão cair depois de criar o arquivo, repetir a mesma operação não cria outro. */
   enviar(p) {
+    if (!GaleriaCPT.pode(this.ctx.perfil)) throw new Error('Enviar fotos é da Comunicação, do Socioambiental e da Gestão.');
     p = p || {}; const T = ColecaoCPT.texto, data = ColecaoCPT.data(p.data, 'data da atividade', true), atividade = T(p.atividade, 200, 'atividade', true), local = T(p.local, 200, 'local');
     if (typeof p.operacaoId !== 'string' || !/^OP-[\w-]{8,70}$/.test(p.operacaoId)) throw new Error('Operação inválida. Recarregue a página.');
     const ja = this.col.porOperacao(p.operacaoId);

@@ -116,7 +116,7 @@ window.CPTArte = (() => {
     ajuda: '<circle class="ia-a" cx="100" cy="70" r="40"/><circle class="ia-p" cx="100" cy="70" r="22"/><path class="ia-c" d="M70 40 l12 12 M130 40 l-12 12 M70 100 l12 -12 M130 100 l-12 -12" stroke-width="10"/><path class="ia-l-a" d="M92 64 q0 -10 8 -10 q8 0 8 8 q0 6 -8 8 v4 M100 82 v1"/>',
     padrao: '<path class="ia-a" d="M100 22 C100 22 64 62 64 84 a36 36 0 0 0 72 0 C136 62 100 22 100 22Z"/><path class="ia-p" opacity=".5" d="M84 82 a16 16 0 0 0 10 18" fill="none" stroke-width="6"/><circle class="ia-c" cx="146" cy="44" r="10"/>'
   };
-  const alias = {cronograma: 'cronograma', atendimentos: 'atendimentos', registros: 'registros', obras: 'obras', contatos: 'contatos', recados: 'recados', comunicacao: 'comunicacao', lembretes: 'comunicacao',
+  const alias = {cronograma: 'cronograma', atendimentos: 'atendimentos', registros: 'registros', obras: 'obras', contatos: 'contatos', recados: 'recados', galeria: 'comunicacao', materiais: 'comunicacao', lembretes: 'comunicacao',
     socioambiental: 'socioambiental', painel: 'painel', inicio: 'painel', ajuda: 'ajuda', equipe: 'contatos', conectores: 'padrao'};
   function pagina(rota) { return `<svg class="page-art" viewBox="0 0 200 140">${fundo}${cenas[alias[rota]] || cenas.padrao}${agua}</svg>`; }
   return {pagina};
@@ -164,26 +164,46 @@ window.CPTEspaco = (() => {
     <g class="sc-house"><rect x="10" y="196" width="26" height="22" rx="2"/><path d="M5 199 L23 182 L41 199Z"/><rect x="44" y="200" width="20" height="18" rx="2"/><path d="M40 203 L54 190 L68 203Z"/><rect x="560" y="188" width="30" height="26" rx="2"/><path d="M554 191 L575 172 L596 191Z"/></g>
     <g class="sc-tree"><circle cx="76" cy="210" r="10"/><circle cx="188" cy="206" r="12"/><circle cx="540" cy="200" r="14"/></g>
     <path class="sc-water1" d="M0 262 C120 250 240 272 360 262 S600 250 720 262 960 272 1080 262 1160 254 1200 258 V300 H0Z"/><path class="sc-water2" d="M0 280 C140 270 260 290 400 280 S640 270 780 282 1020 290 1200 278 V300 H0Z"/></svg>`;
-  // 2.26: quadro na parede (visual novo): a foto mais favoritada da semana no Álbum; sem foto, esta paisagem.
-  const PAISAGEM = `<svg class="quadro-paisagem" viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="quadroCeu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd3ec"/><stop offset="1" stop-color="#f3ead2"/></linearGradient></defs>
-    <rect width="160" height="110" fill="url(#quadroCeu)"/><circle cx="122" cy="30" r="12" fill="#f6c84c"/><circle cx="122" cy="30" r="18" fill="#f6c84c" opacity=".25"/>
-    <path d="M0 70 Q30 44 62 62 T120 54 T160 60 V110 H0Z" fill="#8fbf6a"/><path d="M0 84 Q40 64 82 80 T160 74 V110 H0Z" fill="#5e8f4a"/>
-    <path d="M18 110 C40 96 70 98 86 90 S130 84 160 88 V96 C128 94 108 98 92 102 S48 106 34 110Z" fill="#7cc0ea"/>
-    <g fill="#f4ede0"><rect x="96" y="66" width="14" height="10"/><rect x="113" y="63" width="12" height="13"/></g><g fill="#bd553b"><path d="M94 67 l9 -8 l9 8Z"/><path d="M111 64 l8 -7 l8 7Z"/></g>
-    <g fill="#3f6f3a"><circle cx="30" cy="70" r="7"/><circle cx="40" cy="73" r="5"/><circle cx="140" cy="70" r="6"/></g></svg>`;
+  // 2.29: quadro na parede (visual novo): cada pessoa escolhe um desenho pronto ou uma foto da Galeria (o Álbum saiu).
+  const CENARIOS = {
+    'santo-andre': {ceu: ['#9fd3ec', '#f3ead2'], sol: '#f6c84c', morro: ['#8fbf6a', '#5e8f4a'], rio: '#7cc0ea', arvore: '#3f6f3a', casa: ['#f4ede0', '#bd553b']},
+    rio: {ceu: ['#bfe3f2', '#eef6f4'], sol: '#f9dc7a', morro: ['#a6c98a', '#6f9d5c'], rio: '#5aa9de', arvore: '#4a7b44', casa: ['#f4ede0', '#c4693f'], aguaGrande: true},
+    'por-do-sol': {ceu: ['#f4a261', '#f8e1b7'], sol: '#e76f51', morro: ['#b5a36a', '#7d6f43'], rio: '#e9a879', arvore: '#5b4a2f', casa: ['#f7e6cf', '#9c3f2b']},
+    noite: {ceu: ['#1d2b4f', '#3e5683'], sol: '#f5f1d8', morro: ['#3f5a4a', '#2c4236'], rio: '#5b7fb6', arvore: '#1f3326', casa: ['#d9cfa9', '#6a3a2c'], estrelas: true}};
+  function paisagem(k) {
+    const c = CENARIOS[k] || CENARIOS['santo-andre'], id = 'quadroCeu-' + (CENARIOS[k] ? k : 'santo-andre');
+    return `<svg class="quadro-paisagem" viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.ceu[0]}"/><stop offset="1" stop-color="${c.ceu[1]}"/></linearGradient></defs>
+    <rect width="160" height="110" fill="url(#${id})"/>${c.estrelas ? '<g fill="#fff8d6"><circle cx="20" cy="18" r="1"/><circle cx="48" cy="10" r="1.3"/><circle cx="76" cy="24" r="1"/><circle cx="98" cy="12" r="1"/><circle cx="142" cy="20" r="1.2"/><circle cx="60" cy="36" r=".8"/></g>' : ''}
+    <circle cx="122" cy="${k === 'por-do-sol' ? 52 : 30}" r="12" fill="${c.sol}"/><circle cx="122" cy="${k === 'por-do-sol' ? 52 : 30}" r="18" fill="${c.sol}" opacity=".25"/>
+    <path d="M0 70 Q30 44 62 62 T120 54 T160 60 V110 H0Z" fill="${c.morro[0]}"/><path d="M0 84 Q40 64 82 80 T160 74 V110 H0Z" fill="${c.morro[1]}"/>
+    <path d="${c.aguaGrande ? 'M0 92 C40 84 70 90 96 86 S138 80 160 84 V110 H0Z' : 'M18 110 C40 96 70 98 86 90 S130 84 160 88 V96 C128 94 108 98 92 102 S48 106 34 110Z'}" fill="${c.rio}"/>
+    <g fill="${c.casa[0]}"><rect x="96" y="66" width="14" height="10"/><rect x="113" y="63" width="12" height="13"/></g><g fill="${c.casa[1]}"><path d="M94 67 l9 -8 l9 8Z"/><path d="M111 64 l8 -7 l8 7Z"/></g>
+    <g fill="${c.arvore}"><circle cx="30" cy="70" r="7"/><circle cx="40" cy="73" r="5"/><circle cx="140" cy="70" r="6"/></g></svg>`;
+  }
   const corta = (t, n) => { t = String(t || ''); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; };
   function quadro() {
-    const q = d.quadro, foto = q && q.fileId, album = ui.podeVer('album');
-    const img = foto ? `<img class="quadro-foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-mini="${ui.esc(q.fileId)}" src="${ui.esc(window.CPTMiniaturas ? window.CPTMiniaturas.src(q.fileId, 480) : 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(q.fileId) + '&sz=w480')}">` : '';
-    const rotulo = foto ? 'Foto da semana · ' + corta(q.legenda || 'Álbum da equipe', 28) : 'Santo André';
-    return `<${album ? 'button type="button" data-route="album"' : 'div'} class="pet-quadro ${foto ? 'tem-foto' : ''}" aria-label="${ui.esc(foto ? 'Quadro com a foto da semana do álbum: ' + (q.legenda || '') : 'Quadro com uma paisagem')}">
-      <span class="quadro-moldura"><span class="quadro-tela">${PAISAGEM}${img}</span></span><span class="quadro-placa">${ui.esc(rotulo)}</span></${album ? 'button' : 'div'}>`;
+    const q = d.quadro || {tipo: 'paisagem', paisagem: 'santo-andre'}, foto = q.tipo === 'foto' && q.imagem;
+    const rotulo = foto ? corta(q.legenda || 'Foto da Galeria', 28) : (d.paisagens || {})[q.paisagem] || 'Santo André';
+    return `<button type="button" data-esp-quadro class="pet-quadro ${foto ? 'tem-foto' : ''}" aria-label="Trocar o quadro (agora: ${ui.esc(rotulo)})" title="Trocar o quadro">
+      <span class="quadro-moldura"><span class="quadro-tela">${foto ? `<img class="quadro-foto" alt="" decoding="async" src="${ui.esc(q.imagem)}">` : paisagem(q.paisagem)}</span></span><span class="quadro-placa">${ui.esc(rotulo)}</span></button>`;
+  }
+  /** Escolher o quadro: os desenhos prontos e as fotos da Galeria (deste mês e do anterior). */
+  async function escolherQuadro() {
+    const q = d.quadro || {}, desenhos = Object.entries(d.paisagens || {});
+    dialogo('QUADRO', 'Escolha o seu quadro', `<div id="espErro" class="notice" hidden></div><h3 class="answers-head">Desenhos</h3><div class="quadro-opcoes">${desenhos.map(([k, n]) => `<button type="button" class="quadro-opcao ${q.tipo !== 'foto' && q.paisagem === k ? 'is-picked' : ''}" data-esp-paisagem="${k}"><span class="quadro-mini">${paisagem(k)}</span><span>${ui.esc(n)}</span></button>`).join('')}</div>
+      <h3 class="answers-head">Fotos da Galeria</h3><div id="quadroFotos"><div class="loading-label"><span class="spinner"></span>Buscando as fotos…</div></div>`);
+    const mes = ui.state.mes, ant = new Date(Date.UTC(+mes.slice(0, 4), +mes.slice(5, 7) - 2, 15)).toISOString().slice(0, 7);
+    let fotos = [];
+    try { for (const m of [mes, ant]) { const g = await ui.call('listarGaleriaCPT', {mes: m}); fotos = fotos.concat((g.itens || []).filter(x => !x.video)); if (fotos.length >= 24) break; } } catch (e) { const b = $('quadroFotos'); if (b) b.innerHTML = `<p class="empty-line">${ui.esc(e.message)}</p>`; return; }
+    const box = $('quadroFotos'); if (!box) return;
+    box.innerHTML = fotos.length ? `<div class="quadro-opcoes fotos">${fotos.slice(0, 24).map(x => `<button type="button" class="quadro-opcao ${q.fileId === x.fileId ? 'is-picked' : ''}" data-esp-foto="${ui.esc(x.fileId)}" data-legenda="${ui.esc(corta(x.atividade || x.legenda, 110))}"><span class="quadro-mini"><img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-mini="${ui.esc(x.fileId)}" src="${ui.esc(window.CPTMiniaturas ? window.CPTMiniaturas.src(x.fileId, 240) : '')}"></span><span>${ui.esc(corta(x.atividade || x.legenda, 40))}</span></button>`).join('')}</div>`
+      : '<p class="empty-line">Ainda não há fotos na Galeria deste mês.</p>';
   }
   // Caderno (2.26): no visual novo, a capa marrom abre uma vez por visita; trocar de dia vira a página.
   const diasAbertos = new Set();
   const ILUSTRA_VAZIO = '<svg class="empty-art" viewBox="0 0 120 90" aria-hidden="true"><rect x="18" y="16" width="84" height="64" rx="10" class="ea-paper"/><rect x="18" y="16" width="84" height="16" rx="8" class="ea-top"/><circle cx="40" cy="12" r="5" class="ea-ring"/><circle cx="80" cy="12" r="5" class="ea-ring"/><path d="M44 56 l10 10 l22 -22" class="ea-check"/></svg>';
   const TRABALHO = {
-    atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Ver os relatos do mês', 'registros', 'relatos'], comunicacao: ['Abrir meu dia na Comunicação', 'comunicacao', 'hoje'],
+    atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Ver os relatos do mês', 'registros', 'relatos'], comunicacao: ['Ver os materiais', 'materiais', ''],
     comercializacao: ['Ver obras e endereços', 'obras', ''], gestao: ['Abrir a Visão do mês', 'inicio', ''], administrativo: ['Abrir a Visão do mês', 'inicio', '']};
 
   async function render(manterDia) {
@@ -391,6 +411,9 @@ window.CPTEspaco = (() => {
     ui = api;
     // Quadro: foto sem acesso no Drive (ou que não abre) volta para a paisagem.
     // 2.26.3: antes de desistir, pede a miniatura à aplicação (a conta de quem vê pode não ter leitura na pasta do Drive).
+    // Escolha do quadro: foto que o navegador não abre no Drive vem pela aplicação; se nem ela abrir, a opção some.
+    document.addEventListener('error', e => { const t = e.target; if (!t || !t.closest || !t.closest('.quadro-mini') || !t.dataset.mini) return; const some = () => { const b = t.closest('.quadro-opcao'); if (b) b.remove(); };
+      if (window.CPTMiniaturas) window.CPTMiniaturas.tentar(t, some); else some(); }, true);
     document.addEventListener('error', e => { const t = e.target; if (!t || !t.classList || !t.classList.contains('quadro-foto')) return;
       const desistir = () => { const q = t.closest('.pet-quadro'); t.remove();
         if (q) { q.classList.remove('tem-foto'); const pl = q.querySelector('.quadro-placa'); if (pl) pl.textContent = 'Santo André'; } };
@@ -415,6 +438,10 @@ window.CPTEspaco = (() => {
       if (t.closest('[data-esp-nomear]')) { const n = prompt('Novo nome para ' + M().nome + ':', M().nome); if (n && n.trim() && n.trim() !== M().nome && await mascote({acao: 'nomear', nome: n.trim()})) desenhar(); return; }
       if (t.closest('[data-esp-guarda]')) { guardaAba = 'cabeca'; guardaRoupa(); return; }
       if (t.closest('[data-esp-cor]')) { cores(); return; }
+      if (t.closest('[data-esp-quadro]')) { escolherQuadro(); return; }
+      const qp = t.closest('[data-esp-paisagem]'); if (qp) { const k = qp.dataset.espPaisagem; if (await mascote({acao: 'quadro', tipo: 'paisagem', paisagem: k})) { d.quadro = {tipo: 'paisagem', paisagem: k}; fechar(); desenhar(); } return; }
+      const qf = t.closest('[data-esp-foto]'); if (qf) { const id = qf.dataset.espFoto, leg = qf.dataset.legenda || '', img = qf.querySelector('img');
+        if (await mascote({acao: 'quadro', tipo: 'foto', fileId: id, legenda: leg})) { d.quadro = {tipo: 'foto', fileId: id, legenda: leg, imagem: (window.CPTMiniaturas && window.CPTMiniaturas.daAplicacao(id)) || (img && img.currentSrc) || ''}; fechar(); desenhar(); } return; }
       const cl = t.closest('[data-esp-colorir]'); if (cl) { if ((M().cor || '') !== cl.dataset.espColorir && await mascote({acao: 'colorir', cor: cl.dataset.espColorir})) { fechar(); desenhar(); } else if ((M().cor || '') === cl.dataset.espColorir) fechar(); return; }
       const cc = t.closest('[data-esp-comprar-cor]'); if (cc) { const k = cc.dataset.espComprarCor; if (d.pontos.saldo < d.precoCor) { ui.toast('Faltam ' + (d.precoCor - d.pontos.saldo) + ' pontos. Complete tarefas do checklist.'); return; }
         if (confirm('Usar ' + d.precoCor + ' pontos na cor ' + d.coresEspeciais[k].toLowerCase() + '? Depois de comprada, trocar é livre.') && await mascote({acao: 'comprarCor', cor: k})) { fechar(); desenhar(); } return; }

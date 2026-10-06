@@ -1360,4 +1360,10 @@ html[data-theme=dark] .controle-situacao{background:#4a3a20;color:#f2cf8a}html[d
 :root{--front-comercializacao:#a07a1c}html[data-theme=dark]{--front-comercializacao:#e3c46f}
 @media print{html,body{background:#fff!important}}
 html[data-theme=dark] .holiday-tag{color:#ffb4a9;background:color-mix(in srgb,#e2574c 24%,var(--surface))}html[data-theme=dark] .calendar-cell.holiday .day-number{color:#ff9a8f}
+/* 2.29: escolher o quadro atrás do mascote (desenhos prontos ou fotos da Galeria). */
+.quadro-opcoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px;margin:0 0 18px}
+.quadro-opcao{display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:8px;border:2px solid var(--line);border-radius:12px;background:var(--surface);text-align:left;font-size:12px;min-height:0}
+.quadro-opcao:hover{border-color:var(--blue)}.quadro-opcao.is-picked{border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 18%,transparent)}
+.quadro-mini{display:block;aspect-ratio:16/11;border-radius:7px;overflow:hidden;background:var(--bg)}.quadro-mini svg,.quadro-mini img{width:100%;height:100%;object-fit:cover;display:block}
+.quadro-opcao>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>

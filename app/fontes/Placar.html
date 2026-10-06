@@ -16,7 +16,7 @@ window.CPTPlacar = (() => {
       <div class="placar-topo"><div class="placar-total"><strong>${ui.num(p.pontos)}</strong><span>de ${ui.num(p.meta)} pontos na meta da semana</span>
         <span class="meter placar-meta" role="meter" aria-valuemin="0" aria-valuemax="${p.meta}" aria-valuenow="${Math.min(p.pontos, p.meta)}" aria-label="Meta da equipe"><span style="width:${pct}%"></span></span>
         <p class="small">${p.atingiu ? ic('sparkle', '🎉') + ' Meta da semana batida! Bom trabalho, equipe.' : `Faltam ${ui.num(p.meta - p.pontos)} pontos. Cada tarefa, acerto e vitória conta.`}</p></div>
-      <ul class="placar-itens">${item(ic('check', '✅'), p.tarefas, 'tarefa feita', 'tarefas feitas')}${item(ic('question', '❓'), p.acertos, 'acerto no quiz', 'acertos no quiz')}${item(ic('game', '🎮'), p.vitorias, 'vitória nos joguinhos', 'vitórias nos joguinhos')}${item(ic('heart', '❤'), p.fotos, 'foto favoritada', 'fotos favoritadas')}</ul></div>
+      <ul class="placar-itens">${item(ic('check', '✅'), p.tarefas, 'tarefa feita', 'tarefas feitas')}${item(ic('question', '❓'), p.acertos, 'acerto no quiz', 'acertos no quiz')}${item(ic('game', '🎮'), p.vitorias, 'vitória nos joguinhos', 'vitórias nos joguinhos')}</ul></div>
       <div class="placar-semanas" role="img" aria-label="Pontos da equipe nas últimas ${p.historico.length} semanas: ${p.historico.map(h => ddmm(h.inicio) + ' ' + h.pontos).join(', ')}">
         ${p.historico.map(h => `<div class="placar-semana ${h.atual ? 'is-atual' : ''}"><b>${ui.num(h.pontos)}</b><span class="placar-barra"><span style="height:${Math.max(2, h.pontos / max * 100)}%"></span></span><small>${h.atual ? 'esta semana' : ddmm(h.inicio)}</small></div>`).join('')}
 </div></section>`;

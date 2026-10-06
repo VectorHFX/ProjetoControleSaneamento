@@ -1,6 +1,6 @@
 // Ciclo do caso na interface (prévia com dados fictícios).
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),path=require('path'),assert=require('node:assert/strict');
-(async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined});const page=await b.newPage({viewport:{width:1280,height:900}});await page.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({mes:true,consulta:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const erros=[];page.on('pageerror',e=>erros.push(e.message));
+(async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined});const page=await b.newPage({viewport:{width:1280,height:900}});await page.addInitScript(()=>{try{localStorage.setItem('cpt.menu',JSON.stringify({extras:true,admin:true}));}catch(_){}});/* grupos do menu abertos (preferência da pessoa) */const erros=[];page.on('pageerror',e=>erros.push(e.message));
 const url='file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html'),out=process.env.SHOTS;
 const abrirCaso=async q=>{await page.goto(url+'?inicial=1'+q);await page.locator('#roleView option').nth(0).waitFor({state:'attached'});await page.waitForTimeout(300);await page.locator('.nav-item[data-route=atendimentos]').click();await page.locator('[data-case]').nth(2).click();await page.locator('.case-status').waitFor();};
 // Comunicação: consulta e observa, sem ações nem telefone.

@@ -34,7 +34,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
     base64Decode:s=>[...Buffer.from(s,'base64')],newBlob:(b,mime,nome)=>({mime,nome}),zip:(blobs,n)=>({getBytes:()=>[1,2,3],blobs}),base64Encode:()=>'AQID'},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','GaleriaCPT','AlbumCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','AplicacaoCPT','ColecaoCPT','RecadosCPT','ComunicacaoCPT','GaleriaCPT','PessoalCPT','ConteudoSaneamentoCPT','RevisaoConteudoCPT','QuizCPT','JogosCPT','PlacarCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx))),op=()=>'OP-'+crypto.randomUUID();
 const path=require('path'),DOC=path.join(__dirname,'../../docs/CONTEUDO_SANEAMENTO.md');
 // 1. Banco: ~150 itens, IDs únicos, 4 alternativas distintas, certa válida, fonte existente (https ou "prática da equipe"),
@@ -83,7 +83,7 @@ const certa=id=>Q.find(q=>q.id===id).certa,errada=id=>(certa(id)+1)%4,antes=d.po
 ctx.p={tipo:'dia',escolha:certa(qd.id),id:'Q999',operacaoId:op()};assert.throws(()=>run('responderQuizCPT(p)'),/pergunta mudou/);
 ctx.p={tipo:'dia',escolha:7,id:qd.id,operacaoId:op()};assert.throws(()=>run('responderQuizCPT(p)'),/alternativas/);
 const opDia=op();ctx.p={tipo:'dia',escolha:certa(qd.id),id:qd.id,versao:0,operacaoId:opDia};let r=run('responderQuizCPT(p)');
-assert.match(r.resultado,/Acertou! \+2/);assert.equal(r.resposta.acertou,true);assert.equal(r.resposta.certa,certa(qd.id));assert.ok(r.resposta.explica&&r.resposta.fonte.url);
+assert.match(r.resultado,/Acertou! \+2/);assert.equal(r.resposta.acertou,true);assert.equal(r.resposta.certa,certa(qd.id));assert.ok(r.resposta.explica&&r.resposta.fonte&&(r.resposta.fonte.url||/Prática da equipe/.test(r.resposta.fonte.nome)),'explicação e fonte (link ou prática da equipe)');
 assert.equal(r.pontos.saldo,antes+2);assert.equal(r.pontos.quiz,2);
 assert.equal(run('responderQuizCPT(p)').pontos.saldo,antes+2,'mesma operação não soma de novo');
 ctx.p={tipo:'dia',escolha:certa(qd.id),id:qd.id,versao:1,operacaoId:op()};assert.throws(()=>run('responderQuizCPT(p)'),/já respondeu a pergunta de hoje/);
