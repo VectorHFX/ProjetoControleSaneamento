@@ -1423,4 +1423,17 @@ details.mais-detalhes>summary small{font-weight:400;color:var(--muted)}
 .mais-detalhes-corpo{display:grid;gap:12px;padding:2px 0 14px}.editor-grid .mais-detalhes-corpo{grid-template-columns:repeat(2,minmax(0,1fr))}.editor-grid .mais-detalhes-corpo .wide{grid-column:1/-1}
 @media (max-width:640px){.editor-grid .mais-detalhes-corpo{grid-template-columns:1fr}}
 .check-inline.dia-todo{align-self:end;min-height:44px}
+/* 2.33: Levantamento de traçado — feito para o polegar: chips grandes, número em destaque, salvar largo. */
+.lev-sessao{display:grid;gap:12px;margin-bottom:14px}.lev-obra{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.lev-obra>div{display:grid;gap:2px}.lev-obra strong{font-size:17px}
+.lev-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}.lev-ok{display:inline-flex;align-items:center;gap:6px;color:var(--green,#2c8669);font-weight:650}.lev-status .spinner{width:16px;height:16px}
+.lev-form{display:grid;gap:14px;margin-bottom:14px}.lev-endereco{grid-template-columns:minmax(0,1fr) 120px}.lev-num input{font-size:20px;font-weight:700;text-align:center;letter-spacing:.02em}
+.lev-chips{border:0;margin:0;padding:0;display:grid;gap:6px}.lev-chips legend{font-size:13px;font-weight:650;color:var(--muted);margin-bottom:6px}.chip-linha{display:flex;flex-wrap:wrap;gap:8px}
+.lev-chips .chip-opcao span{min-height:44px;padding:6px 16px;font-size:14px}
+.lev-salvar{width:100%;min-height:52px;font-size:16px}.lev-dup{margin:0}
+.lev-comecar{display:grid;gap:10px}.lev-comecar h2{margin:0}.lev-obras{display:grid;gap:8px}
+.lev-obra-op{display:grid;gap:2px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;min-height:52px}.lev-obra-op:hover,.lev-obra-op:focus-visible{border-color:var(--blue)}.lev-obra-op small{color:var(--muted)}
+.lev-atencao,.lev-recentes{margin-bottom:14px}.lev-atencao h2,.lev-recentes h2{font-size:15px;margin:0 0 8px}.lev-atencao{border-color:#e7b44c}
+.lev-lista{list-style:none;margin:0;padding:0;display:grid}.lev-lista li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}.lev-lista li:last-child{border-bottom:0}.lev-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.lev-ver{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:14px}.lev-ver .field{min-width:220px;flex:1 1 260px}.lev-tabela{overflow-x:auto;padding:6px 12px}.lev-tabela td:not(:first-child),.lev-tabela th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}.lev-tabela th{white-space:nowrap}.lev-tabela td:first-child{min-width:150px}
+@media (max-width:640px){.lev-endereco{grid-template-columns:minmax(0,1fr) 96px}}
 </style>

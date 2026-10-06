@@ -11,7 +11,7 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   await p.goto('file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+'?perfil=comunicacao&latencia=30');
   // 2.29: entra pelo Meu espaço; a página "Comunicação" e o "Hoje" saíram — Galeria e Materiais nas Ferramentas extras.
   await p.locator('.welcome-pets').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'meuespaco');
-  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','registros','galeria','obras','contatos','materiais','ajuda']);
+  assert.deepEqual(await p.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','registros','levantamento','galeria','obras','contatos','materiais','ajuda']);
   assert.match(await p.locator('.nav-group[data-grupo=extras] .nav-group-head').textContent(),/Ferramentas extras/);assert.match(await p.locator('.nav-group[data-grupo=ferramentas] .nav-caption').textContent(),/FERRAMENTAS/);
   // 2.30: recados e tarefas recebidas somam no "Meu espaço" (1 recado + 1 tarefa atrasada da Comunicação).
   await p.waitForFunction(()=>document.querySelector('.nav-item[data-route=meuespaco] .nav-badge')?.textContent==='2');

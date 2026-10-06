@@ -198,6 +198,18 @@ if(nome==='salvarNotaCPT'){const antes=espDias();ESP.notas[p.data]={texto:p.text
 if(nome==='salvarChecklistCPT'){const ant=new Map(((ESP.listas[p.data]||{}).itens||[]).map(t=>[t.id,t]));let pts=[...ant.values()].filter(t=>t.pontuado).length,novos=0;const itens=p.itens.map(t=>{const v=ant.get(t.id),x={...t,pontuado:!!(v&&v.pontuado)};if(t.feito&&!x.pontuado&&p.data<=hojeE&&pts<8){x.pontuado=true;pts++;novos++;}return x;});
   let comLem=false;itens.filter(x=>x.lembrete).forEach(x=>{comLem=true;const l=COM.lembretes.find(y=>y.id===x.lembrete);if(!l||!lemPara(l))throw new Error('Essa tarefa não é para você.');if((l.situacao==='feito')!==!!x.feito){l.situacao=x.feito?'feito':'pendente';l.feitoPor=x.feito?perfilDemo.email:'';}});
   ESP.listas[p.data]={itens,versao:((ESP.listas[p.data]||{}).versao||0)+1};return {resultado:novos?'+'+novos*10+' pontos!':'Checklist salvo.',lista:{data:p.data,...ESP.listas[p.data]},pontos:espPontos(),lembretes:comLem?lemDia(p.data):undefined};}
+// 2.33: Levantamento de traçado. window.CPT_PREVIA.semRede=true simula o celular sem internet.
+if(nome==='listarLevantamentoCPT'||nome==='enviarLevantamentoCPT'){if(window.CPT_PREVIA.semRede)throw new Error('Sem conexão com o servidor.');
+  const LV=window.CPT_LEV=window.CPT_LEV||{itens:[{id:'LEV-1',obraId:'OBR-0117',obra:'Viela Carijós',bairro:'Vila Linda',rua:'Rua das Flores',numero:'10',tipo:'Residencial',imovel:'Casa',resultado:'Comunicado',observacao:'',visitadaEm:'2026-10-05T13:00:00Z',nome:'Equipe social de exemplo',atualizadoEm:''},
+    {id:'LEV-2',obraId:'OBR-0117',obra:'Viela Carijós',bairro:'Vila Linda',rua:'Rua das Flores',numero:'12',tipo:'Comercial',imovel:'Casa',resultado:'Contato com morador',observacao:'Padaria',visitadaEm:'2026-10-05T13:10:00Z',nome:'Equipe social de exemplo',atualizadoEm:''}],ops:{}};
+  const nm=v=>String(v==null?'':v).normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase().replace(/\s+/g,' '),ch=(o,r,n)=>[o,nm(r),nm(n).replace(/\s+/g,'')].join('|');
+  const obrasL=obrasDemo.map(o=>({id:o.id,nome:o.exibir||o.nomeUso||o.nome,oficial:o.nome,apelidos:o.apelidos||[],bairros:o.bairros,situacao:o.situacao}));
+  if(nome==='listarLevantamentoCPT')return {itens:LV.itens.slice(),obras:obrasL,tipos:['Residencial','Comercial','Outro'],imoveis:['Casa','Prédio','Terreno'],resultados:['Comunicado','Contato com morador'],agora:new Date().toISOString()};
+  const res=p.itens.map(x=>{if(LV.ops[x.operacaoId])return {operacaoId:x.operacaoId,situacao:'ja-recebida',casa:LV.ops[x.operacaoId]};const o=obrasL.find(y=>y.id===x.obraId);if(!o)return {operacaoId:x.operacaoId,situacao:'invalida',mensagem:'Obra não encontrada no catálogo.'};
+    const e=LV.itens.find(c=>ch(c.obraId,c.rua,c.numero)===ch(x.obraId,x.rua,x.numero));if(e&&!x.atualizar)return {operacaoId:x.operacaoId,situacao:'duplicada',casa:e};
+    const c={id:e?e.id:'LEV-'+crypto.randomUUID(),obraId:o.id,obra:o.nome,bairro:x.bairro,rua:x.rua,numero:x.numero,tipo:x.tipo,imovel:x.imovel,resultado:x.resultado,observacao:x.observacao||'',visitadaEm:x.visitadaEm,nome:perfilDemo.nome,atualizadoEm:e?new Date().toISOString():''};
+    if(e)Object.assign(e,c);else LV.itens.push(c);LV.ops[x.operacaoId]=e||c;return {operacaoId:x.operacaoId,situacao:e?'atualizada':'salva',casa:e||c};});
+  const n=t=>res.filter(r=>r.situacao===t).length;return {resultados:res,salvas:n('salva')+n('atualizada')+n('ja-recebida'),duplicadas:n('duplicada'),invalidas:n('invalida')};}
 if(nome==='listarEquipeCPT')return {pessoas:equipeDemo,agendaUrl:'https://docs.google.com/spreadsheets/'};
 if(nome==='salvarPessoaCPT'){const i=equipeDemo.findIndex(x=>x.email===p.email);if(i>=0)equipeDemo[i]=p;else equipeDemo.push(p);return {resultado:'Cadastro demonstrativo atualizado.'};}
 if(nome==='conferirSaudeCPT')return {itens:[{nome:'Registros',quantidade:54,unidade:'registros',orientacao:'Dados fictícios desta prévia.'}],tempoServidorMs:120};
@@ -221,6 +233,7 @@ s=s.replace("<?!= incluirCPT_('Jogos'); ?>",(root/'src/Jogos.html').read_text())
 s=s.replace("<?!= incluirCPT_('Placar'); ?>",(root/'src/Placar.html').read_text())
 s=s.replace("<?!= incluirCPT_('Visual'); ?>",(root/'src/Visual.html').read_text())
 s=s.replace("<?!= incluirCPT_('Organograma'); ?>",(root/'src/Organograma.html').read_text())
+s=s.replace("<?!= incluirCPT_('Levantamento'); ?>",(root/'src/Levantamento.html').read_text())
 import subprocess,json
 cat=subprocess.run(['node','-e',"const fs=require('fs'),vm=require('vm'),c={};vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+';this.x={catalogo:PessoalCPT.catalogo,especies:PessoalCPT.especiesAntigas,especiesNovas:PessoalCPT.especiesNovas,classicos:PessoalCPT.classicos,precoClassico:PessoalCPT.precoClassico,kit:PessoalCPT.kit,cores:PessoalCPT.cores,slots:PessoalCPT.slots,pecasNovas:PessoalCPT.pecasNovas,coresEspeciais:PessoalCPT.coresEspeciais,precoCor:PessoalCPT.precoCor};',c);console.log(JSON.stringify(c.x))",str(root/'src/PessoalCPT.gs')],capture_output=True,text=True,check=True).stdout.strip()
 s=s.replace('__CATALOGO__',cat)

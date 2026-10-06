@@ -43,7 +43,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Registro único (ROTAS): toda página do menu abre, com o título do registro e sem erro (quem tem todos os cargos).
   for(const g of ['extras','admin'])if(await fechado(g))await p.locator('.nav-group[data-grupo='+g+'] .nav-group-head').click();
   const rotas=await p.$$eval('#navigation .nav-item',l=>l.filter(x=>!x.hidden).map(x=>[x.dataset.route,x.querySelector('span').textContent]));
-  assert.equal(rotas.length,14,'menu completo do proprietário (2.30: Recados e Lembretes dentro do Meu espaço): '+rotas.length);
+  assert.equal(rotas.length,15,'menu completo do proprietário (2.33: + Levantamento de traçado): '+rotas.length);
   for(const [r,titulo] of rotas){await p.locator('.nav-item[data-route='+r+']').click();await p.waitForFunction(r=>document.querySelector('.nav-item.active')?.dataset.route===r,r);
     assert.equal(await p.locator('#pageLabel').textContent(),titulo,'título de '+r);await p.waitForTimeout(250);}
   assert.deepEqual(errors,[],'nenhuma página com erro');

@@ -23,6 +23,16 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.33.0 — Levantamento de traçado (≈ 5 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.33.0`, Nova versão). Arquivos novos: `LevantamentoCPT` (script) e `Levantamento` (HTML); o atualizador cria os dois.
+2. **Ferramentas → Levantamento de traçado** (toda a equipe):
+   - **Em campo:** digite a obra e toque nela; o bairro vem do catálogo da obra (se a obra tem mais de um, escolha em um toque). Para cada casa: rua (fica a anterior), número, tipo (Residencial / Comercial / Outro), imóvel (Casa / Prédio / Terreno), resultado (Comunicado / Contato com morador) e, se quiser, uma observação.
+   - **Sem internet:** cada casa fica guardada no celular na hora e vai sozinha, em lotes, quando a conexão volta (ou ao abrir a aplicação de novo). **Abra a aplicação com internet antes de sair para o campo** e não feche a aba até ver "Tudo enviado".
+   - **Casa repetida:** a tela avisa enquanto você digita o número e o botão vira "Atualizar casa". Se outra pessoa levantou a mesma casa ao mesmo tempo, ela aparece em "Precisam de você", com "Atualizar com o novo" ou "Manter o que estava".
+   - **Resultados:** por obra (todas) ou por rua (uma obra), com **Baixar planilha (.xlsx)** (abas Por rua/Por obra e Casas).
+3. **Onde fica:** a aba nova **Levantamento de traçado** é criada sozinha na planilha "CPT • Dados da aplicação" no primeiro envio. Só endereço do imóvel e resultado; nome e telefone do morador não entram.
+
 ## Atualização 2.32.1 — revisão das entregas 2.31 e 2.32 (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.32.1`, Nova versão).

@@ -1,0 +1,231 @@
+<script>
+/* CPTLevantamento 2.33.0 — Levantamento de traçado (Ferramentas).
+   Em campo: escolhe a obra (o bairro vem dela) e registra casa por casa: rua (fica a anterior), número, tipo, imóvel e resultado.
+   Cada casa fica guardada no celular na hora e vai para a planilha em lotes; sem internet, espera e tenta de novo sozinha
+   (a aplicação precisa ter sido aberta com internet). Casa já levantada: avisa e oferece atualizar.
+   Resultados: por obra e por rua, com planilha .xlsx. */
+window.CPTLevantamento = (() => {
+  let ui = null, dados = null, parte = 'campo', ticket = 0, enviando = false, timer = null, falhas = 0, ultimoErro = '', verObra = null, buscaObra = '';
+  const $ = id => document.getElementById(id);
+  const LOTE = 100, RECENTES = 8;
+  const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const chave = (obraId, rua, numero) => [String(obraId), norm(rua), norm(numero).replace(/\s+/g, '')].join('|');
+  const novoId = () => 'OP-lev-' + (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
+  const quando = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'}).replace(',', ''); };
+  const OPC = {tipos: ['Residencial', 'Comercial', 'Outro'], imoveis: ['Casa', 'Prédio', 'Terreno'], resultados: ['Comunicado', 'Contato com morador']};
+
+  // ---------- Guardado no celular (por conta, para não misturar pessoas no mesmo aparelho) ----------
+  const chaveLocal = () => 'cpt.lev.v1.' + ((ui.state.perfil && ui.state.perfil.email) || 'anon');
+  function ler() { let l = {}; try { l = JSON.parse(localStorage.getItem(chaveLocal()) || '{}') || {}; } catch (_) { l = {}; } l.fila = l.fila || []; l.atencao = l.atencao || []; l.recentes = l.recentes || []; return l; }
+  function gravar(l) { try { localStorage.setItem(chaveLocal(), JSON.stringify(l)); return true; } catch (_) { return false; } }
+  let memoria = null; // se o celular não deixar guardar (modo anônimo, sem espaço), a fila fica só na memória enquanto a tela estiver aberta
+  function local() { return memoria || ler(); }
+  function salvarLocal(l) { if (gravar(l)) { memoria = null; return true; } memoria = l; return false; }
+
+  // ---------- Carregar ----------
+  async function render(atualizar) {
+    const mine = ++ticket;
+    if (!dados || atualizar) {
+      if (!dados) ui.view.innerHTML = cabecalho() + '<div class="loading-label"><span class="spinner"></span>Abrindo o levantamento…</div>';
+      try { const d = await ui.call('listarLevantamentoCPT'); if (mine !== ticket || ui.state.route !== 'levantamento') return; dados = d; }
+      catch (e) { if (mine !== ticket || ui.state.route !== 'levantamento') return; if (!dados && !local().sessao) { ui.view.innerHTML = cabecalho() + `<div class="notice">${ui.esc(e.message)}</div>`; return; } ui.toast('Sem conexão agora: dá para seguir registrando, as casas ficam no celular.'); }
+    }
+    desenhar(); if (local().fila.length) agendarEnvio(400);
+  }
+  function cabecalho() { return ui.intro('Levantamento de traçado', 'Casa por casa ao longo da obra. Cada casa fica guardada no celular na hora e é enviada sozinha quando há internet. Abra a aplicação com internet antes de ir a campo.'); }
+  function abas() { return `<div class="segmented painel-tabs" role="tablist" aria-label="Partes do levantamento">${[['campo', 'Em campo'], ['resultados', 'Resultados']].map(([k, t]) => `<button role="tab" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-lev-parte="${k}">${t}</button>`).join('')}</div>`; }
+  function desenhar() {
+    if (ui.state.route !== 'levantamento') return;
+    ui.view.innerHTML = cabecalho() + abas() + `<div id="levCorpo">${parte === 'resultados' ? resultados() : campo()}</div>`;
+    if (parte === 'campo' && local().sessao) { const f = $('levForm'); if (f) { conferirDuplicada(); if (!f.elements.rua.value) f.elements.rua.focus(); } }
+  }
+
+  // ---------- Em campo ----------
+  function obras() { return (dados && dados.obras) || []; }
+  function casasDaObra(obraId) { return ((dados && dados.itens) || []).filter(c => c.obraId === obraId); }
+  function campo() {
+    const l = local();
+    if (!l.sessao) return escolherObra();
+    const s = l.sessao, outras = (s.bairros || []).length > 1;
+    const ruas = [...new Map(casasDaObra(s.obraId).concat(l.fila.filter(c => c.obraId === s.obraId)).map(c => [norm(c.rua), c.rua])).values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const chips = (nome, lista, sel, obrig) => `<fieldset class="lev-chips"><legend>${nome === 'tipo' ? 'Tipo' : nome === 'imovel' ? 'Imóvel' : 'Resultado'}</legend><div class="chip-linha">${lista.map((x, i) => `<label class="chip-opcao"><input type="radio" name="${nome}" value="${ui.esc(x)}" ${sel === x ? 'checked' : ''} ${obrig && !i ? 'required' : ''}><span>${ui.esc(x)}</span></label>`).join('')}</div></fieldset>`;
+    return `<section class="panel lev-sessao"><div class="lev-obra"><div><span class="small muted">Obra</span><strong>${ui.esc(s.obra)}</strong>${outras ? '' : `<span class="small muted">${ui.esc(s.bairro || 'Bairro não informado no catálogo')}</span>`}</div><button class="button ghost" type="button" data-lev-trocar>Trocar obra</button></div>
+        ${outras ? `<fieldset class="lev-chips"><legend>Bairro</legend><div class="chip-linha">${s.bairros.map(b => `<label class="chip-opcao"><input type="radio" name="levBairro" value="${ui.esc(b)}" ${s.bairro === b ? 'checked' : ''}><span>${ui.esc(b)}</span></label>`).join('')}</div></fieldset>` : ''}
+        <div id="levStatus" class="lev-status" role="status">${status(l)}</div></section>
+      <form id="levForm" class="panel stack-form lev-form" autocomplete="off" novalidate>
+        <div class="form-row lev-endereco"><label class="field">Rua<input name="rua" required maxlength="150" list="levRuas" value="${ui.esc(s.rua || '')}" placeholder="Nome da rua"></label><label class="field lev-num">Número<input name="numero" required maxlength="20" enterkeyhint="next" placeholder="Ex.: 120"></label></div>
+        <datalist id="levRuas">${ruas.map(r => `<option value="${ui.esc(r)}">`).join('')}</datalist>
+        <div id="levDup" class="notice lev-dup" role="status" hidden></div>
+        ${chips('tipo', OPC.tipos, s.tipo || 'Residencial')}${chips('imovel', OPC.imoveis, s.imovel || 'Casa')}${chips('resultado', OPC.resultados, '', true)}
+        <details class="mais-detalhes"><summary>Observação <small>opcional</small></summary><div class="mais-detalhes-corpo"><label class="field wide">Observação<textarea name="observacao" rows="2" maxlength="500" placeholder="Ex.: portão fechado, falar com o síndico"></textarea></label></div></details>
+        <div id="levErro" class="notice" role="alert" hidden></div>
+        <button class="button lev-salvar" type="submit">Salvar casa</button>
+      </form>
+      ${atencao(l)}${recentes(l)}`;
+  }
+  function escolherObra() {
+    const b = norm(buscaObra), ativas = o => ['Em andamento', 'Paralisada', 'A confirmar', ''].includes(o.situacao);
+    const lista = obras().filter(o => b ? norm([o.nome, o.oficial, (o.apelidos || []).join(' '), (o.bairros || []).join(' '), o.id].join(' ')).includes(b) : ativas(o)).slice(0, 8);
+    return `<section class="panel lev-comecar"><h2>Comece pela obra</h2><p class="small muted">O bairro vem do catálogo da obra.</p>
+      <label class="field">Obra<span class="search-input">${ui.icon('search')}<input id="levBusca" value="${ui.esc(buscaObra)}" placeholder="Digite o nome, o bairro ou o ID" maxlength="80" autocomplete="off"></span></label>
+      <div class="lev-obras">${lista.map(o => `<button class="lev-obra-op" type="button" data-lev-obra="${ui.esc(o.id)}"><strong>${ui.esc(o.nome)}</strong><small>${ui.esc([(o.bairros || []).join(' · '), o.situacao].filter(Boolean).join(' — '))}</small></button>`).join('') || `<p class="empty-line">${dados ? 'Nenhuma obra encontrada. Confira o nome ou peça para cadastrar em Obras.' : 'Sem a lista de obras agora (sem conexão). Abra com internet para começar.'}</p>`}</div></section>${atencao(local())}`;
+  }
+  function status(l) {
+    const n = l.fila.length;
+    if (!n) return `<span class="lev-ok">${ui.icon('check')} Tudo enviado</span>`;
+    if (enviando) return `<span class="spinner"></span> Enviando ${n} ${n === 1 ? 'casa' : 'casas'}…`;
+    if (navigator.onLine === false) return `${n} ${n === 1 ? 'casa guardada' : 'casas guardadas'} no celular. Vão sozinhas quando a internet voltar.`;
+    return `${n} ${n === 1 ? 'casa aguardando' : 'casas aguardando'} envio${ultimoErro ? ' <small class="muted">(' + ui.esc(ultimoErro) + ')</small>' : ''} <button class="button ghost small-button" type="button" data-lev-enviar>Enviar agora</button>`;
+  }
+  function atencao(l) {
+    if (!l.atencao.length) return '';
+    return `<section class="panel lev-atencao"><h2>Precisam de você (${l.atencao.length})</h2><ul class="lev-lista">${l.atencao.map(c => `<li><div><strong>${ui.esc(c.rua)}, ${ui.esc(c.numero)}</strong> <span class="muted">· ${ui.esc(c.obra)}</span><br><span class="small">${c.situacao === 'duplicada' && c.existente ? `Já estava no levantamento: ${ui.esc(c.existente.resultado)} · ${ui.esc(c.existente.nome)} · ${ui.esc(quando(c.existente.visitadaEm))}. O novo: ${ui.esc(c.resultado)}.` : ui.esc(c.mensagem || 'Não foi aceita.')}</span></div><div class="lev-acoes">${c.situacao === 'duplicada' ? `<button class="button small-button" type="button" data-lev-atualizar="${ui.esc(c.operacaoId)}">Atualizar com o novo</button><button class="button ghost small-button" type="button" data-lev-descartar="${ui.esc(c.operacaoId)}">Manter o que estava</button>` : `<button class="button ghost small-button" type="button" data-lev-descartar="${ui.esc(c.operacaoId)}">Descartar</button>`}</div></li>`).join('')}</ul></section>`;
+  }
+  function recentes(l) {
+    const fila = new Set(l.fila.map(c => c.operacaoId)), lista = l.recentes.filter(c => l.sessao && c.obraId === l.sessao.obraId);
+    if (!lista.length) return '';
+    return `<section class="panel lev-recentes"><h2>Últimas casas</h2><ul class="lev-lista">${lista.map(c => `<li><div><strong>${ui.esc(c.rua)}, ${ui.esc(c.numero)}</strong><br><span class="small muted">${ui.esc([c.tipo, c.imovel, c.resultado].join(' · '))}</span></div><span class="badge ${fila.has(c.operacaoId) ? '' : 'status-concluida'}">${fila.has(c.operacaoId) ? 'no celular' : 'enviada'}</span></li>`).join('')}</ul></section>`;
+  }
+  function iniciar(id) {
+    const o = obras().find(x => x.id === id); if (!o) return;
+    const l = local(), antes = l.sessao && l.sessao.obraId === o.id ? l.sessao : null;
+    l.sessao = {obraId: o.id, obra: o.nome, bairros: o.bairros || [], bairro: antes && antes.bairro || (o.bairros || [])[0] || '', rua: antes ? antes.rua : '', tipo: antes ? antes.tipo : 'Residencial', imovel: antes ? antes.imovel : 'Casa'};
+    salvarLocal(l); buscaObra = ''; desenhar();
+  }
+  /** Casa repetida: na lista do servidor ou ainda na fila do celular. */
+  function existente(obraId, rua, numero) {
+    if (!rua || !numero) return null; const k = chave(obraId, rua, numero);
+    return local().fila.find(c => chave(c.obraId, c.rua, c.numero) === k) || casasDaObra(obraId).find(c => chave(c.obraId, c.rua, c.numero) === k) || null;
+  }
+  function conferirDuplicada() {
+    const f = $('levForm'), box = $('levDup'), s = local().sessao; if (!f || !box || !s) return null;
+    const e = existente(s.obraId, f.elements.rua.value, f.elements.numero.value);
+    box.hidden = !e; f.querySelector('.lev-salvar').textContent = e ? 'Atualizar casa' : 'Salvar casa';
+    if (e) box.innerHTML = `<strong>Esta casa já está no levantamento</strong> (${ui.esc(e.resultado)}${e.nome ? ' · ' + ui.esc(e.nome) : ''}${e.visitadaEm ? ' · ' + ui.esc(quando(e.visitadaEm)) : ''}). Se o número está certo, salvar atualiza o que está lá; se não, corrija o número.`;
+    return e;
+  }
+  function salvarCasa(f) {
+    const l = local(), s = l.sessao; if (!s) return;
+    const v = n => String((f.elements[n] && f.elements[n].value) || '').trim(), marcado = n => { const x = f.querySelector(`[name=${n}]:checked`); return x ? x.value : ''; };
+    const erro = $('levErro'), falta = !v('rua') ? 'a rua' : !v('numero') ? 'o número' : !marcado('resultado') ? 'o resultado' : '';
+    if (falta) { erro.textContent = 'Falta ' + falta + '.'; erro.hidden = false; (falta === 'a rua' ? f.elements.rua : falta === 'o número' ? f.elements.numero : f.querySelector('[name=resultado]')).focus(); return; }
+    erro.hidden = true;
+    const dup = existente(s.obraId, v('rua'), v('numero'));
+    const casa = {operacaoId: novoId(), obraId: s.obraId, obra: s.obra, bairro: s.bairro, rua: v('rua'), numero: v('numero'), tipo: marcado('tipo') || 'Residencial', imovel: marcado('imovel') || 'Casa',
+      resultado: marcado('resultado'), observacao: v('observacao'), visitadaEm: new Date().toISOString(), atualizar: !!dup};
+    // Casa que ainda está na fila: troca na própria fila. Operação nova (se a antiga estiver indo agora, esta chega depois e atualiza).
+    const k = chave(casa.obraId, casa.rua, casa.numero), naFila = l.fila.findIndex(c => chave(c.obraId, c.rua, c.numero) === k);
+    if (naFila >= 0) { casa.atualizar = l.fila[naFila].atualizar || enviando; l.fila[naFila] = casa; } else l.fila.push(casa);
+    l.recentes = [casa].concat(l.recentes.filter(c => c.operacaoId !== casa.operacaoId && chave(c.obraId, c.rua, c.numero) !== k)).slice(0, RECENTES);
+    s.rua = casa.rua; s.tipo = casa.tipo; s.imovel = casa.imovel;
+    const guardou = salvarLocal(l);
+    ui.toast(dup ? 'Casa atualizada.' : guardou ? 'Casa guardada. Próxima!' : 'Casa guardada só nesta tela (o celular não deixou salvar). Não feche antes de enviar.');
+    f.elements.numero.value = ''; f.elements.observacao.value = ''; f.querySelectorAll('[name=resultado]').forEach(x => { x.checked = false; });
+    const det = f.querySelector('details'); if (det) det.open = false;
+    conferirDuplicada(); atualizarPartes(); f.elements.numero.focus();
+    agendarEnvio(1200);
+  }
+  function atualizarPartes() {
+    const l = local(), st = $('levStatus'); if (st) st.innerHTML = status(l);
+    ['lev-atencao', 'lev-recentes'].forEach(c => { const el = document.querySelector('#levCorpo .' + c); if (el) el.remove(); });
+    const corpo = $('levCorpo'); if (corpo && parte === 'campo') corpo.insertAdjacentHTML('beforeend', atencao(l) + (l.sessao ? recentes(l) : ''));
+  }
+
+  // ---------- Envio em lotes ----------
+  function agendarEnvio(ms) { clearTimeout(timer); timer = setTimeout(enviar, ms); }
+  async function enviar() {
+    if (enviando || !ui.state.perfil) return; const l = local(); if (!l.fila.length) return;
+    if (navigator.onLine === false) { atualizarPartes(); return; }
+    enviando = true; const lote = l.fila.slice(0, LOTE); atualizarPartes();
+    try {
+      const r = await ui.call('enviarLevantamentoCPT', {itens: lote.map(({obra, ...c}) => c)});
+      const m = local(), res = new Map(r.resultados.map(x => [x.operacaoId, x]));
+      m.fila = m.fila.filter(c => !res.has(c.operacaoId));
+      lote.forEach(c => { const x = res.get(c.operacaoId); if (!x) return;
+        if (x.casa) guardarNaLista(x.casa);
+        if (x.situacao === 'duplicada' || x.situacao === 'invalida') m.atencao = m.atencao.filter(a => a.operacaoId !== c.operacaoId).concat([{...c, situacao: x.situacao, mensagem: x.mensagem || '', existente: x.casa || null}]); });
+      salvarLocal(m); falhas = 0; ultimoErro = '';
+      if (r.duplicadas || r.invalidas) ui.toast((r.duplicadas + r.invalidas) + ' casa(s) precisam de você no levantamento.');
+      if (m.fila.length) agendarEnvio(300);
+    } catch (e) { falhas++; ultimoErro = navigator.onLine === false ? '' : e.message; agendarEnvio(Math.min(60000, 5000 * falhas)); }
+    finally { enviando = false; if (ui.state.route === 'levantamento') { atualizarPartes(); if (parte === 'resultados') desenhar(); } }
+  }
+  function guardarNaLista(casa) {
+    if (!dados) return; const k = chave(casa.obraId, casa.rua, casa.numero);
+    dados.itens = dados.itens.filter(c => chave(c.obraId, c.rua, c.numero) !== k).concat([casa]);
+  }
+
+  // ---------- Resultados ----------
+  function grupos(itens, campoChave, nomeDe) {
+    const m = new Map();
+    itens.forEach(c => { const k = campoChave(c); if (!m.has(k)) m.set(k, {nome: nomeDe(c), casas: 0, comunicado: 0, contato: 0, Residencial: 0, Comercial: 0, Outro: 0, ruas: new Set()});
+      const g = m.get(k); g.casas++; if (c.resultado === 'Comunicado') g.comunicado++; else g.contato++; g[c.tipo] = (g[c.tipo] || 0) + 1; g.ruas.add(norm(c.rua)); });
+    return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+  function selecao() {
+    const itens = (dados && dados.itens) || [], comCasas = [...new Map(itens.map(c => [c.obraId, c.obra])).entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+    if (verObra === null) { const s = local().sessao; verObra = s && comCasas.some(([id]) => id === s.obraId) ? s.obraId : ''; }
+    if (verObra && !comCasas.some(([id]) => id === verObra)) verObra = '';
+    return {itens: verObra ? itens.filter(c => c.obraId === verObra) : itens, comCasas};
+  }
+  function resultados() {
+    if (!dados) return '<p class="notice">Os resultados precisam de internet. Toque em Atualizar no topo quando a conexão voltar.</p>';
+    const {itens, comCasas} = selecao(), pend = local().fila.length;
+    if (!comCasas.length) return `<p class="empty-line">Nenhuma casa enviada ainda.${pend ? ' ' + pend + ' no celular aguardando envio.' : ''}</p>`;
+    const gs = verObra ? grupos(itens, c => norm(c.rua), c => c.rua) : grupos(itens, c => c.obraId, c => c.obra), contato = itens.filter(c => c.resultado !== 'Comunicado').length;
+    const tile = (r, v, n) => `<div class="stat-tile"><span class="stat-label">${r}</span><span class="stat-value">${ui.num(v)}</span>${n ? `<span class="stat-note">${n}</span>` : ''}</div>`;
+    const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '';
+    return `<div class="lev-ver"><label class="field">Ver<select id="levVer"><option value="">Todas as obras</option>${comCasas.map(([id, n]) => `<option value="${ui.esc(id)}" ${verObra === id ? 'selected' : ''}>${ui.esc(n)}</option>`).join('')}</select></label><button class="button" type="button" data-lev-xlsx>Baixar planilha (.xlsx)</button></div>
+      <div class="stat-row">${tile('Casas', itens.length)}${tile('Comunicado', itens.length - contato, pct(itens.length - contato, itens.length))}${tile('Contato com morador', contato, pct(contato, itens.length))}${verObra ? tile('Ruas', gs.length) : tile('Obras', gs.length)}</div>
+      ${pend ? `<p class="small muted">${pend} ${pend === 1 ? 'casa ainda está' : 'casas ainda estão'} no celular e entram aqui depois do envio.</p>` : ''}
+      <div class="panel lev-tabela"><table class="simple-table"><thead><tr><th>${verObra ? 'Rua' : 'Obra'}</th><th>Casas</th><th>Comunicado</th><th>Contato com morador</th>${verObra ? '<th>Residencial</th><th>Comercial</th><th>Outro</th>' : '<th>Ruas</th>'}</tr></thead>
+        <tbody>${gs.map(g => `<tr><td>${ui.esc(g.nome)}</td><td>${g.casas}</td><td>${g.comunicado}</td><td>${g.contato}</td>${verObra ? `<td>${g.Residencial}</td><td>${g.Comercial}</td><td>${g.Outro}</td>` : `<td>${g.ruas.size}</td>`}</tr>`).join('')}</tbody></table></div>`;
+  }
+  function baixarPlanilha() {
+    const {itens, comCasas} = selecao(), nomeObra = verObra ? (comCasas.find(([id]) => id === verObra) || [])[1] : 'Todas as obras';
+    const gs = verObra ? grupos(itens, c => norm(c.rua), c => c.rua) : grupos(itens, c => c.obraId, c => c.obra), hoje = new Date().toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo'});
+    const casas = itens.slice().sort((a, b) => (a.obra + '|' + a.rua).localeCompare(b.obra + '|' + b.rua, 'pt-BR') || String(a.numero).localeCompare(String(b.numero), 'pt-BR', {numeric: true}));
+    const resumo = {nome: verObra ? 'Por rua' : 'Por obra', titulo: 'Levantamento de traçado · ' + nomeObra, subtitulo: itens.length + ' casas · gerado em ' + hoje,
+      cab: verObra ? ['Rua', 'Casas', 'Comunicado', 'Contato com morador', 'Residencial', 'Comercial', 'Outro'] : ['Obra', 'Casas', 'Comunicado', 'Contato com morador', 'Ruas'],
+      linhas: gs.map(g => verObra ? [g.nome, g.casas, g.comunicado, g.contato, g.Residencial, g.Comercial, g.Outro] : [g.nome, g.casas, g.comunicado, g.contato, g.ruas.size]), larguras: verObra ? [40, 10, 14, 20, 13, 13, 10] : [48, 10, 14, 20, 10]};
+    const lista = {nome: 'Casas', titulo: 'Casas levantadas · ' + nomeObra, subtitulo: 'Uma linha por casa · horário de Brasília', cab: ['Obra', 'Bairro', 'Rua', 'Número', 'Tipo', 'Imóvel', 'Resultado', 'Observação', 'Visitada em', 'Quem levantou'],
+      linhas: casas.map(c => [c.obra, c.bairro, c.rua, c.numero, c.tipo, c.imovel, c.resultado, c.observacao, quando(c.visitadaEm), c.nome]), larguras: [34, 20, 32, 10, 13, 10, 20, 36, 16, 22]};
+    const arquivo = 'Levantamento_' + (verObra ? nomeObra : 'todas').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').slice(0, 40) + '.xlsx';
+    window.CPTAgenda.baixar(window.CPTAgenda.xlsxTabelas([resumo, lista]), arquivo); ui.toast('Planilha preparada: abas ' + resumo.nome + ' e Casas.');
+  }
+
+  // ---------- Eventos ----------
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', e => {
+      if (ui.state.route !== 'levantamento') return;
+      const t = e.target.closest('[data-lev-parte],[data-lev-obra],[data-lev-trocar],[data-lev-enviar],[data-lev-atualizar],[data-lev-descartar],[data-lev-xlsx]'); if (!t) return;
+      if (t.dataset.levParte) { parte = t.dataset.levParte; desenhar(); return; }
+      if (t.dataset.levObra) { iniciar(t.dataset.levObra); return; }
+      if (t.hasAttribute('data-lev-trocar')) { const l = local(); delete l.sessao; salvarLocal(l); desenhar(); const b = $('levBusca'); if (b) b.focus(); return; }
+      if (t.hasAttribute('data-lev-enviar')) { falhas = 0; agendarEnvio(0); return; }
+      if (t.hasAttribute('data-lev-xlsx')) { baixarPlanilha(); return; }
+      const id = t.dataset.levAtualizar || t.dataset.levDescartar, l = local(), c = l.atencao.find(x => x.operacaoId === id); if (!c) return;
+      l.atencao = l.atencao.filter(x => x.operacaoId !== id);
+      if (t.dataset.levAtualizar) { const {situacao, mensagem, existente: _e, ...casa} = c; l.fila.push({...casa, atualizar: true}); agendarEnvio(300); }
+      salvarLocal(l); atualizarPartes();
+    });
+    document.addEventListener('input', e => {
+      if (ui.state.route !== 'levantamento') return;
+      if (e.target.id === 'levBusca') { buscaObra = e.target.value; const pos = e.target.selectionStart; desenhar(); const b = $('levBusca'); if (b) { b.focus(); b.setSelectionRange(pos, pos); } return; }
+      if (e.target.closest('#levForm') && ['rua', 'numero'].includes(e.target.name)) conferirDuplicada();
+    });
+    document.addEventListener('change', e => {
+      if (ui.state.route !== 'levantamento') return;
+      if (e.target.name === 'levBairro') { const l = local(); if (l.sessao) { l.sessao.bairro = e.target.value; salvarLocal(l); } return; }
+      if (e.target.id === 'levVer') { verObra = e.target.value; desenhar(); }
+    });
+    document.addEventListener('submit', e => { if (e.target.id !== 'levForm') return; e.preventDefault(); salvarCasa(e.target); });
+    // Envio sozinho: quando a internet volta, quando a tela volta a aparecer e logo depois de abrir (se ficou casa no celular).
+    window.addEventListener('online', () => { falhas = 0; agendarEnvio(500); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil && local().fila.length) agendarEnvio(800); });
+    (function aoAbrir(n) { if (!ui.state.perfil) { if (n < 30) setTimeout(() => aoAbrir(n + 1), 2000); return; } if (local().fila.length) agendarEnvio(1500); })(0);
+  }
+  return {init, render, enviar};
+})();
+</script>
