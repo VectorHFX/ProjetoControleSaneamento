@@ -6,7 +6,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const p=await b.newPage({viewport:{width:1366,height:900},acceptDownloads:true});const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
   await p.route(/fonts\.(googleapis|gstatic)\.com/,r=>r.abort());
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q,foto=async n=>{if(process.env.FOTOS)await p.screenshot({path:path.join(process.env.FOTOS,n+'.png'),fullPage:false});};
-  const abrir=async()=>{await p.evaluate(()=>{const g=document.querySelector('.nav-group[data-grupo=extras] .nav-group-head');if(g&&g.getAttribute('aria-expanded')==='false')g.click();});await p.locator('.nav-item[data-route=organograma]').click();await p.locator('#orgQuadro svg, .org-painel .empty').first().waitFor();};
+  const abrir=async()=>{/* o menu ajusta os grupos quando o perfil chega: abre o grupo até o item aparecer */await p.waitForFunction(()=>{const g=document.querySelector('.nav-group[data-grupo=extras] .nav-group-head'),it=document.querySelector('.nav-item[data-route=organograma]');if(g&&g.getAttribute('aria-expanded')==='false')g.click();return !!(it&&it.offsetParent);});await p.locator('.nav-item[data-route=organograma]').click();await p.locator('#orgQuadro svg, .org-painel .empty').first().waitFor();};
   // 1. Equipe: nos testes, a página é só do proprietário (como o Álbum e o Mapa).
   await p.goto(url('?perfil=atendimento&latencia=20'));await p.locator('#navigation .nav-item').first().waitFor({state:'attached'});
   assert.equal(await p.locator('.nav-item[data-route=organograma]').isHidden(),true,'equipe não vê a página nos testes');

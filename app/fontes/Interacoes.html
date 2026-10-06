@@ -31,8 +31,9 @@
   const ROTAS={
     // 2.29: menu novo — Meu espaço, Visão do mês (com o Cronograma dentro), Atendimentos; Ferramentas; Ferramentas extras; Administração; Como usar.
     meuespaco:{titulo:'Meu espaço',icone:'i-star',grupo:'dia',abrir:()=>window.CPTEspaco.render(),atualizar:()=>window.CPTEspaco.render(true),aoSair:()=>window.CPTEspaco.sair()},
-    recados:{titulo:'Recados',icone:'i-message',grupo:'dia',abrir:()=>window.CPTRecados.render(),atualizar:()=>window.CPTRecados.render()},
-    lembretes:{titulo:'Lembretes',icone:'i-bell',grupo:'dia',acesso:['administrador',...MESA],visoes:MESA,abrir:()=>window.CPTComunicacao.render(),atualizar:()=>window.CPTComunicacao.atualizar()},
+    // 2.30: Recados e Lembretes moram no Meu espaço; os endereços antigos (atalhos, missões, Ctrl K) levam para lá.
+    recados:{titulo:'Recados',menu:'meuespaco',abrir:()=>{window.CPTEspaco.irParte('recados');navigate('meuespaco');}},
+    lembretes:{titulo:'Lembretes',menu:'meuespaco',abrir:()=>{window.CPTEspaco.irParte('dia');navigate('meuespaco');}},
     inicio:{titulo:'Visão do mês',icone:'i-home',grupo:'dia',abrir:()=>renderHome(),atualizar:()=>{window.CPTInicio.prefetchAgenda(state.mes);loadHome(true);}},
     painel:{titulo:'Visão do mês',icone:'i-chart',menu:'inicio',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderPainel(),atualizar:()=>window.CPTGestao.renderPainel(true),mes:()=>window.CPTGestao.renderPainel()},
     cronograma:{titulo:'Cronograma',icone:'i-calendar',menu:'inicio',abrir:()=>window.CPTAgenda.render(),atualizar:()=>window.CPTAgenda.render(),mes:()=>window.CPTAgenda.render()},
@@ -136,8 +137,8 @@
       const temAtual=itens.some(b=>b.dataset.route===state.route&&!b.hidden);abrirGrupo(k,temAtual||(k in pref?!!pref[k]:!GESTAO.includes(visao())),false);});}
   document.addEventListener('click',e=>{const h=e.target.closest('.nav-group-head');if(!h)return;const g=h.closest('.nav-group');abrirGrupo(g.dataset.grupo,g.classList.contains('is-closed'),true);});
   // Barra de atalhos do celular: as 4 páginas mais usadas de cada cargo + Menu.
-  const ATALHOS={atendimento:['meuespaco','atendimentos','inicio','recados'],socioambiental:['meuespaco','registros','inicio','recados'],comunicacao:['meuespaco','galeria','inicio','recados'],
-    comercializacao:['meuespaco','obras','inicio','recados'],gestao:['inicio','atendimentos','meuespaco','recados'],administrativo:['inicio','atendimentos','meuespaco','recados']};
+  const ATALHOS={atendimento:['meuespaco','atendimentos','inicio','contatos'],socioambiental:['meuespaco','registros','inicio','galeria'],comunicacao:['meuespaco','galeria','inicio','materiais'],
+    comercializacao:['meuespaco','obras','inicio','contatos'],gestao:['inicio','atendimentos','meuespaco','registros'],administrativo:['inicio','atendimentos','meuespaco','registros']};
   function montarTabbar(){const bar=$('tabbar');if(!bar)return;const vis=[...document.querySelectorAll('#navigation .nav-item')].filter(b=>!b.hidden),por=new Map(vis.map(b=>[b.dataset.route,b]));
     const rotas=(ATALHOS[visao()]||[]).filter(r=>por.has(r));vis.forEach(b=>{if(rotas.length<4&&!rotas.includes(b.dataset.route))rotas.push(b.dataset.route);});
     bar.innerHTML=rotas.slice(0,4).map(r=>{const b=por.get(r),uso=b.querySelector('use'),nome=b.querySelector('span').textContent;return `<button class="tab-item${state.route===r?' active':''}" data-route="${esc(r)}"${state.route===r?' aria-current="page"':''}><svg class="icon" aria-hidden="true"><use href="${esc(uso?uso.getAttribute('href'):'#i-home')}"/></svg><span>${esc(nome)}</span></button>`;}).join('')+
@@ -274,7 +275,7 @@
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTInicio)throw new Error('Componentes Inicio.html ou Obras.html ausentes. Confira os arquivos da versão 2.29.0.');
+  if(!window.CPTObras||!window.CPTInicio)throw new Error('Componentes Inicio.html ou Obras.html ausentes. Confira os arquivos da versão 2.30.0.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});

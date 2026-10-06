@@ -43,7 +43,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Registro único (ROTAS): toda página do menu abre, com o título do registro e sem erro (quem tem todos os cargos).
   for(const g of ['extras','admin'])if(await fechado(g))await p.locator('.nav-group[data-grupo='+g+'] .nav-group-head').click();
   const rotas=await p.$$eval('#navigation .nav-item',l=>l.filter(x=>!x.hidden).map(x=>[x.dataset.route,x.querySelector('span').textContent]));
-  assert.equal(rotas.length,16,'menu completo do proprietário (2.29: sem Álbum e Comunicação; com Galeria, Materiais e Conectores): '+rotas.length);
+  assert.equal(rotas.length,14,'menu completo do proprietário (2.30: Recados e Lembretes dentro do Meu espaço): '+rotas.length);
   for(const [r,titulo] of rotas){await p.locator('.nav-item[data-route='+r+']').click();await p.waitForFunction(r=>document.querySelector('.nav-item.active')?.dataset.route===r,r);
     assert.equal(await p.locator('#pageLabel').textContent(),titulo,'título de '+r);await p.waitForTimeout(250);}
   assert.deepEqual(errors,[],'nenhuma página com erro');
@@ -52,7 +52,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await fechado('extras'),false);
   // Socioambiental (não é gestão): grupos abertos — as páginas de consulta (Registros) não ficam escondidas.
   await p.evaluate(()=>localStorage.removeItem('cpt.menu'));await p.goto(url('?perfil=socioambiental&latencia=20'));await p.locator('.nav-item[data-route=registros]').waitFor({state:'attached'});
-  assert.equal(await p.locator('.nav-item[data-route=socioambiental]').count(),0,'Mesa do relatório saiu');assert.equal(await p.locator('.nav-item[data-route=registros]').isVisible(),true);
+  assert.equal(await p.locator('.nav-item[data-route=socioambiental]').count(),0,'Mesa do relatório saiu');await p.locator('.nav-item[data-route=registros]').waitFor({state:'visible'});/* espera o menu aplicar o perfil (com a máquina ocupada ele chega depois) */
   // Celular: sem rolagem lateral, busca vira ícone.
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(300);assert(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral');
   await p.locator('#searchOpen').click();await p.locator('#searchDialog[open]').waitFor();await p.keyboard.press('Escape');

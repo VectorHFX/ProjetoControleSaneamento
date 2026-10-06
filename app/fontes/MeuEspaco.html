@@ -152,6 +152,7 @@ window.CPTEspaco = (() => {
   // 2.26.1: o mesmo tamanho do primeiro desenho (o visual novo usa 330); antes o humor redesenhava com 220 e o mascote encolhia.
   const tamanhoHeroi = () => (window.CPTVisual && window.CPTVisual.ativo()) ? 330 : 220;
   function comemorar() { comemorarAte = Date.now() + 3200; atualizarHumor(); setTimeout(atualizarHumor, 3300); }
+  const hojeISO = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
   const dataLonga = x => new Date(x + 'T12:00:00Z').toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'});
   const somaDias = (x, n) => { const t = new Date(x + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
   const dialogo = (tipo, titulo, html) => { $('detailType').textContent = tipo; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); };
@@ -206,11 +207,23 @@ window.CPTEspaco = (() => {
     atendimento: ['Ver casos em aberto', 'atendimentos', 'abertos'], socioambiental: ['Ver os relatos do mês', 'registros', 'relatos'], comunicacao: ['Ver os materiais', 'materiais', ''],
     comercializacao: ['Ver obras e endereços', 'obras', ''], gestao: ['Abrir a Visão do mês', 'inicio', ''], administrativo: ['Abrir a Visão do mês', 'inicio', '']};
 
+  /**
+   * 2.30: ao voltar para o Meu espaço, a última versão aparece na hora e a atualização chega por trás.
+   * Se nada mudou, a tela fica como está; se a pessoa já está digitando, só o checklist e os recados são trocados.
+   */
   async function render(manterDia) {
     const mine = ++ticket; if (!manterDia) dia = null;
-    if (!d) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
-    try { const r = await ui.call('carregarMeuEspacoCPT', {data: dia || undefined}); if (mine !== ticket || ui.state.route !== 'meuespaco') return; d = r; dia = r.data; desenhar(); }
-    catch (e) { if (mine === ticket) ui.view.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+    const deCache = !manterDia && d && d.perfil && d.data === d.hoje && d.hoje === hojeISO();
+    if (deCache) { dia = d.data; desenhar(); }
+    else if (!d) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
+    try {
+      const r = await ui.call('carregarMeuEspacoCPT', {data: dia || undefined}); if (mine !== ticket || ui.state.route !== 'meuespaco') return;
+      if (d && d.missoes && r.data === d.data) r.missoes = d.missoes; // as missões chegam por outra consulta: continuam valendo
+      if (deCache && JSON.stringify(r) === JSON.stringify(d)) return;
+      const digitando = deCache && document.activeElement && ui.view.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+      d = r; dia = r.data;
+      if (digitando) { desenharLista(); desenharNovosRecados(); mostrarPontos(d.pontos.saldo, false); } else desenhar();
+    } catch (e) { if (mine === ticket && !deCache) ui.view.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
   function desenhar() {
     if (!d.perfil) { boasVindas(); return; }
@@ -221,27 +234,28 @@ window.CPTEspaco = (() => {
     const chip = (icone, texto, extra) => `<span class="home-chip" ${extra || ''}>${icone}<span>${texto}</span></span>`;
     // 2.27.1: menos rolagem — o dia (agenda, checklist, caderno) numa aba; quiz e joguinhos/placar em outras.
     const saberHtml = d.saber && window.CPTSaber ? window.CPTSaber.painel(d.saber) : '', jogosHtml = (d.jogos && window.CPTJogos ? window.CPTJogos.painel(d.jogos) : '') + (d.placar && window.CPTPlacar ? window.CPTPlacar.painel(d.placar) : '');
-    const extras = [['saber', 'Quiz e saber', saberHtml], ['jogos', d.jogos ? 'Jogos e placar' : 'Placar', jogosHtml]].filter(x => x[2]);
+    const extras = [['saber', 'Quiz', saberHtml], ['jogos', d.jogos ? 'Jogos' : 'Placar', jogosHtml]].filter(x => x[2]);
     const quizAberto = !!(d.saber && d.saber.quiz && d.saber.quiz.dia && !d.saber.quiz.dia.resposta);
-    if (!extras.some(x => x[0] === parte)) parte = 'dia';
+    if (parte !== 'recados' && !extras.some(x => x[0] === parte)) parte = 'dia';
     const v3 = !!(window.CPTVisual && window.CPTVisual.ativo()); // 2.24: visual novo — o mascote na recepção (parede ripada, plantas, luminárias)
-    ui.view.innerHTML = `<section class="space-hero mascot-stage${v3 ? ' v3-cena-host com-quadro' : ''}">${v3 ? window.CPTVisual.cena() : CENA}
+    ui.view.innerHTML = `<section class="space-hero mascot-stage${v3 ? ' v3-cena-host com-quadro' : ''}">${v3 ? window.CPTVisual.cena() + '<span class="folhas-caindo" aria-hidden="true"><i></i><i></i><i></i></span>' : CENA}
         <div class="hero-pet">${v3 ? quadro() : ''}<div class="mascot-art">${desenho(m, tamanhoHeroi(), humor())}</div>
           <div class="pet-plate"><h2 class="mascot-name">${ui.esc(m.nome)} <button class="link-button" data-esp-nomear aria-label="Mudar o nome">mudar nome</button></h2><p class="small">${ui.esc(d.especies[m.especie])} de ${ui.esc(nome || 'você')}</p></div></div>
         <div class="hero-copy"><span class="hero-date">${ui.esc(dataLonga(d.hoje))}</span><h1 class="hero-title">${saudacao}${nome ? ', ' + ui.esc(nome) : ''}!</h1>
           <p class="hero-sub">${ui.esc(m.nome)} está torcendo por você hoje.</p>${d.saber && window.CPTSaber ? window.CPTSaber.balao(d.saber) : ''}
-          <div class="home-chips">${tr.recados ? `<button class="home-chip is-alert" data-route="recados">${ic('message', '💬')}<span>${tr.recados} ${tr.recados === 1 ? 'recado novo' : 'recados novos'}</span></button>` : ''}${tr.lembretes ? chip(ic('bell', '🔔'), tr.lembretes + ' ' + (tr.lembretes === 1 ? 'lembrete para hoje' : 'lembretes para hoje')) : ''}
+          <div class="home-chips">${tr.recados ? `<button class="home-chip is-alert" data-esp-parte="recados">${ic('message', '💬')}<span>${tr.recados} ${tr.recados === 1 ? 'recado novo' : 'recados novos'}</span></button>` : ''}${tr.lembretes ? chip(ic('bell', '🔔'), tr.lembretes + ' ' + (tr.lembretes === 1 ? 'tarefa recebida para hoje' : 'tarefas recebidas para hoje')) : ''}
             ${chip(ic('star', '⭐'), `<strong id="espPontos">${ui.num(d.pontos.saldo)}</strong> pontos`, 'title="Pontos do checklist' + (d.saber ? ' e do quiz' : '') + '"')}${chip(ic('book', '📓'), `<strong id="espDias">${cad.dias}</strong> ${cad.dias === 1 ? 'dia' : 'dias'} no caderno`, 'title="Dias com anotação no caderno"')}</div>
           <div class="quick-actions">${ui.podeVer(t[1]) ? `<button class="button" data-route="${t[1]}" ${t[2] ? `data-filter="${t[2]}"` : ''}>${t[0]} ${ui.icon('arrow')}</button>` : ''}<button class="button secondary" data-route="inicio">Números do mês</button></div>
           ${d.pendentes.length ? `<button class="gift" data-esp-presente>${ic('gift', '🎁')} <span>${d.pendentes.length === 1 ? ui.esc(d.pendentes[0].titulo) : d.pendentes.length + ' presentes'} esperando por você</span></button>` : ''}
           <div class="pet-tools"><button class="pill-button" data-esp-guarda>${ic('shirt', '👕')} Guarda-roupa</button><button class="pill-button" data-esp-cor>${ic('palette', '🎨')} Cor</button>${d.perfil.mascotes.length > 1 ? `<button class="pill-button" data-esp-trocar>${ic('swap', '🔁')} Trocar mascote</button>` : ''}
             <span class="pet-meter"><span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${cad.porPeca}" aria-valuenow="${cad.porPeca - faltam}" aria-label="Caderno até a próxima peça"><span style="width:${(cad.porPeca - faltam) / cad.porPeca * 100}%"></span></span><small>${faltam} ${faltam === 1 ? 'dia' : 'dias'} de caderno para a próxima peça</small></span></div></div></section>
       ${abasEspaco(extras, quizAberto)}
-      <div class="home-cards" id="espParte-dia" ${extras.length && parte !== 'dia' ? 'hidden' : ''}>
+      <div class="home-cards" id="espParte-dia" ${parte !== 'dia' ? 'hidden' : ''}>
+        <div id="espNovosRecados" class="home-novos-recados-host"></div>
         <section class="panel home-agenda"><div class="panel-head"><div><span class="card-kicker">${ic('calendar', '📅')} Agenda</span><h2>Hoje na agenda</h2></div>${ui.podeVer('cronograma') ? '<button class="button ghost" data-route="cronograma">Abrir cronograma ' + ui.icon('arrow') + '</button>' : ''}</div><div id="espAgenda" aria-live="polite"><div class="skel-list" aria-hidden="true"><div class="skeleton"></div></div></div></section>
         <section class="panel home-check"><div class="day-nav"><button class="icon-button" data-esp-dia="-1" aria-label="Dia anterior">‹</button><div><span class="eyebrow">${dia === d.hoje ? 'HOJE' : dia > d.hoje ? 'PLANEJAMENTO' : 'DIA ANTERIOR'}</span><h2>${ui.esc(dataLonga(dia))}</h2></div><button class="icon-button" data-esp-dia="1" aria-label="Próximo dia">›</button>${dia !== d.hoje ? '<button class="button ghost" data-esp-dia="0">Voltar para hoje</button>' : ''}</div>
           ${dia === d.hoje ? '<div id="espMissoes"></div>' : ''}<h3 class="peek-title">${ic('check', '✅')} Checklist</h3><div id="espLista"></div>
-          <form id="espNova" class="inline-add"><input name="texto" maxlength="200" placeholder="${dia > d.hoje ? 'Planejar uma tarefa para este dia' : 'Nova tarefa para hoje'}" aria-label="Nova tarefa" autocomplete="off"><button class="button" type="submit">${ui.icon('plus')}Adicionar</button></form>
+          <form id="espNova" class="inline-add"><input name="texto" maxlength="200" placeholder="${dia > d.hoje ? 'Planejar uma tarefa para este dia' : 'Nova tarefa para hoje'}" aria-label="Nova tarefa" autocomplete="off"><select name="para" class="task-para" aria-label="Para quem">${opcoesPara()}</select><button class="button" type="submit">${ui.icon('plus')}Adicionar</button></form>
           <p class="small muted">Cada tarefa feita vale ${d.regras.pontosPorTarefa} pontos (até ${d.regras.tarefasPorDia} por dia).${d.proximos.length ? ' Planejado: ' + d.proximos.map(p => `<button class="link-button" data-esp-ir="${p.data}">${ui.date(p.data)} (${p.pendentes})</button>`).join(' ') : ''}</p></section>
         <section class="panel home-notebook ${v3 ? 'caderno' : ''}">${v3 ? `<div class="caderno-capa" aria-hidden="true"><span class="caderno-etiqueta">Caderno de ${ui.esc(nome || 'você')}</span><span class="caderno-elastico"></span></div>` : ''}
           <div class="caderno-folha"><div class="panel-head"><div><span class="card-kicker">${ic('lock', '📓')} Só você lê</span><h2>Meu caderno</h2></div><span id="espNotaEstado" class="small muted" aria-live="polite"></span></div>
@@ -250,19 +264,35 @@ window.CPTEspaco = (() => {
           ${v3 ? `<p class="caderno-rodape small muted">Cada dia fica guardado na sua página: ${ui.num(cad.dias)} ${cad.dias === 1 ? 'dia escrito' : 'dias escritos'}. Para reler, abra "Dias anteriores" ou volte o dia no checklist.</p>` : ''}
           ${cad.recentes.length ? `<details class="notebook-past"><summary>Dias anteriores</summary>${cad.recentes.map(r => `<button class="mini-row" data-esp-ir="${r.data}"><strong>${ui.date(r.data)}</strong><small>${ui.esc(r.trecho)}</small></button>`).join('')}</details>` : ''}</div></section>
       </div>
+      <div class="home-cards" id="espParte-recados" ${parte === 'recados' ? '' : 'hidden'}><section class="panel home-recados"><div class="panel-head"><div><span class="card-kicker">${ic('message', '💬')} Recados</span><h2>Para avisar e combinar</h2></div></div><div id="espRecados"></div></section></div>
       ${extras.map(([k, , html]) => `<div class="home-cards" id="espParte-${k}" ${parte === k ? '' : 'hidden'}>${html}</div>`).join('')}`;
-    desenharLista(); recuperarNota(); desenharAgendaHoje(); carregarMissoes(); abrirCaderno();
+    desenharLista(); desenharNovosRecados(); recuperarNota(); desenharAgendaHoje(); carregarMissoes(); abrirCaderno();
+    if (parte === 'recados' && window.CPTRecados) window.CPTRecados.embutir($('espRecados'));
   }
-  /** Abas do Meu espaço (só quando há quiz, joguinhos ou placar). A escolha fica guardada neste navegador. */
+  /** Abas do Meu espaço: Meu dia · Recados (2.30) · Quiz · Jogos. A escolha fica guardada neste navegador. */
   function abasEspaco(extras, quizAberto) {
-    if (!extras.length) return '';
-    const partes = [['dia', 'Meu dia']].concat(extras);
-    return `<div class="segmented esp-tabs" role="tablist" aria-label="Partes do Meu espaço">${partes.map(([k, t]) => `<button type="button" role="tab" id="espTab-${k}" aria-controls="espParte-${k}" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-esp-parte="${k}">${ui.esc(t)}${k === 'saber' && quizAberto ? '<i class="tab-dot" title="Pergunta do dia esperando"></i>' : ''}</button>`).join('')}</div>`;
+    const n = (d.recados || {}).total || 0, partes = [['dia', 'Meu dia'], ['recados', 'Recados']].concat(extras);
+    return `<div class="segmented esp-tabs" role="tablist" aria-label="Partes do Meu espaço">${partes.map(([k, t]) => `<button type="button" role="tab" id="espTab-${k}" aria-controls="espParte-${k}" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-esp-parte="${k}">${ui.esc(t)}${k === 'saber' && quizAberto ? '<i class="tab-dot" title="Pergunta do dia esperando"></i>' : ''}${k === 'recados' && n ? `<span class="tab-count" aria-label="${n} ${n === 1 ? 'novo' : 'novos'}">${n}</span>` : ''}</button>`).join('')}</div>`;
   }
   function trocarParte(k) {
     parte = k; store.set('cpt.espaco.parte', k);
     document.querySelectorAll('[data-esp-parte]').forEach(b => { const on = b.dataset.espParte === k; b.classList.toggle('chosen', on); b.setAttribute('aria-selected', on); });
-    document.querySelectorAll('[id^="espParte-"]').forEach(p => { p.hidden = p.id !== 'espParte-' + k; });
+    document.querySelectorAll('[id^="espParte-"]').forEach(p => { p.hidden = p.id !== 'espParte-' + k; if (!p.hidden) { p.classList.remove('acabou-de-abrir'); void p.offsetWidth; p.classList.add('acabou-de-abrir'); } });
+    if (k === 'recados' && window.CPTRecados && $('espRecados')) window.CPTRecados.embutir($('espRecados'));
+  }
+  /** Recados novos no topo do "Meu dia": só aparece quando chegou algo. */
+  function desenharNovosRecados() {
+    const box = $('espNovosRecados'); if (!box) return; const r = d.recados || {novos: [], total: 0};
+    const quando = iso => new Date(iso).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'});
+    box.innerHTML = r.novos.length ? `<section class="panel home-novos-recados"><div class="panel-head"><div><span class="card-kicker">${ic('message', '💬')} Chegou recado</span><h2>${r.total === 1 ? '1 recado novo' : r.total + ' recados novos'}</h2></div><button class="button ghost" data-esp-parte="recados">Ver todos ${ui.icon('arrow')}</button></div>
+      <ul class="novos-recados">${r.novos.map(x => `<li><button type="button" class="novo-recado" data-esp-recado="${ui.esc(x.id)}">${x.importante ? '<span class="tag-important">Importante</span>' : ''}<strong>${ui.esc(x.assunto)}</strong><small>De ${ui.esc(x.nomeAutor || x.criadoPor)} · ${ui.esc(quando(x.atualizadoEm))}</small></button></li>`).join('')}</ul></section>` : '';
+  }
+  /** Recado lido, respondido ou resolvido (em qualquer lugar): sai da lista dos novos. */
+  function recadoMudou(x) {
+    if (!d || !d.recados || !x || !x.paraMim) return;
+    const era = d.recados.novos.some(y => y.id === x.id), novo = !x.lido && x.situacao !== 'resolvido';
+    if (era && !novo) { d.recados.novos = d.recados.novos.filter(y => y.id !== x.id); d.recados.total = Math.max(0, d.recados.total - 1); if (d.trabalho) d.trabalho.recados = d.recados.total; desenharNovosRecados();
+      const c = document.querySelector('#espTab-recados .tab-count'); if (c) { if (d.recados.total) c.textContent = d.recados.total; else c.remove(); } }
   }
   /** Capa que abre na primeira vez; trocar de dia vira a página. Sem animação com "Reduzir movimentos". */
   function abrirCaderno() {
@@ -349,15 +379,51 @@ window.CPTEspaco = (() => {
     if (dia !== d.hoje) return; const mine = ++missoesTicket;
     try { const r = await ui.call('missoesCPT'); if (mine !== missoesTicket || !d) return; d.missoes = r.missoes || []; desenharMissoes(); atualizarHumor(); } catch (_) {}
   }
+  /**
+   * Checklist do dia: as minhas tarefas e as tarefas recebidas (lembretes "para quem", 2.30).
+   * Recebida ainda não marcada aparece com "de Fulana"; ao marcar, entra na minha lista (pontua) e o lembrete fica feito.
+   * As que eu passei para alguém aparecem com "para Paula", só para acompanhar.
+   */
   function desenharLista() {
     desenharMissoes();
-    const box = $('espLista'); if (!box) return; const itens = d.lista.itens.filter(t => !t.removido);
-    box.innerHTML = itens.length ? `<ul class="check-list">${itens.map(t => `<li class="${t.feito ? 'is-done' : ''}"><label><input type="checkbox" data-esp-check="${ui.esc(t.id)}" ${t.feito ? 'checked' : ''}><span>${ui.esc(t.texto)}</span></label>${t.pontuado ? '<span class="pts" title="Já pontuou">' + ic('star', '⭐') + '</span>' : ''}<button class="icon-button small-x" data-esp-apagar="${ui.esc(t.id)}" aria-label="Apagar tarefa">×</button></li>`).join('')}</ul>` : `<p class="empty-line">${dia > d.hoje ? 'Nada planejado ainda.' : 'Nenhuma tarefa ainda. Que tal anotar a primeira?'}</p>`;
+    const box = $('espLista'); if (!box) return; const itens = d.lista.itens.filter(t => !t.removido), lems = d.lembretes || [];
+    const porLem = new Map(lems.map(l => [l.id, l])), naLista = new Set(itens.map(t => t.lembrete).filter(Boolean));
+    const etiqueta = l => !l ? '' : l.para ? `<span class="task-tag is-para">para ${ui.esc(l.para)}</span>` : l.de ? `<span class="task-tag">de ${ui.esc(l.de)}</span>` : '';
+    const minhas = itens.map(t => `<li class="${t.feito ? 'is-done' : ''}"><label><input type="checkbox" data-esp-check="${ui.esc(t.id)}" ${t.feito ? 'checked' : ''}><span>${ui.esc(t.texto)}</span></label>${etiqueta(porLem.get(t.lembrete))}${t.pontuado ? '<span class="pts" title="Já pontuou">' + ic('star', '⭐') + '</span>' : ''}<button class="icon-button small-x" data-esp-apagar="${ui.esc(t.id)}" aria-label="Apagar tarefa">×</button></li>`);
+    const recebidas = lems.filter(l => !naLista.has(l.id)).map(l => {
+      const travada = !!l.para || (l.feito && !l.meu), feitoPor = l.feito ? (l.meu ? 'feito' : 'feito por ' + l.feitoPor) : '';
+      return `<li class="is-recebida ${l.feito ? 'is-done' : ''} ${l.atrasado ? 'is-late' : ''}"><label><input type="checkbox" data-esp-lem="${ui.esc(l.id)}" ${l.feito ? 'checked' : ''} ${travada ? 'disabled' : ''}><span>${ui.esc(l.titulo)}</span></label>${etiqueta(l)}${l.atrasado ? `<span class="task-tag is-late">desde ${ui.date(l.data)}</span>` : ''}${feitoPor ? `<span class="task-tag is-done">${ui.esc(feitoPor)}</span>` : ''}</li>`;
+    });
+    const linhas = recebidas.concat(minhas);
+    box.innerHTML = linhas.length ? `<ul class="check-list">${linhas.join('')}</ul>` : `<p class="empty-line">${dia > d.hoje ? 'Nada planejado ainda.' : 'Nenhuma tarefa ainda. Que tal anotar a primeira?'}</p>`;
+  }
+  /** 2.30: uma folhinha sobe da caixinha marcada (fora da lista, para não sumir quando ela é redesenhada). */
+  function folhinha(el) {
+    if (!(window.CPTVisual && window.CPTVisual.ativo()) || window.CPTVisual.calmo()) return;
+    const r = el.getBoundingClientRect(), f = document.createElement('span'); f.className = 'folhinha-voa'; f.setAttribute('aria-hidden', 'true');
+    f.style.left = Math.round(r.left + r.width / 2 - 6) + 'px'; f.style.top = Math.round(r.top + r.height / 2 - 6) + 'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 950);
+  }
+  /** "Para quem" da tarefa nova: eu, uma frente ou uma pessoa da equipe. */
+  function opcoesPara() {
+    const NOMES = {atendimento: 'Atendimento', socioambiental: 'Socioambiental', comunicacao: 'Comunicação', comercializacao: 'Comercialização', gestao: 'Gestão', administrativo: 'Administrativo'};
+    const eu = (ui.state.perfil || {}).email, pessoas = (d.pessoas || []).filter(p => p.email !== eu);
+    return `<option value="">Para mim</option><optgroup label="Para uma frente">${Object.entries(NOMES).map(([k, n]) => `<option value="frente:${k}">${n}</option>`).join('')}</optgroup>${pessoas.length ? `<optgroup label="Para uma pessoa">${pessoas.map(p => `<option value="pessoa:${ui.esc(p.email)}">${ui.esc(p.nome)}</option>`).join('')}</optgroup>` : ''}`;
+  }
+  /** Tarefa para outra pessoa ou frente: vira um lembrete no dia que está aberto. */
+  async function passarTarefa(texto, para, form) {
+    const [tipo, valor] = para.split(':'), b = form.querySelector('[type=submit]');
+    const dados = {titulo: texto, data: dia, responsavel: tipo === 'pessoa' ? valor : '', frentes: tipo === 'frente' ? [valor] : []};
+    b.disabled = true;
+    try {
+      const r = await ui.call('salvarLembreteCPT', {...dados, operacaoId: op()}); ui.toast(r.resultado); form.reset();
+      const nome = tipo === 'pessoa' ? ((d.pessoas || []).find(p => p.email === valor) || {nome: valor}).nome : form.querySelector(`option[value="${para}"]`).textContent;
+      (d.lembretes = d.lembretes || []).push({id: r.lembrete.id, titulo: r.lembrete.titulo, data: r.lembrete.data, feito: false, para: nome, de: ''}); desenharLista();
+    } catch (e) { ui.toast(e.message); } finally { b.disabled = false; }
   }
   function salvarLista() {
-    const pedido = {data: dia, itens: d.lista.itens.filter(t => !t.removido).map(({id, texto, feito}) => ({id, texto, feito}))};
+    const pedido = {data: dia, itens: d.lista.itens.filter(t => !t.removido).map(({id, texto, feito, lembrete}) => lembrete ? {id, texto, feito, lembrete} : {id, texto, feito})};
     fila = fila.then(async () => {
-      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; desenharLista(); } d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, /pontos!/.test(r.resultado)); if (/pontos!/.test(r.resultado)) { ui.toast(r.resultado); comemorar(); } else atualizarHumor(); }
+      try { const r = await ui.call('salvarChecklistCPT', {...pedido, versao: d.lista.versao, operacaoId: op()}); if (r.lista.data === dia) { d.lista = r.lista; if (r.lembretes) d.lembretes = r.lembretes; desenharLista(); } d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, /pontos!/.test(r.resultado)); if (/pontos!/.test(r.resultado)) { ui.toast(r.resultado); comemorar(); } else atualizarHumor(); }
       catch (e) { ui.toast('Checklist não salvou: ' + e.message); render(true); }
     });
   }
@@ -409,6 +475,7 @@ window.CPTEspaco = (() => {
   }
   function init(api) {
     ui = api;
+    document.addEventListener('cpt:recado', e => recadoMudou(e.detail));
     // Quadro: foto sem acesso no Drive (ou que não abre) volta para a paisagem.
     // 2.26.3: antes de desistir, pede a miniatura à aplicação (a conta de quem vê pode não ter leitura na pasta do Drive).
     // Escolha do quadro: foto que o navegador não abre no Drive vem pela aplicação; se nem ela abrir, a opção some.
@@ -433,7 +500,11 @@ window.CPTEspaco = (() => {
       const md = t.closest('[data-missao-dica]'); if (md) { abrirDica(md.dataset.missaoDica); return; }
       const mv = t.closest('[data-missao-devolutiva]'); if (mv) { abrirDevolutiva(mv.dataset.missaoDevolutiva); return; }
       const en = t.closest('[data-dica-entendi]'); if (en) { marcarDicaVista(en.dataset.dicaEntendi); $('detailDialog').close(); desenharMissoes(); ui.toast('Boa! Dica guardada.'); return; }
-      const ck = t.closest('[data-esp-check]'); if (ck) { const x = d.lista.itens.find(y => y.id === ck.dataset.espCheck); x.feito = ck.checked; ck.closest('li').classList.toggle('is-done', ck.checked); salvarLista(); return; }
+      const lm = t.closest('[data-esp-lem]'); if (lm) { const l = (d.lembretes || []).find(y => y.id === lm.dataset.espLem); if (!l || l.para) return;
+        if (d.lista.itens.filter(y => !y.removido).length >= 30) { lm.checked = false; ui.toast('Use até 30 tarefas por dia.'); return; }
+        if (lm.checked) folhinha(lm); d.lista.itens.push({id: 'T-L' + crypto.randomUUID().slice(0, 8), texto: l.titulo, feito: lm.checked, lembrete: l.id}); desenharLista(); salvarLista(); return; }
+      const rc = t.closest('[data-esp-recado]'); if (rc && window.CPTRecados) { window.CPTRecados.abrir(rc.dataset.espRecado); return; }
+      const ck = t.closest('[data-esp-check]'); if (ck) { const x = d.lista.itens.find(y => y.id === ck.dataset.espCheck); x.feito = ck.checked; ck.closest('li').classList.toggle('is-done', ck.checked); if (ck.checked) folhinha(ck); salvarLista(); return; }
       const ap = t.closest('[data-esp-apagar]'); if (ap) { d.lista.itens = d.lista.itens.filter(y => y.id !== ap.dataset.espApagar); desenharLista(); salvarLista(); return; }
       if (t.closest('[data-esp-nomear]')) { const n = prompt('Novo nome para ' + M().nome + ':', M().nome); if (n && n.trim() && n.trim() !== M().nome && await mascote({acao: 'nomear', nome: n.trim()})) desenhar(); return; }
       if (t.closest('[data-esp-guarda]')) { guardaAba = 'cabeca'; guardaRoupa(); return; }
@@ -462,11 +533,11 @@ window.CPTEspaco = (() => {
       const f = e.target;
       if (f.id === 'espInicio') { e.preventDefault(); if (await mascote({acao: 'iniciar', especie: f.dataset.especie, nome: f.elements.nome.value})) { window.scrollTo({top: 0, behavior: 'auto'}); render(); } }
       else if (f.id === 'espNovoMascote') { e.preventDefault(); if (await mascote({acao: 'resgatar', chave: $('detailContent').dataset.chave, escolha: 'mascote', especie: f.dataset.especie, nome: f.elements.nome.value})) { fechar(); desenhar(); } }
-      else if (f.id === 'espNova') { e.preventDefault(); const texto = f.elements.texto.value.trim(); if (!texto) return; if (d.lista.itens.filter(t => !t.removido).length >= 30) { ui.toast('Use até 30 tarefas por dia.'); return; } d.lista.itens.push({id: 'T-' + crypto.randomUUID().slice(0, 8), texto, feito: false}); f.reset(); desenharLista(); salvarLista(); f.elements.texto.focus(); }
+      else if (f.id === 'espNova') { e.preventDefault(); const texto = f.elements.texto.value.trim(); if (!texto) return; if (f.elements.para.value) { passarTarefa(texto, f.elements.para.value, f); return; } if (d.lista.itens.filter(t => !t.removido).length >= 30) { ui.toast('Use até 30 tarefas por dia.'); return; } d.lista.itens.push({id: 'T-' + crypto.randomUUID().slice(0, 8), texto, feito: false}); f.reset(); desenharLista(); salvarLista(); f.elements.texto.focus(); }
     });
     document.addEventListener('input', e => { if (e.target.id === 'espNota') { store.set(chaveNota(), e.target.value); estadoNota('Escrevendo…'); agendarNota(); } });
     document.addEventListener('focusout', e => { if (e.target.id === 'espNota') agendarNota(0); });
   }
-  return {init, render, sair: () => { clearTimeout(notaTimer); salvarNota(); }};
+  return {init, render, irParte: k => { parte = k; store.set('cpt.espaco.parte', k); }, sair: () => { clearTimeout(notaTimer); salvarNota(); }};
 })();
 </script>

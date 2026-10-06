@@ -51,9 +51,9 @@ function agirRecadoCPT(p) { return ColecaoCPT.executar('recados.agir', ctx => ne
 /** Contadores leves para a lateral: recados não lidos e lembretes vencendo. Chamado depois que a tela abre. */
 function contarAvisosCPT() {
   return ColecaoCPT.executar('avisos.contar', ctx => {
-    const out = {recados: 0, lembretes: 0}, hoje = ColecaoCPT.hoje();
+    const out = {recados: 0, lembretes: 0};
     try { out.recados = new RecadosCPT(ctx).naoLidos().length; } catch (_) {}
-    try { if (LembretesCPT.pode(ctx.perfil)) out.lembretes = new ColecaoCPT(ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= hoje).length; } catch (_) {}
+    try { out.lembretes = new LembretesCPT(ctx).pendentesHoje(); } catch (_) {}
     return out;
   });
 }

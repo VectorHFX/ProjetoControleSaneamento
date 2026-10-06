@@ -1,6 +1,7 @@
 <script>
 /*
  * Recados e Contatos 2.8.0 — ferramentas comuns a toda a equipe.
+ * 2.30: Recados moram no Meu espaço (aba "Recados" e cartão dos novos no "Meu dia"); embutir(el) desenha a lista ali.
  * Recados: para uma frente ou pessoa, com aviso na lateral, leitura registrada, resposta e "resolvido".
  *   Não envia e-mail nem WhatsApp. Pode levar um vínculo (material, protocolo, registro, lembrete, obra).
  * Contatos: matriz comum com observação interna e o caderno de conversas de cada contato.
@@ -9,7 +10,7 @@
 window.CPTRecados = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
-  let ui = null, ticket = 0, rec = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: '', limite: 50}, rascunhoVinculo = null;
+  let ui = null, ticket = 0, rec = null, alvo = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: '', limite: 50}, rascunhoVinculo = null;
   const LIMITE_CON = 50; // contatos por vez (2.13: linhas); "Mostrar mais" traz o resto aos poucos
   const $ = id => document.getElementById(id);
   const ops = new Map(), opId = (k, c) => { const s = JSON.stringify(c), a = ops.get(k); if (a && a.s === s) return a.id; const id = 'OP-' + crypto.randomUUID(); ops.set(k, {s, id}); return id; };
@@ -25,10 +26,11 @@ window.CPTRecados = (() => {
   /** Números de recados e lembretes na lateral e na barra de atalhos do celular. */
   function marcar() {
     if (!avisos) return;
-    [['recados', avisos.recados], ['lembretes', avisos.lembretes]].forEach(([rota, n]) => {
+    // 2.30: recados novos e tarefas de hoje (lembretes) somam no "Meu espaço".
+    [['meuespaco', (avisos.recados || 0) + (avisos.lembretes || 0)]].forEach(([rota, n]) => {
       document.querySelectorAll('.nav-item[data-route="' + rota + '"], .tab-item[data-route="' + rota + '"]').forEach(b => {
         let s = b.querySelector('.nav-badge'); if (!n) { if (s) s.remove(); return; }
-        if (!s) { s = document.createElement('span'); s.className = 'nav-badge'; b.append(s); } s.textContent = n > 99 ? '99+' : n; s.setAttribute('aria-label', n + (rota === 'recados' ? ' recados novos' : ' lembretes para hoje ou atrasados'));
+        if (!s) { s = document.createElement('span'); s.className = 'nav-badge'; b.append(s); } s.textContent = n > 99 ? '99+' : n; s.setAttribute('aria-label', [avisos.recados ? avisos.recados + (avisos.recados === 1 ? ' recado novo' : ' recados novos') : '', avisos.lembretes ? avisos.lembretes + (avisos.lembretes === 1 ? ' tarefa recebida para hoje' : ' tarefas recebidas para hoje') : ''].filter(Boolean).join(' e '));
       });
     });
   }
@@ -42,17 +44,20 @@ window.CPTRecados = (() => {
   }
 
   // ---------------- Recados ----------------
-  const INTRO = ['Recados', 'Para avisar outra frente ou pessoa. Quem recebe vê o aviso na lateral ao abrir a aplicação.'];
-  async function render() {
-    const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO) + '<div class="loading-label"><span class="spinner"></span>Abrindo seus recados…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
-    try { rec = await ui.call('listarRecadosCPT'); if (mine !== ticket || ui.state.route !== 'recados') return; desenhar(); }
-    catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO) + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  /** Lista de recados dentro de outro lugar (o Meu espaço). Usa a última lista e atualiza em seguida. */
+  async function embutir(el) {
+    alvo = el; const mine = ++ticket;
+    if (rec) desenhar(); else el.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seus recados…</div>';
+    try { const r = await ui.call('listarRecadosCPT'); if (mine !== ticket || alvo !== el || !el.isConnected) return; rec = r; desenhar(); }
+    catch (e) { if (mine === ticket && el.isConnected && !rec) el.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
   }
+  const visivel = () => alvo && alvo.isConnected;
   const destino = r => [...r.para.frentes.map(f => NOMES[f] || f), ...r.para.pessoas.map(e => (rec.pessoas.find(p => p.email === e) || {nome: e}).nome)].join(', ');
   function desenhar() {
+    if (!visivel() || !rec) return;
     const filtros = {recebidos: r => r.paraMim && r.situacao !== 'resolvido', enviados: r => r.meu && r.situacao !== 'resolvido', resolvidos: r => r.situacao === 'resolvido'};
     const lista = rec.itens.filter(filtros[aba]), n = k => rec.itens.filter(filtros[k]).length;
-    ui.view.innerHTML = ui.intro(...INTRO) + `<div class="tool-head"><div class="segmented painel-tabs" role="tablist">${[['recebidos', 'Para mim'], ['enviados', 'Que enviei'], ['resolvidos', 'Resolvidos']].map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-rec-aba="${k}">${t} <span class="count-pill">${n(k)}</span></button>`).join('')}</div>
+    alvo.innerHTML = `<div class="tool-head"><div class="segmented painel-tabs" role="tablist">${[['recebidos', 'Para mim'], ['enviados', 'Que enviei'], ['resolvidos', 'Resolvidos']].map(([k, t]) => `<button role="tab" aria-selected="${aba === k}" class="${aba === k ? 'chosen' : ''}" data-rec-aba="${k}">${t} <span class="count-pill">${n(k)}</span></button>`).join('')}</div>
       <button class="button" data-rec-novo>${ui.icon('plus')}Novo recado</button></div>
       <div class="simple-list">${lista.map(r => `<button class="simple-row ${r.paraMim && !r.lido ? 'is-new' : ''}" data-rec-abrir="${ui.esc(r.id)}"><span class="row-dot" aria-hidden="true"></span>
         <span class="row-main"><strong>${r.importante ? '<span class="tag-important">Importante</span> ' : ''}${ui.esc(r.assunto)}</strong><small>${r.meu ? 'Para ' + ui.esc(destino(r)) : 'De ' + ui.esc(r.nomeAutor || r.criadoPor)} · ${ui.esc(quando(r.atualizadoEm))}${r.respostas.length ? ' · ' + r.respostas.length + (r.respostas.length === 1 ? ' resposta' : ' respostas') : ''}${r.prazo ? ' · prazo ' + ui.date(r.prazo) : ''}</small></span>
@@ -61,10 +66,11 @@ window.CPTRecados = (() => {
   function vinculoHtml(v) {
     if (!v) return '';
     const rot = {link: 'Material', protocolo: 'Atendimento', obra: 'Obra', lembrete: 'Lembrete', registro: 'Registro'}[v.tipo];
-    const acao = v.tipo === 'protocolo' ? `data-case="${ui.esc(v.id)}"` : v.tipo === 'registro' ? `data-record="${ui.esc(v.id)}"` : v.tipo === 'obra' ? 'data-route="obras"' : v.tipo === 'lembrete' ? 'data-route="lembretes"' : '';
+    const acao = v.tipo === 'protocolo' ? `data-case="${ui.esc(v.id)}"` : v.tipo === 'registro' ? `data-record="${ui.esc(v.id)}"` : v.tipo === 'obra' ? 'data-route="obras"' : v.tipo === 'lembrete' ? 'data-route="meuespaco"' : '';
     return `<div class="link-chip"><span>${rot}: <strong>${ui.esc(v.titulo || v.id)}</strong></span>${v.url ? `<a class="button ghost" href="${ui.esc(ui.safeURL(v.url))}" target="_blank" rel="noopener noreferrer">Abrir link</a>` : acao ? `<button class="button ghost" ${acao}>Abrir</button>` : ''}</div>`;
   }
   async function abrir(id) {
+    if (!rec) { try { rec = await ui.call('listarRecadosCPT'); } catch (e) { ui.toast(e.message); return; } }
     const r = rec.itens.find(x => x.id === id); if (!r) return;
     const corpo = () => {
       const x = rec.itens.find(y => y.id === id);
@@ -78,10 +84,10 @@ window.CPTRecados = (() => {
     if (r.paraMim && !r.lido) try { const x = await ui.call('agirRecadoCPT', {id, acao: 'lido'}); atualizarItem(x.recado); contar(true); } catch (_) {}
     $('detailContent').__corpo = corpo;
   }
-  function atualizarItem(r) { const i = rec.itens.findIndex(x => x.id === r.id); if (i >= 0) rec.itens[i] = r; else rec.itens.unshift(r); }
+  function atualizarItem(r) { const i = rec.itens.findIndex(x => x.id === r.id); if (i >= 0) rec.itens[i] = r; else rec.itens.unshift(r); document.dispatchEvent(new CustomEvent('cpt:recado', {detail: r})); }
   async function agir(acao, texto) {
     const id = $('detailContent').dataset.recado; const dados = {id, acao, texto};
-    try { const r = await ui.call('agirRecadoCPT', {...dados, operacaoId: opId('rec-' + acao + id, dados)}); atualizarItem(r.recado); ui.toast(r.resultado); if ($('detailContent').__corpo) $('detailContent').innerHTML = $('detailContent').__corpo(); if (ui.state.route === 'recados') desenhar(); contar(true); }
+    try { const r = await ui.call('agirRecadoCPT', {...dados, operacaoId: opId('rec-' + acao + id, dados)}); atualizarItem(r.recado); ui.toast(r.resultado); if ($('detailContent').__corpo) $('detailContent').innerHTML = $('detailContent').__corpo(); desenhar(); contar(true); }
     catch (e) { erro('recErro', e); }
   }
   /** Novo recado. vinculo opcional: {tipo,id,titulo,url}; usado por materiais e lembretes ("Avisar por recado"). */
@@ -101,7 +107,7 @@ window.CPTRecados = (() => {
     const b = f.querySelector('[type=submit]'), dados = {para: {frentes: [...f.querySelectorAll('[name=frente]:checked')].map(x => x.value), pessoas: [...f.querySelectorAll('[name=pessoa]:checked')].map(x => x.value)},
       assunto: f.elements.assunto.value, texto: f.elements.texto.value, prazo: f.elements.prazo.value, importante: f.elements.importante.checked, vinculo: rascunhoVinculo};
     b.disabled = true;
-    try { const r = await ui.call('enviarRecadoCPT', {...dados, operacaoId: opId('recNovo', dados)}); atualizarItem(r.recado); ops.delete('recNovo'); ui.toast(r.resultado); fechar(); if (ui.state.route === 'recados') { aba = 'enviados'; desenhar(); } }
+    try { const r = await ui.call('enviarRecadoCPT', {...dados, operacaoId: opId('recNovo', dados)}); atualizarItem(r.recado); ops.delete('recNovo'); ui.toast(r.resultado); fechar(); if (visivel()) { aba = 'enviados'; desenhar(); } }
     catch (e) { erro('recErro', e); } finally { b.disabled = false; }
   }
 
@@ -183,6 +189,6 @@ window.CPTRecados = (() => {
     document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; filtroCon.limite = LIMITE_CON; desenharContatos(); } });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil && Date.now() - ultimaContagem > 60000) contar(true); });
   }
-  return {init, render, renderContatos, novo, contar, copiarAvisos: marcar};
+  return {init, embutir, abrir, renderContatos, novo, contar, copiarAvisos: marcar};
 })();
 </script>

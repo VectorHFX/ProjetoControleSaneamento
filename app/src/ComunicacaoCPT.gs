@@ -1,34 +1,53 @@
 /**
- * ComunicacaoCPT 2.8.0. Ferramentas da Comunicação, pensadas para uma coisa de cada vez:
- * - LembretesCPT: ações socioambientais e necessidades de material, compartilhados entre Social e Comunicação.
- * - MateriaisCPT: pasta de links e materiais (título, link, observação, responsável, prazo, situação),
- *   com o que foi publicado/entregue no mês (alimenta o Programa Parceiros e os Anexos).
- * - ComunicacaoHojeCPT: a tela "Hoje": só o que pede ação agora, em poucas linhas.
+ * ComunicacaoCPT. Ferramentas que vieram da antiga Comunicação:
+ * - LembretesCPT: tarefas com data "para quem" (2.30: entram no checklist do Meu espaço).
+ * - MateriaisCPT: pasta de links e materiais (título, link, observação, responsável, prazo, situação).
+ */
+/**
+ * LembretesCPT 2.30: tarefa com data "para quem" (uma pessoa ou uma frente), que entra no checklist do Meu espaço.
+ * Todo o time cria e recebe. Quem recebe marca no próprio checklist (pontua como qualquer tarefa); aí o lembrete fica feito.
+ * Lembretes antigos (Social/Comunicação, sem responsável) aparecem para quem é dessas frentes.
  */
 class LembretesCPT {
-  static pode(p) { return PerfisCPT.gerencia(p) || p.papeis.some(x => ['socioambiental', 'comunicacao'].includes(x)); }
+  static pode() { return true; }
   static get tipos() { return {acao: 'Ação socioambiental', material: 'Material de comunicação'}; }
-  constructor(ctx) {
-    if (!LembretesCPT.pode(ctx.perfil)) throw new Error('Os lembretes são do Socioambiental, da Comunicação e da Gestão.');
-    this.ctx = ctx; this.col = new ColecaoCPT(ctx, 'Lembretes', 'LEM');
+  constructor(ctx) { this.ctx = ctx; this.col = new ColecaoCPT(ctx, 'Lembretes', 'LEM'); this.papeis = ctx.perfil.papeis.filter(x => x !== 'administrador'); }
+  /** Para mim: eu sou o responsável, ou não tem responsável e é da minha frente. */
+  paraMim(l) { return l.responsavel ? l.responsavel === this.ctx.email : (l.frentes || []).some(f => this.papeis.includes(f)); }
+  visivel(l) { return this.paraMim(l) || l.criadoPor === this.ctx.email; }
+  listar() { return {itens: this.col.itens().filter(l => this.visivel(l)).sort((a, b) => (a.data || '9999').localeCompare(b.data || '9999')), pessoas: ColecaoCPT.pessoas(this.ctx), hoje: ColecaoCPT.hoje(), tipos: LembretesCPT.tipos}; }
+  /** Os do dia (e, hoje, também os atrasados que ainda não foram feitos), prontos para o checklist. */
+  doDia(dia) {
+    const hoje = ColecaoCPT.hoje(), pessoas = ColecaoCPT.pessoas(this.ctx), nome = e => (pessoas.find(x => x.email === e) || {nome: e ? e.split('@')[0] : ''}).nome;
+    const NOMES = {atendimento: 'Atendimento', socioambiental: 'Socioambiental', comunicacao: 'Comunicação', comercializacao: 'Comercialização', gestao: 'Gestão', administrativo: 'Administrativo'};
+    return this.col.itens().filter(l => this.visivel(l) && (l.data === dia || (dia === hoje && l.data < hoje && l.situacao !== 'feito')))
+      .sort((a, b) => a.data.localeCompare(b.data))
+      .map(l => ({id: l.id, titulo: l.titulo, data: l.data, feito: l.situacao === 'feito', feitoPor: l.feitoPor ? nome(l.feitoPor) : '', meu: l.feitoPor === this.ctx.email, atrasado: l.data < hoje && l.situacao !== 'feito',
+        de: l.criadoPor && l.criadoPor !== this.ctx.email ? (l.nomeAutor || nome(l.criadoPor)) : '', para: this.paraMim(l) ? '' : (l.responsavel ? nome(l.responsavel) : (l.frentes || []).map(f => NOMES[f] || f).join(', '))}));
   }
-  listar() { return {itens: this.col.itens().sort((a, b) => (a.data || '9999').localeCompare(b.data || '9999')), pessoas: ColecaoCPT.pessoas(this.ctx), hoje: ColecaoCPT.hoje(), tipos: LembretesCPT.tipos}; }
   salvar(p) {
     p = p || {}; const antigo = p.id ? this.col.obter(String(p.id)) : null; if (p.id && !antigo) throw new Error('Lembrete não encontrado.');
+    if (antigo && antigo.criadoPor !== this.ctx.email) throw new Error('Só quem criou pode mudar este lembrete.');
     const pessoas = ColecaoCPT.pessoas(this.ctx).map(x => x.email), T = ColecaoCPT.texto;
-    if (p.responsavel && !pessoas.includes(p.responsavel)) throw new Error('Escolha o responsável na lista.');
-    const frentes = [...new Set(Array.isArray(p.frentes) ? p.frentes : [])].filter(f => ['socioambiental', 'comunicacao'].includes(f));
-    const l = {tipo: ColecaoCPT.opcao(p.tipo, Object.keys(LembretesCPT.tipos), 'tipo'), titulo: T(p.titulo, 140, 'o que lembrar', true), data: ColecaoCPT.data(p.data, 'data', true),
-      detalhe: T(p.detalhe, 1500, 'detalhes'), material: T(p.material, 600, 'materiais necessários'), frentes: frentes.length ? frentes : ['socioambiental', 'comunicacao'],
-      responsavel: p.responsavel || '', evento: p.evento && p.evento.id ? {id: T(p.evento.id, 80, 'atividade'), titulo: T(p.evento.titulo, 140, 'atividade'), data: ColecaoCPT.data(p.evento.data, 'data da atividade')} : (antigo ? antigo.evento : null),
-      situacao: antigo ? antigo.situacao : 'pendente', feitoEm: antigo ? antigo.feitoEm || '' : '', feitoPor: antigo ? antigo.feitoPor || '' : ''};
-    return {resultado: 'Lembrete salvo.', lembrete: this.col.gravar({...l, id: antigo ? antigo.id : ''}, antigo ? Number(p.versao) : 0, p.operacaoId)};
+    if (p.responsavel && !pessoas.includes(p.responsavel)) throw new Error('Escolha a pessoa na lista.');
+    const frentes = p.responsavel ? [] : [...new Set(Array.isArray(p.frentes) ? p.frentes : [])].filter(f => RecadosCPT.frentes.includes(f));
+    if (!p.responsavel && !frentes.length) throw new Error('Escolha para quem é a tarefa: uma pessoa ou uma frente.');
+    const l = {tipo: p.tipo ? ColecaoCPT.opcao(p.tipo, Object.keys(LembretesCPT.tipos), 'tipo') : 'acao', titulo: T(p.titulo, 140, 'tarefa', true), data: ColecaoCPT.data(p.data, 'data', true),
+      detalhe: T(p.detalhe, 1500, 'detalhes'), material: T(p.material, 600, 'materiais necessários'), frentes, responsavel: p.responsavel || '', nomeAutor: antigo ? antigo.nomeAutor || '' : this.ctx.perfil.nome,
+      evento: antigo ? antigo.evento || null : null, situacao: antigo ? antigo.situacao : 'pendente', feitoEm: antigo ? antigo.feitoEm || '' : '', feitoPor: antigo ? antigo.feitoPor || '' : ''};
+    return {resultado: 'Tarefa enviada. Aparece no checklist de quem recebe, no dia marcado.', lembrete: this.col.gravar({...l, id: antigo ? antigo.id : ''}, antigo ? Number(p.versao) : 0, p.operacaoId)};
   }
+  /** Feito ou desfeito (pelo checklist de quem recebe). Desfazer só quem fez. */
   concluir(p) {
-    p = p || {}; const l = this.col.obter(String(p.id || '')); if (!l) throw new Error('Lembrete não encontrado.');
-    const feito = p.feito !== false, novo = {...l, situacao: feito ? 'feito' : 'pendente', feitoEm: feito ? new Date().toISOString() : '', feitoPor: feito ? this.ctx.email : ''};
-    return {resultado: feito ? 'Feito! Lembrete concluído.' : 'Lembrete voltou para pendente.', lembrete: this.col.gravar(novo, l.versao, p.operacaoId)};
+    p = p || {}; const l = this.col.obter(String(p.id || '')); if (!l || !this.visivel(l)) throw new Error('Lembrete não encontrado.');
+    const feito = p.feito !== false;
+    if ((l.situacao === 'feito') === feito) return {resultado: 'Sem mudança.', lembrete: l};
+    if (!feito && l.feitoPor && l.feitoPor !== this.ctx.email) throw new Error('Quem marcou como feito foi outra pessoa.');
+    const novo = {...l, situacao: feito ? 'feito' : 'pendente', feitoEm: feito ? new Date().toISOString() : '', feitoPor: feito ? this.ctx.email : ''};
+    return {resultado: feito ? 'Feito! Lembrete concluído.' : 'Lembrete voltou para pendente.', lembrete: this.col.gravar(novo, l.versao, p.operacaoId || 'OP-' + Utilities.getUuid())};
   }
+  /** Para o contador do menu: os meus, pendentes, de hoje ou atrasados. */
+  pendentesHoje() { const hoje = ColecaoCPT.hoje(); return this.col.itens().filter(l => this.paraMim(l) && l.situacao !== 'feito' && l.data && l.data <= hoje).length; }
 }
 
 class MateriaisCPT {

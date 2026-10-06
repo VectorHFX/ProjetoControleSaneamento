@@ -31,7 +31,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await p.locator('#menuToggle').getAttribute('aria-expanded'),'false');await p.locator('#menuToggle').click();await p.waitForFunction(()=>!document.body.classList.contains('nav-compact'));
   // Checklist: +10 uma vez só por tarefa.
   for(const t of ['Ligar para a moradora','Conferir fichas'])await p.locator('#espNova [name=texto]').fill(t),await p.locator('#espNova [type=submit]').click();
-  await p.waitForFunction(()=>document.querySelectorAll('.check-list li').length===2);
+  await p.waitForFunction(()=>document.querySelectorAll('.check-list li:not(.is-recebida)').length===2);
   await p.locator('[data-esp-check]').first().check();await toast(/\+10 pontos/);await p.waitForFunction(()=>document.querySelector('#espPontos').textContent==='10');
   await p.locator('[data-esp-check]').first().uncheck();await p.waitForTimeout(400);await p.locator('[data-esp-check]').first().check();await p.waitForTimeout(500);
   assert.equal(await p.locator('#espPontos').textContent(),'10','desmarcar e marcar não soma de novo');

@@ -1366,4 +1366,42 @@ html[data-theme=dark] .holiday-tag{color:#ffb4a9;background:color-mix(in srgb,#e
 .quadro-opcao:hover{border-color:var(--blue)}.quadro-opcao.is-picked{border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 18%,transparent)}
 .quadro-mini{display:block;aspect-ratio:16/11;border-radius:7px;overflow:hidden;background:var(--bg)}.quadro-mini svg,.quadro-mini img{width:100%;height:100%;object-fit:cover;display:block}
 .quadro-opcao>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 2.30: Meu espaço com Recados e tarefas recebidas. */
+.home-novos-recados-host:empty{display:none}.home-novos-recados-host{grid-column:1/-1}
+.home-novos-recados{border-left:4px solid var(--veolia,#d94a2b)}
+.novos-recados{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.novo-recado{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-height:0}
+.novo-recado:hover{border-color:var(--blue)}.novo-recado small{color:var(--muted);flex-basis:100%}
+.home-recados{grid-column:1/-1}
+.tab-count{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:9px;background:var(--veolia,#d94a2b);color:#fff;font-size:10px;font-weight:700;vertical-align:1px}
+.task-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:9px;background:var(--pale);color:var(--blue);font-size:10px;font-weight:650;white-space:nowrap}
+.task-tag.is-para{background:color-mix(in srgb,var(--accent,#e8a23b) 18%,var(--surface));color:#8a5a12}.task-tag.is-late{background:#fde3e1;color:#9c2a1f}.task-tag.is-done{background:var(--soft);color:var(--mint)}
+.check-list li.is-recebida>label span{font-weight:600}
+.check-list li{flex-wrap:wrap;row-gap:4px}.check-list li>label{min-width:0;flex:1 1 60%}.task-tag{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.inline-add .task-para{max-width:170px;font-size:12px}
+@media (max-width:640px){.inline-add{flex-wrap:wrap}.inline-add .task-para{max-width:none;flex:1 1 100%}}
+html[data-theme=dark] .task-tag.is-para{color:#f0c27a}html[data-theme=dark] .task-tag.is-late{background:#4a2522;color:#ffb4a9}
+
+/* 2.30: aconchego (visual novo) — folhas onde cabem, leves (só CSS e uma máscara), e nada com "Reduzir movimentos". */
+:root{--folha-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20C4 10 10 4 20 4c0 10-6 16-16 16Z'/%3E%3C/svg%3E")}
+html[data-visual=v3] .spinner{border:0;border-radius:0;width:18px;height:18px;background:#5e8f4a;-webkit-mask:var(--folha-mask) center/contain no-repeat;mask:var(--folha-mask) center/contain no-repeat;animation:v3-folha-gira 1.4s ease-in-out infinite}
+@keyframes v3-folha-gira{0%,100%{transform:rotate(-28deg) scale(.88)}50%{transform:rotate(22deg) scale(1.06)}}
+html[data-visual=v3] .skeleton{background:linear-gradient(100deg,color-mix(in srgb,var(--line) 75%,#a7c77f) 20%,var(--surface) 45%,color-mix(in srgb,var(--line) 75%,#a7c77f) 70%);background-size:220% 100%}
+html[data-visual=v3] .empty-line::before,html[data-visual=v3] .toast::before{content:'';display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;background:#7fae5f;-webkit-mask:var(--folha-mask) center/contain no-repeat;mask:var(--folha-mask) center/contain no-repeat}
+html[data-visual=v3] .toast::before{background:#a7c77f}
+html[data-visual=v3] .home-cards>.panel:not(.caderno){position:relative}
+html[data-visual=v3] .home-cards>.panel:not(.caderno)::before{content:'';position:absolute;top:-12px;right:20px;width:46px;height:30px;background:var(--v3-ramo) center/contain no-repeat;pointer-events:none}
+html[data-visual=v3] .home-cards[id^=espParte-].acabou-de-abrir{animation:v3-aparece .28s ease both}
+@keyframes v3-aparece{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.space-hero>.folhas-caindo{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.folhas-caindo i{position:absolute;top:-18px;width:13px;height:13px;background:#7fae5f;-webkit-mask:var(--folha-mask) center/contain no-repeat;mask:var(--folha-mask) center/contain no-repeat;opacity:0;animation:v3-cai 16s linear infinite}
+.folhas-caindo i:nth-child(1){left:18%;animation-delay:1s}.folhas-caindo i:nth-child(2){left:52%;background:#a7c77f;width:10px;height:10px;animation-duration:19s;animation-delay:7s}.folhas-caindo i:nth-child(3){left:83%;background:#5e8f4a;animation-duration:22s;animation-delay:12s}
+@keyframes v3-cai{0%{transform:translate(0,0) rotate(0);opacity:0}8%{opacity:.85}50%{transform:translate(38px,190px) rotate(160deg)}92%{opacity:.7}100%{transform:translate(-14px,400px) rotate(330deg);opacity:0}}
+.folhinha-voa{position:fixed;z-index:60;width:12px;height:12px;background:#7fae5f;-webkit-mask:var(--folha-mask) center/contain no-repeat;mask:var(--folha-mask) center/contain no-repeat;pointer-events:none;animation:v3-folhinha .9s ease-out forwards}
+@keyframes v3-folhinha{0%{transform:translate(0,0) rotate(0) scale(.6);opacity:1}100%{transform:translate(26px,-30px) rotate(140deg) scale(1);opacity:0}}
+html[data-motion=reduce] .folhas-caindo,html[data-motion=reduce] .folhinha-voa{display:none}
+html[data-motion=reduce] .spinner,html[data-motion=reduce] .home-cards.acabou-de-abrir{animation:none}
+@media (prefers-reduced-motion:reduce){.folhas-caindo,.folhinha-voa{display:none}html[data-visual=v3] .spinner,.home-cards.acabou-de-abrir{animation:none}}
+/* Desempenho: itens fora da tela de listas longas não são desenhados até chegar perto. */
+.gallery-grid .photo,.list-row:not(.list-head){content-visibility:auto;contain-intrinsic-size:auto 120px}
 </style>

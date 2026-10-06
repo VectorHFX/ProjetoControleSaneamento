@@ -62,13 +62,14 @@ ctx.e.versao=2;const c2=run('salvarContatoCPT(e)').contato;assert.equal(c2.obser
 assert.throws(()=>run("salvarContatoCPT({nome:'',instituicao:'',tipo:'Outro',operacaoId:'"+op()+"'})"),/nome da pessoa ou a instituição/);
 console.log('PASS: contatos — todos cadastram, edição restrita, duplicado avisado, conflito de versão, conversas preservadas na edição.');
 
-// 3. Lembretes (Social + Comunicação) e materiais (Comunicação); resumo do mês.
-email='atd@example.com';assert.throws(()=>run('listarLembretesCPT()'),/Socioambiental, da Comunicação/);const ma=run('listarMateriaisCPT()');assert.equal(ma.podeEditar,false,'2.29: todo o time vê os materiais');assert.throws(()=>run("salvarMaterialCPT({titulo:'x',tipo:'Outro',situacao:'afazer',operacaoId:'"+op()+"'})"),/Comunicação e da Gestão/);
+// 3. Lembretes (2.30: tarefas "para quem", todo o time) e materiais (Comunicação); resumo do mês.
+email='atd@example.com';assert.deepEqual(run('listarLembretesCPT()').itens,[],'todo o time usa; só vê os seus');const ma=run('listarMateriaisCPT()');assert.equal(ma.podeEditar,false,'2.29: todo o time vê os materiais');assert.throws(()=>run("salvarMaterialCPT({titulo:'x',tipo:'Outro',situacao:'afazer',operacaoId:'"+op()+"'})"),/Comunicação e da Gestão/);
 email='social@example.com';ctx.l={tipo:'material',titulo:'Levar panfletos',data:hoje,material:'200 panfletos',frentes:['comunicacao','x'],operacaoId:op(),evento:{id:'AG-1',titulo:'Ação na escola',data:mais(2)}};
 const l1=run('salvarLembreteCPT(l)').lembrete;assert.deepEqual(l1.frentes,['comunicacao']);
-run("salvarLembreteCPT({tipo:'acao',titulo:'Divulgar',data:'"+mais(-2)+"',operacaoId:'"+op()+"'})");run("salvarLembreteCPT({tipo:'acao',titulo:'Depois',data:'"+mais(20)+"',operacaoId:'"+op()+"'})");
-assert.throws(()=>run("salvarLembreteCPT({tipo:'acao',titulo:'',data:'"+hoje+"',operacaoId:'"+op()+"'})"),/o que lembrar/);
-email='com@example.com';assert.equal(run('contarAvisosCPT()').lembretes,2,'hoje + atrasado');
+run("salvarLembreteCPT({tipo:'acao',titulo:'Divulgar',data:'"+mais(-2)+"',frentes:['comunicacao'],operacaoId:'"+op()+"'})");run("salvarLembreteCPT({tipo:'acao',titulo:'Depois',data:'"+mais(20)+"',frentes:['comunicacao'],operacaoId:'"+op()+"'})");
+assert.throws(()=>run("salvarLembreteCPT({titulo:'Sem destino',data:'"+hoje+"',operacaoId:'"+op()+"'})"),/para quem é a tarefa/);
+assert.throws(()=>run("salvarLembreteCPT({tipo:'acao',titulo:'',data:'"+hoje+"',operacaoId:'"+op()+"'})"),/tarefa/);
+email='atd@example.com';assert.equal(run('contarAvisosCPT()').lembretes,0,'não é da Comunicação');email='com@example.com';assert.equal(run('contarAvisosCPT()').lembretes,2,'hoje + atrasado');
 run("concluirLembreteCPT({id:'"+l1.id+"',operacaoId:'"+op()+"'})");assert.equal(run('contarAvisosCPT()').lembretes,1);
 email='social@example.com';assert.equal(run('listarMateriaisCPT()').podeEditar,false);
 email='com@example.com';
@@ -81,7 +82,7 @@ run("salvarMaterialCPT({titulo:'Vídeo outubro',tipo:'Vídeo',situacao:'concluid
 run("salvarMaterialCPT({titulo:'Banner da feira',tipo:'Arte / peça digital',situacao:'producao',prazo:'"+mais(3)+"',url:'https://www.canva.com/x',operacaoId:'"+op()+"'})");
 const m=run("listarMateriaisCPT('2026-09')");assert.equal(m.resumo.publicacoes,2);assert.equal(m.resumo.alcance,1200);assert.equal(m.resumo.semAlcance,1);assert.equal(m.resumo.impressos,500);assert.equal(m.resumo.videos,0);assert.equal(m.resumo.ferramentas,1);
 assert.equal(m.itens[0].situacao,'producao','em aberto primeiro');
-console.log('PASS: lembretes compartilhados Social/Comunicação (avisos de hoje e atrasados, feito), materiais com link seguro, números validados e resumo do mês só com concluídos pela data de publicação.');
+console.log('PASS: lembretes como tarefas "para quem" (todo o time cria; destino obrigatório; avisos de hoje e atrasados só para quem recebe; feito), materiais com link seguro, números validados e resumo do mês só com concluídos pela data de publicação.');
 
 // 4. (2.29: a página "Hoje" da Comunicação saiu.)
 email='social@example.com';run("enviarRecadoCPT({para:{frentes:[],pessoas:['com@example.com']},assunto:'Banner',texto:'Pode ser amanhã?',operacaoId:'"+op()+"'})");

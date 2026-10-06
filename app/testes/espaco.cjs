@@ -118,5 +118,18 @@ lista(5,oito('e'));r=masc({acao:'comprar',item:'capacete-azul',versao:r.perfil.v
 r=masc({acao:'vestir',slot:'cabeca',item:'capacete-branco',versao:r.perfil.versao});r=masc({acao:'vestir',slot:'cabeca',item:'capacete-azul',versao:r.perfil.versao});assert.equal(r.perfil.mascotes[r.perfil.ativo].equipado.cabeca,'capacete-azul');
 console.log('PASS: loja do bloco D — EPI colorido, roupas e cores especiais por pontos, só no elenco novo; cor comprada uma vez e depois trocar é livre.');
 console.log('PASS: elenco chibi e kit EPI — elenco novo só do proprietário nos testes, mascote novo já com o kit, kit sem precisar ganhar, clássicos por 150 pontos (sem repetir).');
+// 2.30: tarefas "para quem" no checklist e recados novos no Meu espaço.
+email='social@example.com';ctx.l={titulo:'Separar 50 panfletos',data:hoje,frentes:['comunicacao'],operacaoId:op()};const tl=run('salvarLembreteCPT(l)').lembrete;
+ctx.l={titulo:'Ligar para a escola',data:hoje,responsavel:'atd@example.com',operacaoId:op()};run('salvarLembreteCPT(l)');
+run("enviarRecadoCPT({para:{frentes:['comunicacao'],pessoas:[]},assunto:'Fotos da oficina',texto:'Pode separar?',operacaoId:'"+op()+"'})");
+let ds=run('carregarMeuEspacoCPT()');assert.deepEqual(ds.lembretes.map(x=>[x.titulo,x.para]),[['Separar 50 panfletos','Comunicação'],['Ligar para a escola','Bia']],'quem passou acompanha');assert.ok(ds.pessoas.some(x=>x.email==='com@example.com'));
+email='com2@example.com';let dr=run('carregarMeuEspacoCPT()');assert.equal(dr.lembretes.length,1);assert.equal(dr.lembretes[0].de,'Ana');assert.equal(dr.recados.total,1);assert.equal(dr.recados.novos[0].assunto,'Fotos da oficina');assert.equal(dr.trabalho.lembretes,1);
+const antesR=dr.pontos.saldo;ctx.p={data:hoje,itens:[{id:'T-recebida1',texto:'Separar 50 panfletos',feito:true,lembrete:tl.id}],versao:0,operacaoId:op()};r=run('salvarChecklistCPT(p)');
+assert.equal(r.pontos.saldo,antesR+10,'tarefa recebida pontua como as outras');assert.equal(r.lembretes[0].feito,true);assert.equal(r.lista.itens[0].lembrete,tl.id);
+email='com@example.com';const dp=run('carregarMeuEspacoCPT()');const lp=dp.lembretes.find(x=>x.id===tl.id);assert.equal(lp.feito,true);assert.equal(lp.feitoPor,'Rui','colega da frente vê quem fez');assert.equal(lp.meu,false);
+ctx.p={data:hoje,itens:[{id:'T-recebida2',texto:'x',feito:true,lembrete:'LEM-naoexiste'}],versao:0,operacaoId:op()};assert.throws(()=>run('salvarChecklistCPT(p)'),/não é para você/);
+email='atd@example.com';ctx.p={data:hoje,itens:[{id:'T-recebida3',texto:'Separar',feito:true,lembrete:tl.id}],versao:0,operacaoId:op()};assert.throws(()=>run('salvarChecklistCPT(p)'),/não é para você/,'tarefa da Comunicação não entra no checklist do Atendimento');
+email='com2@example.com';ctx.p={data:hoje,itens:[{id:'T-recebida1',texto:'Separar 50 panfletos',feito:false,lembrete:tl.id}],versao:r.lista.versao,operacaoId:op()};r=run('salvarChecklistCPT(p)');assert.equal(r.lembretes[0].feito,false,'desmarcar volta o lembrete para pendente');
+console.log('PASS: tarefas "para quem" — aparecem no checklist de quem recebe (de quem veio) e de quem passou (para quem), pontuam como as outras, colega da frente vê quem fez, só entra no checklist de quem recebe; recados novos chegam junto com o Meu espaço.');
 assert.equal(locked,false);
 console.log('PASS: privacidade — caderno, checklist, pontos e mascote são de cada conta; ninguém lê o espaço do outro pela aplicação.');

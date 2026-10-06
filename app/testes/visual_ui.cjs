@@ -48,8 +48,13 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await p.evaluate(()=>document.body.innerHTML.includes('${ic(')),false,'nenhum ícone como texto cru');
   assert.equal(await p.evaluate(()=>/[\u{1F300}-\u{1FAFF}]/u.test(document.querySelector('.space-hero').textContent)),false,'sem emoji no cartão de boas-vindas');
   await p.locator('#espNova [name=texto]').fill('Conferir a obra');await p.locator('#espNova [type=submit]').click();await p.locator('[data-esp-check]').first().waitFor();
-  await p.locator('[data-esp-check]').first().check();await p.waitForFunction(()=>document.querySelector('.v3-folhas'));
+  await p.locator('[data-esp-check]').first().check();await p.waitForFunction(()=>document.querySelector('.folhinha-voa'));/* 2.30: folhinha ao marcar */await p.waitForFunction(()=>document.querySelector('.v3-folhas'));
   await p.waitForFunction(()=>document.querySelector('#espPontos').textContent.trim()==='10');await p.waitForFunction(()=>!document.querySelector('.v3-folhas'),null,{timeout:4000});
+  // 2.30: aconchego — folhinha ao marcar a tarefa, folhas caindo devagar no cenário, raminho nos cartões e folha no carregando.
+assert.equal(await p.locator('.space-hero .folhas-caindo i').count(),3);
+  assert.equal(await p.evaluate(()=>getComputedStyle(document.querySelector('.folhas-caindo i')).animationName),'v3-cai');
+  assert.match(await p.evaluate(()=>getComputedStyle(document.querySelector('.home-cards>.panel.home-agenda'),'::before').backgroundImage),/data:image\/svg/,'raminho no canto do cartão');
+  assert.equal(await p.evaluate(()=>{const s=document.createElement('span');s.className='spinner';document.body.append(s);const m=getComputedStyle(s).webkitMaskImage||getComputedStyle(s).maskImage;s.remove();return /data:image\/svg/.test(m);}),true,'carregando em forma de folha');
   // Parallax: o ponteiro sobre o cenário mexe as camadas.
   await p.evaluate(()=>window.scrollTo(0,0));const box=await p.locator('.space-hero').boundingBox();await p.mouse.move(box.x+40,box.y+40);await p.mouse.move(box.x+60,box.y+60);
   await p.waitForFunction(()=>Number(getComputedStyle(document.querySelector('.space-hero')).getPropertyValue('--px'))<0);
@@ -58,6 +63,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=gato]').click();await p.locator('#espInicio [type=submit]').click();await p.locator('.space-hero').waitFor();await p.waitForTimeout(300);
   assert.equal(await p.evaluate(()=>document.querySelector('#view').hasAttribute('data-entrando')),false,'sem entrada animada');
   assert.equal(await p.evaluate(()=>getComputedStyle(document.querySelector('.v3-brisa-3')).animationName),'none','plantas paradas');
+  assert.equal(await p.evaluate(()=>getComputedStyle(document.querySelector('.folhas-caindo')).display),'none','sem folhas caindo');
   assert.equal(await p.evaluate(()=>document.querySelector('.home-notebook.caderno').className.includes('is-aberto')&&!document.querySelector('.home-notebook.caderno').className.includes('is-abrindo')),true,'caderno já aberto, sem animar a capa');
   await p.locator('#espNova [name=texto]').fill('Conferir a obra');await p.locator('#espNova [type=submit]').click();await p.locator('[data-esp-check]').first().waitFor();
   await p.locator('[data-esp-check]').first().check();await p.waitForFunction(()=>document.querySelector('#espPontos').textContent.trim()==='10');await p.waitForTimeout(200);

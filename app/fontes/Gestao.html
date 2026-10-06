@@ -47,7 +47,7 @@ window.CPTGestao = (() => {
   /** Abas da Visão do mês para a gestão. sel: aba marcada ('resumo' na própria Visão do mês). */
   function abas(sel) {
     const atual = sel || aba;
-    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['cronograma', 'Cronograma']].concat(ui.podeVer('painel') ? [['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo']] : []).map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
+    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['cronograma', 'Cronograma']].concat(ui.state.route === 'painel' || ui.podeVer('painel') ? [['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo']] : []).map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
   }
   function desenharPainel() {
     const corpo = aba === 'frentes' ? frentes() : aba === 'relatos' ? '<div id="relatosResumo"></div>' : contrato();

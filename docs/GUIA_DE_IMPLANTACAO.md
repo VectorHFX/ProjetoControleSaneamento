@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.30.0 — Recados e tarefas dentro do Meu espaço, e mais aconchego (≈ 3 min)
+
+1. Rode a atualização pelo **Cloud Shell**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.30.0`) e publique uma **Nova versão**. Não há planilha nova nem permissão nova.
+2. **Recados** saíram do menu e moram no **Meu espaço**: quando chega recado, ele aparece no topo do "Meu dia" (toque para abrir, responder ou resolver); a aba **Recados** tem tudo (para mim, que enviei, resolvidos) e o "Novo recado". O número no menu, no **Meu espaço**, soma recados novos e tarefas recebidas para hoje.
+3. **Lembretes viraram tarefas "para quem"**: ao anotar uma tarefa no checklist, escolha **Para mim**, uma **frente** ou uma **pessoa**. Quem recebe vê a tarefa no próprio checklist daquele dia, com "de Fulana"; ao marcar, ganha os pontos como qualquer tarefa e a tarefa fica feita para todos. Quem passou acompanha com "para Paula". Atrasadas aparecem hoje com "desde dd/mm". Todo o time pode passar tarefas. Os lembretes antigos continuam valendo do mesmo jeito.
+4. **Aconchego (visual novo):** carregando em forma de folha, raminho no canto dos cartões do Meu espaço, folhas caindo devagar no cenário do mascote e uma folhinha ao marcar tarefa. Tudo some com "Reduzir movimentos".
+5. **Mais rápido:** ao voltar para o Meu espaço, a tela aparece na hora (a atualização chega por trás, sem piscar e sem apagar o que você está digitando); recados novos e tarefas chegam junto, sem outra consulta; listas longas (contatos, registros, galeria) só desenham o que está perto da tela; a fonte do visual novo começa a carregar mais cedo.
+
 ## Atualização 2.29.0 — menu novo, Ferramentas e o Álbum sai (≈ 5 min)
 
 1. Rode a atualização pelo **Cloud Shell**. A conferência mostra em **"Remover (aposentados)"** também `AlbumCPT` e `Album`: são apagados do projeto no Google de propósito. Execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.29.0`) e publique uma **Nova versão**.
@@ -44,7 +52,7 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 1. Rode a atualização pelo **Cloud Shell** como sempre, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.27.1`) e publique uma **Nova versão** (se a atualização não publicou). Não há planilha nova nem permissão nova.
 2. **Obras**: **Bairros** virou uma aba própria, com campo para localizar o bairro (antes ficava no fim da página, depois de todas as obras). Quem só consulta vê as abas Catálogo e Bairros; a gerência vê também Obras de hoje e Para vincular.
 3. O **Catálogo** mostra 12 obras por vez e o **Para vincular** 8 registros por vez, com o botão **"Mostrar mais"**. Buscar ou trocar o filtro volta para o começo da lista.
-4. **Meu espaço**: abaixo do mascote, as abas **Meu dia** (agenda, checklist e caderno), **Quiz e saber** e **Jogos e placar**. A aba fica presa no alto ao rolar, e o navegador lembra a última escolhida. Um ponto laranja na aba do quiz avisa que a pergunta do dia ainda espera resposta. Quem ainda não vê quiz nem joguinhos continua sem abas.
+4. **Meu espaço**: abaixo do mascote, as abas **Meu dia** (agenda, checklist e caderno), **Quiz** e **Jogos** (2.30: também **Recados**). A aba fica presa no alto ao rolar, e o navegador lembra a última escolhida. Um ponto laranja na aba do quiz avisa que a pergunta do dia ainda espera resposta. Quem ainda não vê quiz nem joguinhos continua sem abas.
 
 ## Atualização 2.27.0 — fechamento do relatório retirado da aplicação (≈ 5 min)
 

@@ -4,7 +4,7 @@
  * Galeria (Ferramentas extras): fotos do mês (registros + extras), para todo o time; enviar fotos é da Comunicação,
  *   do Socioambiental e da Gestão. Pacote .zip para baixar.
  * Materiais (Ferramentas extras): a pasta de links com prazo e situação; todos veem, Comunicação e Gestão editam.
- * Lembretes: ações e materiais combinados entre Social e Comunicação (vão para o Meu espaço na próxima entrega).
+ * 2.30: os Lembretes viraram tarefas "para quem" no checklist do Meu espaço (a página saiu).
  */
 /*
  * 2.26.3 — miniaturas pela aplicação. Primeiro o navegador tenta o Drive (rápido, quando a conta de quem vê tem leitura
@@ -50,8 +50,8 @@ window.CPTMiniaturas = (() => {
 window.CPTComunicacao = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
-  let ui = null, ticket = 0, lem = null, mat = null, gal = null;
-  let filtroLem = 'fazer', filtroMat = {situacao: 'abertos', busca: ''}, filtroGal = {origem: '', busca: '', limite: 24}, selecionadas = new Set();
+  let ui = null, ticket = 0, mat = null, gal = null;
+  let filtroMat = {situacao: 'abertos', busca: ''}, filtroGal = {origem: '', busca: '', limite: 24}, selecionadas = new Set();
   const $ = id => document.getElementById(id);
   const ops = new Map(), opId = (k, c) => { const s = JSON.stringify(c), a = ops.get(k); if (a && a.s === s) return a.id; const id = 'OP-' + crypto.randomUUID(); ops.set(k, {s, id}); return id; };
   const hojeISO = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
@@ -63,61 +63,14 @@ window.CPTComunicacao = (() => {
   const nomePessoa = (lista, email) => (lista.find(p => p.email === email) || {nome: email ? email.split('@')[0] : ''}).nome;
   const thumb = id => window.CPTMiniaturas ? window.CPTMiniaturas.src(id, 360) : 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w360';
 
-  const TITULOS = {galeria: ['Galeria', 'Fotos do mês: dos relatos e as extras. Escolha até 15 para baixar com as legendas.'], materiais: ['Materiais', 'Links e peças da Comunicação, com prazo e situação.'],
-    lembretes: ['Lembretes', 'Ações socioambientais e materiais, combinados entre Social e Comunicação.']};
+  const TITULOS = {galeria: ['Galeria', 'Fotos do mês: dos relatos e as extras. Escolha até 15 para baixar com as legendas.'], materiais: ['Materiais', 'Links e peças da Comunicação, com prazo e situação.']};
   const cabecalho = () => ui.intro(...(TITULOS[ui.state.route] || TITULOS.galeria));
-  function render() { ({lembretes: renderLembretes, materiais: renderMateriais, galeria: renderGaleria}[ui.state.route] || renderGaleria)(); }
+  function render() { ({materiais: renderMateriais, galeria: renderGaleria}[ui.state.route] || renderGaleria)(); }
   const carregando = t => { ui.view.innerHTML = cabecalho() + `<div class="loading-label"><span class="spinner"></span>${t}</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>`; };
   const falhou = (mine, e) => { if (mine === ticket) ui.view.innerHTML = cabecalho() + `<div class="notice">${ui.esc(e.message)}</div>`; };
-  const ativo = mine => mine === ticket && ['galeria', 'materiais', 'lembretes'].includes(ui.state.route);
+  const ativo = mine => mine === ticket && ['galeria', 'materiais'].includes(ui.state.route);
 
-  // ---------------- Lembretes ----------------
-  async function renderLembretes() {
-    const mine = ++ticket; carregando('Abrindo os lembretes…');
-    try { lem = await ui.call('listarLembretesCPT'); if (!ativo(mine)) return; desenharLembretes(); } catch (e) { falhou(mine, e); }
-  }
-  function cartaoLembrete(l) {
-    const feito = l.situacao === 'feito', late = !feito && l.data < hojeISO();
-    return `<article class="reminder ${feito ? 'is-done' : ''} ${late ? 'is-late' : ''}"><div class="card-top"><span class="kind kind-${l.tipo}">${l.tipo === 'material' ? 'Material de comunicação' : 'Ação socioambiental'}</span><span class="small ${late ? 'late-text' : 'muted'}">${feito ? 'Feito em ' + ui.date(String(l.feitoEm).slice(0, 10)) : ui.esc(relativo(l.data))}</span></div>
-      <h3>${ui.esc(l.titulo)}</h3>${l.detalhe ? `<p>${ui.esc(l.detalhe)}</p>` : ''}${l.material ? `<p class="small"><strong>Materiais:</strong> ${ui.esc(l.material)}</p>` : ''}
-      <p class="small muted">${ui.esc([l.responsavel ? 'Com ' + nomePessoa(lem.pessoas, l.responsavel) : '', l.evento ? 'Atividade: ' + l.evento.titulo : '', l.frentes.map(f => f === 'comunicacao' ? 'Comunicação' : 'Social').join(' + ')].filter(Boolean).join(' · '))}</p>
-      <div class="card-actions">${feito ? `<button class="button ghost" data-lem-desfazer="${ui.esc(l.id)}">Voltar para pendente</button>` : `<button class="button" data-lem-feito="${ui.esc(l.id)}">Feito ${ic('tick', '✓')}</button>`}<button class="button ghost" data-lem-editar="${ui.esc(l.id)}">Editar</button><button class="button ghost" data-lem-recado="${ui.esc(l.id)}">Avisar por recado</button></div></article>`;
-  }
-  function desenharLembretes() {
-    const h = hojeISO(), pend = lem.itens.filter(l => l.situacao !== 'feito'), d7 = new Date(h + 'T12:00:00Z'); d7.setUTCDate(d7.getUTCDate() + 7); const s7 = d7.toISOString().slice(0, 10);
-    const grupos = filtroLem === 'feitos' ? [['Feitos (mais recentes primeiro)', lem.itens.filter(l => l.situacao === 'feito').sort((a, b) => String(b.feitoEm).localeCompare(String(a.feitoEm))).slice(0, 40)]]
-      : [['Atrasados', pend.filter(l => l.data < h)], ['Hoje', pend.filter(l => l.data === h)], ['Próximos 7 dias', pend.filter(l => l.data > h && l.data <= s7)], ['Mais adiante', pend.filter(l => l.data > s7)]];
-    ui.view.innerHTML = cabecalho() + `<div class="tool-head"><div class="segmented painel-tabs">${[['fazer', 'Para fazer'], ['feitos', 'Feitos']].map(([k, n]) => `<button class="${filtroLem === k ? 'chosen' : ''}" aria-pressed="${filtroLem === k}" data-lem-filtro="${k}">${n}</button>`).join('')}</div><button class="button" data-lem-novo>${ui.icon('plus')}Novo lembrete</button></div>` +
-      grupos.filter(([, l]) => l.length || filtroLem === 'feitos').map(([t, l]) => `<section class="reminder-group"><h3 class="peek-title">${t} <span class="count-pill">${l.length}</span></h3><div class="cards reminder-cards">${l.map(cartaoLembrete).join('') || '<p class="empty-line">Nada aqui.</p>'}</div></section>`).join('') ||
-      '<p class="empty-line">Nenhum lembrete pendente. Crie um para não esquecer de uma ação ou de um material.</p>';
-  }
-  async function formLembrete(l, evento) {
-    if (!lem) { try { lem = await ui.call('listarLembretesCPT'); } catch (e) { ui.toast(e.message); return; } }
-    l = l || {tipo: evento ? 'material' : 'acao', titulo: evento ? 'Material para: ' + evento.titulo : '', data: evento ? evento.data : hojeISO(), frentes: ['socioambiental', 'comunicacao'], evento: evento || null};
-    dialogo('LEMBRETE', l.id ? 'Editar lembrete' : 'Novo lembrete', `<form id="lemForm" class="stack-form" data-id="${ui.esc(l.id || '')}" data-versao="${l.versao || 0}"><div id="lemErro" class="notice" hidden></div>
-      <fieldset class="big-choice"><legend>É sobre o quê?</legend><label><input type="radio" name="tipo" value="acao" ${l.tipo === 'acao' ? 'checked' : ''}><span><strong>Ação socioambiental</strong><small>Algo para fazer, acompanhar ou divulgar</small></span></label><label><input type="radio" name="tipo" value="material" ${l.tipo === 'material' ? 'checked' : ''}><span><strong>Material</strong><small>Panfleto, banner, brinde, foto, vídeo…</small></span></label></fieldset>
-      ${l.evento ? `<p class="link-chip"><span>Atividade: <strong>${ui.esc(l.evento.titulo)}</strong> (${ui.date(l.evento.data)})</span></p>` : ''}
-      <label class="field">O que lembrar<input name="titulo" maxlength="140" required value="${ui.esc(l.titulo || '')}" placeholder="Ex.: Levar 200 panfletos da obra"></label>
-      <div class="form-row"><label class="field">Quando<input type="date" name="data" required value="${ui.esc(l.data || '')}"></label><label class="field">Responsável<select name="responsavel"><option value="">Ninguém em especial</option>${lem.pessoas.map(p => `<option value="${ui.esc(p.email)}" ${l.responsavel === p.email ? 'selected' : ''}>${ui.esc(p.nome)}</option>`).join('')}</select></label></div>
-      <label class="field">Materiais necessários (se tiver)<input name="material" maxlength="600" value="${ui.esc(l.material || '')}" placeholder="Ex.: 200 panfletos, 1 banner, tenda"></label>
-      <label class="field">Detalhes<textarea name="detalhe" rows="3" maxlength="1500" placeholder="Onde, com quem, o que não pode faltar.">${ui.esc(l.detalhe || '')}</textarea></label>
-      <fieldset class="choice-group"><legend>Quem acompanha</legend><label class="choice"><input type="checkbox" name="frentes" value="socioambiental" ${l.frentes.includes('socioambiental') ? 'checked' : ''}>Social</label><label class="choice"><input type="checkbox" name="frentes" value="comunicacao" ${l.frentes.includes('comunicacao') ? 'checked' : ''}>Comunicação</label></fieldset>
-      <div class="dialog-actions"><button class="button" type="submit">Salvar lembrete</button></div></form>`);
-    $('lemForm').__evento = l.evento || null;
-  }
-  async function salvarLembrete(f) {
-    const b = f.querySelector('[type=submit]'), dados = {id: f.dataset.id, versao: Number(f.dataset.versao), tipo: (f.querySelector('[name=tipo]:checked') || {}).value, titulo: f.elements.titulo.value, data: f.elements.data.value, responsavel: f.elements.responsavel.value,
-      material: f.elements.material.value, detalhe: f.elements.detalhe.value, frentes: [...f.querySelectorAll('[name=frentes]:checked')].map(x => x.value), evento: f.__evento};
-    b.disabled = true;
-    try { const r = await ui.call('salvarLembreteCPT', {...dados, operacaoId: opId('lem' + dados.id, dados)}); ui.toast(r.resultado); fechar(); depoisDeSalvar(); }
-    catch (e) { erro('lemErro', e); } finally { b.disabled = false; }
-  }
-  async function concluirLembrete(id, feito, botao) {
-    if (botao) botao.disabled = true;
-    try { const r = await ui.call('concluirLembreteCPT', {id, feito, operacaoId: opId('lemc' + id, {id, feito})}); ui.toast(r.resultado); depoisDeSalvar(); }
-    catch (e) { ui.toast(e.message); if (botao) botao.disabled = false; }
-  }
-  function depoisDeSalvar() { if (window.CPTRecados) window.CPTRecados.contar(true); if (['galeria', 'materiais', 'lembretes'].includes(ui.state.route)) render(); }
+  function depoisDeSalvar() { if (window.CPTRecados) window.CPTRecados.contar(true); if (['galeria', 'materiais'].includes(ui.state.route)) render(); }
 
   // ---------------- Materiais e links ----------------
   async function renderMateriais() {
@@ -227,12 +180,6 @@ window.CPTComunicacao = (() => {
   function init(api) {
     ui = api; window.CPTMiniaturas.ligar(ui.call, () => ui.state.mes);
     document.addEventListener('click', e => {
-      if (e.target.closest('[data-lem-novo]')) { formLembrete(); return; }
-      const lf = e.target.closest('[data-lem-feito]'); if (lf) { concluirLembrete(lf.dataset.lemFeito, true, lf); return; }
-      const ld = e.target.closest('[data-lem-desfazer]'); if (ld) { concluirLembrete(ld.dataset.lemDesfazer, false, ld); return; }
-      const le = e.target.closest('[data-lem-editar]'); if (le) { formLembrete(lem.itens.find(x => x.id === le.dataset.lemEditar)); return; }
-      const lr = e.target.closest('[data-lem-recado]'); if (lr) { const l = lem.itens.find(x => x.id === lr.dataset.lemRecado); window.CPTRecados.novo({tipo: 'lembrete', id: l.id, titulo: l.titulo, url: ''}, {assunto: 'Lembrete: ' + l.titulo, texto: [relativo(l.data), l.material ? 'Materiais: ' + l.material : '', l.detalhe].filter(Boolean).join('\n'), frentes: l.frentes}); return; }
-      const lft = e.target.closest('[data-lem-filtro]'); if (lft) { filtroLem = lft.dataset.lemFiltro; desenharLembretes(); return; }
       if (e.target.closest('[data-mat-novo]')) { formMaterial(); return; }
       const mc = e.target.closest('[data-mat-concluir]'); if (mc) { const go = async () => { if (!mat) mat = await ui.call('listarMateriaisCPT', ui.state.mes); formMaterial(mat.itens.find(x => x.id === mc.dataset.matConcluir), true); }; go().catch(err => ui.toast(err.message)); return; }
       const me = e.target.closest('[data-mat-editar]'); if (me) { formMaterial(mat.itens.find(x => x.id === me.dataset.matEditar)); return; }
@@ -267,8 +214,8 @@ window.CPTComunicacao = (() => {
       if (e.target.id === 'galBusca') { filtroGal.busca = e.target.value; filtroGal.limite = 24; clearTimeout(buscaTimer); buscaTimer = setTimeout(() => { if ($('galBusca')) desenharGaleria(focado('galBusca')); }, 220); }
     });
     document.addEventListener('submit', e => {
-      const f = e.target; if (!['lemForm', 'matForm', 'galForm'].includes(f.id)) return; e.preventDefault();
-      if (f.id === 'lemForm') salvarLembrete(f); else if (f.id === 'matForm') salvarMaterial(f); else enviarFotos(f);
+      const f = e.target; if (!['matForm', 'galForm'].includes(f.id)) return; e.preventDefault();
+      if (f.id === 'matForm') salvarMaterial(f); else enviarFotos(f);
     });
   }
   return {init, render, atualizar: () => { if (ui.state.route === 'galeria') renderGaleria(true); else render(); }};

@@ -126,8 +126,11 @@ class PessoalCPT {
     if (QuizCPT.pode(this.ctx.perfil)) out.saber = this.saber();
     if (JogosCPT.pode(this.ctx.perfil)) out.jogos = JogosCPT.de(this.ctx).estado();
     out.quadro = this.quadro(perfil); out.paisagens = PessoalCPT.paisagens;
+    out.pessoas = ColecaoCPT.pessoas(this.ctx).map(x => ({email: x.email, nome: x.nome})); // "para quem" das tarefas
     if (PlacarCPT.pode(this.ctx.perfil)) { try { out.placar = new PlacarCPT(this.ctx).carregar(); } catch (e) { console.warn('Placar: ' + e.message); } }
-    try { out.trabalho = {recados: new RecadosCPT(this.ctx).naoLidos().length}; if (LembretesCPT.pode(this.ctx.perfil)) out.trabalho.lembretes = new ColecaoCPT(this.ctx, 'Lembretes', 'LEM').itens().filter(l => l.situacao !== 'feito' && l.data && l.data <= this.hoje).length; } catch (_) { out.trabalho = {}; }
+    // 2.30: recados novos e tarefas recebidas (lembretes) chegam junto, sem outra consulta.
+    try { const r = new RecadosCPT(this.ctx), novos = r.naoLidos().sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm)); out.recados = {novos: novos.slice(0, 3).map(x => r.publico(x)), total: novos.length}; } catch (e) { out.recados = {novos: [], total: 0}; }
+    try { const l = new LembretesCPT(this.ctx); out.lembretes = l.doDia(dia); out.trabalho = {recados: out.recados.total, lembretes: l.pendentesHoje()}; } catch (e) { out.lembretes = []; out.trabalho = {recados: out.recados.total}; }
     return out;
   }
   /** "Saber mais": curiosidade do dia, campanha do mês e quiz (conteúdo em ConteudoSaneamentoCPT). */
@@ -224,7 +227,10 @@ class PessoalCPT {
     const dias = this.diasEscritos(), ganhou = Math.floor(dias / PessoalCPT.diasPorPeca) > Math.floor(antes / PessoalCPT.diasPorPeca);
     return {resultado: ganhou ? 'Caderno salvo. Você completou ' + dias + ' dias: tem peça nova esperando!' : 'Salvo.', nota: {data: dia, texto: e.texto, versao: e.versao, alteradoEm: e.alteradoEm}, dias, pendentes: this.pendentes(this.perfil())};
   }
-  /** Lista do dia inteira. "pontuado" nunca sai de uma tarefa que já ganhou pontos (desmarcar não tira, remarcar não soma). */
+  /**
+   * Lista do dia inteira. "pontuado" nunca sai de uma tarefa que já ganhou pontos (desmarcar não tira, remarcar não soma).
+   * 2.30: tarefa recebida (lembrete) entra na lista com o código do lembrete; marcar feito aqui conclui o lembrete.
+   */
   salvarLista(p) {
     p = p || {}; const dia = ColecaoCPT.data(p.data, 'data', true), id = this.idDia('CHK', dia), antiga = this.listas.obter(id);
     if (!Array.isArray(p.itens) || p.itens.length > 30) throw new Error('Use até 30 tarefas por dia.');
@@ -233,14 +239,22 @@ class PessoalCPT {
     const itens = p.itens.map(t => {
       const idT = /^T-[\w-]{4,40}$/.test(String(t.id)) ? t.id : 'T-' + Utilities.getUuid().slice(0, 8), velho = ant.get(idT), feito = t.feito === true;
       const x = {id: idT, texto: ColecaoCPT.texto(t.texto, 200, 'tarefa', true), feito, feitoEm: feito ? (velho && velho.feitoEm) || new Date().toISOString() : '', pontuado: !!(velho && velho.pontuado)};
+      const lem = velho && velho.lembrete ? velho.lembrete : (/^LEM-[\w-]{4,60}$/.test(String(t.lembrete || '')) ? t.lembrete : ''); if (lem) x.lembrete = lem;
       if (feito && !x.pontuado && dia <= this.hoje && pontuadas < PessoalCPT.tarefasPontuadasPorDia) { x.pontuado = true; pontuadas++; }
       return x;
     });
     // Tarefa que já pontuou continua contando mesmo se for apagada da lista.
     ant.forEach(t => { if (t.pontuado && !itens.some(x => x.id === t.id)) itens.push({...t, removido: true}); });
+    // Tarefa recebida: confere antes de gravar (o lembrete precisa ser para mim) e conclui depois.
+    const mudaram = itens.filter(x => x.lembrete && !x.removido && x.feito !== !!(ant.get(x.id) || {}).feito);
+    const lembretes = mudaram.length || itens.some(x => x.lembrete && !ant.has(x.id)) ? new LembretesCPT(this.ctx) : null;
+    itens.filter(x => x.lembrete && !ant.has(x.id)).forEach(x => { const l = lembretes.col.obter(x.lembrete); if (!l || !lembretes.visivel(l)) throw new Error('Essa tarefa não é para você.'); });
     const e = this.listas.gravar({itens}, antiga ? Number(p.versao) : 0, p.operacaoId, id), perfil = this.perfil();
+    mudaram.forEach(x => { try { lembretes.concluir({id: x.lembrete, feito: x.feito}); } catch (err) { console.warn('Lembrete ' + x.lembrete + ': ' + err.message); } });
     const novos = itens.filter(x => x.pontuado && !(ant.get(x.id) || {}).pontuado).length;
-    return {resultado: novos ? '+' + novos * PessoalCPT.pontosPorTarefa + ' pontos!' : 'Checklist salvo.', lista: {data: dia, itens: e.itens, versao: e.versao}, pontos: this.pontos(perfil)};
+    const out = {resultado: novos ? '+' + novos * PessoalCPT.pontosPorTarefa + ' pontos!' : 'Checklist salvo.', lista: {data: dia, itens: e.itens, versao: e.versao}, pontos: this.pontos(perfil)};
+    if (lembretes) out.lembretes = lembretes.doDia(dia);
+    return out;
   }
 }
 
