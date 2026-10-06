@@ -43,6 +43,9 @@ const png=path.join(os.tmpdir(),'cpt_teste.png');fs.writeFileSync(png,Buffer.fro
   // Materiais: concluir com alcance entra no mês.
   await p.locator('.nav-item[data-route=materiais]').click();await p.locator('.month-strip').waitFor();assert.equal(await p.locator('.com-tabs').count(),0,'sem abas da antiga Comunicação');
   assert.match(await p.locator('.month-strip').textContent(),/Publicações1/);
+  // 2.32: material novo simples — "Quando ficar pronto" só com a situação Concluído; prazo e responsável em "Mais detalhes".
+  await p.locator('[data-mat-novo]').first().click();await p.locator('#matForm').waitFor();assert.equal(await p.locator('#matForm .done-fields').isVisible(),false);assert.equal(await p.locator('#matForm [name=prazo]').isVisible(),false);
+  await p.selectOption('#matForm [name=situacao]','concluido');assert.equal(await p.locator('#matForm .done-fields').isVisible(),true);await p.locator('#closeDialog').click();
   await p.locator('[data-mat-concluir]').first().click();await p.locator('#matForm').waitFor();
   await p.locator('#matForm [name=alcance]').fill('1200');await p.locator('#matForm [name=publicadoEm]').fill('2026-09-20');await p.locator('#matForm [type=submit]').click();await toast(/concluído/);
   await p.waitForFunction(()=>/Publicações2/.test(document.querySelector('.month-strip')?.textContent));assert.match(await p.locator('.month-strip').textContent(),/6\.200/);

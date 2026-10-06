@@ -23,6 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.32.0 — formulários simples (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.32.0`, Nova versão).
+2. Formulários mais curtos: na frente ficam só os campos essenciais; o resto fica em **+ Mais detalhes** (abre sozinho ao editar algo que já tem esses campos preenchidos, ou quando um campo obrigatório lá dentro falta).
+   - **Nova atividade (Cronograma):** título, data, **Dia todo** (esconde início e fim), frentes e quem participa. Motivo da mudança só aparece ao editar. Natureza, situação, obra, bairro e descrição em Mais detalhes.
+   - **Novo recado:** prazo e "importante" em Mais detalhes.
+   - **Novo contato:** nome, instituição, tipo e telefone na frente; e-mail, endereço, bairro, frente, etiquetas e observação em Mais detalhes.
+   - **Material:** os campos de conclusão só aparecem com a situação "Concluído"; prazo, responsável e observação em Mais detalhes.
+   - **Obra:** nomes, situação e bairros na frente; tipo, endereço, datas, público, impacto e observação em Mais detalhes.
+3. Nada muda nas planilhas.
+
 ## Atualização 2.31.1 — acabamento do visual (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.31.1`, Nova versão).

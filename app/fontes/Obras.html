@@ -201,6 +201,8 @@ window.CPTObras = (() => {
       ${campo('Também chamada de <small class="muted">(separe por vírgula; ajuda a busca)</small>', `<input name="apelidos" maxlength="400" value="${ui.esc((e.apelidos || []).join(', '))}" ${dis}>`)}
       ${campo('Situação atual', `<select name="situacao" ${dis}>${dados.situacoes.map(s => `<option ${s === e.situacao ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
       <label class="check-inline"><input type="checkbox" name="noFormulario" ${e.noFormulario ? 'checked' : ''} ${dis}> Mostrar no formulário (quando em andamento ou paralisada)</label>
+      <fieldset class="wide"><legend>Bairros</legend><div class="check-options obra-bairros">${dados.bairros.map(b => `<label><input type="checkbox" name="bairros" value="${ui.esc(b)}" ${e.bairros.includes(b) ? 'checked' : ''} ${dis}> ${ui.esc(b)}</label>`).join('')}</div></fieldset>
+      <details class="mais-detalhes" ${so ? 'open' : ''}><summary>Mais detalhes <small>tipo, endereço, datas, público, impacto e observação</small></summary><div class="mais-detalhes-corpo">
       ${campo('Tipo de obra', `<input name="tipo" maxlength="120" placeholder="Ex.: Coletor tronco, rede coletora, MND" value="${ui.esc(e.tipo)}" ${dis}>`)}
       ${campo('Endereço da frente', `<input name="endereco" maxlength="300" placeholder="${ui.esc(e.logradouroPAC16 || 'Rua, trecho ou intervalo de numeração')}" value="${ui.esc(e.endereco)}" ${dis}>`)}
       ${campo('Início da obra', `<input type="date" name="inicioObra" value="${ui.esc(e.inicioObra)}" ${dis}>`)}
@@ -208,8 +210,8 @@ window.CPTObras = (() => {
       ${campo('Início da comunicação', `<input type="date" name="inicioComunicacao" value="${ui.esc(e.inicioComunicacao)}" ${dis}>`)}
       ${campo('Tipo de público (A, B, C…)', `<input name="publico" maxlength="20" placeholder="A, B" value="${ui.esc(e.publico)}" ${dis}>`)}
       ${campo('Impacto', `<select name="impacto" ${dis}><option value="">Não informado</option>${dados.impactos.map(s => `<option ${s === e.impacto ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
-      <fieldset class="wide"><legend>Bairros</legend><div class="check-options obra-bairros">${dados.bairros.map(b => `<label><input type="checkbox" name="bairros" value="${ui.esc(b)}" ${e.bairros.includes(b) ? 'checked' : ''} ${dis}> ${ui.esc(b)}</label>`).join('')}</div></fieldset>
       ${campo('Observação', `<textarea name="observacao" rows="3" maxlength="1000" ${dis}>${ui.esc(e.observacao)}</textarea>`, true)}
+      </div></details>
       </div>
       ${novo ? '' : `<p class="small muted">PAC16: ${ui.esc(e.logradouroPAC16 || '—')} · ${ui.esc(e.metodoPAC16 || '—')} ${mapa}<br>${ui.esc(revisao(e))}${e.atualizadoPor ? ' por ' + ui.esc(e.atualizadoPor) : ''}.</p>`}
       ${so ? '' : `<div class="dialog-actions"><button class="button" type="submit">${novo ? 'Cadastrar obra' : 'Salvar alterações'}</button></div>`}</form>`;

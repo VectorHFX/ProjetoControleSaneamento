@@ -1413,4 +1413,14 @@ html[data-motion=reduce] .spinner,html[data-motion=reduce] .home-cards.acabou-de
 textarea{font:inherit;color:var(--ink)}
 :where(.field) textarea{font-weight:400;font-size:14px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);resize:vertical;line-height:1.55}
 #noteForm{margin-top:12px;display:grid;gap:4px}#noteForm .button{justify-self:start;margin-top:6px}#caseNotes{margin-top:16px}
+/* 2.32: formulários simples — o essencial na frente, o opcional em "Mais detalhes". */
+details.mais-detalhes{grid-column:1/-1;border:1px dashed var(--line);border-radius:12px;padding:0 14px;margin:4px 0 2px;background:color-mix(in srgb,var(--bg) 55%,transparent)}
+details.mais-detalhes>summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650;color:var(--blue)}
+details.mais-detalhes>summary::-webkit-details-marker{display:none}
+details.mais-detalhes>summary::before{content:'+';display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--pale);font-weight:800;transition:transform .2s}
+details.mais-detalhes[open]>summary::before{content:'–'}
+details.mais-detalhes>summary small{font-weight:400;color:var(--muted)}
+.mais-detalhes-corpo{display:grid;gap:12px;padding:2px 0 14px}.editor-grid .mais-detalhes-corpo{grid-template-columns:repeat(2,minmax(0,1fr))}.editor-grid .mais-detalhes-corpo .wide{grid-column:1/-1}
+@media (max-width:640px){.editor-grid .mais-detalhes-corpo{grid-template-columns:1fr}}
+.check-inline.dia-todo{align-self:end;min-height:44px}
 </style>

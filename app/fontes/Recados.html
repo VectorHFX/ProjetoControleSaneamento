@@ -100,7 +100,7 @@ window.CPTRecados = (() => {
       ${vinculo ? vinculoHtml(vinculo) : ''}
       <label class="field">Assunto<input name="assunto" maxlength="120" required value="${ui.esc(s.assunto || '')}" placeholder="Ex.: Fotos da ação na escola"></label>
       <label class="field">Mensagem<textarea name="texto" rows="5" maxlength="2000" required placeholder="Escreva o que a pessoa precisa saber ou fazer.">${ui.esc(s.texto || '')}</textarea></label>
-      <div class="form-row"><label class="field">Prazo (se tiver)<input type="date" name="prazo"></label><label class="choice"><input type="checkbox" name="importante">Marcar como importante</label></div>
+      <details class="mais-detalhes"><summary>Mais detalhes <small>prazo e importante</small></summary><div class="mais-detalhes-corpo"><div class="form-row"><label class="field">Prazo (se tiver)<input type="date" name="prazo"></label><label class="choice"><input type="checkbox" name="importante">Marcar como importante</label></div></div></details>
       <div class="dialog-actions"><button class="button" type="submit">Enviar recado</button></div></form>`);
   }
   async function enviar(f) {
@@ -148,11 +148,12 @@ window.CPTRecados = (() => {
     c = c || {cor: 'azul', tipo: ''};
     dialogo('CONTATO', c.id ? 'Editar contato' : 'Novo contato', `<form id="conForm" class="stack-form" data-id="${ui.esc(c.id || '')}" data-versao="${c.versao || 0}"><div id="conErro" class="notice" hidden></div>
       <div class="form-row"><label class="field">Nome da pessoa<input name="nome" maxlength="120" value="${ui.esc(c.nome || '')}"></label><label class="field">Instituição, função ou cargo<input name="instituicao" maxlength="200" value="${ui.esc(c.instituicao || '')}"></label></div>
-      <div class="form-row"><label class="field">Tipo<select name="tipo" required><option value="">Escolha</option>${con.tipos.map(t => `<option ${c.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><label class="field">Sinalizador<select name="cor">${[['azul', 'Azul (padrão)'], ['verde', 'Verde (parceiro)'], ['amarelo', 'Amarelo (atenção)'], ['vermelho', 'Vermelho (cuidado)'], ['cinza', 'Cinza (inativo)']].map(([k, n]) => `<option value="${k}" ${c.cor === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
-      <div class="form-row"><label class="field">Telefone<input name="telefone" maxlength="60" inputmode="tel" value="${ui.esc(c.telefone || '')}"></label><label class="field">E-mail<input name="email" type="email" maxlength="160" value="${ui.esc(c.email || '')}"></label></div>
+      <div class="form-row"><label class="field">Tipo<select name="tipo" required><option value="">Escolha</option>${con.tipos.map(t => `<option ${c.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><label class="field">Telefone<input name="telefone" maxlength="60" inputmode="tel" value="${ui.esc(c.telefone || '')}"></label></div>
+      <details class="mais-detalhes" ${c.id && (c.email || c.endereco || c.bairro || c.frente || c.etiquetas || c.observacao || (c.cor && c.cor !== 'azul')) ? 'open' : ''}><summary>Mais detalhes <small>e-mail, endereço, etiquetas, sinalizador e observação</small></summary><div class="mais-detalhes-corpo">
+      <div class="form-row"><label class="field">E-mail<input name="email" type="email" maxlength="160" value="${ui.esc(c.email || '')}"></label><label class="field">Sinalizador<select name="cor">${[['azul', 'Azul (padrão)'], ['verde', 'Verde (parceiro)'], ['amarelo', 'Amarelo (atenção)'], ['vermelho', 'Vermelho (cuidado)'], ['cinza', 'Cinza (inativo)']].map(([k, n]) => `<option value="${k}" ${c.cor === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
       <div class="form-row"><label class="field">Endereço<input name="endereco" maxlength="300" value="${ui.esc(c.endereco || '')}"></label><label class="field">Bairro<input name="bairro" maxlength="120" value="${ui.esc(c.bairro || '')}"></label></div>
       <div class="form-row"><label class="field">Frente de obra<input name="frente" maxlength="200" value="${ui.esc(c.frente || '')}"></label><label class="field">Etiquetas<input name="etiquetas" maxlength="200" value="${ui.esc(c.etiquetas || '')}" placeholder="Ex.: escola, horta, imprensa"></label></div>
-      <label class="field">Observação interna<textarea name="observacao" rows="3" maxlength="2000" placeholder="Como abordar, melhor horário, cuidados.">${ui.esc(c.observacao || '')}</textarea></label>
+      <label class="field">Observação interna<textarea name="observacao" rows="3" maxlength="2000" placeholder="Como abordar, melhor horário, cuidados.">${ui.esc(c.observacao || '')}</textarea></label></div></details>
       <div class="dialog-actions"><button class="button" type="submit">Salvar contato</button>${c.id ? '<button class="button ghost" type="button" data-con-arquivar>Arquivar</button>' : ''}</div></form>`);
   }
   async function salvarContato(f, arquivar) {
