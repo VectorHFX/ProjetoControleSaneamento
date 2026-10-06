@@ -23,6 +23,11 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.30.1 — revisão das entregas 2.29 e 2.30 (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.30.1`, Nova versão).
+2. **Correções da revisão:** quem passa uma tarefa só acompanha (não consegue marcar no lugar de quem recebe e ganhar os pontos); o número de recados novos no Meu espaço (aba, cartão e aviso do topo) acerta sozinho depois de ler qualquer recado; ao voltar para o Meu espaço depois de olhar outro dia, aparece o "carregando" em vez da página anterior; atalhos antigos de "Lembretes" na Visão do mês viraram "Tarefas do dia"; restos de código sem uso removidos.
+
 ## Atualização 2.30.0 — Recados e tarefas dentro do Meu espaço, e mais aconchego (≈ 3 min)
 
 1. Rode a atualização pelo **Cloud Shell**, execute **`instalarAplicacaoCPT`** (deve mostrar `versao: 2.30.0`) e publique uma **Nova versão**. Não há planilha nova nem permissão nova.

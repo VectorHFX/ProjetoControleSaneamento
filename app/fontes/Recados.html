@@ -189,6 +189,8 @@ window.CPTRecados = (() => {
     document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; filtroCon.limite = LIMITE_CON; desenharContatos(); } });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil && Date.now() - ultimaContagem > 60000) contar(true); });
   }
-  return {init, embutir, abrir, renderContatos, novo, contar, copiarAvisos: marcar};
+  /** Recados novos para mim (mais recentes primeiro), ou null se a lista ainda não foi carregada. */
+  const novos = () => rec ? rec.itens.filter(r => r.paraMim && !r.meu && !r.lido && r.situacao !== 'resolvido').sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm)) : null;
+  return {init, embutir, abrir, novos, renderContatos, novo, contar, copiarAvisos: marcar};
 })();
 </script>

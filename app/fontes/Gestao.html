@@ -34,7 +34,6 @@ window.CPTGestao = (() => {
 
   // ---------------- Painel da gestão ----------------
   // 2.11: o painel vive dentro da Visão do mês, em abas (Resumo do mês · Contrato · Frentes · Relatos).
-  const INTRO = ['Visão do mês', 'Resumo, contrato, frentes de serviço e relatos do mês, começando pelo que pede atenção.'];
   async function renderPainel(atualizar = false) {
     const mine = ++ticket, mes = ui.state.mes;
     if (atualizar) comparacao = null;

@@ -49,7 +49,6 @@ window.CPTMiniaturas = (() => {
 
 window.CPTComunicacao = (() => {
   'use strict';
-  const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
   let ui = null, ticket = 0, mat = null, gal = null;
   let filtroMat = {situacao: 'abertos', busca: ''}, filtroGal = {origem: '', busca: '', limite: 24}, selecionadas = new Set();
   const $ = id => document.getElementById(id);

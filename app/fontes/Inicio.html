@@ -78,8 +78,8 @@ window.CPTInicio = (() => {
     const pesq = s.semana ? s.semana.total + ' de ' + s.semana.meta + ' nesta semana' : s.mes + ' de ' + s.meta + ' no mês';
     const mapa = {
       atendimento: [b('atendimentos', 'Casos em aberto', ui.num(k.abertos) + ' em tratativa', 'abertos'), b('atendimentos', 'Auditoria das fichas', 'O que conferir na carteira', 'auditoria'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('obras', 'Obras e endereços', 'Frentes de serviço')],
-      socioambiental: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('lembretes', 'Lembretes', 'Ações e materiais com a Comunicação'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
-      comunicacao: [b('materiais', 'Materiais', 'Prazos e publicações'), b('galeria', 'Galeria', 'Fotos do mês'), b('lembretes', 'Lembretes', 'Ações e materiais'), b('recados', 'Recados', 'Avisar outra frente')],
+      socioambiental: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('meuespaco', 'Tarefas do dia', 'Checklist e tarefas recebidas'), b('registros', 'Pesquisas de satisfação', pesq), b('recados', 'Recados', 'Avisar outra frente')],
+      comunicacao: [b('materiais', 'Materiais', 'Prazos e publicações'), b('galeria', 'Galeria', 'Fotos do mês'), b('contatos', 'Contatos', 'Imprensa e parceiros'), b('recados', 'Recados', 'Avisar outra frente')],
       comercializacao: [b('obras', 'Obras e endereços', 'Onde estão as frentes'), b('cronograma', 'Cronograma', 'Agenda da equipe'), b('atendimentos', 'Consultar atendimentos', 'Casos e observações'), b('registros', 'Relatos', 'O que a equipe registrou')],
       gestao: [b('registros', 'Relatos do mês', 'O que a equipe registrou', 'relatos'), b('atendimentos', 'Auditoria de atendimentos', ui.num(k.abertos) + ' casos em aberto', 'auditoria'), b('obras', 'Obras e frentes', 'Catálogo e obras de hoje'), b('cronograma', 'Cronograma', 'Agenda da equipe')]
     };

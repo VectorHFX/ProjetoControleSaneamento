@@ -245,10 +245,10 @@ class PessoalCPT {
     });
     // Tarefa que já pontuou continua contando mesmo se for apagada da lista.
     ant.forEach(t => { if (t.pontuado && !itens.some(x => x.id === t.id)) itens.push({...t, removido: true}); });
-    // Tarefa recebida: confere antes de gravar (o lembrete precisa ser para mim) e conclui depois.
+    // Tarefa recebida: confere antes de gravar (o lembrete precisa ser para mim; quem passou só acompanha) e conclui depois.
     const mudaram = itens.filter(x => x.lembrete && !x.removido && x.feito !== !!(ant.get(x.id) || {}).feito);
     const lembretes = mudaram.length || itens.some(x => x.lembrete && !ant.has(x.id)) ? new LembretesCPT(this.ctx) : null;
-    itens.filter(x => x.lembrete && !ant.has(x.id)).forEach(x => { const l = lembretes.col.obter(x.lembrete); if (!l || !lembretes.visivel(l)) throw new Error('Essa tarefa não é para você.'); });
+    itens.filter(x => x.lembrete && !ant.has(x.id)).forEach(x => { const l = lembretes.col.obter(x.lembrete); if (!l || !lembretes.paraMim(l)) throw new Error('Essa tarefa não é para você.'); });
     const e = this.listas.gravar({itens}, antiga ? Number(p.versao) : 0, p.operacaoId, id), perfil = this.perfil();
     mudaram.forEach(x => { try { lembretes.concluir({id: x.lembrete, feito: x.feito}); } catch (err) { console.warn('Lembrete ' + x.lembrete + ': ' + err.message); } });
     const novos = itens.filter(x => x.pontuado && !(ant.get(x.id) || {}).pontuado).length;

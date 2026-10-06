@@ -215,7 +215,7 @@ window.CPTEspaco = (() => {
     const mine = ++ticket; if (!manterDia) dia = null;
     const deCache = !manterDia && d && d.perfil && d.data === d.hoje && d.hoje === hojeISO();
     if (deCache) { dia = d.data; desenhar(); }
-    else if (!d) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
+    else if (!d || !manterDia) ui.view.innerHTML = '<div class="loading-label"><span class="spinner"></span>Abrindo seu espaço…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try {
       const r = await ui.call('carregarMeuEspacoCPT', {data: dia || undefined}); if (mine !== ticket || ui.state.route !== 'meuespaco') return;
       if (d && d.missoes && r.data === d.data) r.missoes = d.missoes; // as missões chegam por outra consulta: continuam valendo
@@ -290,9 +290,15 @@ window.CPTEspaco = (() => {
   /** Recado lido, respondido ou resolvido (em qualquer lugar): sai da lista dos novos. */
   function recadoMudou(x) {
     if (!d || !d.recados || !x || !x.paraMim) return;
-    const era = d.recados.novos.some(y => y.id === x.id), novo = !x.lido && x.situacao !== 'resolvido';
-    if (era && !novo) { d.recados.novos = d.recados.novos.filter(y => y.id !== x.id); d.recados.total = Math.max(0, d.recados.total - 1); if (d.trabalho) d.trabalho.recados = d.recados.total; desenharNovosRecados();
-      const c = document.querySelector('#espTab-recados .tab-count'); if (c) { if (d.recados.total) c.textContent = d.recados.total; else c.remove(); } }
+    // A lista completa (aba Recados) é a fonte; sem ela, só tira o que estava no cartão.
+    const lista = window.CPTRecados && window.CPTRecados.novos ? window.CPTRecados.novos() : null;
+    if (lista) d.recados = {novos: lista.slice(0, 3), total: lista.length};
+    else if (d.recados.novos.some(y => y.id === x.id) && (x.lido || x.situacao === 'resolvido')) d.recados = {novos: d.recados.novos.filter(y => y.id !== x.id), total: Math.max(0, d.recados.total - 1)};
+    else return;
+    if (d.trabalho) d.trabalho.recados = d.recados.total; desenharNovosRecados();
+    const n = d.recados.total, c = document.querySelector('#espTab-recados .tab-count'), chip = document.querySelector('.home-chip[data-esp-parte=recados]');
+    if (c) { if (n) c.textContent = n; else c.remove(); }
+    if (chip) { if (n) chip.querySelector('span:last-child').textContent = n + (n === 1 ? ' recado novo' : ' recados novos'); else chip.remove(); }
   }
   /** Capa que abre na primeira vez; trocar de dia vira a página. Sem animação com "Reduzir movimentos". */
   function abrirCaderno() {
