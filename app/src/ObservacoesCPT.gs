@@ -2,10 +2,13 @@
  * ObservacoesCPT 2.0.0. Observações da equipe sobre atendimentos.
  * Cada observação é um evento novo: nunca altera a ficha nem o histórico original.
  * Fica na planilha "CPT • Dados da aplicação" (config.agendaId), aba Observações.
+ * 2.31: todo o time observa; cada observação nova vira um recado para Atendimento, Comunicação, Gestão e Administrativo
+ * (quem escreveu não recebe). O canal é opcional.
  */
 class ObservacoesCPT {
   static get cabecalho() { return ['ID', 'Protocolo principal', 'Protocolo consultado', 'Operação ID', 'Registrado em', 'Autor', 'Nome do autor', 'Canal', 'Observação']; }
   static get canais() { return ['Escritório', 'Campo / itinerante', 'Telefone ou WhatsApp', 'E-mail', 'Reunião', 'Outro']; }
+  static get avisar() { return ['atendimento', 'comunicacao', 'gestao', 'administrativo']; }
   static planilha(config) {
     if (!config.agendaId) throw new Error('Os dados da aplicação ainda não foram preparados. Avise a administração técnica.');
     return planilhaCPT_(config.agendaId);
@@ -32,18 +35,27 @@ class ObservacoesCPT {
   adicionar(p) {
     if (!p || typeof p.operacaoId !== 'string' || !/^OP-[a-zA-Z0-9-]{12,70}$/.test(p.operacaoId)) throw new Error('Identificação de salvamento inválida. Feche e abra a ficha novamente.');
     const texto = CronogramaCPT.texto(p.texto, 2000, true);
-    if (!ObservacoesCPT.canais.includes(p.canal)) throw new Error('Informe por onde a informação chegou.');
-    const consultado = String(p.protocolo || '');
-    const principal = new DadosDaAplicacao(this.ctx.base, this.ctx.perfil).ficha(consultado).ficha.protocolo;
+    const canal = p.canal ? p.canal : 'Não informado';
+    if (p.canal && !ObservacoesCPT.canais.includes(p.canal)) throw new Error('Escolha por onde a informação chegou na lista.');
+    const consultado = String(p.protocolo || ''), dados = new DadosDaAplicacao(this.ctx.base, this.ctx.perfil);
+    const principal = dados.ficha(consultado).ficha.protocolo;
     const a = ObservacoesCPT.tabela(ObservacoesCPT.planilha(this.ctx.config), true), rows = this.linhas(a);
     const repetida = rows.find(r => String(r[3]) === p.operacaoId);
     if (repetida) {
       if (String(repetida[5]) !== this.ctx.email || String(repetida[8]) !== texto) throw new Error('Esta observação já foi registrada. Feche e abra a ficha para conferir.');
       return {resultado: 'Observação já registrada.', observacao: this.publico(repetida)};
     }
-    const linha = ['OBS-' + Utilities.getUuid(), principal, consultado, p.operacaoId, new Date(), this.ctx.email, this.ctx.perfil.nome, p.canal, texto];
+    const linha = ['OBS-' + Utilities.getUuid(), principal, consultado, p.operacaoId, new Date(), this.ctx.email, this.ctx.perfil.nome, canal, texto];
     a.getRange(a.getLastRow() + 1, 1, 1, linha.length).setValues([linha]);
-    return {resultado: 'Observação registrada no caso ' + principal + '.', observacao: this.publico(linha)};
+    // Recado automático (um por observação). Se o recado falhar, a observação continua registrada.
+    const caso = dados.caso(principal) || principal; let avisou = false;
+    try {
+      new RecadosCPT(this.ctx).enviar({para: {frentes: ObservacoesCPT.avisar, pessoas: []}, assunto: ('Nova observação no ' + caso).slice(0, 120),
+        texto: (texto.length > 1900 ? texto.slice(0, 1899) + '…' : texto) + '\n\n— ' + this.ctx.perfil.nome + (canal !== 'Não informado' ? ' · ' + canal : ''),
+        vinculo: {tipo: 'protocolo', id: principal, titulo: caso}, operacaoId: 'OP-' + Utilities.getUuid()});
+      avisou = true;
+    } catch (e) { console.warn('Recado da observação ' + linha[0] + ': ' + e.message); }
+    return {resultado: 'Observação registrada no ' + caso + '.' + (avisou ? ' Atendimento, Comunicação, Gestão e Administrativo receberam um recado.' : ''), observacao: this.publico(linha), avisou};
   }
   /** Histórico de alterações de acesso (antes ficava nas propriedades do script). */
   static registrarAcesso(config, anterior, novo) {

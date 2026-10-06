@@ -11,11 +11,12 @@ class CicloAtendimentoCPT {
   static get status() { return ['Recebida', 'Em andamento', 'Concluída']; }
   static get procedencias() { return ['Em análise', 'Procedente', 'Não procedente']; }
   static get areas() { return ['Atendimento', 'Execução', 'Socioambiental', 'Comunicação', 'Gestão']; }
-  static podeConduzir(p) { return PerfisCPT.gerencia(p) || p.papeis.includes('atendimento'); }
+  /** 2.31: conduzir (atualizar, finalizar, mesclar, corrigir, reabrir, ficha oficial): Atendimento, Comunicação, Gestão e Administrativo. */
+  static podeConduzir(p) { return PerfisCPT.gerencia(p) || p.papeis.some(x => ['atendimento', 'comunicacao'].includes(x)); }
   /** A engenharia responde pelo formulário; na aplicação, quem conduz o caso registra execução em nome dela. */
   static podeExecutar(p) { return this.podeConduzir(p); }
-  /** Telefone e e-mail do munícipe: só quem conduz o caso (Atendimento, Administrativo, Gestão). */
-  static veContato(p) { return this.podeConduzir(p); }
+  /** 2.31: ficha completa (inclusive telefone e e-mail do munícipe) para todo o time — quem recebe um morador entende o caso na hora. */
+  static veContato(p) { return !!(p && p.ativo !== false); }
 
   /** Campos que o Atendimento pode corrigir: [rótulo, tamanho máximo, aparece no histórico como "alterado" (dado de contato)]. */
   static get corrigiveis() {

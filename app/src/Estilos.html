@@ -1404,4 +1404,9 @@ html[data-motion=reduce] .spinner,html[data-motion=reduce] .home-cards.acabou-de
 @media (prefers-reduced-motion:reduce){.folhas-caindo,.folhinha-voa{display:none}html[data-visual=v3] .spinner,.home-cards.acabou-de-abrir{animation:none}}
 /* Desempenho: itens fora da tela de listas longas não são desenhados até chegar perto. */
 .gallery-grid .photo,.list-row:not(.list-head){content-visibility:auto;contain-intrinsic-size:auto 120px}
+/* 2.31: observação com o canal opcional em um toque. */
+.canal-chips{border:0;padding:0;margin:4px 0 12px;display:flex;flex-wrap:wrap;gap:6px}.canal-chips legend{padding:0;margin-bottom:6px}
+.chip-opcao{position:relative;display:inline-flex}.chip-opcao input{position:absolute;opacity:0;width:1px;height:1px}
+.chip-opcao span{display:inline-flex;align-items:center;min-height:34px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer}
+.chip-opcao input:checked+span{border-color:var(--blue);background:var(--pale);color:var(--blue);font-weight:650}.chip-opcao input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
 </style>

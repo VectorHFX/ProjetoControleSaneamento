@@ -21,7 +21,7 @@ class AuditoriaAtendimentosCPT {
   }
   constructor(ctx) {
     this.ctx = ctx;
-    if (!CicloAtendimentoCPT.podeConduzir(ctx.perfil)) throw new Error('A auditoria de atendimentos é do Atendimento, Administrativo e Gestão.');
+    if (!CicloAtendimentoCPT.podeConduzir(ctx.perfil)) throw new Error('A auditoria de atendimentos é do Atendimento, da Comunicação, do Administrativo e da Gestão.');
     this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil);
   }
   carregar(atualizar) {

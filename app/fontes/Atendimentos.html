@@ -1,7 +1,8 @@
 <script>
 /*
  * Atendimentos 2.4.0 — carteira e ficha do caso, com o ciclo completo na aplicação:
- * consulta e observações (todos) · atualização e finalização (Atendimento/Gestão) · execução (Execução/Atendimento).
+ * consulta da ficha completa e observações (todo o time; cada observação vira recado para quem conduz) ·
+ * atualização, finalização, mesclar e ficha oficial (Atendimento, Comunicação, Gestão e Administrativo) · execução (quem conduz).
  * 2.4: filtro "com quem está", dias em aberto, correção dos dados, incorporação de protocolo e ficha oficial em PDF.
  * 2.7: aba "Auditoria e números" (Atendimento, Administrativo e Gestão): o que precisa de cuidado na carteira,
  *      com a ficha a um clique, e os números do serviço (idade dos casos, áreas, tipos, recebidos x concluídos).
@@ -101,6 +102,7 @@ window.CPTAtendimentos = (() => {
       ${docs.length ? `<div class="dialog-actions">${docs.map(([l, u]) => `<a class="button secondary" href="${ui.esc(ui.safeURL(u))}" target="_blank" rel="noopener noreferrer">${ui.icon('file')}${l}</a>`).join('')}</div>` : ''}
       ${d.protocoloConsultado !== f.protocolo ? `<div class="notice">O protocolo ${ui.esc(d.protocoloConsultado)} está incorporado à ficha principal ${ui.esc(f.protocolo)}.</div>` : ''}
       <div class="case-actions" role="group" aria-label="Ações do caso">
+        <button class="button ${d.pode.atualizar ? 'secondary' : ''}" data-fazer-observacao>${ui.icon('plus')}Fazer observação</button>
         ${d.pode.atualizar && !conc ? '<button class="button secondary" data-caso-form="atualizar">Atualizar caso</button>' : ''}
         ${d.pode.executar && !conc ? '<button class="button secondary" data-caso-form="execucao">Registrar execução</button>' : ''}
         ${d.pode.finalizar && !conc ? '<button class="button" data-caso-form="finalizar">Finalizar ficha</button>' : ''}
@@ -112,11 +114,13 @@ window.CPTAtendimentos = (() => {
       <h3 class="answers-head">Solicitação</h3><p class="case-text">${ui.esc(a.solicitacao || f.assunto || 'Não informada')}</p>${a.descricao ? `<p class="case-text">${ui.esc(a.descricao)}</p>` : ''}
       ${a.execucoesAntigas ? `<h3 class="answers-head">Providências registradas no Controle antigo</h3><p class="case-text">${ui.esc(a.execucoesAntigas)}</p>` : ''}${a.conclusaoAntiga ? `<h3 class="answers-head">Conclusão registrada no Controle antigo</h3><p class="case-text">${ui.esc(a.conclusaoAntiga)}</p>` : ''}
       ${linhaResumo([['Assunto', f.assunto], ['Tipo de manifestação', a.tipo], ['Canal', a.canal], ['Urgência', a.urgencia], ['Endereço', f.endereco], ['Frente de obra', f.obra],
-        ['Telefone', a.telefone || (a.contatoOculto ? 'Visível para Atendimento e Execução' : '')], ['E-mail', a.email || null], ['Abertura', ui.date(f.abertura)], ['Conclusão', f.conclusao ? ui.date(f.conclusao) : null], ['Responsável', f.responsavel], ['Tratativa inicial', a.tratativa || null]])}
+        ['Telefone', a.telefone || null], ['E-mail', a.email || null], ['Abertura', ui.date(f.abertura)], ['Conclusão', f.conclusao ? ui.date(f.conclusao) : null], ['Responsável', f.responsavel], ['Tratativa inicial', a.tratativa || null]])}
       ${a.registroId ? `<p class="small muted">Aberto pelo formulário · registro <button class="link-button" data-record="${ui.esc(a.registroId)}">${ui.esc(a.registroId)}</button></p>` : ''}
-      <section class="case-notes"><h3 class="answers-head">Observações da equipe</h3><p class="small muted">Registre o que você soube sobre o caso. Fica com seu nome e não altera a ficha oficial.</p>
-        <form id="noteForm"><div id="noteError" class="notice" hidden></div><label class="field">Por onde a informação chegou<select name="canal" required><option value="">Escolha</option>${['Escritório', 'Campo / itinerante', 'Telefone ou WhatsApp', 'E-mail', 'Reunião', 'Outro'].map(x => `<option ${rascunhos.canal === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
-        <label class="field">Observação<textarea name="texto" rows="3" maxlength="2000" required placeholder="Ex.: Moradora procurou a equipe na rua e informou que o vazamento voltou.">${ui.esc(rascunhos.nota || '')}</textarea></label><button class="button secondary" type="submit">Registrar observação</button></form>
+      <section class="case-notes" id="caseNotesBox"><h3 class="answers-head">Observações da equipe</h3><p class="small muted">Soube algo do caso? Conte aqui. Fica com seu nome, não altera a ficha oficial e avisa Atendimento, Comunicação, Gestão e Administrativo por recado.</p>
+        <form id="noteForm"><div id="noteError" class="notice" hidden></div>
+        <label class="field">Observação<textarea name="texto" rows="3" maxlength="2000" required placeholder="Ex.: Moradora procurou a equipe na rua e informou que o vazamento voltou.">${ui.esc(rascunhos.nota || '')}</textarea></label>
+        <fieldset class="canal-chips"><legend class="small muted">Por onde chegou (opcional)</legend>${['Escritório', 'Campo / itinerante', 'Telefone ou WhatsApp', 'E-mail', 'Reunião', 'Outro'].map(x => `<label class="chip-opcao"><input type="radio" name="canal" value="${x}" ${rascunhos.canal === x ? 'checked' : ''}><span>${x}</span></label>`).join('')}</fieldset>
+        <button class="button" type="submit">Registrar observação</button></form>
         <div id="caseNotes"><p class="muted">Carregando observações…</p></div></section>
       <h3 class="answers-head">Linha do tempo</h3><div id="caseHistory" class="timeline"><p class="muted">Carregando histórico…</p></div><button class="button ghost" id="historyMore" hidden>Carregar mais</button>`;
     carregarNotas(); carregarHistorico(true);
@@ -178,7 +182,8 @@ window.CPTAtendimentos = (() => {
   }
   async function enviarNota(form) {
     const f = new FormData(form), p = {protocolo: aberto.ficha.protocolo, canal: f.get('canal'), texto: String(f.get('texto') || '').trim()}, err = $('noteError'), b = form.querySelector('button');
-    if (!p.canal || !p.texto) { err.textContent = 'Escolha o canal e escreva a observação.'; err.hidden = false; return; }
+    p.canal = p.canal || '';
+    if (!p.texto) { err.textContent = 'Escreva a observação.'; err.hidden = false; return; }
     p.operacaoId = opId('nota' + p.protocolo, p); b.disabled = true; b.textContent = 'Registrando…'; err.hidden = true;
     try { const r = await ui.call('adicionarObservacaoCPT', p); ops.delete('nota' + p.protocolo); ui.toast(r.resultado); form.reset(); const box = $('caseNotes'); if (box) { if (box.querySelector('.muted:only-child')) box.innerHTML = ''; box.insertAdjacentHTML('afterbegin', nota(r.observacao)); } }
     catch (e) { err.textContent = e.message + ' Seu texto continua no campo.'; err.hidden = false; } finally { b.disabled = false; b.textContent = 'Registrar observação'; }
@@ -198,6 +203,7 @@ window.CPTAtendimentos = (() => {
       const c = ev.target.closest('[data-case]'); if (c) { abrir(c.dataset.case); return; }
       const m = ev.target.closest('[data-atd-modo]'); if (m) { modo = m.dataset.atdModo; render(); return; }
       if (ev.target.closest('[data-case-mais]')) { carregar(true); return; }
+      if (ev.target.closest('[data-fazer-observacao]')) { const box = $('caseNotesBox'), t = $('noteForm') && $('noteForm').elements.texto; if (box) box.scrollIntoView({block: 'start', behavior: 'smooth'}); if (t) setTimeout(() => t.focus({preventScroll: true}), 250); return; }
       const f = ev.target.closest('[data-caso-form]'); if (f && aberto) { formulario(f.dataset.casoForm); return; }
       if (ev.target.closest('[data-caso-cancelar]')) { $('casoForm').innerHTML = ''; return; }
       const fo = ev.target.closest('[data-ficha-oficial]'); if (fo && aberto) { fichaOficial(fo); return; }

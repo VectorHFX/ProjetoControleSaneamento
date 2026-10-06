@@ -107,7 +107,7 @@ props.set('CPT_TRAVA_CONFIG','liberada');email='atd@example.com';og=run('carrega
 console.log('PASS: organograma — só o proprietário nos testes, depois todos veem; só Gestão/Administrativo editam (proprietário nos testes); trazer da equipe sem repetir; sem ciclo nem chefia de si mesmo; tirar pede mudar quem responde; e-mail não vai à tela.');
 
 // 5. Auditoria de atendimentos.
-email='social@example.com';assert.throws(()=>run('auditarAtendimentosCPT()'),/Atendimento, Administrativo e Gestão/);
+email='social@example.com';assert.throws(()=>run('auditarAtendimentosCPT()'),/Atendimento, da Comunicação, do Administrativo e da Gestão/);
 email='atd@example.com';const a=run('auditarAtendimentosCPT()'),v=id=>a.verificacoes.find(x=>x.id===id);
 assert.deepEqual(v('recebidaParada').itens.map(x=>x.protocolo),['P3']);assert.deepEqual(v('prazo').itens.map(x=>x.protocolo),['P3']);
 assert.deepEqual(v('semProximaAcao').itens.map(x=>x.protocolo),['P3']);assert.deepEqual(v('semArea').itens.map(x=>x.protocolo),['P3']);

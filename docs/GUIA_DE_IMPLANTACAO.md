@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.31.0 — Atendimentos para todo o time (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.31.0`, Nova versão).
+2. **Ficha completa para todo o time**, inclusive telefone e e-mail do morador: quem recebe um morador na rua entende o caso na hora.
+3. **"Fazer observação"** aparece no topo de toda ficha: leva direto ao campo. O texto é o único obrigatório; "por onde chegou" é opcional, em um toque.
+4. **Cada observação vira um recado** para Atendimento, Comunicação, Gestão e Administrativo ("Nova observação no Caso 17", com botão que abre o caso). Quem escreveu não recebe. Se o recado falhar, a observação continua registrada.
+5. **Quem conduz o caso** (atualizar, registrar execução, finalizar, reabrir, corrigir dados, mesclar protocolo duplicado e gerar a ficha oficial): Atendimento, **Comunicação**, Gestão e Administrativo. Socioambiental e Comercialização consultam e observam.
+6. Combinado registrado no `CLAUDE.md`: "Ficha completa para todo o time; finalizar e mesclar só Atendimento, Comunicação, Gestão e Administrativo".
+
 ## Atualização 2.30.1 — revisão das entregas 2.29 e 2.30 (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.30.1`, Nova versão).

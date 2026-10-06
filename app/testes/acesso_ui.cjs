@@ -14,8 +14,10 @@ await page.locator('.nav-item[data-route=atendimentos]').click();await page.loca
 assert.deepEqual(await page.locator('#caseFilters select[name=estado] option').allTextContents(),['Todos os casos','Em aberto','Concluídos']);
 await page.locator('[data-case]').first().click();await page.locator('#noteForm').waitFor();
 await page.locator('#noteForm button[type=submit]').click();assert(await page.locator('#noteForm textarea').evaluate(e=>!e.checkValidity()));
-await page.selectOption('#noteForm select[name=canal]','Campo / itinerante');await page.fill('#noteForm textarea','Moradora informou retorno do vazamento.');await page.locator('#noteForm button[type=submit]').click();
-await page.locator('#caseNotes .history-item').waitFor();assert.match(await page.locator('#caseNotes').textContent(),/retorno do vazamento/);assert.equal(await page.locator('#noteForm textarea').inputValue(),'');
+// 2.31: "Fazer observação" leva ao campo; canal opcional em um toque; a observação vira recado para quem conduz.
+await page.locator('[data-fazer-observacao]').click();await page.waitForFunction(()=>document.activeElement&&document.activeElement.name==='texto');
+await page.locator('#noteForm .chip-opcao',{hasText:'Campo / itinerante'}).click();await page.fill('#noteForm textarea','Moradora informou retorno do vazamento.');await page.locator('#noteForm button[type=submit]').click();
+await page.locator('#caseNotes .history-item').waitFor();assert.match(await page.locator('#caseNotes').textContent(),/retorno do vazamento/);await page.waitForFunction(()=>/receberam um recado/.test(document.querySelector('#toast').textContent));assert.equal(await page.locator('#noteForm textarea').inputValue(),'');
 // 3. Proprietário: Administração técnica não aparece como "visão"; Equipe e acessos visível.
 await page.goto(url);await page.locator('#roleView option[value=administrativo]').waitFor({state:'attached'});
 const visoes=await page.locator('#roleView option').evaluateAll(o=>o.map(x=>x.value));assert(!visoes.includes('administrador'));assert(visoes.includes('comercializacao'));assert(await page.locator('[data-route=equipe]').isVisible());
