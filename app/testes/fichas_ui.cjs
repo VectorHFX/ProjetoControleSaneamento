@@ -10,7 +10,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // 1. Socioambiental não vê a aba (nem Auditoria).
   await atendimentos('?liberada=1&perfil=socioambiental&latencia=20');assert.equal(await p.locator('[data-atd-modo]').count(),0);
   // 2. Comunicação vê Casos e Fichas oficiais (gera fichas), sem Auditoria.
-  await atendimentos('?liberada=1&perfil=comunicacao&latencia=20');assert.deepEqual(await p.locator('[data-atd-modo]').evaluateAll(b=>b.map(x=>x.dataset.atdModo)),['casos','fichas']);
+  await atendimentos('?liberada=1&perfil=comunicacao&latencia=20');assert.deepEqual(await p.locator('[data-atd-modo]').evaluateAll(b=>b.map(x=>x.dataset.atdModo)),['casos','fichas','dia']);
   // 3. Proprietário (Administrativo): os quatro números, pasta, corrigir e rotina.
   await atendimentos('?liberada=1&latencia=60');await p.locator('[data-atd-modo=fichas]').click();await p.locator('.fichas-grid').waitFor();
   const n=await p.locator('.stat-row .stat-value').allTextContents();assert.deepEqual(n,['38','7','22','2']);

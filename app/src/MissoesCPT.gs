@@ -6,6 +6,7 @@
  * - Gestão e Administrativo (2.26): responder a planilha de controle do contrato do mês anterior (ControleContratoCPT).
  * - Gestão e Administrativo (2.36): os alertas de AlertasGestaoCPT (dia útil sem ação, ação sem público, caso aberto há mais
  *   de 30 dias, ritmo de pesquisas, obras de ontem sem relato) — no lugar da missão de casos antigos.
+ * - Atendimento, Gestão, Administrativo e Comunicação (2.42): os casos do dia escolhidos na mensagem (AtendimentoDiaCPT).
  * Nada é ranqueado nem comparado entre pessoas: cada um vê só as próprias missões.
  * Período de testes: só o proprietário recebe missões (as demais pessoas não veem nada novo até liberar).
  * Desempenho: pedido à parte (depois da tela) e cada fonte em cache; quem não tem missão não abre a base.
@@ -28,6 +29,8 @@ class MissoesCPT {
     if (PerfisCPT.gerencia(this.perfil)) fonte('alertas', () => new AlertasGestaoCPT(this.ctx).listar().map(a => ({id: 'alerta:' + a.id, titulo: a.titulo, texto: a.texto, rota: a.rota, aba: a.aba, pendente: a.pendente, tipo: a.pendente ? 'pendente' : 'rota'})));
     else if (this.tem('atendimento')) fonte('casos', () => this.casosAntigos());
     if (this.tem('administrativo', 'gestao')) fonte('controle', () => new ControleContratoCPT(this.ctx).missoes());
+    // 2.42: casos escolhidos na mensagem do dia (Atendimento, Gestão, Administrativo e Comunicação).
+    fonte('dia', () => new AtendimentoDiaCPT(this.ctx).missoes());
     return out;
   }
   /** Comentários da gestão sobre relatos da pessoa, ainda não vistos. */

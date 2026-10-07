@@ -23,6 +23,16 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.42.0 — o dia e o mês do atendimento (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.42.0`, Nova versão). Arquivo novo: `AtendimentoDiaCPT` (script); o atualizador cria. Nenhuma permissão nova. **Nenhum e-mail é enviado pela aplicação.**
+2. **Atendimentos → aba Dia e mês** (Atendimento, Comunicação, Gestão e Administrativo).
+3. **Mensagem do dia (a Gestão ou o Administrativo preparam):** a tela mostra os **casos novos** e os **concluídos** desde a última mensagem (sem mensagem anterior: os últimos 3 dias) e a lista dos casos em aberto, dos mais antigos aos mais novos. Marque **até 3 casos** para trabalhar hoje (recado opcional em "Mais detalhes") → **Publicar como missão**.
+   - Os casos escolhidos viram **missões no Meu espaço** de Atendimento, Gestão, Administrativo e Comunicação, com o botão "Abrir a ficha". Cada missão some quando o caso é atualizado depois da mensagem (ou concluído); no dia seguinte, as de ontem somem.
+   - **Copiar mensagem** leva o texto pronto para o grupo da equipe. Publicar de novo no mesmo dia substitui a mensagem (a anterior fica no histórico).
+4. **E-mail do mês (para o mês escolhido em Competência):** resumo e a tabela caso a caso — caso, abertura, **nome completo**, assunto, **com quem está**, situação (concluído em…, ou em andamento no fim do mês) e observações (próxima ação ou conclusão), com o **link do pacote** de fichas do mês, se já foi montado (Fichas oficiais → Montar pacote). Os casos são os mesmos do pacote.
+   - **Copiar e-mail** → no Gmail, cole no corpo da mensagem (a tabela vem formatada). **Copiar assunto** à parte. "Ver o e-mail" mostra a prévia.
+
 ## Atualização 2.41.0 — Programa Parceiros: números automáticos e depoimentos com o Gemini (≈ 5 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.41.0`, Nova versão). Arquivo novo: `ParceirosCPT` (script); o atualizador cria. Nenhuma permissão nova. A rotina das 12h e 0h ganhou o passo do Programa Parceiros.

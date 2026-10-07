@@ -1478,4 +1478,10 @@ html[data-theme=dark] .stat-tile.is-bad .stat-value{color:#f19a90}
 /* 2.41: Programa Parceiros — prompt para o Gemini e textos revisados. */
 .pp-depo .stat-row{margin:0 0 12px}.pp-depo .dialog-actions{margin:0 0 10px;align-items:center}.pp-prompt{white-space:pre-wrap;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0 0;max-height:320px;overflow:auto;overflow-wrap:anywhere}
 #ppTextos{margin-top:14px}#ppTextos textarea{width:100%}
+/* 2.42: Dia e mês do atendimento — mensagem do dia, escolha dos casos e prévia do e-mail. */
+.dia-grid{margin-top:0;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}.dia-grid .stat-row{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.dia-grid .stat-tile{min-height:0}.dia-msg{white-space:pre-wrap;font:13.5px/1.6 inherit;font-family:inherit;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 12px}
+.dia-casos{border:1px solid var(--line);border-radius:12px;padding:6px 12px;margin:0;max-height:360px;overflow:auto}.dia-casos legend{font-size:12px;font-weight:650;padding:0 6px}
+.dia-caso{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer}.dia-caso:last-child{border-bottom:0}.dia-caso input{width:18px;height:18px;min-height:18px;margin-top:2px;accent-color:var(--blue);flex:none}
+.dia-caso span{display:grid;gap:2px;min-width:0}.dia-caso small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.email-previa{overflow-x:auto;background:#fff;color:#1f2a26;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px}
 </style>

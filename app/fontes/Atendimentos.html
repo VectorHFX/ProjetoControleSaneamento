@@ -8,12 +8,14 @@
  *      com a ficha a um clique, e os números do serviço (idade dos casos, áreas, tipos, recebidos x concluídos).
  * 2.38: aba "Fichas oficiais" (quem gera fichas: Atendimento, Comunicação, Gestão e Administrativo): situação das fichas,
  *      "Atualizar todas" (continua sozinho até terminar), pasta organizada e pacote do mês com os PDFs.
+ * 2.42: aba "Dia e mês" (mesmos perfis das fichas): mensagem do dia (a Gestão e o Administrativo escolhem os casos de hoje,
+ *      que viram missão) e o e-mail do mês pronto para copiar no Gmail.
  * Textos digitados ficam na tela em caso de erro ou conflito.
  */
 window.CPTAtendimentos = (() => {
   'use strict';
   let ui = null, filtro = {busca: '', estado: 'abertos', com: ''}, pagina = null, casos = [], ticket = 0, debounce = null;
-  let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false}, modo = 'casos', auditoria = null, fichas = null, fichasRodando = false, pacoteMes = '';
+  let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false}, modo = 'casos', auditoria = null, fichas = null, fichasRodando = false, pacoteMes = '', dia = null;
   const ops = new Map(); // operação idempotente por formulário enquanto o conteúdo não muda
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
@@ -26,13 +28,14 @@ window.CPTAtendimentos = (() => {
   /** Fichas oficiais: quem gera as fichas (mesma regra do servidor), na visão de quem conduz casos ou da Comunicação. */
   const geraFichas = () => ['atendimento', 'administrativo', 'gestao', 'comunicacao'].includes(ui.visao()) && (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao', 'atendimento', 'comunicacao'].includes(p));
   const abas = () => {
-    const lista = [['casos', 'Casos']].concat(conduz() ? [['auditoria', 'Auditoria e números']] : [], geraFichas() ? [['fichas', 'Fichas oficiais']] : []);
+    const lista = [['casos', 'Casos']].concat(conduz() ? [['auditoria', 'Auditoria e números']] : [], geraFichas() ? [['fichas', 'Fichas oficiais'], ['dia', 'Dia e mês']] : []);
     return lista.length > 1 ? `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de atendimentos">${lista.map(([k, n]) => `<button role="tab" aria-selected="${modo === k}" class="${modo === k ? 'chosen' : ''}" data-atd-modo="${k}">${n}</button>`).join('')}</div>` : '';
   };
   function render() {
-    if ((modo === 'auditoria' && !conduz()) || (modo === 'fichas' && !geraFichas())) modo = 'casos';
+    if ((modo === 'auditoria' && !conduz()) || ((modo === 'fichas' || modo === 'dia') && !geraFichas())) modo = 'casos';
     if (modo === 'auditoria') { renderAuditoria(); return; }
     if (modo === 'fichas') { renderFichas(); return; }
+    if (modo === 'dia') { renderDia(); return; }
     ui.view.innerHTML = ui.intro('Atendimentos', 'Cada ficha nasce do formulário com um protocolo. Acompanhe, registre a execução e finalize por aqui.') + abas() +
       `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Nº do caso (ex.: 17), protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
       <label class="field">Situação<select name="estado"><option value="" ${!filtro.estado ? 'selected' : ''}>Todos os casos</option><option value="abertos" ${filtro.estado === 'abertos' ? 'selected' : ''}>Em aberto</option><option value="concluidos" ${filtro.estado === 'concluidos' ? 'selected' : ''}>Concluídos</option></select></label>
@@ -168,6 +171,58 @@ window.CPTAtendimentos = (() => {
     finally { if (b.isConnected) { b.disabled = false; b.innerHTML = rotulo; } }
   }
 
+  // ---------- Dia e mês (2.42) ----------
+  const prepara = () => (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao'].includes(p));
+  const INTRO_D = ['Atendimentos', 'O dia e o mês do atendimento: os casos de hoje viram missão; o relatório do mês sai pronto para colar no Gmail.'];
+  async function renderDia(atualizar = false) {
+    const mine = ++ticket, mes = ui.state.mes, intro = ui.intro(...INTRO_D) + abas();
+    if (!dia || atualizar || dia.mes !== mes) {
+      ui.view.innerHTML = intro + '<div class="loading-label"><span class="spinner"></span>Reunindo os casos…</div>';
+      try {
+        const [hoje, prep, email] = await Promise.all([ui.call('mensagemDiaCPT'), prepara() ? ui.call('preparoMensagemDiaCPT') : Promise.resolve(null), ui.call('emailMesAtendimentoCPT', {mes})]);
+        if (mine !== ticket || ui.state.route !== 'atendimentos' || modo !== 'dia') return;
+        dia = {mes, mensagem: hoje.mensagem, prep, email, escolhidos: new Set(((prep && prep.atual) || {escolhidos: []}).escolhidos.map(c => c.protocolo))};
+      } catch (e) { if (mine === ticket) ui.view.innerHTML = intro + `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    }
+    desenharDia();
+  }
+  const hora = iso => new Date(iso).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'});
+  function desenharDia() {
+    const D = dia, m = D.mensagem, p = D.prep, e = D.email, r = e.resumo, tile = (rot, n, nota) => `<div class="stat-tile"><span class="stat-label">${rot}</span><span class="stat-value">${n}</span><span class="stat-note">${nota}</span></div>`;
+    const lista = l => l.length ? l.map(c => ui.esc(c.caso || c.protocolo)).join(', ') : 'nenhum';
+    const msg = `<section class="panel"><div class="panel-head"><div><span class="eyebrow">MENSAGEM DE HOJE</span><h2>${m ? 'Casos para trabalhar hoje' : 'Ainda não publicada hoje'}</h2>${m ? `<p>Publicada por ${ui.esc(m.nome)} às ${hora(m.publicadaEm)}. Os casos escolhidos estão nas missões do Meu espaço.</p>` : `<p>${prepara() ? 'Prepare abaixo: escolha os casos do dia.' : 'A Gestão ou o Administrativo publicam a mensagem do dia.'}</p>`}</div></div>
+      ${m ? `<pre class="dia-msg">${ui.esc(m.texto)}</pre><div class="dialog-actions"><button class="button secondary" data-dia-copiar>${ui.icon('file')}Copiar mensagem</button></div>` : ''}</section>`;
+    const prep = !p ? '' : `<section class="panel"><div class="panel-head"><div><span class="eyebrow">PREPARAR</span><h2>Mensagem do dia</h2><p>Novos e concluídos desde ${ui.esc(p.desde.split('-').reverse().join('/'))}. Escolha até ${p.max} casos para trabalhar hoje.</p></div></div>
+        <section class="stat-row" aria-label="Desde a última mensagem">${tile('Casos novos', ui.num(p.novos.length), lista(p.novos))}${tile('Concluídos', ui.num(p.concluidos.length), lista(p.concluidos))}${tile('Em aberto', ui.num(p.abertos.length), 'Dos mais antigos para os mais novos.')}</section>
+        <form id="diaForm" class="stack-form"><div id="diaErro" class="notice" hidden></div><fieldset class="dia-casos"><legend>Casos para trabalhar hoje</legend>
+          ${p.abertos.map(c => `<label class="dia-caso"><input type="checkbox" name="caso" value="${ui.esc(c.protocolo)}" ${D.escolhidos.has(c.protocolo) ? 'checked' : ''}><span><strong>${ui.esc(c.caso || c.protocolo)} · ${ui.esc(c.assunto || 'Sem assunto')}</strong><small>${ui.esc([c.area ? 'com ' + c.area : '', c.dias != null ? c.dias + (c.dias === 1 ? ' dia' : ' dias') : '', c.proximaAcao].filter(Boolean).join(' · '))}</small></span></label>`).join('') || '<p class="muted">Nenhum caso em aberto.</p>'}</fieldset>
+          <details class="mais-detalhes" ${p.atual && p.atual.nota ? 'open' : ''}><summary>Mais detalhes <small>recado para a equipe</small></summary><div class="mais-detalhes-corpo"><label class="field">Recado (opcional)<textarea name="nota" rows="2" maxlength="500">${ui.esc((p.atual && p.atual.nota) || '')}</textarea></label></div></details>
+          <div class="dialog-actions"><button class="button" type="submit" ${p.abertos.length ? '' : 'disabled'}>${p.atual ? 'Publicar de novo' : 'Publicar como missão'}</button><span class="small muted" id="diaConta">${D.escolhidos.size} de ${p.max} escolhidos</span></div></form></section>`;
+    const pac = ui.safeURL(e.pacote);
+    const mail = `<section class="panel wide"><div class="panel-head"><div><span class="eyebrow">E-MAIL DO MÊS</span><h2>${ui.esc(e.assunto)}</h2><p>Os mesmos casos do pacote: abertos no mês, concluídos no mês e os que seguiram em andamento. Copie e cole no Gmail; nada é enviado pela aplicação.</p></div></div>
+        <section class="stat-row" aria-label="Resumo do mês">${tile('Casos no período', ui.num(r.casos), ui.num(r.abertos) + ' abertos no mês.')}${tile('Concluídos no mês', ui.num(r.concluidos), r.prazoMedio != null ? 'Prazo médio de ' + r.prazoMedio + ' dias.' : 'Sem concluídos no mês.')}${tile('Seguem em andamento', ui.num(r.andamento), 'No fim do mês.')}${tile('Pacote de fichas', pac ? 'Pronto' : '—', pac ? 'O link vai no e-mail.' : 'Monte em Fichas oficiais para o link ir no e-mail.')}</section>
+        <div class="dialog-actions"><button class="button" data-dia-email ${r.casos ? '' : 'disabled'}>${ui.icon('mail')}Copiar e-mail</button><button class="button secondary" data-dia-assunto>Copiar assunto</button>${pac ? `<a class="button ghost" href="${ui.esc(pac)}" target="_blank" rel="noopener">Abrir o pacote</a>` : ''}</div>
+        <details class="mais-detalhes"><summary>Ver o e-mail</summary><div class="email-previa">${e.html}</div></details></section>`;
+    ui.view.innerHTML = ui.intro(...INTRO_D) + abas() + `<div class="painel-grid dia-grid">${msg}${prep}${mail}</div>`;
+  }
+  async function copiarRico(html, texto, ok) {
+    try {
+      if (navigator.clipboard && window.ClipboardItem && html) await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type: 'text/html'}), 'text/plain': new Blob([texto], {type: 'text/plain'})})]);
+      else await navigator.clipboard.writeText(texto);
+      ui.toast(ok);
+    } catch (_) {
+      const ta = document.createElement('textarea'); ta.value = texto; ta.style.cssText = 'position:fixed;left:-9999px'; document.body.append(ta); ta.select(); let feito = false; try { feito = document.execCommand('copy'); } catch (_) {} ta.remove();
+      ui.toast(feito ? ok : 'Não deu para copiar: abra "Ver o e-mail" e copie à mão.');
+    }
+  }
+  const opsDia = new Map();
+  async function publicarDia(f) {
+    const b = f.querySelector('[type=submit]'), escolhidos = [...f.querySelectorAll('[name=caso]:checked')].map(x => x.value), dados = {escolhidos, nota: f.elements.nota.value}, sig = JSON.stringify(dados), err = $('diaErro');
+    if (!opsDia.has(sig)) opsDia.set(sig, 'OP-' + crypto.randomUUID()); b.disabled = true; err.hidden = true;
+    try { const r = await ui.call('publicarMensagemDiaCPT', {...dados, operacaoId: opsDia.get(sig)}); dia.mensagem = r.mensagem; dia.prep.atual = r.mensagem; ui.toast(r.resultado); desenharDia(); }
+    catch (e) { err.hidden = false; err.textContent = e.message; b.disabled = false; }
+  }
+
   // ---------- Ficha ----------
   function linhaResumo(pares) { return '<dl class="detail-summary">' + pares.filter(([, v]) => v !== null).map(([k, v]) => `<div><dt>${ui.esc(k)}</dt><dd>${ui.esc(v || 'Não informado')}</dd></div>`).join('') + '</dl>'; }
   async function abrir(protocolo) {
@@ -281,6 +336,13 @@ window.CPTAtendimentos = (() => {
   }
   function init(api) {
     ui = api;
+    // Dia e mês: no máximo N casos marcados; o contador acompanha.
+    document.addEventListener('change', ev => {
+      const f = ev.target.closest('#diaForm'); if (!f || ev.target.name !== 'caso' || !dia || !dia.prep) return;
+      const marcados = [...f.querySelectorAll('[name=caso]:checked')];
+      if (marcados.length > dia.prep.max) { ev.target.checked = false; ui.toast('Escolha no máximo ' + dia.prep.max + ' casos.'); }
+      dia.escolhidos = new Set([...f.querySelectorAll('[name=caso]:checked')].map(x => x.value)); const c = $('diaConta'); if (c) c.textContent = dia.escolhidos.size + ' de ' + dia.prep.max + ' escolhidos';
+    });
     document.addEventListener('click', ev => {
       const c = ev.target.closest('[data-case]'); if (c) { abrir(c.dataset.case); return; }
       const m = ev.target.closest('[data-atd-modo]'); if (m) { modo = m.dataset.atdModo; render(); return; }
@@ -290,14 +352,18 @@ window.CPTAtendimentos = (() => {
       if (ev.target.closest('[data-caso-cancelar]')) { $('casoForm').innerHTML = ''; return; }
       const fo = ev.target.closest('[data-ficha-oficial]'); if (fo && aberto) { fichaOficial(fo); return; }
       if (ev.target.closest('[data-fichas-todas]')) { atualizarTodasFichas(); return; }
+      if (ev.target.closest('[data-dia-copiar]') && dia && dia.mensagem) { copiarRico('', dia.mensagem.texto, 'Mensagem copiada. Cole no grupo da equipe.'); return; }
+      if (ev.target.closest('[data-dia-email]') && dia) { copiarRico(dia.email.html, dia.email.texto, 'E-mail copiado. Cole no corpo da mensagem no Gmail.'); return; }
+      if (ev.target.closest('[data-dia-assunto]') && dia) { copiarRico('', dia.email.assunto, 'Assunto copiado.'); return; }
       if (ev.target.closest('#historyMore')) carregarHistorico(false);
     });
     document.addEventListener('submit', ev => {
       const cf = ev.target.closest('.case-form'); if (cf) { ev.preventDefault(); enviar(cf); return; }
       const pf = ev.target.closest('#pacoteForm'); if (pf) { ev.preventDefault(); montarPacote(pf); return; }
+      const df = ev.target.closest('#diaForm'); if (df) { ev.preventDefault(); publicarDia(df); return; }
       const nf = ev.target.closest('#noteForm'); if (nf && aberto) { ev.preventDefault(); enviarNota(nf); }
     });
   }
-  return {init, render, abrir, atualizar: () => { if (modo === 'auditoria' && conduz()) renderAuditoria(true); else if (modo === 'fichas' && geraFichas()) renderFichas(true); else render(); }, filtrar: estado => { if (estado === 'auditoria') { modo = 'auditoria'; return; } filtro.estado = estado; modo = 'casos'; }};
+  return {init, render, abrir, atualizar: () => { if (modo === 'auditoria' && conduz()) renderAuditoria(true); else if (modo === 'fichas' && geraFichas()) renderFichas(true); else if (modo === 'dia' && geraFichas()) renderDia(true); else render(); }, filtrar: estado => { if (estado === 'auditoria') { modo = 'auditoria'; return; } filtro.estado = estado; modo = 'casos'; }};
 })();
 </script>
