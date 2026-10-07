@@ -14,10 +14,25 @@ window.CPTSaber = (() => {
   const LETRAS = ['A', 'B', 'C', 'D'];
   const fonte = f => !f ? '' : f.url ? `<a class="saber-fonte" href="${ui.esc(f.url)}" target="_blank" rel="noopener">Fonte: ${ui.esc(f.nome)}</a>` : '<span class="saber-fonte is-equipe">Prática da equipe</span>';
   const revisar = x => x && x.revisar ? '<span class="saber-revisar" title="Só você vê este conteúdo até a revisão">a revisar</span>' : '';
-  /** Balão do mascote com a curiosidade do dia. */
+  /** 2.34.1: a curiosidade troca a cada 3 horas (horário de Brasília) entre as do dia; com a tela aberta, troca sozinha. */
+  const VEZ = 3;
+  function horaSP() { return Number(new Intl.DateTimeFormat('en-GB', {hour: 'numeric', hourCycle: 'h23', timeZone: 'America/Sao_Paulo'}).format(new Date())); }
+  function daVez(x) { const l = x && Array.isArray(x.curiosidades) && x.curiosidades.length ? x.curiosidades : x && x.curiosidade ? [x.curiosidade] : []; return l.length ? l[Math.floor(horaSP() / VEZ) % l.length] : null; }
+  let girando = null, mostrada = '';
+  function girar() {
+    if (girando) return;
+    girando = setInterval(() => {
+      const el = document.querySelector('.saber-balao'); if (!el || !s || document.visibilityState !== 'visible') return;
+      const c = daVez(s); if (!c || c.id === mostrada) return;
+      const t = document.createElement('div'); t.innerHTML = balao(s); const novo = t.firstElementChild; if (!novo) return;
+      novo.classList.add('saber-troca'); el.replaceWith(novo);
+    }, 60000);
+  }
+  /** Balão do mascote com a curiosidade da vez. */
   function balao(x) {
-    s = x; const c = x && x.curiosidade; if (!c) return '';
-    return `<div class="saber-balao" role="note"><span class="saber-kicker">${ic('bulb', '💡')} Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${c.importa ? `<p class="saber-importa"><strong>Por que importa:</strong> ${ui.esc(c.importa)}</p>` : ''}${fonte(c.fonte)}</div>`;
+    s = x; const c = daVez(x); if (!c) return '';
+    mostrada = c.id; girar();
+    return `<div class="saber-balao" role="note" data-curiosidade="${ui.esc(c.id)}"><span class="saber-kicker">${ic('bulb', '💡')} Você sabia? <small>${ui.esc(c.tema)}</small>${revisar(c)}</span><p>${ui.esc(c.texto)}</p>${c.importa ? `<p class="saber-importa"><strong>Por que importa:</strong> ${ui.esc(c.importa)}</p>` : ''}${fonte(c.fonte)}</div>`;
   }
   function opcoes(q, tipo, resposta) {
     return `<div class="quiz-opcoes" role="group" aria-label="Alternativas">${q.opcoes.map((o, i) => {

@@ -288,9 +288,11 @@ class ConteudoSaneamentoCPT {
   }
 
   /** Curiosidade do dia para a pessoa (muda a cada dia; vazio se nada visível). */
-  static curiosidadeDoDia(ctx, email, dia) {
-    const lista = ConteudoSaneamentoCPT.visiveis(ConteudoSaneamentoCPT.curiosidades, ctx); if (!lista.length) return null;
-    return ConteudoSaneamentoCPT.publica(ConteudoSaneamentoCPT.embaralhar(lista, email + ':' + dia)[0], ctx);
+  static curiosidadeDoDia(ctx, email, dia) { return ConteudoSaneamentoCPT.curiosidadesDoDia(ctx, email, dia, 1)[0] || null; }
+  /** 2.34.1: as curiosidades do dia (diferentes entre si); a tela troca a cada 3 horas. A primeira é a mesma de curiosidadeDoDia. */
+  static curiosidadesDoDia(ctx, email, dia, n) {
+    const lista = ConteudoSaneamentoCPT.visiveis(ConteudoSaneamentoCPT.curiosidades, ctx);
+    return ConteudoSaneamentoCPT.embaralhar(lista, email + ':' + dia).slice(0, n || 4).map(c => ConteudoSaneamentoCPT.publica(c, ctx));
   }
   /** Campanha do mês e datas do saneamento do mês (dia = AAAA-MM-DD). */
   static doMes(ctx, dia) {

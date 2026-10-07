@@ -74,6 +74,8 @@ assert.equal(books.get('agenda').getSheetByName('Quiz'),null,'ninguém além do 
 // 3. Proprietário: pergunta do dia estável, sem a resposta; responder dá 2 pontos se acertar, só uma vez.
 email='victor@example.com';d=run('carregarMeuEspacoCPT()');const s=d.saber;
 assert.ok(s.curiosidade.texto&&s.curiosidade.fonte.url&&s.curiosidade.revisar);assert.ok(s.mes.campanha&&s.mes.tema);
+// 2.34.1: quatro curiosidades do dia, diferentes entre si; a primeira é a de sempre (a tela troca a cada 3 horas).
+assert.equal(s.curiosidades.length,4);assert.equal(new Set(s.curiosidades.map(c=>c.id)).size,4);assert.equal(s.curiosidades[0].id,s.curiosidade.id);assert.deepEqual(run('carregarMeuEspacoCPT()').saber.curiosidades.map(c=>c.id),s.curiosidades.map(c=>c.id),'mesmas no mesmo dia');
 const qd=s.quiz.dia.pergunta;assert.ok(qd&&qd.opcoes.length===4&&qd.revisar);assert.equal(qd.certa,undefined,'certa não vai antes');assert.equal(qd.explica,undefined);
 assert.equal(run('carregarMeuEspacoCPT()').saber.quiz.dia.pergunta.id,qd.id,'mesma pergunta ao recarregar');
 const sem=s.quiz.semana;assert.equal(sem.total,5);assert.equal(sem.respondidas,0);assert.ok(sem.proxima&&sem.proxima.certa===undefined);
@@ -112,7 +114,7 @@ ctx.p={id:'Q999',situacao:'aprovado',versao:0,operacaoId:op()};assert.throws(()=
 ctx.p={id:'Q001',situacao:'talvez',versao:1,operacaoId:op()};assert.throws(()=>run('decidirConteudoCPT(p)'),/opção válida/);
 ctx.p={id:'Q001',situacao:'suspenso',versao:0,operacaoId:op()};assert.throws(()=>run('decidirConteudoCPT(p)'),/Outra pessoa alterou/);
 rv=run('carregarRevisaoConteudoCPT()');assert.equal(rv.resumo.aprovado,8);
-email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.saber.curiosidade.id,'C01');assert.equal(d.saber.curiosidade.revisar,false);assert.ok(d.saber.curiosidade.importa);
+email='social@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.saber.curiosidade.id,'C01');assert.deepEqual(d.saber.curiosidades.map(c=>c.id),['C01'],'só as aprovadas giram');assert.equal(d.saber.curiosidade.revisar,false);assert.ok(d.saber.curiosidade.importa);
 assert.ok(aprovar.includes(d.saber.quiz.dia.pergunta.id));assert.equal(d.saber.quiz.semana.total,5);assert.equal(d.pontos.quiz,0,'pontos do proprietário não aparecem para os outros');
 // Suspender tira o item de todos, até do proprietário; o que estava no quiz da semana e não foi respondido sai da lista.
 let sq=d.saber.quiz.semana;ctx.p={tipo:'semana',escolha:0,id:sq.proxima.id,versao:0,operacaoId:op()};sq=run('responderQuizCPT(p)').estado.semana;const alvo=sq.proxima.id,feita=sq.respostas[0].id;

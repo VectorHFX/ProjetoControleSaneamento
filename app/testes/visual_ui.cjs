@@ -32,7 +32,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.ok(topo,'o texto do "i" fica por cima do conteúdo');await p.locator('#view .intro-info summary').click();
   // 4. Meu espaço: o mascote na recepção (parede ripada, plantas, luminárias, placa), pontos que contam e folhas comemorando.
   await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=urso]').click();await p.locator('#espInicio [type=submit]').click();
-  await p.locator('.space-hero.v3-cena-host .v3-cena').waitFor();assert.equal(await p.locator('.v3-cena .v3-placa').count(),1);assert.equal(await p.locator('.v3-cena .v3-lumi').count(),2);assert.ok(await p.locator('.v3-cena .v3-brisa path').count()>100,'parede de plantas');
+  await p.locator('.space-hero.v3-cena-host .v3-cena').waitFor();assert.equal(await p.locator('.v3-cena .v3-placa').count(),0,'2.34.1: sem a plaquinha da gota no canto');assert.equal(await p.locator('.v3-cena .v3-lumi').count(),2);assert.ok(await p.locator('.v3-cena .v3-brisa path').count()>100,'parede de plantas');
   // 2.26: mascote maior em frente ao quadro da parede (paisagem sem foto no álbum) e caderno marrom que abre uma vez.
   assert.equal(await p.locator('.space-hero.com-quadro .hero-pet .pet-quadro .quadro-paisagem').count(),1,'quadro com paisagem');assert.match(await p.locator('.quadro-placa').textContent(),/Santo André/);
   assert.ok((await p.locator('.space-hero .hero-pet .mascot-svg').boundingBox()).width>=300,'mascote maior');

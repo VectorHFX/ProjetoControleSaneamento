@@ -23,6 +23,12 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.34.1 — Meu espaço: sem a gotinha e curiosidades ao longo do dia (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.34.1`, Nova versão).
+2. Saiu a plaquinha azul com a gota no canto de cima da cena do Meu espaço.
+3. **Você sabia?** agora troca a cada 3 horas (horário de Brasília) entre 4 curiosidades do dia, diferentes para cada pessoa; com a tela aberta, troca sozinha, com uma transição suave. Só entram curiosidades aprovadas na Revisão do conteúdo.
+
 ## Atualização 2.34.0 — ferramenta Relatos (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.34.0`, Nova versão). Arquivo novo: `Relatos` (HTML); o atualizador cria.

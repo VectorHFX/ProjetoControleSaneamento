@@ -35,6 +35,13 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(150);
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral no celular');
   await foto('saber-4-celular');
+  // 2.34.1: a curiosidade troca a cada 3 horas, sozinha, com a tela aberta (relógio adiantado).
+  {const q=p;await q.setViewportSize({width:1366,height:900});await q.evaluate(()=>{try{localStorage.clear();}catch(_){}});
+   await q.clock.install({time:new Date('2026-10-07T10:30:00-03:00')});await q.goto(url('?latencia=20'));await q.locator('.nav-item[data-route=meuespaco]').first().click();
+   await q.locator('.welcome-pets').waitFor();await q.locator('[data-esp-especie=urso]').click();await q.locator('#espInicio [type=submit]').click();await q.locator('.saber-balao').waitFor();
+   const antes=await q.locator('.saber-balao').getAttribute('data-curiosidade');await q.clock.fastForward('03:00:00');
+   await q.waitForFunction(a=>{const el=document.querySelector('.saber-balao');return el&&el.dataset.curiosidade!==a;},antes);
+   assert.equal(await q.locator('.saber-balao.saber-troca').count(),1,'entra com transição');}
   assert.deepEqual(errors,[]);await b.close();
-  console.log('PASS: Saber mais — só o proprietário nos testes, curiosidade com fonte e marca "a revisar", pergunta do dia trava e soma pontos, quiz da semana com 5 perguntas e placar, celular sem rolagem lateral.');
+  console.log('PASS: Saber mais (curiosidade troca sozinha a cada 3 horas) — só o proprietário nos testes, curiosidade com fonte e marca "a revisar", pergunta do dia trava e soma pontos, quiz da semana com 5 perguntas e placar, celular sem rolagem lateral.');
 })().catch(e=>{console.error(e);process.exit(1);});

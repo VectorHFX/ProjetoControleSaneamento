@@ -135,7 +135,8 @@ class PessoalCPT {
   }
   /** "Saber mais": curiosidade do dia, campanha do mês e quiz (conteúdo em ConteudoSaneamentoCPT). */
   saber() {
-    return {curiosidade: ConteudoSaneamentoCPT.curiosidadeDoDia(this.ctx, this.email, this.hoje), mes: ConteudoSaneamentoCPT.doMes(this.ctx, this.hoje), quiz: QuizCPT.de(this.ctx).estado()};
+    const cur = ConteudoSaneamentoCPT.curiosidadesDoDia(this.ctx, this.email, this.hoje, 4);
+    return {curiosidade: cur[0] || null, curiosidades: cur, mes: ConteudoSaneamentoCPT.doMes(this.ctx, this.hoje), quiz: QuizCPT.de(this.ctx).estado()};
   }
   static nome(v) { const s = ColecaoCPT.texto(v, 30, 'nome do mascote', true); if (!/^[\p{L}\p{N} '\-]+$/u.test(s)) throw new Error('Use só letras, números e espaços no nome do mascote.'); return s; }
   /** Quadro escolhido (sem escolha: o desenho de Santo André). Foto: a miniatura vem pela aplicação (vale para quem não abre a pasta no Drive). */
