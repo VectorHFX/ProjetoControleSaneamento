@@ -63,7 +63,7 @@ vm.createContext(ctx);
 for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','FichaOficialCPT','ColecaoCPT','ComunicacaoCPT','RelatosCPT','PaineisGestaoCPT','ConectoresCPT','AplicacaoCPT','AnexosCPT','MatrizCPT','RotinaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Linhas que já estão na planilha: caso 1 (com nota, histórico velho, Obs. com fórmula), caso 2 (igual, sem nota), uma linha à mão e o caso 6 concluído.
-const val=n=>vm.runInContext("new AnexosCPT(AplicacaoCPT.contexto()).fichas()",ctx).find(x=>x.id==='ATD2026000'+n).valores.slice();
+const val=n=>vm.runInContext("new AnexosCPT(AplicacaoCPT.contexto()).fichas()",ctx).find(x=>x.id==='ATD2026'+String(n).padStart(4,'0')).valores.slice();
 const v1=val(1);v1[6]='Histórico antigo';v1[8]='Em andamento';ctl.rows.push(v1);ctl.notes['2:1']='\nCPT_ATD_ID=ATD20260001\n======';ctl.formulas['2:10']='=X1';ctl.rows[1][9]='valor da fórmula';
 ctl.rows.push(val(2));const manual=[dia('2026-02-01'),'Escrito à mão','Rua M','CAC Canteiro','Outros','Social','Texto manual','Prov','Concluído','Obs'];ctl.rows.push(manual.slice());
 const v6=val(6);v6[8]='Concluído';ctl.rows.push(v6);ctl.notes['5:1']='CPT_ATD_ID=ATD20260006';
@@ -76,6 +76,7 @@ email='atd@example.com';assert.throws(()=>run('conferirAnexosCPT()'),/Gestão e 
 // 2. Conferir: mostra tudo e não grava nada.
 email='adm@example.com';const antes=JSON.stringify([ctl.rows,ctl.notes,ind.rows]);let r=run('conferirAnexosCPT()');
 assert.equal(JSON.stringify([ctl.rows,ctl.notes,ind.rows]),antes,'conferir não grava');assert.equal(r.gravado,false);assert.equal(cfgDesde(),undefined,'conferir não ativa');
+function AnexosCPTdia(d){return fmt(d,0,'yyyy-MM-dd');}
 function cfgDesde(){return JSON.parse(props.get('CPT_APLICACAO_1')).anexosDesde;}
 assert.deepEqual(r.controle.novos,['ATD20260003','ATD20260004']);assert.deepEqual(r.controle.atualizados.sort(),['ATD20260001','ATD20260006']);assert.equal(r.controle.marcados,1,'caso 2 só ganha a nota');assert.equal(r.controle.semNome,1);
 assert.match(r.controle.avisos[0],/ATD20260006 foi reaberto/);
@@ -103,6 +104,15 @@ r=run('atualizarAnexosCPT()');const l=k=>r.indicadores[0].linhas.find(x=>x.linha
 assert.equal(l(12).situacao,'pulada');assert.match(l(12).aviso,/Rótulo diferente/);assert.equal(ind.rows[11][colM-1],1,'linha com rótulo trocado não é escrita');assert.equal(l(13).situacao,'formula');assert.equal(l(9).valor,5);
 // Duplicidade na planilha: para tudo antes de gravar.
 ctl.notes['8:1']='CPT_ATD_ID=ATD20260003';ctl.rows.push(ctl.rows[5].slice());assert.throws(()=>run('atualizarAnexosCPT()'),/aparece em duas linhas/);ctl.rows.pop();delete ctl.notes['8:1'];
+// 5b. Linhas antigas sem a nota do protocolo, com histórico escrito à mão: reconhecidas pela data e nome (sem linha repetida).
+{atd.rows.push(caso(10,'2026-05-02','',{nome:'Moradora Antiga'}),caso(11,'2026-05-03','',{nome:'Nome Repetido'}));
+ const v10=val(10);v10[0]=new Date('2026-05-02T22:00:00Z');v10[6]='Histórico escrito à mão';ctl.rows.push(v10);const n10=ctl.rows.length;
+ const v11=val(11);v11[6]='Primeira';ctl.rows.push(v11);const v11b=v11.slice();v11b[6]='Segunda';ctl.rows.push(v11b);const total=ctl.rows.length;
+ r=run('atualizarAnexosCPT()');assert.equal(ctl.rows.length,total,'nenhuma linha repetida no fim');assert.equal(ctl.notes[n10+':1'],'CPT_ATD_ID=ATD20260010');assert.equal(ctl.rows[n10-1][6],'Pedido 10','dados oficiais no lugar');
+ assert.ok(r.controle.avisos.some(a=>/1 caso antigo foi reconhecido/.test(a)));assert.ok(r.controle.avisos.some(a=>/ATD20260011 parece estar em mais de uma linha/.test(a)),'ambíguo: avisa e não inclui');
+ assert.equal(AnexosCPTdia(ctl.rows[n10-1][0]),'2026-05-02');}
+// Horário diferente na mesma data não é mudança.
+assert.equal(run("AnexosCPT.igual(new Date('2026-03-04T22:00:00Z'),new Date('2026-03-04T15:00:00Z'))"),true);
 // 6. Quais meses: o atual e, até o dia 10, o anterior; nunca antes da ativação.
 assert.deepEqual(run("AnexosCPT.mesesParaGravar('2026-11-05','2026-10')"),['2026-10','2026-11']);assert.deepEqual(run("AnexosCPT.mesesParaGravar('2026-11-11','2026-10')"),['2026-11']);
 assert.deepEqual(run("AnexosCPT.mesesParaGravar('2026-10-05','2026-10')"),['2026-10']);

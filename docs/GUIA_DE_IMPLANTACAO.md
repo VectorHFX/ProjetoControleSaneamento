@@ -23,6 +23,13 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.40.1 — revisão das entregas 2.38 a 2.40 (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.40.1`, Nova versão). Nada a configurar.
+2. **Controle de manifestações sem linhas repetidas:** a planilha tem linhas antigas sem a nota do protocolo (38 na cópia de setembro). Agora a aplicação também as reconhece pela **data + nome** (ou **nome + endereço**), desde que a combinação seja única; a nota do protocolo é acrescentada e os dados oficiais entram no lugar. Se a mesma pessoa aparecer em duas linhas antigas parecidas, o caso **não** é incluído de novo: vira um aviso para conferir. Horário diferente na mesma data não conta como mudança.
+3. **Fichas antigas não são refeitas à toa:** caso migrado do sistema anterior, sem nenhuma ação feita na aplicação (execução, conclusão, correção, incorporação ou reabertura), mantém a ficha oficial antiga — ela só é **movida** para a pasta nova. Se o caso mudar depois, a ficha é refeita. Isso evita gerar de novo dezenas de fichas na primeira vez.
+4. A rotina das 12h e 0h ficou com mais folga de tempo (fichas até 3 minutos por rodada).
+
 ## Atualização 2.40.0 — Matriz de Contatos da Sabesp na aplicação (≈ 5 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.40.0`, Nova versão). Arquivo novo: `MatrizCPT` (script); o atualizador cria. Nenhuma permissão nova. A rotina das 12h e 0h ganhou o passo da Matriz (sem mudar os acionadores).

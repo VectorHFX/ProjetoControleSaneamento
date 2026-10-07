@@ -75,7 +75,8 @@ class AnexosCPT {
   static nota(nota, id) { return (String(nota || '').replace(/(?:^|\n)CPT_ATD_ID=[^\n]*/g, '').trim() + '\nCPT_ATD_ID=' + encodeURIComponent(id)).trim(); }
   static concluido(v) { return /^conclu/.test(AnexosCPT.norm(v)); }
   static valor(v) { return typeof v === 'string' && /^\s*[=+@-]/.test(v) ? "'" + v : v; }
-  static igual(a, b) { return a instanceof Date && b instanceof Date ? a.getTime() === b.getTime() : String(a == null ? '' : a) === String(b == null ? '' : b); }
+  // Datas comparadas pelo dia: o horário guardado na planilha (ex.: 19h) não é mudança.
+  static igual(a, b) { return a instanceof Date && b instanceof Date ? AnexosCPT.dia(a) === AnexosCPT.dia(b) : String(a == null ? '' : a) === String(b == null ? '' : b); }
   /** Categoria da lista da planilha a partir do tipo, assunto e solicitação (mesma regra das Fichas Oficiais 3.2.1). */
   static tipo(reg) {
     const t = AnexosCPT.norm([reg.tipo, reg.assunto, reg.solicitacao].join(' '));
@@ -110,22 +111,41 @@ class AnexosCPT {
           AnexosCPT.publico(reg.solucao), reg.concluido ? 'Concluído' : 'Em andamento', AnexosCPT.publico(reg.finalizacao)].map(v => v == null ? '' : v)};
     });
   }
+  /** Chaves mais soltas para linhas antigas sem a nota do protocolo: data + nome; nome + endereço. Só valem se forem únicas. */
+  static chavesSoltas(r) { const N = AnexosCPT.norm, nome = N(r[1]); return nome ? [AnexosCPT.dia(r[0]) + '|' + nome, nome + '|' + N(r[2])] : []; }
   /** Plano (sem gravar): o que atualiza e o que entra. Erro só quando a planilha está ambígua (duplicidade). */
   static planejar(linhas, notas, formulas, registros) {
-    const porId = new Map(), porConteudo = new Map(), usadas = new Set(), atualizar = [], incluir = [], avisos = []; let iguais = 0;
+    const porId = new Map(), porConteudo = new Map(), soltas = [new Map(), new Map()], usadas = new Set(), atualizar = [], incluir = [], avisos = []; let iguais = 0, ligados = 0;
+    const semNota = k => !AnexosCPT.idNota((notas[k] || [])[0]), por = (m, k, i) => { if (!m.has(k)) m.set(k, []); m.get(k).push(i); };
     linhas.forEach((r, i) => {
       if (!r.some(v => v !== '' && v != null)) return;
       const id = AnexosCPT.idNota((notas[i] || [])[0]);
-      if (id) { if (porId.has(id)) throw new Error('O protocolo ' + id + ' aparece em duas linhas do Controle. Confira a planilha; nada foi alterado.'); porId.set(id, i); }
-      const k = AnexosCPT.identidade(r); if (!porConteudo.has(k)) porConteudo.set(k, []); porConteudo.get(k).push(i);
+      if (id) { if (porId.has(id)) throw new Error('O protocolo ' + id + ' aparece em duas linhas do Controle. Confira a planilha; nada foi alterado.'); porId.set(id, i); return; }
+      por(porConteudo, AnexosCPT.identidade(r), i); AnexosCPT.chavesSoltas(r).forEach((k, n) => por(soltas[n], k, i));
     });
+    // 1ª passada: protocolo na nota ou conteúdo idêntico. 2ª: linhas antigas pela data e nome (ou nome e endereço), só se únicas —
+    // assim um caso já escrito à mão não ganha uma linha repetida no fim.
+    const achados = new Map();
     registros.forEach(x => {
       let i = porId.get(x.id);
       if (i === undefined) {
-        const cands = (porConteudo.get(AnexosCPT.identidade(x.valores)) || []).filter(k => !usadas.has(k) && !AnexosCPT.idNota((notas[k] || [])[0]));
+        const cands = (porConteudo.get(AnexosCPT.identidade(x.valores)) || []).filter(k => !usadas.has(k));
         if (cands.length > 1) throw new Error('Mais de uma linha do Controle corresponde ao protocolo ' + x.id + '. Confira a duplicidade; nada foi alterado.');
         if (cands.length === 1) i = cands[0];
       }
+      if (i !== undefined) { usadas.add(i); achados.set(x.id, i); }
+    });
+    registros.forEach(x => {
+      if (achados.has(x.id)) return;
+      for (const [n, k] of AnexosCPT.chavesSoltas(x.valores).entries()) {
+        const cands = (soltas[n].get(k) || []).filter(j => !usadas.has(j) && semNota(j));
+        if (cands.length === 1) { usadas.add(cands[0]); achados.set(x.id, cands[0]); ligados++; return; }
+        if (cands.length > 1) { avisos.push('O caso ' + x.id + ' parece estar em mais de uma linha antiga do Controle; não foi incluído de novo. Confira e apague a repetida, ou anote o protocolo.'); achados.set(x.id, -1); return; }
+      }
+    });
+    if (ligados) avisos.push(ligados + (ligados === 1 ? ' caso antigo foi reconhecido' : ' casos antigos foram reconhecidos') + ' pela data e nome (linhas sem a nota do protocolo); a nota é acrescentada.');
+    registros.forEach(x => {
+      const i0 = achados.get(x.id); if (i0 === -1) return; const i = i0;
       if (i === undefined) { incluir.push(x); return; }
       usadas.add(i);
       const antiga = linhas[i], f = formulas[i] || [];

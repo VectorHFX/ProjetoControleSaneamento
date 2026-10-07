@@ -93,18 +93,22 @@ class FichaOficialCPT {
     const D = this.ciclo.dados, a = D.atendimentos(), linhas = D.ler(a, 20);
     return linhas.map((r, i) => ({r, linha: i + 2})).filter(x => D.principal(x.r)).map(x => {
       const reg = this.registro(x.r), d = CicloAtendimentoCPT.json(x.r[19]), at = D.atendimento(x.r);
-      const situacao = !reg.nome || !reg.solicitacao ? 'corrigir' : d.fichaHash !== this.hash(reg) || !x.r[14] || !x.r[15] ? 'gerar' : d.fichaPasta !== 'v2' ? 'mover' : 'ok';
+      // Ficha do sistema antigo (sem hash) de um caso que não mudou na aplicação: vale como está — é movida, não refeita.
+      const legado = !d.fichaHash && x.r[14] && x.r[15] && FichaOficialCPT.intocado(d);
+      const situacao = !reg.nome || !reg.solicitacao ? 'corrigir' : (d.fichaHash !== this.hash(reg) && !legado) || !x.r[14] || !x.r[15] ? 'gerar' : d.fichaPasta !== 'v2' ? 'mover' : 'ok';
       return {protocolo: reg.protocolo, caso: at.caso, abertura: at.abertura, conclusao: at.conclusao, concluido: at.concluido, nome: at.nome, assunto: at.assunto, status: at.status, area: at.area,
         situacao, documento: String(x.r[14] || ''), pdf: String(x.r[15] || ''), naAntiga: !!(x.r[14] || x.r[15]) && d.fichaPasta !== 'v2'};
     });
   }
+  /** Caso migrado sem nenhuma ação feita na aplicação (execução, conclusão, correção, incorporação ou reabertura). */
+  static intocado(d) { return !(d.execucoes || []).length && !d.conclusao && !d.corrigido && !(d.incorporados || []).length && !(d.reaberturas || []).length; }
   static idDe(url) { return (String(url || '').match(/\/d\/([A-Za-z0-9_-]{20,})/) || [])[1] || ''; }
   /** Ficha em dia, mas na pasta antiga: move o Docs e o PDF para Casos (com o número do caso no nome) e marca. */
   mover(c) {
     const casos = this.pasta('Casos'), nome = this.nome(c.protocolo);
     [[c.documento, nome + ' · Ficha de Atendimento'], [c.pdf, nome + ' · Ficha de Atendimento.pdf']].forEach(([u, n]) => { const id = FichaOficialCPT.idDe(u); if (!id) return; const f = DriveApp.getFileById(id); f.moveTo(casos); f.setName(n); });
     const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) throw new Error('A base está ocupada; tente de novo.');
-    try { const atual = this.ciclo.localizar(c.protocolo), dd = CicloAtendimentoCPT.json(atual.r[19]); dd.fichaPasta = 'v2'; atual.a.getRange(atual.linha, 20).setValue(JSON.stringify(dd).slice(0, 49000)); }
+    try { const atual = this.ciclo.localizar(c.protocolo), dd = CicloAtendimentoCPT.json(atual.r[19]); dd.fichaPasta = 'v2'; /* base para refazer quando mudar */ if (!dd.fichaHash) dd.fichaHash = this.hash(this.registro(atual.r)); atual.a.getRange(atual.linha, 20).setValue(JSON.stringify(dd).slice(0, 49000)); }
     finally { lock.releaseLock(); }
   }
   /** Põe em dia as fichas da lista (gera as que faltam/mudaram, move as da pasta antiga) até o prazo. */
