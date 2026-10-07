@@ -18,6 +18,7 @@ window.CPTGestao = (() => {
   /** Barras verticais simples (SVG próprio): uma ou duas séries, valor escrito em cima de cada barra. Sem valor (null): sem barra e "—".
    *  o (opcional): {sufixo: '%', max: 100}. 2.35: todo gráfico leva "Copiar imagem" e "Copiar tabela". */
   function colunas(serie, campos, titulo, o = {}) {
+    if (!serie || !serie.length) return `<figure class="mini-chart"><figcaption>${titulo}</figcaption><p class="muted small">Sem dados no período.</p></figure>`;
     const W = 300, H = 150, base = 118, alto = 92, n = serie.length, passo = W / n, max = o.max || Math.max(1, ...serie.flatMap(s => campos.map(c => s[c.k] || 0))), suf = o.sufixo || '';
     const larg = Math.min(26, (passo - 10) / campos.length);
     const barras = serie.map((s, i) => campos.map((c, j) => { const v = s[c.k], h = Math.round((v || 0) / max * alto), x = i * passo + (passo - larg * campos.length) / 2 + j * larg, t = v == null ? '—' : v + suf;

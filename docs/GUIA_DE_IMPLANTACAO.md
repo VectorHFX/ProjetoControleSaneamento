@@ -23,6 +23,12 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.35.1 — revisão das entregas 2.34 e 2.35 (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.35.1`, Nova versão).
+2. Corrigido: um gráfico de meses sem nenhum dado mostra "Sem dados no período" em vez de quebrar a página.
+3. Conferido sem mudança: quem vê os pontos para melhorar (responsável, colaboradores de apoio e gestão), o "Abrir no RDAS", as curiosidades ao longo do dia, a imagem e a tabela copiadas, e o tamanho do cache dos relatos (vai comprimido e cabe no limite do Google).
+
 ## Atualização 2.35.0 — gráficos novos e "Copiar imagem / Copiar tabela" (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.35.0`, Nova versão). Arquivo novo: `Graficos` (HTML); o atualizador cria.
