@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.39.1 — planilha nova dos Anexos, Tenda pelos relatos e parceiros pela Matriz (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.39.1`, Nova versão).
+2. **Planilha dos Anexos:** a aplicação já usa a Planilha Google nova (`1Lxm4a6q…R3REc`). Não precisa mexer em Conectores; se lá estiver o endereço antigo (Excel), ele é trocado sozinho.
+3. **Linha 43 (Atendimento UMS / Tenda):** vem dos relatos. Toda ação do mês que teve a **tenda (ou UMS) como ferramenta** conta as **pessoas alcançadas** naquele dia.
+4. **Linha 15 (Total de parceiros):** automática, = quantidade de contatos na aba **Matriz de Contatos** da própria planilha (linhas abaixo de cada cabeçalho "PESSOA DE CONTATO" com pelo menos dois campos; títulos de seção não contam). A Matriz só é lida, nunca alterada.
+5. Na primeira vez, abra Visão do mês → Anexos do relatório e confira a coluna "Calculado" antes de clicar em Atualizar agora.
+
 ## Atualização 2.39.0 — Anexos do relatório atualizados sozinhos (≈ 5 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.39.0`, Nova versão). Arquivo novo: `AnexosCPT` (script); o atualizador cria. Nenhuma permissão nova. Os acionadores `rotinaCPT` (12h e 0h) não mudam: ganharam o passo dos Anexos.
@@ -35,11 +43,10 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
    - 31: registros "Acompanhamento de Vistoria Cautelar" do mês;
    - 32 e 33: Materiais concluídos no mês (publicações; ferramentas: impresso, vídeo, arte e apresentação);
    - 34: panfletos entregues informados nos relatos do mês;
-   - 43: fichas abertas no mês com canal ou local Tenda/UMS.
-   - A linha 15 (parceiros) entra na próxima entrega, com a Matriz de Contatos.
+   - 43: (2.39.1) pessoas alcançadas nas ações com Tenda/UMS como ferramenta;
+   - 15: (2.39.1) contatos da Matriz de Contatos.
 6. **Meses que a aplicação escreve:** o mês atual e, até o dia 10, o anterior — e **nunca antes da primeira gravação** (a primeira vez que alguém clicar em Atualizar agora, ou a rotina rodar, vale a partir daquele mês). Os meses já entregues não mudam.
 7. Segurança: se o rótulo de uma linha não for o esperado (a planilha mudou de lugar) ou a célula tiver fórmula, a linha é **pulada** e avisada. Se o mesmo protocolo aparecer em duas linhas do Controle, nada é gravado até corrigir.
-8. **Confira na primeira vez:** a linha 43 tinha números altos em agosto e setembro (59 e 93), que parecem vir de outra contagem. A regra combinada é "fichas com canal ou local Tenda/UMS"; se o número esperado for outro (ex.: pessoas atendidas na tenda), me avise antes de outubro fechar.
 
 ## Atualização 2.38.0 — fichas oficiais organizadas, pacote do mês e rotina das 12h e 0h (≈ 6 min)
 

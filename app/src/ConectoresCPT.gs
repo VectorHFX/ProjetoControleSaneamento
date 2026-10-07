@@ -15,7 +15,7 @@ class ConectoresCPT {
         uso: 'Consulta anterior do projeto (fica como referência).'},
       {chave: 'painelGestao', nome: 'Planilha do Painel de Gestão', tipo: 'planilha', padrao: '1mWROhF6jD4G9lz4PkSWGb6lSLO05SJMJwH8sJHqRYek',
         uso: 'Painel anterior da gestão. As visões dele agora estão na aplicação (Painel da gestão).'},
-      {chave: 'anexos', nome: 'Anexos do relatório (planilha oficial)', tipo: 'planilha', padrao: '1Et4M0nr4CxlRj7J6EDoru91aC4PJ-G2Y',
+      {chave: 'anexos', nome: 'Anexos do relatório (planilha oficial)', tipo: 'planilha', padrao: '1Lxm4a6qs9XGwhGokUTYUBcOuCWQssOEWlOBsU3R3REc',
         uso: 'A aplicação mantém o Controle de manifestações e as linhas automáticas dos Indicadores 2026 (12h, 0h e Atualizar agora). Precisa ser Planilha Google.'},
       {chave: 'contrato', nome: 'Planilha de controle do contrato', tipo: 'planilha', padrao: '1pQJ5B8wRzsdlU8udlh9ZzcWXozT3BOh4', aba: 733716505,
         uso: 'Preenchida 100% à mão pela Gestão, todo mês. A aplicação só abre o link e lembra (Visão do mês · Contrato); nunca escreve nela.'}

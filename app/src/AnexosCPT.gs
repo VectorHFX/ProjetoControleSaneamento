@@ -10,7 +10,7 @@
  *   O resto da aba é preenchido à mão. Escreve o mês atual e, até o dia 10, o anterior — nunca meses antes da ativação
  *   (anexosDesde, gravado na primeira atualização), para não trocar números já entregues. Rótulo da linha diferente do
  *   esperado → a linha é pulada e avisada (a planilha mudou de lugar).
- * - Matriz de Contatos: não é alterada aqui.
+ * - Matriz de Contatos: não é alterada aqui; só é contada (linha 15 dos Indicadores = contatos da Matriz).
  * Rotina das 12h/0h e botão "Atualizar agora" (Gestão e Administrativo). Conferir mostra tudo sem gravar.
  */
 class AnexosCPT {
@@ -29,18 +29,20 @@ class AnexosCPT {
       [12, /^elogio/, 'elogio', 'fichas abertas no mês do tipo Elogio'],
       [13, /^conclu/, 'concluidas', 'fichas concluídas no mês'],
       [14, /nao procedente/, 'naoProcedente', 'fichas abertas no mês com procedência "Não procedente"'],
+      [15, /parceiros/, 'parceiros', 'contatos cadastrados na Matriz de Contatos desta planilha'],
       [28, /participantes/, 'participantes', 'pessoas alcançadas nas ações socioambientais do mês (Visão do mês)'],
       [29, /total de acoes/, 'acoes', 'ações socioambientais do mês (Visão do mês)'],
       [31, /vistoria cautelar/, 'vistorias', 'registros "Acompanhamento de Vistoria Cautelar" do mês'],
       [32, /publicac/, 'publicacoes', 'Materiais concluídos no mês: publicações em rede social e na mídia'],
       [33, /ferramentas/, 'ferramentas', 'Materiais concluídos no mês: impresso, vídeo, arte e apresentação'],
       [34, /impress/, 'panfletos', 'panfletos entregues informados nos relatos do mês'],
-      [43, /total de atendimentos/, 'tenda', 'fichas abertas no mês com canal ou local Tenda/UMS']
+      [43, /total de atendimentos/, 'tenda', 'pessoas alcançadas nas ações do mês com Tenda/UMS como ferramenta (relatos)']
     ];
   }
 
   constructor(ctx) { this.ctx = ctx; this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil); this.fuso = 'America/Sao_Paulo'; }
-  static id() { return ConectoresCPT.id('anexos'); }
+  /** O arquivo antigo (Excel no Drive) foi trocado pela Planilha Google em 07/10/2026: se ainda estiver salvo, vale o novo. */
+  static id() { const id = ConectoresCPT.id('anexos'); return id === '1Et4M0nr4CxlRj7J6EDoru91aC4PJ-G2Y' ? ConectoresCPT.item('anexos').padrao : id; }
   static links() {
     const b = 'https://docs.google.com/spreadsheets/d/' + AnexosCPT.id();
     return {planilha: b + '/edit', xlsx: b + '/export?format=xlsx'};
@@ -102,7 +104,7 @@ class AnexosCPT {
       const reg = f.registro(r), j = CicloAtendimentoCPT.json(r[19]), c = CicloAtendimentoCPT.campos(j, r);
       const frente = String(r[9] || '').replace(/\s*\[OBR-\d+\]\s*$/, '').split(' — ')[0];
       return {id: String(r[0]), abertura: D.data(r[4]), conclusao: D.data(r[5]), concluido: D.encerrado(r), tipo: AnexosCPT.norm(c.tipo), procedencia: String(j.procedencia || ''),
-        lugar: AnexosCPT.norm([c.canal, c.local].join(' ')), temNome: !!String(reg.nome || '').trim(),
+        temNome: !!String(reg.nome || '').trim(),
         valores: [r[4] instanceof Date ? r[4] : reg.dataAbertura || '', reg.nome, reg.endereco, c.canal || 'Não informado', AnexosCPT.tipo(reg), frente, reg.solicitacao,
           AnexosCPT.publico(reg.solucao), reg.concluido ? 'Concluído' : 'Em andamento', AnexosCPT.publico(reg.finalizacao)].map(v => v == null ? '' : v)};
     });
@@ -187,7 +189,25 @@ class AnexosCPT {
       naoProcedente: abertas.filter(x => N(x.procedencia) === 'nao procedente').length, participantes: ini.pessoas, acoes: ini.acoes,
       vistorias: linhas.filter(r => r[0] && D.mesCelula(r[3]) === mes && /vistoria cautelar/.test(N(r[1]))).length,
       publicacoes: mat.publicacoes, ferramentas: mat.ferramentas, panfletos: relatos.reduce((s, r) => s + (r.panfletos || 0), 0),
-      tenda: abertas.filter(x => /tenda|\bums\b|unidade movel/.test(x.lugar)).length};
+      // Atendimento em tenda/UMS: cada ação que usou a tenda como ferramenta conta as pessoas daquele dia.
+      tenda: relatos.filter(r => /tenda|\bums\b|unidade movel/.test(N(r.ferramenta + ' ' + r.atividade))).reduce((s, r) => s + (r.publico || 0), 0),
+      parceiros: this.contatosDaMatriz()};
+  }
+  /** Contatos da Matriz (só leitura): linhas abaixo de um cabeçalho "PESSOA DE CONTATO" com ao menos dois campos preenchidos;
+   *  títulos de seção (um campo só) e os próprios cabeçalhos não contam. */
+  static contarMatriz(valores) {
+    let dentro = false, n = 0;
+    valores.forEach(r => {
+      const cel = r.slice(1, 8).map(v => String(v == null ? '' : v).trim()), cheios = cel.filter(Boolean).length;
+      if (/pessoa de contato/.test(AnexosCPT.norm(cel[1]))) { dentro = true; return; }
+      if (dentro && cheios >= 2) n++;
+    });
+    return n;
+  }
+  contatosDaMatriz() {
+    if (this._matriz != null) return this._matriz;
+    const a = AnexosCPT.aba(this._ss, 'Matriz de Contatos', n => n.includes('matriz') && n.includes('contato')), ult = a.getLastRow();
+    return this._matriz = ult ? AnexosCPT.contarMatriz(a.getRange(1, 1, ult, 8).getValues()) : 0;
   }
   static notaFonte(fonte) { return 'CPT: automático · Fonte: ' + fonte + '. Preenchido pela Aplicação CPT (não editar à mão: a próxima atualização sobrescreve).'; }
   indicadores(ss, meses, gravar) {
@@ -217,7 +237,7 @@ class AnexosCPT {
   // ---------------- Conferir / atualizar ----------------
   rodar(gravar) {
     const c = AplicacaoCPT.config(), hoje = Utilities.formatDate(new Date(), this.fuso, 'yyyy-MM-dd');
-    const desde = c.anexosDesde || hoje.slice(0, 7), ss = this.abrir(), meses = AnexosCPT.mesesParaGravar(hoje, desde);
+    const desde = c.anexosDesde || hoje.slice(0, 7), ss = this._ss = this.abrir(), meses = AnexosCPT.mesesParaGravar(hoje, desde);
     const r = {em: new Date().toISOString(), gravado: !!gravar, desde, controle: this.controle(ss, gravar), indicadores: this.indicadores(ss, meses, gravar), links: AnexosCPT.links()};
     if (gravar) {
       // Ativação: a primeira gravação que deu certo marca o mês; meses anteriores nunca são escritos.

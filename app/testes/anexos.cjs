@@ -38,7 +38,7 @@ const atd=new Sheet('Atendimentos',[cab,
 const colReg=['ID','Procedimento','Data do procedimento','Mês','Carimbo do envio','Origem','ID legado','Bairro','Bairro ID','Obra de referência','Obra ID','Responsável','Área','Atividade','Público informado','Protocolo informado','Situação do vínculo','Pesquisa','Conferência dos campos','Hash','Detalhes JSON'];
 const reg=(i,proc,ativ,pub,campos=[])=>['REG-'+String(i).padStart(24,'a'),proc,dia(dM(2)),M,'','4.0','','Vila Linda','BAI-001','Coletor A [OBR-0001]','OBR-0001','Resp','Social',ativ,pub,'','','','','h'+i,JSON.stringify({campos})];
 const registros=new Sheet('Registros',[colReg,reg(1,'Relato de atividade','Sensibilização em frente de obra',12,[{titulo:'Quantidade de panfletos entregues',valor:'40'}]),
-  reg(2,'Relato de atividade','Ação Social Externa',8,[{titulo:'Quantidade de panfletos entregues',valor:'1.200'}]),reg(3,'Acompanhamento de Vistoria Cautelar','',''),reg(4,'Acompanhamento de Vistoria Cautelar','','')]);
+  reg(2,'Relato de atividade','Ação Social Externa',8,[{titulo:'Quantidade de panfletos entregues',valor:'1.200'},{titulo:'Ferramenta',valor:'Tenda, Panfleto'}]),reg(3,'Acompanhamento de Vistoria Cautelar','',''),reg(4,'Acompanhamento de Vistoria Cautelar','','')]);
 const base=new Book('base',[registros,atd,new Sheet('Movimentações',[['ID']])]),agenda=new Book('agenda-0123456789',[]);
 // ---- planilha oficial ----
 const ctl=new Sheet('Controle de manisfestações',[['Data','Nome','Endereço','Canal','Tipo de Manifestação','Frente de obra','Histórico','Providência','Status','Obs.:']]);
@@ -48,7 +48,8 @@ Object.entries(rot).forEach(([l,t])=>ind.rows[l-1][1]=t);ind.rows[2][1]='Indicad
 // Linha 3: agosto/2025 a dezembro/2026 como datas cujo dia é o ano (25/08/2026 = "08.25").
 for(let i=0;i<17;i++){const m=(7+i)%12+1,a=i<5?25:26;ind.rows[2][2+i]=new Date(Date.UTC(2026,m-1,a,3));}ind.rows[2][19]='Acumulado';
 const colM=3+[...Array(17).keys()].find(i=>{const m=(7+i)%12+1,a=i<5?2025:2026;return a+'-'+String(m).padStart(2,'0')===M});
-const anexos=new Book('anexos',[ind,ctl,new Sheet('Matriz de Contatos',[['x']])]);
+const anexos=new Book('anexos',[ind,ctl,new Sheet('Matriz de Contatos',[['','Matriz de Contatos'],['','LIDERANÇAS LOCAIS'],['','NOME/FUNÇÃO/CARGO','PESSOA DE CONTATO','ENDEREÇO','TELEFONE','EMAIL','OBSERVAÇÃO','ATUALIZAÇÃO'],
+  ['','Líder A','Pessoa A','Rua 1','1111'],['','Líder B','','','2222'],['','ESCOLAS'],['','NOME ','PESSOA DE CONTATO','ENDEREÇO','TELEFONE','EMAIL','OBSERVAÇÃO','ATUALIZAÇÃO'],['','Escola C','Diretora','Rua 3'],['','Só nome'],['','Novo contato']])]);
 const books=new Map([['base',base],['agenda-0123456789',agenda],['anexos',anexos]]),cacheMap=new Map();
 const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   Session:{getActiveUser:()=>({getEmail:()=>email})},
@@ -79,7 +80,7 @@ function cfgDesde(){return JSON.parse(props.get('CPT_APLICACAO_1')).anexosDesde;
 assert.deepEqual(r.controle.novos,['ATD20260003','ATD20260004']);assert.deepEqual(r.controle.atualizados.sort(),['ATD20260001','ATD20260006']);assert.equal(r.controle.marcados,1,'caso 2 só ganha a nota');assert.equal(r.controle.semNome,1);
 assert.match(r.controle.avisos[0],/ATD20260006 foi reaberto/);
 const im=r.indicadores.find(x=>x.mes===M);assert.equal(im.coluna,colM);const v=k=>im.linhas.find(x=>x.linha===k).valor;
-assert.deepEqual([9,10,11,12,13,14,31,32,33,34,43].map(v),[3,1,1,1,0,1,2,1,1,1240,2],'manifestações (o caso 5 é Reclamação), vistorias, materiais, panfletos e tenda/UMS');
+assert.deepEqual([9,10,11,12,13,14,15,31,32,33,34,43].map(v),[3,1,1,1,0,1,3,2,1,1,1240,8],'manifestações (o caso 5 é Reclamação), contatos da Matriz, tenda pelas pessoas das ações com Tenda, vistorias, materiais, panfletos e tenda/UMS');
 const vis=run(`new DadosDaAplicacao(planilhaCPT_('base'),{papeis:['administrador']}).inicio('${M}',true).indicadores`);assert.equal(v(28),vis.pessoas);assert.equal(v(29),vis.acoes);assert.equal(v(28),20);
 // 3. Atualizar: grava, ativa a partir deste mês e guarda o resumo.
 r=run('atualizarAnexosCPT()');assert.equal(cfgDesde(),M);assert.ok(props.get('CPT_ANEXOS_ULTIMA'));assert.equal(locked,false);assert.equal(cacheMap.get('CPT_ANEXOS_LOTE'),undefined);
@@ -92,7 +93,7 @@ assert.equal(ctl.rows[5][3],'Tenda');assert.equal(ctl.rows[5][4],'Solicitação'
 assert.ok(!ctl.rows.some(x=>x[1]==='Morador 5'),'sem nome fica fora');
 // Indicadores: coluna do mês preenchida com nota de fonte; outras colunas e linhas manuais intactas.
 assert.equal(ind.rows[8][colM-1],3);assert.equal(ind.rows[33][colM-1],1240);assert.match(ind.notes['34:'+colM],/^CPT: automático · Fonte: panfletos entregues/);
-assert.equal(ind.rows[14][colM-1],'','linha 15 (parceiros) ainda não é automática');assert.equal(ind.rows[8][colM-2]||'','','mês anterior não é tocado (antes da ativação)');
+assert.equal(ind.rows[14][colM-1],3,'linha 15 = contatos da Matriz (seção e linha só com nome não contam)');assert.equal(anexos.getSheetByName('Matriz de Contatos').rows.length,10,'Matriz não é alterada');assert.equal(ind.rows[8][colM-2]||'','','mês anterior não é tocado (antes da ativação)');
 // 4. De novo: nada muda (nem notas).
 r=run('atualizarAnexosCPT()');assert.deepEqual([r.controle.novos.length,r.controle.atualizados.length,r.controle.marcados],[0,0,0]);assert.equal(r.indicadores[0].linhas.filter(x=>x.situacao==='muda').length,0);
 assert.equal(ctl.rows.length,7);
@@ -109,6 +110,8 @@ assert.equal(run("AnexosCPT.mesDaCelula('10.26','America/Sao_Paulo')"),'2026-10'
 // 7. Planilha em Excel no Drive: mensagem clara.
 props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'xlsx-no-drive'}}));assert.throws(()=>run('conferirAnexosCPT()'),/Salvar como Planilhas Google/);
 {const c=JSON.parse(props.get('CPT_APLICACAO_1'));delete c.anexosDesde;props.set('CPT_APLICACAO_1',JSON.stringify(c));assert.throws(()=>run('atualizarAnexosCPT()'),/Planilhas Google/);assert.equal(cfgDesde(),undefined,'falha não ativa');c.anexosDesde=M;props.set('CPT_APLICACAO_1',JSON.stringify(c));}props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'anexos'}}));
+// O endereço antigo (Excel) salvo em Conectores é trocado pela Planilha Google.
+props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'1Et4M0nr4CxlRj7J6EDoru91aC4PJ-G2Y'}}));assert.equal(run('AnexosCPT.id()'),'1Lxm4a6qs9XGwhGokUTYUBcOuCWQssOEWlOBsU3R3REc');props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'anexos'}}));
 // 8. Rotina: passo dos Anexos depois das fichas.
 email='victor@example.com';vm.runInContext("FichaOficialCPT.prototype.atualizarTodas=()=>({geradas:0,movidas:0,faltam:0,erros:[]})",ctx);
 r=run('rotinaCPT()');assert.deepEqual(r.passos.map(p=>p.id),['fichas','anexos']);assert.equal(r.passos[1].ok,true);assert.match(r.passos[1].texto,/caso\(s\) novo\(s\)/);
