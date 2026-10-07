@@ -170,7 +170,7 @@ console.log('PASS: obras consultáveis por todos, edição restrita (travada no 
 
 // Cache compartilhado e página com dados embutidos.
 registros.rows.push(reg(9,'Relato de atividade','2026-10-07','','','Nova',5));books.get('base').sheets.push(new Sheet('Início'));
-email='social@example.com';const i1=run("carregarInicioCPT('2026-10')");assert.equal(i1.cache,false);assert.equal(run("carregarInicioCPT({mes:'2026-10'})").cache,true);
+email='social@example.com';const i1=run("carregarInicioCPT('2026-10')");assert.equal(i1.cache,false);assert.ok(i1.dias.length&&i1.dias.every(x=>typeof x.pessoas==='number'),'2.35: pessoas por dia junto com as ações');assert.equal(i1.dias.reduce((s,x)=>s+x.pessoas,0),i1.indicadores.pessoas,'soma dos dias = pessoas do mês');assert.equal(run("carregarInicioCPT({mes:'2026-10'})").cache,true);
 assert.equal(run("carregarInicioCPT({mes:'2026-10',atualizar:true})").cache,false);registros.rows.push(reg(10,'Pesquisa de Satisfação','2026-10-08','','','',''));
 const i2=run("carregarInicioCPT('2026-10')");assert.equal(i2.cache,false);assert.equal(i2.satisfacao.mes,3);assert.equal(i2.satisfacao.meta,60);
 const mesAtual=ctx.Utilities.formatDate(new Date(),'America/Sao_Paulo','yyyy-MM');run("carregarInicioCPT('"+mesAtual+"')");run("carregarCronogramaCPT({mes:'"+mesAtual+"'})");

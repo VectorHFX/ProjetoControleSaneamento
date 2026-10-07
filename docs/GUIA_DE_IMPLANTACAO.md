@@ -23,6 +23,19 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.35.0 — gráficos novos e "Copiar imagem / Copiar tabela" (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.35.0`, Nova versão). Arquivo novo: `Graficos` (HTML); o atualizador cria.
+2. **Visão do mês → Resumo:** o gráfico por dia troca entre **Ações** e **Pessoas** (pessoas alcançadas por dia), em um toque.
+3. **Visão do mês → Relatos em resumo (Gestão e Administrativo):** painel **Qualidade dos relatos**, pela conferência automática e sem nomes:
+   - % de relatos completos nos últimos 6 meses;
+   - o que mais falta nos relatos do mês;
+   - completude por frente (% e "x de y").
+4. **Todo gráfico** (Visão do mês, painel da gestão e números dos atendimentos) tem **Copiar imagem** e **Copiar tabela**:
+   - a imagem sai sempre em fundo claro, em alta resolução, com título, mês e fonte, pronta para colar em e-mail, WhatsApp ou documento; se o navegador não deixar copiar, ela é baixada;
+   - a tabela cola certinho no Planilhas, no Excel e no Docs.
+5. **Saiu "Quem registrou"** do painel da gestão: era uma contagem por pessoa (ranking individual), que combinamos não ter.
+
 ## Atualização 2.34.1 — Meu espaço: sem a gotinha e curiosidades ao longo do dia (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.34.1`, Nova versão).

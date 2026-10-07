@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.34.1';
+const VERSAO_CPT = '2.35.0';
 
 /**
  * Cada planilha é aberta uma vez por execução e reaproveitada (o equivalente a um "pool" de conexões no Apps Script).
@@ -91,14 +91,14 @@ function dadosIniciaisCPT_() {
   try {
     const ctx = AplicacaoCPT.identidade(), mes = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM');
     inicial.conta = ctx.email; inicial.perfil = ctx.perfil; inicial.mes = mes;
-    inicial.inicio = CacheCPT.ler('inicio:ultimo:' + mes);
+    inicial.inicio = CacheCPT.ler('inicio:ultimo2:' + mes);
     inicial.agenda = CacheCPT.ler('agenda:mes:' + mes);
   } catch (e) { inicial.erro = e.message; }
   // Serializado com < escapado: o JSON vai dentro de uma tag <script>.
   return JSON.stringify(inicial).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 function incluirCPT_(nome) {
-  if (!['Estilos', 'Interacoes', 'Agenda', 'Obras', 'Inicio', 'Atendimentos', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa', 'Mascotes', 'Saber', 'Jogos', 'Placar', 'Visual', 'Organograma', 'Levantamento', 'Relatos'].includes(nome)) throw new Error('Componente desconhecido.');
+  if (!['Estilos', 'Interacoes', 'Agenda', 'Obras', 'Inicio', 'Atendimentos', 'Gestao', 'Comunicacao', 'Recados', 'MeuEspaco', 'Mapa', 'Mascotes', 'Saber', 'Jogos', 'Placar', 'Visual', 'Organograma', 'Levantamento', 'Relatos', 'Graficos'].includes(nome)) throw new Error('Componente desconhecido.');
   return HtmlService.createHtmlOutputFromFile(nome).getContent();
 }
 

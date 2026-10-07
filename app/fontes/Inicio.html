@@ -10,7 +10,7 @@
  */
 window.CPTInicio = (() => {
   'use strict';
-  let ui = null, agenda = {mes: null, itens: null, pedido: null};
+  let ui = null, agenda = {mes: null, itens: null, pedido: null}, medida = 'acoes'; // 2.35: 'acoes' ou 'pessoas' no gráfico por dia
   const $ = id => document.getElementById(id);
   const hojeISO = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
   const diaSemana = iso => new Date(iso + 'T12:00:00Z').toLocaleDateString('pt-BR', {weekday: 'short', timeZone: 'UTC'}).replace('.', '');
@@ -41,25 +41,34 @@ window.CPTInicio = (() => {
     return `<${tag} class="stat-tile" ${rota ? `data-route="${rota}"` : ''} ${filtro ? `data-filter="${filtro}"` : ''}><span class="stat-label">${rotulo}</span><span class="stat-value">${ui.num(valor)}</span>${extra}<span class="stat-note">${nota}</span></${tag}>`;
   }
 
-  /** Barras por dia: fins de semana marcados, hoje destacado, valor no hover/foco. */
+  /** Barras por dia (ações ou pessoas alcançadas): fins de semana marcados, hoje destacado, valor no hover/foco. */
   function graficoDias(d) {
-    const mes = d.mes, ultimo = new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate(), hoje = hojeISO();
-    const por = new Map(d.dias.map(x => [x.data, x.quantidade]));
-    const dias = Array.from({length: ultimo}, (_, i) => { const iso = mes + '-' + String(i + 1).padStart(2, '0'), dow = new Date(iso + 'T12:00:00Z').getUTCDay(); return {iso, n: por.get(iso) || 0, fds: dow === 0 || dow === 6, futuro: iso > hoje}; });
+    const mes = d.mes, ultimo = new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate(), hoje = hojeISO(), pes = medida === 'pessoas';
+    const por = new Map(d.dias.map(x => [x.data, x])), unid = n => pes ? n + (n === 1 ? ' pessoa' : ' pessoas') : n + (n === 1 ? ' ação' : ' ações');
+    const dias = Array.from({length: ultimo}, (_, i) => { const iso = mes + '-' + String(i + 1).padStart(2, '0'), dow = new Date(iso + 'T12:00:00Z').getUTCDay(), x = por.get(iso) || {}; return {iso, n: (pes ? x.pessoas : x.quantidade) || 0, acoes: x.quantidade || 0, pessoas: x.pessoas || 0, fds: dow === 0 || dow === 6, futuro: iso > hoje}; });
     const max = Math.max(4, ...dias.map(x => x.n)), topo = Math.ceil(max / 2) * 2, W = window.matchMedia('(max-width:640px)').matches ? 360 : 640, H = 180, base = 150, alto = 130, passo = W / ultimo, larg = Math.max(4, passo - 4);
     const y = v => base - v / topo * alto;
     const barras = dias.map((x, i) => {
       const cx = i * passo + 2, h = base - y(x.n), r = Math.min(4, h / 2, larg / 2);
       const forma = x.n ? `<path class="bar" d="M${cx},${base}V${base - h + r}Q${cx},${base - h} ${cx + r},${base - h}H${cx + larg - r}Q${cx + larg},${base - h} ${cx + larg},${base - h + r}V${base}Z"/>` : '';
-      return `${x.fds ? `<rect class="weekend" x="${i * passo}" y="${base - alto - 6}" width="${passo}" height="${alto + 6}"/>` : ''}${forma}${x.iso === hoje ? `<line class="today" x1="${cx + larg / 2}" x2="${cx + larg / 2}" y1="${base - alto - 6}" y2="${base}"/>` : ''}<rect class="hit" x="${i * passo}" y="0" width="${passo}" height="${base}" tabindex="-1" data-tip="${ui.esc(diaSemana(x.iso) + ', ' + ui.date(x.iso) + ' · ' + (x.futuro ? 'ainda não chegou' : x.n + (x.n === 1 ? ' ação' : ' ações')))}"/>`;
+      return `${x.fds ? `<rect class="weekend" x="${i * passo}" y="${base - alto - 6}" width="${passo}" height="${alto + 6}"/>` : ''}${forma}${x.iso === hoje ? `<line class="today" x1="${cx + larg / 2}" x2="${cx + larg / 2}" y1="${base - alto - 6}" y2="${base}"/>` : ''}<rect class="hit" x="${i * passo}" y="0" width="${passo}" height="${base}" tabindex="-1" data-tip="${ui.esc(diaSemana(x.iso) + ', ' + ui.date(x.iso) + ' · ' + (x.futuro ? 'ainda não chegou' : unid(x.n)))}"/>`;
     }).join('');
     const marcas = [1, 8, 15, 22, ultimo].map(n => `<text class="axis" x="${(n - 1) * passo + passo / 2}" y="${H - 8}" text-anchor="middle">${String(n).padStart(2, '0')}</text>`).join('');
-    const resumo = dias.filter(x => x.n).map(x => ui.date(x.iso) + ': ' + x.n).join('; ') || 'Nenhuma ação no mês';
-    return `<div class="chart-wrap"><svg class="day-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ações por dia em ${ui.esc(nomeMes(mes))}. ${ui.esc(resumo)}">
+    const resumo = dias.filter(x => x.n).map(x => ui.date(x.iso) + ': ' + x.n).join('; ') || (pes ? 'Nenhuma pessoa alcançada no mês' : 'Nenhuma ação no mês'), titulo = pes ? 'Pessoas alcançadas por dia' : 'Ações por dia';
+    const passados = dias.filter(x => !x.futuro), copiar = window.CPTGraficos ? window.CPTGraficos.acoes({titulo, subtitulo: nomeMes(mes), tipo: 'colunas', rotulos: dias.map(x => x.iso.slice(8)),
+      series: [{nome: pes ? 'Pessoas' : 'Ações', valores: dias.map(x => x.futuro ? null : x.n)}], eixo: [0, 7, 14, 21, ultimo - 1],
+      tabela: {cab: ['Dia', 'Ações', 'Pessoas alcançadas'], linhas: passados.map(x => [ui.date(x.iso), x.acoes, x.pessoas]).concat([['Total', passados.reduce((s, x) => s + x.acoes, 0), passados.reduce((s, x) => s + x.pessoas, 0)]])}}) : '';
+    return `<div class="chart-wrap"><svg class="day-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${titulo} em ${ui.esc(nomeMes(mes))}. ${ui.esc(resumo)}">
       <line class="grid" x1="0" x2="${W}" y1="${y(topo)}" y2="${y(topo)}"/><line class="grid" x1="0" x2="${W}" y1="${y(topo / 2)}" y2="${y(topo / 2)}"/><line class="baseline" x1="0" x2="${W}" y1="${base}" y2="${base}"/>
       <text class="axis" x="${W}" y="${y(topo) - 4}" text-anchor="end">${topo}</text><text class="axis" x="${W}" y="${y(topo / 2) - 4}" text-anchor="end">${topo / 2}</text>${barras}${marcas}</svg>
       <div class="chart-tip" hidden></div></div>
-      <p class="chart-key"><span class="key-weekend"></span>Fim de semana${hoje.startsWith(mes) ? '<span class="key-today"></span>Hoje' : ''}</p>`;
+      <p class="chart-key"><span class="key-weekend"></span>Fim de semana${hoje.startsWith(mes) ? '<span class="key-today"></span>Hoje' : ''}</p>${copiar}`;
+  }
+  /** Cabeçalho do cartão "por dia": título da medida e a troca Ações/Pessoas. */
+  function cabecalhoDias(d) {
+    const pes = medida === 'pessoas', total = d.dias.reduce((s, x) => s + (x.pessoas || 0), 0);
+    return `<div class="panel-head"><div><h2>${pes ? 'Pessoas alcançadas por dia' : 'Ações por dia'}</h2><p>${pes ? ui.num(total) + ' pessoas alcançadas' : ui.num(d.dias.length) + ' dias com ação'} em ${ui.esc(nomeMes(d.mes))}</p></div>
+      <div class="segmented dias-medida" role="group" aria-label="O que mostrar por dia">${[['acoes', 'Ações'], ['pessoas', 'Pessoas']].map(([k, t]) => `<button type="button" data-dias-medida="${k}" aria-pressed="${medida === k}" class="${medida === k ? 'chosen' : ''}">${t}</button>`).join('')}</div></div>`;
   }
   function desenharAgenda() {
     const box = $('homeAgenda'); if (!box) return;
@@ -105,7 +114,7 @@ window.CPTInicio = (() => {
         ${tile('Manifestações em tratativa', k.abertos, ui.num(k.recebidasNoMes || 0) + ' recebidas e ' + ui.num(k.concluidosNoMes || 0) + ' concluídas no mês.', '', 'atendimentos', 'abertos')}
       </section>
       <div class="home-grid"><div class="home-main">
-        <section class="panel panel-dias"><div class="panel-head"><div><h2>Ações por dia</h2><p>${ui.num(d.dias.length)} dias com ação em ${ui.esc(nomeMes(d.mes))}</p></div></div>${graficoDias(d)}</section>
+        <section class="panel panel-dias">${cabecalhoDias(d)}${graficoDias(d)}</section>
 
       </div><aside class="home-side">
         <section class="panel panel-agenda"><div class="panel-head"><div><span class="eyebrow">EM EQUIPE</span><h2>Agenda</h2></div><button class="icon-button" data-route="cronograma" aria-label="Abrir cronograma">↗</button></div><div id="homeAgenda"></div></section>
@@ -124,6 +133,7 @@ window.CPTInicio = (() => {
   function init(api) {
     ui = api;
     document.addEventListener('pointerover', tooltip); document.addEventListener('pointerdown', tooltip);
+    document.addEventListener('click', e => { const b = e.target.closest('[data-dias-medida]'), box = b && b.closest('.panel-dias'), d = ui.state.home; if (!b || !box || !d || b.dataset.diasMedida === medida) return; medida = b.dataset.diasMedida; box.innerHTML = cabecalhoDias(d) + graficoDias(d); });
     document.addEventListener('pointerleave', () => document.querySelectorAll('.chart-tip').forEach(t => t.hidden = true), true);
   }
   /** Itens do cronograma de um mês, reaproveitando o que já foi buscado (usado pela página inicial do Meu espaço). */

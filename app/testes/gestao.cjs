@@ -153,3 +153,17 @@ console.log('PASS: registros 50 por vez, sem repetir nem pular.');
  assert.throws(()=>run("abrirNoRdasCPT('"+idPesq+"')"),/relatos de atividade/);assert.throws(()=>run("abrirNoRdasCPT('x')"),/inválido/);
  props.set('CPT_CONECTORES',JSON.stringify({rdas:{id:'sem-rdas'}}));r=run("abrirNoRdasCPT('"+id20+"')");assert.equal(r.achou,false);assert.match(r.texto,/procure a aba do dia 12\/09/);}
 console.log('PASS: ferramenta Relatos — cartões dos relatos do mês para todos, pontos de melhoria só para responsável, colaboradores de apoio e gestão; Abrir no RDAS acha a linha da ficha na aba do dia e explica quando o dia ainda não está lá.');
+
+// 2.35: qualidade dos relatos (sem nomes): % completos em 6 meses, pontos que mais faltam, completude por frente; sem ranking por pessoa.
+{email='atd@example.com';assert.throws(()=>run("qualidadeRelatosCPT({mes:'2026-09'})"),/Administrativo e da Gestão/);
+ email='gestao@example.com';const q=run("qualidadeRelatosCPT({mes:'2026-09'})");
+ assert.equal(q.meses.length,6);assert.deepEqual(q.meses.map(m=>m.mes),['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09']);
+ const set=run("carregarRelatosCPT({mes:'2026-09'})").itens;assert.equal(q.total,set.length,'mesmos relatos da ferramenta');assert.equal(q.completos,set.filter(x=>x.pontos&&!x.pontos.length).length);
+ assert.equal(q.meses[5].total,q.total);assert.equal(q.meses[4].total,1,'agosto: 1 relato');
+ assert.equal(q.faltas.length,6);assert.ok(q.faltas.every((f,i)=>!i||q.faltas[i-1].quantidade>=f.quantidade),'do que mais falta para o que menos falta');
+ assert.equal(q.faltas.reduce((s,f)=>s+f.quantidade,0),set.reduce((s,x)=>s+x.pontos.length,0),'faltas batem com os pontos dos cartões');
+ assert.equal(q.frentes.reduce((s,f)=>s+f.total,0),q.total);assert.ok(q.frentes.every(f=>f.completos<=f.total));
+ assert.ok(!JSON.stringify(q).includes('Ana')&&!JSON.stringify(q).includes('Social'),'sem nomes de pessoas');
+ assert.equal(run("carregarPainelGestaoCPT({mes:'2026-09'})").porPessoa,undefined,'painel sem contagem por pessoa');
+ assert.throws(()=>run("qualidadeRelatosCPT({mes:'x'})"),/mês válido/);}
+console.log('PASS: qualidade dos relatos — % completos nos 6 meses, pontos que mais faltam (ordenados) e completude por frente, iguais aos cartões; sem nomes e sem contagem por pessoa.');

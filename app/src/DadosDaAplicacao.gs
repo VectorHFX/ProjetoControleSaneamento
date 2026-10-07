@@ -79,11 +79,11 @@ class DadosDaAplicacao {
     // CPT_ATD_VERSAO sobe a cada ação em um caso (linhas editadas não mudam a última linha).
     // Movimentações cobre o que o Campo 4.0 grava (retorno da Execução), que é outro projeto.
     const mov = this.base.getSheetByName('Movimentações');
-    const chave = 'inicio:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(mov?mov.getLastRow():0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ENTREGAS_VERSAO')||0);
+    const chave = 'inicio:p2:'+this.base.getId()+':'+mes+':'+reg.getLastRow()+':'+atd.getLastRow()+':'+(mov?mov.getLastRow():0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO')||0)+':'+(PropertiesService.getScriptProperties().getProperty('CPT_ENTREGAS_VERSAO')||0);
     const salvo = atualizar ? null : CacheCPT.ler(chave);
     if (salvo) return {...salvo, cache: true};
     const r = this.calcularInicio(mes, reg, atd);
-    CacheCPT.gravar(chave, r, 600); CacheCPT.gravar('inicio:ultimo:'+mes, r, 21600);
+    CacheCPT.gravar(chave, r, 600); CacheCPT.gravar('inicio:ultimo2:'+mes, r, 21600);
     return r;
   }
   /**
@@ -92,14 +92,15 @@ class DadosDaAplicacao {
    */
   calcularInicio(mes, reg, atd) {
     const linhas=this.ler(reg,19).filter(r=>this.permitido(r)), fichas=this.ler(atd,18).filter(r=>this.principal(r));
-    const periodo=linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mes), tipos=new Map(), dias=new Map(), destinos=new Map(), frentes=new Set(), bairros=new Set(), entregas=this.situacoesEntregas();
+    const periodo=linhas.filter(r=>r[0]&&this.mesCelula(r[3])===mes), tipos=new Map(), dias=new Map(), pessoasDia=new Map(), destinos=new Map(), frentes=new Set(), bairros=new Set(), entregas=this.situacoesEntregas();
     let acoes=0, pessoas=0, semPublico=0, diagnosticos=0;
     const contar=(item,id)=>{const e=entregas.get(id)||{};if(e.destino&&item!=='2'&&SocioambientalCPT.item(e.destino))item=e.destino;const d=destinos.get(item)||{quantidade:0,prontos:0};d.quantidade++;if(e.situacao==='pronto')d.prontos++;destinos.set(item,d);};
     periodo.forEach(r=>{tipos.set(String(r[1]),(tipos.get(String(r[1]))||0)+1);
       const destino=SocioambientalCPT.destino(r[1],r[13],r[17]);if(!destino)return;
       if(destino==='2'){diagnosticos++;contar('2',String(r[0]));return;}
-      acoes++;contar(destino,String(r[0]));if(r[14]!==''&&/^\d+$/.test(String(r[14])))pessoas+=Number(r[14]);else semPublico++;
-      const dia=this.data(r[2]);if(dia.startsWith(mes))dias.set(dia,(dias.get(dia)||0)+1);
+      acoes++;contar(destino,String(r[0]));const pub=r[14]!==''&&/^\d+$/.test(String(r[14]))?Number(r[14]):null;if(pub!==null)pessoas+=pub;else semPublico++;
+      // 2.35: pessoas alcançadas por dia junto com as ações (gráfico da Visão do mês).
+      const dia=this.data(r[2]);if(dia.startsWith(mes)){dias.set(dia,(dias.get(dia)||0)+1);pessoasDia.set(dia,(pessoasDia.get(dia)||0)+(pub||0));}
       const f=SocioambientalCPT.frente(r[9]);if(f)frentes.add(f);if(r[7])bairros.add(String(r[7]));});
     const concluidas=fichas.filter(r=>this.encerrado(r)), inicio=this.base.getSheetByName('Início');
     const formulario=inicio?this.url(inicio.getRange(3,2).getValue()):'';
@@ -111,7 +112,7 @@ class DadosDaAplicacao {
         frase:'Foram contabilizadas '+acoes+' ações socioambientais, totalizando '+pessoas+' pessoas alcançadas.'},
       destinos:SocioambientalCPT.itens.filter(x=>x.tipo!=='consolidado'||destinos.has(x.item)).map(x=>({item:x.item,titulo:x.titulo,tipo:x.tipo,quantidade:(destinos.get(x.item)||{}).quantidade||0,prontos:(destinos.get(x.item)||{}).prontos||0})),
       procedimentos:[...tipos].map(([nome,quantidade])=>({nome,quantidade})).sort((a,b)=>b.quantidade-a.quantidade),
-      dias:[...dias].map(([data,quantidade])=>({data,quantidade})).sort((a,b)=>a.data.localeCompare(b.data)),
+      dias:[...dias].map(([data,quantidade])=>({data,quantidade,pessoas:pessoasDia.get(data)||0})).sort((a,b)=>a.data.localeCompare(b.data)),
       recentes:periodo.slice(-5).reverse().map(r=>this.registro(r)),
       filtros:{procedimentos:[...new Set(linhas.map(r=>String(r[1])).filter(Boolean))].sort(),bairros:[...new Set(linhas.map(r=>String(r[7])).filter(Boolean))].sort(),obras:[...new Set(linhas.map(r=>String(r[9])).filter(Boolean))].sort()},
       links:{formulario},notaCarteira:'Estado atual das fichas importadas. O mês filtra os registros de campo.'};

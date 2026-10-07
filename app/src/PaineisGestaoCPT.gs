@@ -56,7 +56,7 @@ class PaineisGestaoCPT {
     });
     const contar = (lista, f) => { const m = new Map(); lista.forEach(x => { const k = f(x) || 'Não informado'; m.set(k, (m.get(k) || 0) + 1); }); return [...m].map(([nome, quantidade]) => ({nome, quantidade})).sort((a, b) => b.quantidade - a.quantidade); };
     const porItem = S.itens.filter(i => i.tipo !== 'consolidado').map(i => ({item: i.item, titulo: i.titulo, quantidade: doMes.filter(x => x.destino === i.item).length}));
-    const porPessoa = contar(doMes, x => String(x.r[11]).trim()).slice(0, 12);
+    // 2.35: sem contagem por pessoa (nada de ranking individual).
     const porTipo = contar(acoes, x => String(x.r[13]).trim()).slice(0, 8);
 
     // Frentes: catálogo (exceto finalizadas) + o que apareceu no mês fora do catálogo.
@@ -96,7 +96,27 @@ class PaineisGestaoCPT {
     const paradas = lista.filter(f => f.situacao === 'Em andamento' && (f.diasSemRegistro === null || f.diasSemRegistro > PaineisGestaoCPT.diasSemRegistro));
     if (paradas.length) alertas.push({nivel: 'medio', texto: paradas.length + ' frente(s) em andamento sem registro há mais de ' + PaineisGestaoCPT.diasSemRegistro + ' dias: ' + paradas.slice(0, 4).map(f => f.nome).join('; ') + (paradas.length > 4 ? '…' : '') + '.', aba: 'frentes'});
     if (contrato.semPublico) alertas.push({nivel: 'baixo', texto: contrato.semPublico + ' ação(ões) sem público informado (o total de pessoas alcançadas fica menor).', rota: 'registros'});
-    return {mes, hoje, contrato, serie, porItem, porPessoa, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
+    return {mes, hoje, contrato, serie, porItem, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
+  }
+
+  /**
+   * 2.35: qualidade dos relatos de atividade (conferência automática, sem nomes de pessoas):
+   * % completos nos 6 meses até o escolhido, os pontos que mais faltam e a completude por frente no mês escolhido.
+   * Cada mês vira um resumo pequeno em cache (meses passados por 6 horas; o mês atual acompanha a base).
+   */
+  qualidade(mes) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes || ''))) throw new Error('Selecione um mês válido.');
+    const a = this.dados.registros(), atual = Utilities.formatDate(new Date(), this.dados.fuso, 'yyyy-MM'), versao = PropertiesService.getScriptProperties().getProperty('CPT_ENTREGAS_VERSAO') || 0;
+    const resumo = m => CacheCPT.obter('relatos-qualidade:' + this.ctx.base.getId() + ':' + m + ':' + (m >= atual ? a.getLastRow() : 'fechado') + ':' + versao, m >= atual ? 600 : 21600, () => {
+      const rs = PaineisGestaoCPT.relatosDoMes(this.dados, this.ctx, m).itens.filter(r => RelatosCPT.ehRelato(r.procedimento) && r.qualidade), faltas = {}, frentes = {};
+      rs.forEach(r => { r.qualidade.itens.forEach(i => { if (!i.ok) faltas[i.chave] = (faltas[i.chave] || 0) + 1; });
+        const f = r.frente || 'Sem frente informada', x = frentes[f] || (frentes[f] = [0, 0]); x[0]++; if (!r.qualidade.faltam) x[1]++; });
+      return {mes: m, total: rs.length, completos: rs.filter(r => !r.qualidade.faltam).length, faltas, frentes};
+    });
+    const meses = PaineisGestaoCPT.meses(mes, 6).map(resumo), este = meses[meses.length - 1];
+    return {mes, meses: meses.map(x => ({mes: x.mes, total: x.total, completos: x.completos})), total: este.total, completos: este.completos,
+      faltas: RelatosCPT.criterios.map(c => ({chave: c.chave, nome: c.nome, quantidade: este.faltas[c.chave] || 0})).sort((x, y) => y.quantidade - x.quantidade),
+      frentes: Object.keys(este.frentes).map(nome => ({nome, total: este.frentes[nome][0], completos: este.frentes[nome][1]})).sort((x, y) => y.total - x.total || x.nome.localeCompare(y.nome, 'pt-BR'))};
   }
 
   /** Relatos do mês em leitura rápida: quem, onde, quantas pessoas e o começo do relato. JSON lido só das linhas do mês. */
@@ -128,4 +148,5 @@ class PaineisGestaoCPT {
 }
 
 function carregarPainelGestaoCPT(p) { return AplicacaoCPT.executar((d, ctx) => new PaineisGestaoCPT(ctx).carregar(String(p && p.mes || ''), !!(p && p.atualizar)), 'painel.carregar'); }
+function qualidadeRelatosCPT(p) { return AplicacaoCPT.executar((d, ctx) => new PaineisGestaoCPT(ctx).qualidade(String(p && p.mes || '')), 'painel.qualidade'); }
 function carregarRelatosResumoCPT(mes) { return AplicacaoCPT.executar((d, ctx) => new PaineisGestaoCPT(ctx).relatos(String(mes || '')), 'painel.relatos'); }
