@@ -33,19 +33,21 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   for(const v of ['socioambiental','comunicacao']){await p.selectOption('#viewSwitch',v);await espaco();await irInicio();await p.locator('.panel-dias').waitFor();await semRelatorio(v);}
   // Gestão: painel com alertas, frentes, relatos.
   await p.selectOption('#viewSwitch','gestao');await p.locator('.shortcuts').waitFor();await p.locator('.panel-dias').waitFor();
-  // 2.11: o painel são abas da Visão do mês (Resumo · Contrato · Frentes · Relatos); o menu mantém a Visão do mês marcada.
+  // 2.11: o painel são abas da Visão do mês (2.49: Resumo · Cronograma · Contrato · Frentes · Qualidade dos relatos · Entregas do mês); o menu mantém a Visão do mês marcada.
   await p.locator('.nav-item[data-route=inicio]').click();await p.locator('.mes-tabs [data-painel-aba=resumo][aria-selected=true]').waitFor();assert.equal(await p.locator('.nav-item[data-route=painel]').count(),0,'painel fora do menu');
   await p.locator('[data-painel-aba=contrato]').click();await p.locator('.mini-chart').first().waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');
   assert.equal(await p.locator('#pageLabel').textContent(),'Visão do mês');
-  assert.equal(await p.locator('#view .attention').count(),0,'2.48.1: "Pede atenção" só no Resumo');assert.equal(await p.locator('.mini-chart').count(),4);
+  assert.equal(await p.locator('#view .attention').count(),0,'2.48.1: "Pede atenção" só no Resumo');assert.equal(await p.locator('#controleContrato').count(),0,'2.49: planilha de controle fica em Entregas do mês');assert.equal(await p.locator('.mini-chart').count(),4);
   await p.locator('[role=tab][data-painel-aba=frentes]').click();await p.locator('.front-card').first().waitFor();
   assert.equal(await p.locator('.front-card.is-late').count(),1);
   await p.locator('#frenteFiltro [name=busca]').fill('viela');await p.waitForFunction(()=>document.querySelectorAll('.front-card').length===1);assert.equal(await p.locator('#frenteFiltro [name=busca]').inputValue(),'viela','filtro com espera curta mantém o texto');
   assert.equal(await p.evaluate(()=>document.activeElement.name),'busca','foco mantido no filtro');
   await p.locator('[data-frente]').first().click();await p.waitForFunction(()=>document.querySelector('#detailType').textContent==='FRENTE DE SERVIÇO');
   assert.match(await p.locator('#detailContent').textContent(),/ATD20260014/);await p.locator('#closeDialog').click();
-  await p.locator('[role=tab][data-painel-aba=relatos]').click();await p.locator('.relato-card').first().waitFor();
-  assert.equal(await p.locator('.relato-card').count(),2);assert.match(await p.locator('#relatosResumo').textContent(),/sem foto/);
+  // 2.49: Qualidade dos relatos só com os gráficos e o caminho para a ferramenta Relatos (sem repetir a lista).
+  await p.locator('[role=tab][data-painel-aba=relatos]').click();await p.locator('.rel-qualidade').waitFor();
+  assert.equal(await p.locator('[role=tab][data-painel-aba=relatos]').textContent(),'Qualidade dos relatos');assert.equal(await p.locator('#view .relato-card').count(),0);
+  assert.equal(await p.locator('.mes-tabs [role=tab]').count(),6,'Resumo, Cronograma, Contrato, Frentes, Qualidade, Entregas');
   // Conectores (Equipe → administração técnica).
   await p.locator('.nav-item[data-route=ajuda]').click();await p.locator('#view [data-route=conectores]').click();await p.locator('.connector-list').first().waitFor();
   assert.match(await p.locator('#view').textContent(),/Período de testes: configuração travada/);assert.match(await p.locator('#view').textContent(),/Abrir e compartilhar/);
@@ -64,6 +66,6 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   assert.deepEqual(await s.$$eval('.nav-item',l=>l.filter(x=>!x.hidden).map(x=>x.dataset.route)),['meuespaco','inicio','atendimentos','registros','levantamento','galeria','obras','contatos','materiais','ajuda']);
   assert.match(await s.locator('.shortcuts').textContent(),/Relatos do mês/);assert.doesNotMatch(await s.locator('.shortcuts').textContent(),/Mesa do relatório/);
   assert.deepEqual(errors,[]);
-  console.log('PASS: visões por cargo (faixa, cor, lateral e atalhos mudam; pessoa de um papel não troca), auditoria de atendimentos, painel (alertas, frentes com filtro e detalhe, relatos), conectores e celular sem rolagem lateral.');
+  console.log('PASS: visões por cargo (faixa, cor, lateral e atalhos mudam; pessoa de um papel não troca), auditoria de atendimentos, painel (alertas, frentes com filtro e detalhe, qualidade dos relatos sem repetir a lista), conectores e celular sem rolagem lateral.');
   await b.close();
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -27,7 +27,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const antes=await p.evaluate(()=>window.__entradas);await p.locator('#refresh').click();await p.waitForTimeout(2500);
   assert.equal(await p.evaluate(()=>Math.floor(window.__entradas)),Math.floor(antes),'Atualizar não repete a entrada da página');
   // O "i" de informação abre por cima do conteúdo, mesmo logo depois de chegar à página.
-  await p.locator('.nav-item[data-route=inicio]').first().click();await p.locator('[data-painel-aba=cronograma]').first().click();await p.locator('#view .intro-info summary').waitFor();await p.locator('#view .intro-info summary').click();
+  await p.locator('.nav-item[data-route=registros]').first().click();await p.locator('#view .intro-info summary').waitFor();await p.locator('#view .intro-info summary').click();
   const topo=await p.evaluate(()=>{const t=document.querySelector('#view .intro-info p').getBoundingClientRect();const el=document.elementFromPoint(t.left+t.width/2,t.top+t.height-8);return !!el.closest('.intro-info');});
   assert.ok(topo,'o texto do "i" fica por cima do conteúdo');await p.locator('#view .intro-info summary').click();
   // 4. Meu espaço: o mascote na recepção (parede ripada, plantas, luminárias, placa), pontos que contam e folhas comemorando.

@@ -105,7 +105,7 @@ assert.equal(ct.mes,'2026-09');assert.equal(ct.prazo,'2026-10-10');assert.match(
 assert.equal(ct.indicadores.find(x=>x.nome==='Ações socioambientais').valor,2,'mesmos números do painel');assert.equal(ct.indicadores.find(x=>x.nome==='Atendimentos concluídos').valor,2);assert.equal(ct.podeMarcar,false,'nos testes, só o proprietário marca');
 ctx.m={mes:'2026-09',respondida:true,versao:0,operacaoId:'OP-controle-0001'};assert.throws(()=>run('marcarControleContratoCPT(m)'),/reservado à administração técnica/);
 const hojeC=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),antC=(()=>{const d=new Date(hojeC.slice(0,7)+'-15T12:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7);})();
-email='victor@example.com';let ms=run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').filter(x=>x.id.startsWith('controle-contrato:'));assert.equal(ms.length,1);assert.equal(ms[0].id,'controle-contrato:'+antC);assert.equal(ms[0].rota,'painel');
+email='victor@example.com';let ms=run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').filter(x=>x.id.startsWith('controle-contrato:'));assert.equal(ms.length,1);assert.equal(ms[0].id,'controle-contrato:'+antC);assert.equal(ms[0].rota,'painel');assert.equal(ms[0].aba,'entregas','2.49: leva a Entregas do mês');
 ctx.m={mes:antC,respondida:true,versao:0,operacaoId:'OP-controle-0002'};let mk=run('marcarControleContratoCPT(m)');assert.ok(mk.respondida.nome,'quem respondeu');
 assert.equal(run('new ControleContratoCPT(AplicacaoCPT.contexto()).missoes()').filter(x=>x.id.startsWith('controle-contrato:')).length,0,'respondida: o lembrete some');
 ctx.m={mes:antC,respondida:false,versao:mk.versao,operacaoId:'OP-controle-0003'};assert.equal(run('marcarControleContratoCPT(m)').respondida,null);
@@ -166,6 +166,9 @@ console.log('PASS: registros 50 por vez, sem repetir nem pular.');
  assert.equal(outro.meu,false);assert.equal(outro.pontos,null,'quem não participou não vê os pontos');assert.equal(outro.devolutiva,null);assert.ok(outro.resumo!==undefined&&outro.responsavel==='Ana','o cartão em si é para todos');
  email='atd@example.com';f=run("carregarRelatosCPT({mes:'2026-09'})");assert.equal(f.itens.find(x=>x.id===id20).meu,true,'colaborador de apoio também vê');assert.equal(f.itens.find(x=>x.id===id2).pontos,null);
  email='gestao@example.com';f=run("carregarRelatosCPT({mes:'2026-09'})");assert.equal(f.gerencia,true);assert.ok(f.itens.every(x=>Array.isArray(x.pontos)),'gestão vê os pontos de todos');
+ // 2.49: o comentário privado da gestão fica no cartão (mesma regra: gerência e configuração liberada).
+ props.set('CPT_TRAVA_CONFIG','liberada');assert.equal(run("carregarRelatosCPT({mes:'2026-09'})").podeDevolver,true);props.set('CPT_TRAVA_CONFIG','travada');assert.equal(run("carregarRelatosCPT({mes:'2026-09'})").podeDevolver,false);
+ props.set('CPT_TRAVA_CONFIG','liberada');email='social@example.com';assert.equal(run("carregarRelatosCPT({mes:'2026-09'})").podeDevolver,false,'equipe não comenta');props.delete('CPT_TRAVA_CONFIG');email='gestao@example.com';
  assert.throws(()=>run("carregarRelatosCPT({mes:'2026-13'})"),/mês válido/);
  // Abrir no RDAS: procura "| R4-xxxxxx |" na aba do dia, só no clique.
  const codigo='R4-'+id20.replace(/^REG-/,'').slice(0,6).toUpperCase();let procurou=0;

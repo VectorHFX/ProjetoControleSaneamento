@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.49.0 — Visão do mês reorganizada (≈ 1 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.49.0`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova, nenhum dado muda de lugar.
+2. **Visão do mês** passa de 7 para 6 abas: Resumo do mês · Cronograma · Contrato · Frentes de serviço · Qualidade dos relatos · **Entregas do mês**.
+3. **Entregas do mês** reúne as três entregas mensais da gestão, com atalhos no topo: **Planilha de controle** (saiu da aba Contrato; continua preenchida à mão, a aplicação só lembra e traz os números), **Anexos do relatório** e **Programa Parceiros** (antes abas separadas). A missão "Responder a planilha de controle" e a busca levam direto para cá.
+4. **Contrato** fica com os números e os gráficos do mês.
+5. **Qualidade dos relatos** (antes "Relatos em resumo") mostra só os gráficos de qualidade e o botão **Ver os relatos**. A lista não se repete mais: os relatos ficam na ferramenta **Relatos**, e o **comentário privado da gestão** está agora no cartão de cada relato (botão "Comentar", mesma regra: só quem fez a atividade e a gestão veem). O **Guia do bom relato** também está lá.
+6. **Cronograma** sem título próprio, igual às outras abas da Visão do mês.
+
 ## Atualização 2.48.1 — revisão final de telas (≈ 1 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.48.1`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova.

@@ -8,10 +8,12 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   const p=await ctx.newPage();const erros=[];p.on('pageerror',e=>erros.push(e.message));
   const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')+q,foto=async n=>{if(process.env.FOTOS)await p.screenshot({path:path.join(process.env.FOTOS,n+'.png'),fullPage:true});};
   const abrir=async q=>{await p.goto(url(q));await p.locator('#navigation .nav-item').first().waitFor({state:'attached'});await p.locator('.welcome-pets, .mascot-stage, .panel-dias').first().waitFor();await p.evaluate(()=>document.querySelector('.nav-item[data-route=inicio]').click());await p.locator('.panel-dias').waitFor();};
-  await abrir('?liberada=1&perfil=socioambiental&latencia=20');assert.equal(await p.locator('[data-painel-aba=parceiros]').count(),0,'equipe não vê');
-  await abrir('?liberada=1&latencia=40');await p.locator('[data-painel-aba=parceiros]').click();await p.locator('#parceirosBox .anexos-ind').waitFor();
+  await abrir('?liberada=1&perfil=socioambiental&latencia=20');assert.equal(await p.locator('[data-painel-aba=entregas]').count(),0,'equipe não vê');
+  await abrir('?liberada=1&latencia=40');await p.locator('[data-painel-aba=entregas]').click();await p.locator('#parceirosBox .anexos-ind').waitFor();
   assert.match(await p.locator('#parceirosBox .anexos-topo').textContent(),/Conferido agora: nada foi gravado/);assert.match(await p.locator('#parceirosBox caption').textContent(),/o bloco do mês ainda não existe/);
   assert.equal(await p.locator('#parceirosBox .anexos-ind tbody tr').count(),13);
+  // Atalho "Programa Parceiros" desce até a parte (as três entregas ficam na mesma aba).
+  await p.locator('[data-pular=parceirosBox]').click();await p.waitForFunction(()=>Math.abs(document.getElementById('parceirosBox').getBoundingClientRect().top-84)<60);
   const tiles=await p.locator('.pp-depo .stat-value').allTextContents();assert.deepEqual(tiles.map(t=>t.trim()),['23','2','6 sim','6']);
   // Copiar prompt.
   await p.locator('[data-parceiros-prompt]').click();await p.waitForFunction(()=>[...document.querySelectorAll('.toast,#toast,[role=status]')].some(t=>/Prompt copiado/.test(t.textContent)));

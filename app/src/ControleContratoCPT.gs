@@ -5,7 +5,7 @@
  *  - lembra a Gestão (missão do checklist) até alguém marcar "respondida" — a marca fica na coleção
  *    "Controle do contrato" (CTR-AAAA-MM), nunca na planilha;
  *  - mostra a data da última alteração do arquivo (só os dados do Drive, sem abrir a planilha);
- *  - traz os indicadores do mês calculados pela aplicação (Visão do mês · Contrato), para conferir na hora de preencher.
+ *  - traz os indicadores do mês calculados pela aplicação (Visão do mês · Entregas do mês), para conferir na hora de preencher.
  * Quem vê: Administrativo e Gestão. Marcar "respondida": os mesmos; nos testes, só o proprietário.
  */
 class ControleContratoCPT {
@@ -49,8 +49,8 @@ class ControleContratoCPT {
   missoes() {
     const hoje = ColecaoCPT.hoje(), mes = ControleContratoCPT.mesAnterior(hoje); if (this.marca(mes)) return [];
     const prazo = ControleContratoCPT.prazo(mes), br = prazo.split('-').reverse().slice(0, 2).join('/');
-    return [{id: 'controle-contrato:' + mes, titulo: 'Responder a planilha de controle de ' + DadosDaAplicacao.mesExtenso(mes), tipo: 'rota', rota: 'painel',
-      texto: (hoje > prazo ? 'O prazo era ' + br + '. ' : 'Prazo: ' + br + '. ') + 'É preenchida à mão; na Visão do mês · Contrato estão o link e os números para conferir.'}];
+    return [{id: 'controle-contrato:' + mes, titulo: 'Responder a planilha de controle de ' + DadosDaAplicacao.mesExtenso(mes), tipo: 'rota', rota: 'painel', aba: 'entregas',
+      texto: (hoje > prazo ? 'O prazo era ' + br + '. ' : 'Prazo: ' + br + '. ') + 'É preenchida à mão; na Visão do mês · Entregas do mês estão o link e os números para conferir.'}];
   }
 }
 

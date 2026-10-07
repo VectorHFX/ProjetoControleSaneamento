@@ -10,6 +10,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),path=requi
   // 2.29: o Cronograma fica dentro da Visão do mês (aba).
   await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=cronograma]').first().click();await p.locator('.calendar-grid').waitFor();
   assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio','no menu, a Visão do mês fica marcada');assert.equal(await p.locator('[data-painel-aba=cronograma]').getAttribute('aria-selected'),'true');
+  assert.equal(await p.locator('#view .page-intro').count(),0,'2.49: sem título próprio, igual às outras abas');assert.equal(await p.locator('#pageLabel').textContent(),'Visão do mês');
   await p.locator('#month').fill('2026-10');await p.locator('#month').dispatchEvent('change');
   await p.locator('.calendar-cell.holiday').first().waitFor();
   assert.match(await p.locator('.calendar-cell.holiday').first().textContent(),/^12[\s\S]*Nossa Senhora Aparecida/);

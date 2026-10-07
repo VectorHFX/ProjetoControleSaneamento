@@ -1547,4 +1547,14 @@ html[data-theme=dark] .destaque.is-down strong{color:#f0b07a}
 /* 2.48.1: no celular, os blocos de números ficam compactos (o conteúdo aparece sem rolar meia tela) */
 @media(max-width:700px){.stat-row{gap:8px}.stat-row .stat-tile{padding:12px 14px;min-height:0;gap:2px}.stat-row .stat-value{font-size:24px;margin:2px 0}.stat-row .stat-note{font-size:11px;line-height:1.35}}
 .help-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.help-rotina{margin:10px 0 0;padding-left:18px;display:grid;gap:8px;font-size:13px;color:var(--muted)}.help-rotina strong{color:var(--ink)}
+/* 2.49 Entregas do mês: atalhos para as três partes (planilha de controle, Anexos, Programa Parceiros) e espaço entre elas */
+.entregas-indice{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 16px}
+.entrega-atalho{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;min-height:44px}
+.entrega-atalho strong{font-size:14px}.entrega-atalho span{font-size:12px;color:var(--muted)}
+.entrega-atalho:hover{border-color:color-mix(in srgb,var(--blue) 45%,var(--line))}.entrega-atalho:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#controleContrato,.entrega-parte{scroll-margin-top:84px}.entrega-parte:not(:empty){margin-top:22px}
+.rel-ir{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:16px}.rel-ir h2{margin:0 0 4px;font-size:17px}.rel-ir p{margin:0;color:var(--muted);font-size:13px}
+@media(max-width:700px){.entregas-indice{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.entrega-atalho{padding:8px 10px;justify-content:center}.entrega-atalho strong{font-size:12.5px;line-height:1.25}.entrega-atalho span{display:none}
+  .controle-contrato .panel-head{flex-direction:column;align-items:stretch;gap:8px}.controle-contrato .controle-situacao{align-self:flex-start}}
+.results-head .link-button{display:inline-flex;align-items:center;gap:6px}.results-head .link-button .icon{width:15px;height:15px;flex:none}
 </style>

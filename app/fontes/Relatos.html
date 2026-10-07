@@ -7,7 +7,8 @@
    2.43: aba "Para o relatório" (Socioambiental, Comunicação, Gestão e Administrativo): ação social, articulação institucional,
    CAO e DDS do mês ficam pendentes de revisão; revisar (texto e fotos, prompt opcional para o Gemini) gera o Google Docs.
    2.48: relato no layout da Central — até 2 fotos com legenda, FINAL e ORIGINAL em Docs e PDF.
-   2.46: aba "Diagnósticos" (toda a equipe): diagnósticos por obra, tabela-resumo e documento da obra (Diagnosticos.html). */
+   2.46: aba "Diagnósticos" (toda a equipe): diagnósticos por obra, tabela-resumo e documento da obra (Diagnosticos.html).
+   2.49: o comentário privado da gestão (antes na Visão do mês) fica aqui, no cartão; só quem fez a atividade e a gestão veem. */
 window.CPTRelatos = (() => {
   let ui = null, dados = null, rel = null, filtroTipo = '', parte = 'relatos', ticket = 0, filtro = {busca: '', bairro: '', meus: false, pontos: false}, limite = 24, buscaTimer = null;
   const $ = id => document.getElementById(id), POR_VEZ = 24;
@@ -45,8 +46,8 @@ window.CPTRelatos = (() => {
     return `<article class="relato-card rel-card${r.meu ? ' is-meu' : ''}"><div class="card-top"><span class="badge">${ui.esc(ui.date(r.data))}</span>${r.bairro ? `<span class="badge">${ui.esc(r.bairro)}</span>` : ''}${r.meu ? '<span class="badge status-concluida">seu</span>' : ''}<span class="small muted">${r.publico != null ? ui.num(r.publico) + (r.publico === 1 ? ' pessoa' : ' pessoas') : 'público não informado'}${r.fotos ? ' · ' + r.fotos + (r.fotos === 1 ? ' foto' : ' fotos') : ''}</span></div>
       <h4>${ui.esc(r.atividade)}</h4>${r.frente ? `<p class="small muted">${ui.esc(r.frente)}</p>` : ''}<p class="small">${ui.esc(pessoas)}</p>
       ${r.resumo ? `<p class="relato-text">${ui.esc(r.resumo)}</p>` : '<p class="small late-text">Relato sem texto no registro.</p>'}
-      ${pontos(r)}${r.devolutiva ? `<p class="devolutiva-status small"><strong>Comentário da gestão${r.devolutiva.situacao === 'vista' ? ' (visto)' : ''}:</strong> ${ui.esc(r.devolutiva.comentario)}</p>` : ''}
-      <div class="card-bottom"><span><button class="button ghost" type="button" data-rel-rdas="${ui.esc(r.id)}">Abrir no RDAS</button></span><span><button class="button ghost" type="button" data-record="${ui.esc(r.id)}">Registro completo</button></span></div></article>`;
+      ${pontos(r)}${r.devolutiva ? `<p class="devolutiva-status small"><strong>Comentário da gestão${r.devolutiva.situacao === 'vista' ? ' (visto)' : ''}:</strong> ${ui.esc(r.devolutiva.comentario)}${r.devolutiva.resposta ? `<br><strong>Resposta:</strong> ${ui.esc(r.devolutiva.resposta)}` : ''}</p>` : ''}
+      <div class="card-bottom"><span><button class="button ghost" type="button" data-rel-rdas="${ui.esc(r.id)}">Abrir no RDAS</button>${dados.podeDevolver ? `<button class="button ghost" type="button" data-rel-comentar="${ui.esc(r.id)}">${r.devolutiva ? 'Novo comentário' : 'Comentar'}</button>` : ''}</span><span><button class="button ghost" type="button" data-record="${ui.esc(r.id)}">Registro completo</button></span></div></article>`;
   }
   function desenhar(manterFoco) {
     if (ui.state.route !== 'registros' || parte !== 'relatos' || !dados) return;
@@ -56,10 +57,26 @@ window.CPTRelatos = (() => {
       `<section class="panel filter-panel"><form id="relFiltros" class="filters rel-filtros" onsubmit="return false"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input id="relBusca" value="${ui.esc(filtro.busca)}" placeholder="Atividade, bairro, pessoa ou palavra do relato" maxlength="100"></span></label>
         <label class="field">Bairro<select id="relBairro"><option value="">Todos</option>${dados.bairros.map(b => `<option ${filtro.bairro === b ? 'selected' : ''}>${ui.esc(b)}</option>`).join('')}</select></label>
         <div class="chip-linha rel-chips">${meus ? chip('meus', 'Os meus (' + meus + ')') : ''}${dados.gerencia ? chip('pontos', 'Com pontos para melhorar') : ''}</div></form></section>
-      <div class="results-head"><span>${l.length} ${l.length === 1 ? 'relato' : 'relatos'} · ${ui.esc(ui.monthLabel ? ui.monthLabel(ui.state.mes) : ui.state.mes)}</span></div>
+      <div class="results-head"><span>${l.length} ${l.length === 1 ? 'relato' : 'relatos'} · ${ui.esc(ui.monthLabel ? ui.monthLabel(ui.state.mes) : ui.state.mes)}</span><span><button type="button" class="link-button" data-guia-relato>${ui.icon('pencil')} Guia do bom relato</button></span></div>
       <div class="rel-cards">${vis.map(cartao).join('') || '<p class="empty-line">Nenhum relato com esse filtro neste mês.</p>'}</div>
       ${l.length > vis.length ? `<div class="load-more"><button class="button secondary" type="button" data-rel-mais>Mostrar mais (${l.length - vis.length})</button></div>` : ''}`;
     if (manterFoco) { const i = $('relBusca'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }
+  }
+  /** Comentário privado da gestão (2.49: veio da Visão do mês). Começa com o que a conferência achou faltando. */
+  function abrirComentario(id) {
+    const r = dados && dados.itens.find(x => x.id === id); if (!r) return;
+    const faltam = r.pontos || [];
+    $('detailType').textContent = 'COMENTÁRIO PRIVADO'; $('detailTitle').textContent = r.atividade;
+    $('detailContent').innerHTML = `<p class="small muted">Só ${ui.esc(r.responsavel || 'quem escreveu')} e a gestão veem. Aparece como missão no Meu espaço da pessoa.</p>
+      <form id="relComentar"><label class="field">Comentário<textarea name="comentario" rows="5" maxlength="1500" required>${ui.esc(faltam.length ? 'Seu relato está bom, dá para completar:\n' + faltam.map(i => '• ' + i.nome + ': ' + i.dica).join('\n') : '')}</textarea></label>
+      <div class="dialog-actions"><button class="button" type="submit">Enviar comentário</button></div></form>`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+    const op = 'OP-' + crypto.randomUUID();
+    $('relComentar').onsubmit = async ev => {
+      ev.preventDefault(); const b = ev.target.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Enviando…';
+      try { const x = await ui.call('devolverRelatoCPT', {registroId: id, comentario: ev.target.elements.comentario.value, operacaoId: op}); ui.toast(x.resultado); r.devolutiva = x.devolutiva; $('detailDialog').close(); desenhar(); }
+      catch (e) { ui.toast(e.message); b.disabled = false; b.textContent = 'Enviar comentário'; }
+    };
   }
   // ---------- Para o relatório (2.43) ----------
   const SIT = {pendente: ['Pendente de revisão', 'orange'], mudou: ['Mudou na origem', 'orange'], revisado: ['Revisado', 'green']};
@@ -148,7 +165,8 @@ window.CPTRelatos = (() => {
       const rv = e.target.closest('[data-rr-revisar]'); if (rv) { abrirRevisao(rv.dataset.rrRevisar); return; }
       if (e.target.closest('[data-rr-prompt]') && rr) { copiarPrompt(); return; }
       if (ui.state.route !== 'registros') return;
-      const t = e.target.closest('[data-rel-parte],[data-rel-rdas],[data-rel-mais]'); if (!t) return;
+      const t = e.target.closest('[data-rel-parte],[data-rel-rdas],[data-rel-mais],[data-rel-comentar]'); if (!t) return;
+      if (t.dataset.relComentar) { abrirComentario(t.dataset.relComentar); return; }
       if (t.dataset.relParte) { if (t.dataset.relParte === parte) return; parte = t.dataset.relParte; if (parte === 'relatos') ui.state.filters = {busca: '', procedimento: '', bairro: '', obra: '', pendencia: ''}; render(); return; }
       if (t.dataset.relRdas) { abrirRdas(t); return; }
       if (t.hasAttribute('data-rel-mais')) { limite += POR_VEZ; desenhar(); }

@@ -68,7 +68,9 @@ class RelatosCPT {
       return {id: r.id, data: r.data, atividade: r.atividade, bairro: r.bairro, frente: r.frente, responsavel: r.responsavel, apoio: r.apoio || '', publico: r.publico, fotos: r.fotos,
         resumo: r.resumo, meu, pontos: ve && q ? q.itens.filter(i => !i.ok).map(i => ({nome: i.nome, dica: i.dica})) : null, devolutiva: ve ? devs.get(r.id) || null : null};
     });
-    return {mes, itens, gerencia: ger, bairros: [...new Set(itens.map(x => x.bairro).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))};
+    // 2.49: o comentário privado da gestão sai da Visão do mês e fica nos cartões desta ferramenta (mesma regra de antes).
+    let podeDevolver = ger; try { PerfisCPT.exigirConfiguracao(this.ctx.perfil, ''); } catch (_) { podeDevolver = false; }
+    return {mes, itens, gerencia: ger, podeDevolver, bairros: [...new Set(itens.map(x => x.bairro).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))};
   }
   /** Link para a ficha do relato no RDAS (aba do dia, linha "FICHA n DE m | R4-xxxxxx | …"). Procura só quando alguém pede. */
   rdas(dados, id) {

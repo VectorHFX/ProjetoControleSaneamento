@@ -1,7 +1,7 @@
 <script>
 /*
- * Gestão 2.7.0 — Painel da gestão (contrato, frentes de serviço, relatos em resumo) e Conectores.
- * Painel: só leitura, com o que pede atenção primeiro. Frentes e relatos abrem o registro ou a ficha de sempre.
+ * Gestão 2.7.0 — Painel da gestão (contrato, frentes de serviço, qualidade dos relatos, entregas do mês) e Conectores.
+ * Painel: só leitura, com o que pede atenção primeiro. Frentes abrem o registro ou a ficha de sempre.
  * 2.27: o Programa Parceiros saiu da aplicação junto com o fechamento do relatório.
  * 2.44: gráficos do contrato desde maio (meses antes da aplicação vêm dos Anexos do relatório, marcados), resumo do período
  *      em cada gráfico e "Destaques do contrato".
@@ -9,16 +9,21 @@
  *      mês (sem nomes) para o Gemini e os textos revisados gravados nas linhas 18 e 20.
  * 2.39: aba "Anexos do relatório": confere (sem gravar) o Controle de manifestações e as linhas automáticas dos Indicadores
  *      e atualiza na hora; a rotina das 12h e 0h faz o mesmo sozinha.
+ * 2.49: "Entregas do mês" reúne a planilha de controle, os Anexos do relatório e o Programa Parceiros (antes três lugares);
+ *      "Qualidade dos relatos" fica só com os gráficos (a lista e o comentário privado estão na ferramenta Relatos).
  */
 window.CPTGestao = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
-  let ui = null, ticket = 0, painel = null, aba = 'contrato', relatos = null, filtroFrente = {busca: '', andamento: true}, filtroRelato = {busca: '', item: ''};
+  let ui = null, ticket = 0, painel = null, aba = 'contrato', pular = '', filtroFrente = {busca: '', andamento: true};
   const $ = id => document.getElementById(id);
   const mesCurto = m => new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'short'}).replace('.', '');
   const mesLongo = m => new Date(m + '-15T12:00:00').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'});
   const pct = (a, b) => b ? Math.min(100, Math.round(a / b * 100)) : 0;
   const medidor = (v, meta) => `<div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${meta}" aria-valuenow="${v}" aria-label="${v} de ${meta}"><span style="width:${pct(v, meta)}%"></span></div>`;
+  /** Abas antigas (Anexos, Programa Parceiros) viraram partes de "Entregas do mês": abre a aba e desce até a parte. */
+  const ENTREGAS = {anexos: 'anexosBox', parceiros: 'parceirosBox', controle: 'controleContrato'};
+  const marcar = k => { if (ENTREGAS[k]) { aba = 'entregas'; pular = ENTREGAS[k]; } else { aba = k; pular = ''; } };
   const tile = (rotulo, valor, nota, extra = '') => `<div class="stat-tile"><span class="stat-label">${rotulo}</span><span class="stat-value">${valor}</span>${extra}<span class="stat-note">${nota}</span></div>`;
 
   /** Barras verticais simples (SVG próprio): uma ou duas séries, valor escrito em cima de cada barra. Sem valor (null): sem barra e "—".
@@ -57,7 +62,7 @@ window.CPTGestao = (() => {
   async function renderPainel(atualizar = false) {
     const mine = ++ticket, mes = ui.state.mes;
     if (atualizar) { comparacao = null; anexos = null; parceiros = null; }
-    if (!painel || painel.mes !== mes) { relatos = null; ui.view.innerHTML = abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os números do mês…</div><div class="stat-row">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; }
+    if (!painel || painel.mes !== mes) { ui.view.innerHTML = abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os números do mês…</div><div class="stat-row">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; }
     try {
       const d = await ui.call('carregarPainelGestaoCPT', {mes, atualizar}); if (mine !== ticket || ui.state.route !== 'painel') return;
       painel = d; desenharPainel();
@@ -66,22 +71,30 @@ window.CPTGestao = (() => {
   /** Abas da Visão do mês para a gestão. sel: aba marcada ('resumo' na própria Visão do mês). */
   function abas(sel) {
     const atual = sel || aba;
-    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['cronograma', 'Cronograma']].concat(ui.state.route === 'painel' || ui.podeVer('painel') ? [['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo'], ['anexos', 'Anexos do relatório'], ['parceiros', 'Programa Parceiros']] : []).map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
+    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['cronograma', 'Cronograma']].concat(ui.state.route === 'painel' || ui.podeVer('painel') ? [['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Qualidade dos relatos'], ['entregas', 'Entregas do mês']] : []).map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
   }
   function desenharPainel() {
-    const corpo = aba === 'frentes' ? frentes() : aba === 'anexos' ? '<div id="anexosBox"></div>' : aba === 'parceiros' ? '<div id="parceirosBox"></div>' : aba === 'relatos' ? '<div id="relatosQualidade"></div><div id="relatosResumo"></div>' : contrato();
+    if (!['contrato', 'frentes', 'relatos', 'entregas'].includes(aba)) aba = 'contrato';
+    const corpo = aba === 'frentes' ? frentes() : aba === 'entregas' ? entregas() : aba === 'relatos' ? `<div id="relatosQualidade"></div>
+      <section class="panel rel-ir"><div><h2>Os relatos do mês</h2><p>Cartões com o texto de cada relato, os pontos para melhorar e o comentário privado da gestão.</p></div><button class="button secondary" data-route="registros" data-filter="relatos">Ver os relatos ${ui.icon('arrow')}</button></section>` : contrato();
     ui.view.innerHTML = abas() + `<div class="painel-body">${corpo}</div><p class="small muted painel-foot">Atualizado às ${new Date(painel.atualizadoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'})}. Use o botão Atualizar no topo para recalcular.</p>`;
-    if (aba === 'contrato') carregarControle();
-    if (aba === 'relatos') { carregarQualidade(); carregarRelatos(); }
+    if (aba === 'relatos') carregarQualidade();
     if (aba === 'frentes') carregarComparacao();
-    if (aba === 'anexos') carregarAnexos();
-    if (aba === 'parceiros') carregarParceiros();
+    if (aba === 'entregas') { carregarControle(); carregarAnexos(); carregarParceiros(); }
   }
+  /** 2.49: as três entregas mensais num lugar só, cada uma com o seu quadro (carregam juntas). */
+  function entregas() {
+    const parte = (id, t, d) => `<button type="button" class="entrega-atalho" data-pular="${id}"><strong>${t}</strong><span>${d}</span></button>`;
+    return `<nav class="entregas-indice" aria-label="Entregas do mês">${parte('controleContrato', 'Planilha de controle', 'Preenchida à mão pela gestão')}${parte('anexosBox', 'Anexos do relatório', 'Indicadores e Controle de manifestações')}${parte('parceirosBox', 'Programa Parceiros', 'Números da máscara e depoimentos')}</nav>
+      <section class="panel controle-contrato" id="controleContrato" aria-live="polite"><div class="loading-label"><span class="spinner"></span>Planilha de controle do contrato…</div></section>
+      <div id="anexosBox" class="entrega-parte"></div><div id="parceirosBox" class="entrega-parte"></div>`;
+  }
+  /** Vindo de uma missão ou da busca (ex.: Anexos), desce até a parte quando ela aparece. */
+  function irParaParte(id) { if (pular !== id) return; pular = ''; const el = $(id); if (el) requestAnimationFrame(() => el.scrollIntoView({block: 'start'})); }
   function contrato() {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
-    return `<section class="panel controle-contrato" id="controleContrato" aria-live="polite"><div class="loading-label"><span class="spinner"></span>Planilha de controle do contrato…</div></section>
-      ${/* 2.48.1: o "Pede atenção" fica só no Resumo do mês (aqui repetia, com outra lista). */ ''}
-      <section class="stat-row" aria-label="Números do contrato no mês">
+    // 2.48.1: o "Pede atenção" fica só no Resumo do mês. 2.49: a planilha de controle foi para "Entregas do mês".
+    return `<section class="stat-row" aria-label="Números do contrato no mês">
         ${tile('Ações socioambientais', ui.num(c.acoes), ui.num(c.pessoas) + ' pessoas alcançadas · ' + ui.num(c.frentes) + ' frentes · ' + ui.num(c.bairros) + ' bairros.')}
         ${tile('Pesquisas de satisfação', ui.num(s.mes) + '<small> / ' + s.meta + '</small>', s.semana ? 'Nesta semana: ' + s.semana.total + ' de ' + s.semana.meta + '.' : 'Meta: 15 por semana, 60 no mês.', medidor(s.mes, s.meta))}
         ${tile('Atendimentos em aberto', ui.num(k.abertos), ui.num(k.recebidosMes) + ' recebidos e ' + ui.num(k.concluidosMes) + ' concluídos no mês' + (k.prazoMedio != null ? ' · prazo médio ' + k.prazoMedio + ' dias' : '') + '.')}
@@ -168,7 +181,7 @@ window.CPTGestao = (() => {
     try { anexos = await ui.call(gravar ? 'atualizarAnexosCPT' : 'conferirAnexosCPT'); if (gravar) ui.toast('Anexos atualizados.'); }
     catch (e) { const b = $('anexosBox'); if (b) b.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
     finally { anexosOcupado = false; }
-    if (ui.state.route === 'painel' && aba === 'anexos') desenharAnexos();
+    if (ui.state.route === 'painel' && aba === 'entregas') desenharAnexos();
   }
   // ---------- Programa Parceiros (2.41) ----------
   let parceiros = null, parceirosOcupado = false;
@@ -182,12 +195,13 @@ window.CPTGestao = (() => {
       else parceiros = await ui.call('carregarParceirosCPT', {mes});
     } catch (e) { const b = $('parceirosBox'); if (b) b.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
     finally { parceirosOcupado = false; }
-    if (ui.state.route === 'painel' && aba === 'parceiros') desenharParceiros();
+    if (ui.state.route === 'painel' && aba === 'entregas') desenharParceiros();
   }
   function desenharParceiros() {
     const box = $('parceirosBox'), P = parceiros; if (!box || !P) return;
     const n = P.numeros, d = P.depoimentos, t = P.textos || {}, link = ui.safeURL(P.link), u = P.ultima;
     const numeros = n ? n.meses.map(m => m.semBloco ? tabelaLinhas(m, false, ' · o bloco do mês ainda não existe na máscara: é criado ao atualizar') : tabelaLinhas(m, n.gravado, m.criado ? ' · bloco do mês criado agora' : '')).join('') : `<div class="notice warning">${ui.esc(P.erro)}</div>`;
+    irParaParte('parceirosBox');
     box.innerHTML = `<section class="panel anexos-topo"><div class="panel-head"><div><span class="eyebrow">MÁSCARA DE LANÇAMENTO</span><h2>Programa Parceiros</h2>
         <p>${n && n.gravado ? 'Atualizado agora.' : 'Conferido agora: nada foi gravado.'} ${u ? 'Última gravação: ' + ui.esc(quando(u.em)) + '.' : 'Ainda não foi gravada pela aplicação.'} A rotina das 12h e 0h atualiza os números sozinha; o resto da máscara é preenchido à mão.</p></div></div>
         <div class="dialog-actions"><button class="button" data-parceiros-atualizar ${n ? '' : 'disabled'}>${ui.icon('refresh')}Atualizar agora</button>${link ? `<a class="button secondary" href="${ui.esc(link)}" target="_blank" rel="noopener">Abrir máscara</a>` : ''}</div></section>
@@ -228,6 +242,7 @@ window.CPTGestao = (() => {
     const a = anexos, c = a.controle, u = a.ultima, link = ui.safeURL(a.links.planilha), xlsx = ui.safeURL(a.links.xlsx);
     const tabela = m => tabelaLinhas(m, a.gravado);
     const lista = (t, ids) => ids.length ? `<p class="small"><strong>${t}:</strong> ${ids.slice(0, 12).map(ui.esc).join(', ')}${ids.length > 12 ? ' e mais ' + (ids.length - 12) : ''}</p>` : '';
+    irParaParte('anexosBox');
     box.innerHTML = `<section class="panel anexos-topo"><div class="panel-head"><div><span class="eyebrow">PLANILHA OFICIAL</span><h2>Anexos do relatório</h2>
         <p>${a.gravado ? 'Atualizado agora.' : 'Conferido agora: nada foi gravado.'} ${u ? 'Última gravação: ' + ui.esc(quando(u.em)) + '.' : 'Ainda não foi gravada pela aplicação.'} A rotina das 12h e 0h atualiza sozinha.</p></div></div>
         <div class="dialog-actions"><button class="button" data-anexos-atualizar>${ui.icon('refresh')}Atualizar agora</button>${link ? `<a class="button secondary" href="${ui.esc(link)}" target="_blank" rel="noopener">Abrir planilha</a>` : ''}${xlsx ? `<a class="button ghost" href="${ui.esc(xlsx)}" target="_blank" rel="noopener">Baixar Excel</a>` : ''}</div>
@@ -264,54 +279,6 @@ window.CPTGestao = (() => {
           tabela: {cab: ['Frente', 'Relatos', 'Completos', '% completos'], linhas: frentes.map(f => [f.rotulo, f.total, f.completos, f.quantidade + '%'])}})}</div>
       </div></section>`;
   }
-  async function carregarRelatos() {
-    const box = $('relatosResumo'); if (!box) return;
-    if (!relatos || relatos.mes !== ui.state.mes) {
-      box.innerHTML = '<div class="loading-label"><span class="spinner"></span>Lendo os relatos do mês…</div>';
-      try {
-        const [d, dv] = await Promise.all([ui.call('carregarRelatosResumoCPT', ui.state.mes), ui.call('minhasDevolutivasCPT').catch(() => ({devolutivas: [], podeDevolver: false}))]);
-        if (ui.state.route !== 'painel' || aba !== 'relatos') return; relatos = d; devolutivas = dv;
-      }
-      catch (e) { box.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
-    }
-    desenharRelatos();
-  }
-  let devolutivas = {devolutivas: [], podeDevolver: false};
-  /** Qualidade: o que o relato já tem e o que falta. Sem nota e sem ranking. */
-  function qualidade(q) {
-    if (!q) return '';
-    return `<ul class="qualidade-chips" aria-label="Conferência do relato">${q.itens.map(i => `<li class="${i.ok ? 'ok' : 'falta'}" title="${ui.esc(i.ok ? i.nome + ': ok' : i.dica)}">${i.ok ? ic('tick', '✓') : ic('circle', '○')} ${ui.esc(i.nome)}</li>`).join('')}</ul>`;
-  }
-  function devolutivaDe(id) { return devolutivas.devolutivas.find(d => d.registroId === id); }
-  function abrirDevolver(id) {
-    const r = relatos.itens.find(x => x.id === id); if (!r) return;
-    const faltam = r.qualidade ? r.qualidade.itens.filter(i => !i.ok) : [];
-    $('detailType').textContent = 'COMENTÁRIO PRIVADO'; $('detailTitle').textContent = r.atividade;
-    $('detailContent').innerHTML = `<p class="small muted">Só ${ui.esc(r.responsavel || 'quem escreveu')} e a gestão veem. Aparece como missão no Meu espaço da pessoa.</p>
-      <form id="devolverForm"><label class="field">Comentário<textarea name="comentario" rows="5" maxlength="1500" required>${ui.esc(faltam.length ? 'Seu relato está bom, dá para completar:\n' + faltam.map(i => '• ' + i.nome + ': ' + i.dica).join('\n') : '')}</textarea></label>
-      <div class="dialog-actions"><button class="button" type="submit">Enviar comentário</button></div></form>`;
-    if (!$('detailDialog').open) $('detailDialog').showModal();
-    $('devolverForm').onsubmit = async ev => {
-      ev.preventDefault(); const b = ev.target.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Enviando…';
-      try { const x = await ui.call('devolverRelatoCPT', {registroId: id, comentario: ev.target.elements.comentario.value, operacaoId: 'OP-' + crypto.randomUUID()}); ui.toast(x.resultado); devolutivas.devolutivas = devolutivas.devolutivas.filter(d => d.registroId !== id).concat([x.devolutiva]); $('detailDialog').close(); desenharRelatos(); }
-      catch (e) { ui.toast(e.message); b.disabled = false; b.textContent = 'Enviar comentário'; }
-    };
-  }
-  function desenharRelatos() {
-    const box = $('relatosResumo'); if (!box || !relatos) return;
-    const itens = [...new Set(relatos.itens.map(r => r.item))].sort(), b = ui.norm(filtroRelato.busca);
-    const lista = relatos.itens.filter(r => (!filtroRelato.item || r.item === filtroRelato.item) && (!b || ui.norm([r.atividade, r.bairro, r.frente, r.responsavel, r.resumo].join(' ')).includes(b)));
-    const dias = new Map(); lista.forEach(r => dias.set(r.data, (dias.get(r.data) || []).concat([r])));
-    const rot = {pronto: 'Pronto', rascunho: 'Rascunho', revisao: 'Em revisão'};
-    box.innerHTML = `<section class="panel filter-panel"><form id="relatoFiltro" class="filters"><label class="field">Procurar nos relatos<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroRelato.busca)}" placeholder="Atividade, bairro, pessoa ou palavra do relato" maxlength="100"></span></label>
-      <label class="field">Item do relatório<select name="item"><option value="">Todos</option>${itens.map(i => `<option ${filtroRelato.item === i ? 'selected' : ''}>${ui.esc(i)}</option>`).join('')}</select></label></form></section>
-      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'relato' : 'relatos'} em ${dias.size} ${dias.size === 1 ? 'dia' : 'dias'}</span><span><button type="button" class="link-button" data-guia-relato>${ic('pencil', '📝')} Guia do bom relato</button></span></div>
-      ${[...dias].map(([dia, rs]) => `<section class="relato-day"><h3 class="peek-title">${ui.date(dia)}</h3>${rs.map(r => `<article class="relato-card"><div class="card-top"><span class="badge">Item ${ui.esc(r.item)}</span>${r.situacao ? `<span class="badge ${r.situacao === 'pronto' ? 'status-concluida' : 'status-andamento'}">${rot[r.situacao] || ui.esc(r.situacao)}</span>` : ''}${r.fotos ? `<span class="small muted">${r.fotos} ${r.fotos === 1 ? 'foto' : 'fotos'}</span>` : '<span class="small late-text">sem foto</span>'}</div>
-        <h4>${ui.esc(r.atividade)}</h4><p class="small muted">${ui.esc([r.frente || r.bairro, r.publico != null ? r.publico + ' pessoas' : 'público não informado', r.responsavel].filter(Boolean).join(' · '))}</p>
-        ${r.resumo ? `<p class="relato-text">${ui.esc(r.resumo)}</p>` : '<p class="small late-text">Relato sem texto no registro.</p>'}${r.objetivo ? `<p class="small"><strong>Objetivo:</strong> ${ui.esc(r.objetivo)}</p>` : ''}
-        ${qualidade(r.qualidade)}${(dv => dv ? `<p class="devolutiva-status small"><strong>${dv.situacao === 'vista' ? ic('tick', '✓') + ' Comentário visto' : ic('mail', '✉') + ' Comentário enviado'}</strong>${dv.resposta ? ' · resposta: ' + ui.esc(dv.resposta) : ''}</p>` : '')(devolutivaDe(r.id))}
-        <div class="card-bottom"><span>${r.qualidade && devolutivas.podeDevolver ? `<button class="button ghost" data-devolver="${ui.esc(r.id)}">${devolutivaDe(r.id) ? 'Novo comentário' : 'Comentar'}</button>` : ''}</span><span><button class="button ghost" data-record="${ui.esc(r.id)}">Registro completo</button></span></div></article>`).join('')}</section>`).join('') || '<p class="muted">Nenhum relato com esse filtro.</p>'}`;
-  }
 
   // ---------------- Conectores (administração técnica) ----------------
   async function renderConectores() {
@@ -344,6 +311,7 @@ window.CPTGestao = (() => {
       : `<span class="controle-situacao ${c.atrasada ? 'is-atrasada' : ''}">${c.atrasada ? 'Atrasada · prazo era ' : 'Pendente · prazo '}${dataBr(c.prazo)}</span>`;
     const nums = (c.indicadores || []).map(x => `<div class="controle-num"><b>${ui.num(x.valor)}</b><span>${ui.esc(x.nome)}</span>${x.nota ? `<small>${ui.esc(x.nota)}</small>` : ''}</div>`).join('');
     box.classList.toggle('is-feita', !!c.respondida);
+    irParaParte('controleContrato');
     box.innerHTML = `<div class="panel-head"><div><span class="eyebrow">PLANILHA DE CONTROLE · PREENCHIDA À MÃO</span><h2>${c.respondida ? 'Planilha de ' + ui.esc(c.mesNome) + ' respondida' : 'Responder a planilha de controle de ' + ui.esc(c.mesNome)}</h2>
       <p>Todo mês a gestão preenche esta planilha à mão. A aplicação não escreve nela: só lembra, abre o link e traz os números do mês para conferir.</p></div>${situacao}</div>
       <div class="controle-acoes"><a class="button" href="${ui.esc(c.url)}" target="_blank" rel="noopener noreferrer">${ic('file', '📄')} Abrir a planilha de controle ↗</a>
@@ -359,13 +327,13 @@ window.CPTGestao = (() => {
   function init(api) {
     ui = api;
     document.addEventListener('click', e => {
-      const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } if (t.dataset.painelAba === 'cronograma') { ui.navigate('cronograma'); return; } aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
+      const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } if (t.dataset.painelAba === 'cronograma') { ui.navigate('cronograma'); return; } marcar(t.dataset.painelAba); if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
+      const pl = e.target.closest('[data-pular]'); if (pl) { const el = $(pl.dataset.pular); if (el) el.scrollIntoView({block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); return; }
       if (e.target.closest('[data-anexos-atualizar]')) { carregarAnexos(true); return; }
       if (e.target.closest('[data-parceiros-atualizar]')) { carregarParceiros(true); return; }
       if (e.target.closest('[data-parceiros-prompt]')) { copiarPrompt(); return; }
       const cm = e.target.closest('[data-controle-marcar]'); if (cm) { marcarControle(cm.dataset.controleMarcar === 'sim'); return; }
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
-      const dv = e.target.closest('[data-devolver]'); if (dv) { abrirDevolver(dv.dataset.devolver); return; }
       const cd = e.target.closest('[data-cmp-dia]'); if (cd) { diaCmp = cd.dataset.cmpDia; desenharComparacao(); return; }
     });
     // Filtros com espera curta (debounce): o painel é redesenhado quando a pessoa para de digitar.
@@ -378,13 +346,10 @@ window.CPTGestao = (() => {
     };
     document.addEventListener('input', e => {
       const f = e.target.closest('#frenteFiltro');
-      if (f) { clearTimeout(buscaTimer); buscaTimer = setTimeout(() => redesenhar('frenteFiltro', x => { filtroFrente = {busca: x.elements.busca.value, andamento: x.elements.andamento.checked}; desenharPainel(); }), e.target.name === 'busca' ? 220 : 0); return; }
-      const r = e.target.closest('#relatoFiltro');
-      if (r && e.target.name === 'busca') { clearTimeout(buscaTimer); buscaTimer = setTimeout(() => redesenhar('relatoFiltro', x => { filtroRelato.busca = x.elements.busca.value; desenharRelatos(); }), 220); }
+      if (f) { clearTimeout(buscaTimer); buscaTimer = setTimeout(() => redesenhar('frenteFiltro', x => { filtroFrente = {busca: x.elements.busca.value, andamento: x.elements.andamento.checked}; desenharPainel(); }), e.target.name === 'busca' ? 220 : 0); }
     });
     document.addEventListener('change', e => {
-      const f = e.target.closest('#frenteFiltro'); if (f && e.target.name === 'andamento') { filtroFrente.andamento = e.target.checked; desenharPainel(); return; }
-      const r = e.target.closest('#relatoFiltro'); if (r && e.target.name === 'item') { filtroRelato.item = e.target.value; desenharRelatos(); }
+      const f = e.target.closest('#frenteFiltro'); if (f && e.target.name === 'andamento') { filtroFrente.andamento = e.target.checked; desenharPainel(); }
     });
     document.addEventListener('submit', e => { if (e.target.id === 'ppTextos') { e.preventDefault(); gravarTextos(e.target); } });
     document.addEventListener('submit', async e => {
@@ -395,11 +360,11 @@ window.CPTGestao = (() => {
     });
   }
   // Missões e cartões que levam a uma aba do painel (ex.: obras de ontem → Frentes): marca a aba antes de navegar.
-  document.addEventListener('click', ev => { const ir = ev.target.closest && ev.target.closest('[data-painel-ir]'); if (ir) aba = ir.dataset.painelIr; }, true);
-  return {init, renderPainel, renderConectores, colunas, barrasH, abas, irPara: k => { aba = k; }};
+  document.addEventListener('click', ev => { const ir = ev.target.closest && ev.target.closest('[data-painel-ir]'); if (ir) marcar(ir.dataset.painelIr); }, true);
+  return {init, renderPainel, renderConectores, colunas, barrasH, abas, irPara: marcar};
 })();
 
-/* Guia "Como escrever um bom relato": aberto pelas missões do Meu espaço e pelos relatos da gestão. (2.27: veio da antiga Mesa.) */
+/* Guia "Como escrever um bom relato": aberto pelas missões do Meu espaço e pela ferramenta Relatos. (2.27: veio da antiga Mesa.) */
 window.CPTGuiaRelato = (() => {
   'use strict';
   const PONTOS = [
