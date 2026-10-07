@@ -77,13 +77,14 @@ class ObrasDoDiaCPT {
       obras: this.catalogo().map(o => ({...this.resumoObra(o), busca: ObrasCPT.nomesConhecidos(o).join(' ')}))
         .sort((a, b) => (a.situacao === 'Finalizada') - (b.situacao === 'Finalizada') || a.exibir.localeCompare(b.exibir, 'pt-BR'))};
   }
-  vincular(p) {
+  /** permitido(id): outro caso que também pode ser vinculado (2.46: diagnóstico sem obra do catálogo). */
+  vincular(p, permitido) {
     this.exigirGerencia();
     if (!p || typeof p.registroId !== 'string' || !/^REG-[a-f0-9]{24}$/.test(p.registroId)) throw new Error('Registro inválido.');
     const o = this.obra(String(p.obraId || ''));
     // Pode vincular um pendente ou trocar um vínculo já feito (para corrigir engano). Nada além disso.
     const atual = this.vinculos.obter('VIN-' + p.registroId);
-    if (!atual && !this.pendentesDeVinculo().some(x => String(x.r[0]) === p.registroId)) throw new Error('Este registro já foi vinculado ou não é de "obra ainda não cadastrada". Atualize a página.');
+    if (!atual && !(permitido && permitido(p.registroId)) && !this.pendentesDeVinculo().some(x => String(x.r[0]) === p.registroId)) throw new Error('Este registro já foi vinculado ou não é de "obra ainda não cadastrada". Atualize a página.');
     if (atual && atual.obraId === o.id) return {resultado: 'Este registro já está em ' + o.exibir + '.'};
     const rotulo = o.exibir + ' [' + o.id + ']';
     this.vinculos.gravar({registroId: p.registroId, obraId: o.id, rotulo}, atual ? atual.versao : 0, p.operacaoId, 'VIN-' + p.registroId);

@@ -1503,4 +1503,25 @@ html[data-theme=dark] .destaque.is-down strong{color:#f0b07a}
 .graf-comentar{justify-self:start;font-size:12px;min-height:32px;padding:2px}.graf-nota-form{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .graf-escopo{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px}.graf-escopo label{display:flex;align-items:center;gap:6px;min-height:28px}.graf-escopo input{width:16px;height:16px;min-height:16px;accent-color:var(--blue)}
 .graf-nota-form textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink)}.graf-nota-botoes{display:flex;gap:8px}.graf-nota-botoes .button{min-height:36px;padding:6px 14px}
+/* 2.46 Diagnósticos por obra */
+.dg-card h4{overflow-wrap:anywhere}
+.dg-head{align-items:center;flex-wrap:wrap}
+.dg-sem{margin-top:22px}.dg-sem .panel-head{margin-bottom:12px}
+.dg-sem-lista{list-style:none;margin:0;padding:0;display:grid}
+.dg-sem-linha{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.dg-sem-linha:first-child{border-top:0}.dg-sem-linha>div:first-child{display:grid;gap:3px;min-width:0}.dg-sem-linha strong{font-size:13px;overflow-wrap:anywhere}
+.dg-sem-acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.dg-sem-acoes select{max-width:240px;font-size:12px}
+.dg-tabela{width:100%;border-collapse:collapse;font-size:12px;min-width:760px}
+.dg-tabela caption{text-align:left;font-weight:650;padding:0 0 8px;font-size:13px}
+.dg-tabela th{text-align:left;font-size:11px;color:var(--muted);font-weight:650;padding:8px;border-bottom:1px solid var(--line);background:var(--bg)}
+.dg-tabela td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.dg-tabela td .button{min-height:32px;padding:4px 0}
+.dg-tabela td:first-child,.dg-tabela td:last-child{white-space:nowrap}
+.dg-bloco{padding:14px 0;border-top:1px solid var(--line)}.dg-bloco h3{font-size:13px;color:var(--blue);margin-bottom:8px}
+.dg-texto{font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.dg-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin:0}
+.dg-campos dt{font-size:11px;color:var(--muted)}.dg-campos dd{margin:2px 0 0;font-size:13px;overflow-wrap:anywhere;white-space:pre-wrap}
+.dg-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.dg-fotos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:var(--line);display:block}
+@media(max-width:700px){.dg-sem-linha{flex-direction:column;align-items:stretch}.dg-sem-acoes{justify-content:flex-start}.dg-sem-acoes select{max-width:none;flex:1}.dg-campos{grid-template-columns:1fr}}
 </style>

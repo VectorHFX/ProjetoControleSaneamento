@@ -1,0 +1,106 @@
+<script>
+/* CPTDiagnosticos 2.46.0 — aba "Diagnósticos" em Relatos, para toda a equipe.
+   Cada obra com os seus diagnósticos de área e a tabela-resumo (copiável). Socioambiental, Comunicação, Gestão e
+   Administrativo geram o documento da obra (Google Docs, modelo limpo); a Gestão e o Administrativo vinculam a uma obra
+   o diagnóstico que chegou sem obra do catálogo. */
+window.CPTDiagnosticos = (() => {
+  let ui = null, dados = null, lidoEm = 0, prefixo = '', ativo = () => false, ticket = 0, aberta = null;
+  const $ = id => document.getElementById(id), br = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : (d || '');
+  const DOC = {sem: ['Sem documento', ''], mudou: ['Mudou desde o documento', 'orange'], ok: ['Documento em dia', 'green']};
+  async function render(o) {
+    prefixo = o.prefixo; ativo = o.ativo; const mine = ++ticket;
+    if (!dados || o.forcar || Date.now() - lidoEm > 300000) { // relido a cada 5 minutos (ou ao vincular)
+      ui.view.innerHTML = prefixo + '<div class="loading-label"><span class="spinner"></span>Reunindo os diagnósticos por obra…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div></div>';
+      try { const d = await ui.call('listarDiagnosticosCPT', {}); if (mine !== ticket || !ativo()) return; dados = d; lidoEm = Date.now(); }
+      catch (e) { if (mine === ticket && ativo()) ui.view.innerHTML = prefixo + `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    }
+    desenhar();
+  }
+  function desenhar() {
+    if (!ativo() || !dados) return;
+    const tile = (r, n, nota) => `<div class="stat-tile"><span class="stat-label">${r}</span><span class="stat-value">${ui.num(n)}</span><span class="stat-note">${nota}</span></div>`;
+    const card = o => { const [t, cor] = DOC[o.situacaoDoc]; return `<article class="relato-card rel-card dg-card"><div class="card-top"><span class="badge">${ui.esc(o.situacao)}</span><span class="badge ${cor}">${t}</span></div>
+      <h4>${ui.esc(o.nome)}</h4><p class="small muted">${ui.esc(o.bairros.join(', ') || 'Bairro não informado')}</p>
+      <p class="small"><strong>${o.total}</strong> ${o.total === 1 ? 'diagnóstico' : 'diagnósticos'} · ${o.primeiro === o.ultimo ? br(o.ultimo) : br(o.primeiro) + ' a ' + br(o.ultimo)}</p>
+      ${o.geradoPor ? `<p class="small muted">Documento v${o.versaoDoc} por ${ui.esc(o.geradoPor)}.</p>` : ''}
+      <div class="card-bottom"><span>${o.doc ? `<a class="button ghost" href="${ui.esc(o.doc)}" target="_blank" rel="noopener">Abrir documento</a>` : ''}</span><span><button class="button secondary" type="button" data-dg-obra="${ui.esc(o.obraId)}">Ver tabela</button></span></div></article>`; };
+    const opcoes = dados.catalogo.map(o => `<option value="${ui.esc(o.id)}">${ui.esc(o.exibir)}${o.situacao === 'Finalizada' ? ' (finalizada)' : ''}</option>`).join('');
+    const sem = d => `<li class="dg-sem-linha"><div><strong>${ui.esc(br(d.data))} · ${ui.esc(d.trecho || 'Trecho não informado')}</strong><span class="small muted">${ui.esc([d.obraTexto ? 'Obra informada: ' + d.obraTexto : 'Sem obra informada', d.responsavel].filter(Boolean).join(' · '))}</span></div>
+      <div class="dg-sem-acoes"><button class="button ghost" type="button" data-dg-ver="${ui.esc(d.id)}">Ver</button>${dados.podeVincular ? `<label class="sr-only" for="dgObra-${ui.esc(d.id)}">Obra do diagnóstico</label><select id="dgObra-${ui.esc(d.id)}"><option value="">Escolha a obra…</option>${opcoes}</select><button class="button" type="button" data-dg-vincular="${ui.esc(d.id)}">Vincular</button>` : ''}</div></li>`;
+    ui.view.innerHTML = prefixo + `<section class="stat-row" aria-label="Diagnósticos">${tile('Diagnósticos', dados.total, 'Diagnósticos de área registrados.')}${tile('Obras com diagnóstico', dados.obras.length, 'Cada uma com a sua tabela-resumo.')}${tile('Sem obra', dados.semObra.length, dados.podeVincular ? 'Vincule a uma obra do catálogo.' : 'A gestão vincula a uma obra.')}</section>
+      <div class="results-head dg-head"><span>${dados.obras.length} ${dados.obras.length === 1 ? 'obra' : 'obras'} · do diagnóstico mais recente para o mais antigo</span>${dados.pasta ? `<a class="button ghost" href="${ui.esc(dados.pasta)}" target="_blank" rel="noopener">Abrir pasta dos documentos</a>` : ''}</div>
+      <div class="rel-cards">${dados.obras.map(card).join('') || '<p class="empty-line">Nenhum diagnóstico ligado a uma obra do catálogo ainda.</p>'}</div>
+      ${dados.semObra.length ? `<section class="panel dg-sem"><div class="panel-head"><div><h3>Sem obra do catálogo</h3><p>${dados.podeVincular ? 'Escolha a obra para o diagnóstico entrar na tabela e no documento dela. A linha da base não muda.' : 'A Gestão ou o Administrativo vinculam estes diagnósticos a uma obra.'}</p></div></div><ul class="dg-sem-lista">${dados.semObra.map(sem).join('')}</ul></section>` : ''}`;
+  }
+  // ---------- Tabela da obra ----------
+  const COLS = [['data', 'Data'], ['trecho', 'Trecho'], ['ipvs', 'IPVS'], ['perfil', 'Perfil socioeconômico'], ['imoveis', 'Imóveis (res. / com.)'], ['escolas', 'Escolas'], ['ubs', 'UBS'], ['pontos', 'Pontos críticos']];
+  const celula = (l, k) => k === 'data' ? br(l.data) : k === 'imoveis' ? (l.residenciais || '—') + ' / ' + (l.comerciais || '—') : (l[k] || '—');
+  function tabelaHtml(o, simples) {
+    const th = simples ? 'style="border:1px solid #D9E3EA;background:#EAF4F8;padding:4px 6px;text-align:left"' : 'scope="col"', td = simples ? 'style="border:1px solid #D9E3EA;padding:4px 6px;vertical-align:top"' : '';
+    return `<table class="dg-tabela"${simples ? ' style="border-collapse:collapse;font-family:Arial;font-size:12px"' : ''}><caption${simples ? '' : ' class="sr-only"'}>${ui.esc(o.nome)} · diagnósticos</caption><thead><tr>${COLS.map(([, t]) => `<th ${th}>${t}</th>`).join('')}${simples ? '' : '<th scope="col"><span class="sr-only">Abrir</span></th>'}</tr></thead>
+      <tbody>${o.linhas.map(l => `<tr>${COLS.map(([k]) => `<td ${td}>${ui.esc(celula(l, k))}</td>`).join('')}${simples ? '' : `<td><button class="button ghost" type="button" data-dg-ver="${ui.esc(l.id)}">Ver</button></td>`}</tr>`).join('')}</tbody></table>`;
+  }
+  function abrirObra(id) {
+    const o = dados && dados.obras.find(x => x.obraId === id); if (!o) return; aberta = o;
+    const [t, cor] = DOC[o.situacaoDoc];
+    $('detailType').textContent = 'DIAGNÓSTICOS DA OBRA'; $('detailTitle').textContent = o.nome;
+    $('detailContent').innerHTML = `<p class="small muted">${ui.esc(o.bairros.join(', ') || 'Bairro não informado')} · ${o.total} ${o.total === 1 ? 'diagnóstico' : 'diagnósticos'} · <span class="badge ${cor}">${t}</span></p>
+      ${o.situacaoDoc === 'mudou' ? '<div class="notice warning">Entrou diagnóstico novo ou um registro mudou depois do documento. Gere de novo para atualizar.</div>' : ''}
+      <div class="tabela-rolagem">${tabelaHtml(o, false)}</div>
+      <div class="dialog-actions"><button class="button secondary" type="button" data-dg-copiar>${ui.icon('file')}Copiar tabela</button>${o.doc ? `<a class="button ghost" href="${ui.esc(o.doc)}" target="_blank" rel="noopener">Abrir documento</a>` : ''}
+        ${dados.podeGerar ? `<button class="button" type="button" data-dg-gerar="${ui.esc(o.obraId)}">${ui.icon('check')}${o.doc ? 'Gerar de novo' : 'Gerar documento da obra'}</button>` : ''}</div>
+      ${dados.podeGerar ? '<p class="small muted">O documento junta os dados da obra, esta tabela e um bloco por diagnóstico (com até 4 fotos cada), no modelo limpo da aplicação. A versão anterior fica guardada.</p>' : ''}`;
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+  }
+  async function copiar() {
+    const o = aberta; if (!o) return; const html = tabelaHtml(o, true), texto = [COLS.map(c => c[1]).join('\t')].concat(o.linhas.map(l => COLS.map(([k]) => celula(l, k)).join('\t'))).join('\n');
+    try {
+      if (navigator.clipboard && window.ClipboardItem) await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type: 'text/html'}), 'text/plain': new Blob([texto], {type: 'text/plain'})})]);
+      else await navigator.clipboard.writeText(texto);
+      ui.toast('Tabela copiada. Cole no Docs, no e-mail ou na planilha.');
+    } catch (_) { ui.toast('Não deu para copiar a tabela neste navegador.'); }
+  }
+  async function gerar(btn) {
+    const id = btn.dataset.dgGerar, txt = btn.innerHTML; btn.disabled = true; btn.textContent = 'Gerando o documento… (até 1 minuto)';
+    try {
+      const r = await ui.call('gerarDiagnosticoObraCPT', {obraId: id, operacaoId: 'OP-' + crypto.randomUUID()}); ui.toast(r.resultado);
+      const o = dados.obras.find(x => x.obraId === id); if (o) { o.doc = r.doc; o.versaoDoc = r.versaoDoc; o.geradoPor = r.geradoPor; o.geradoEm = r.geradoEm; o.situacaoDoc = 'ok'; }
+      abrirObra(id); desenhar();
+    } catch (e) { ui.toast(e.message); btn.disabled = false; btn.innerHTML = txt; }
+  }
+  // ---------- Um diagnóstico ----------
+  async function ver(id) {
+    $('detailType').textContent = 'DIAGNÓSTICO DE ÁREA'; $('detailTitle').textContent = 'Abrindo o diagnóstico…'; $('detailContent').innerHTML = '<div class="loading-label"><span class="spinner"></span>Lendo o registro…</div>';
+    if (!$('detailDialog').open) $('detailDialog').showModal();
+    try {
+      const d = await ui.call('abrirDiagnosticoCPT', {id});
+      $('detailTitle').textContent = br(d.data) + ' · ' + (d.endereco || d.frente || d.bairro || 'Diagnóstico');
+      const bloco = (t, corpo) => `<section class="dg-bloco"><h3>${ui.esc(t)}</h3>${corpo}</section>`;
+      $('detailContent').innerHTML = `<p class="small muted">${ui.esc([d.bairro, d.obraTexto, d.responsavel ? 'Equipe: ' + d.responsavel : ''].filter(Boolean).join(' · '))}</p>
+        ${d.relato ? bloco('Relato do diagnóstico', `<p class="dg-texto">${ui.esc(d.relato)}</p>`) : ''}
+        ${d.campos.map(([t, l]) => bloco(t, `<dl class="dg-campos">${l.map(([k, v]) => `<div><dt>${ui.esc(k)}</dt><dd>${ui.esc(v)}</dd></div>`).join('')}</dl>`)).join('')}
+        ${d.observacao ? bloco('Observação final', `<p class="dg-texto">${ui.esc(d.observacao)}</p>`) : ''}
+        ${d.fotos.length ? bloco('Fotos', `<div class="dg-fotos">${d.fotos.map((f, i) => `<a href="${ui.esc(f.url)}" target="_blank" rel="noopener"><img src="${ui.esc(f.thumb)}" alt="Foto ${i + 1} do diagnóstico" loading="lazy" referrerpolicy="no-referrer"></a>`).join('')}</div>`) : ''}
+        <div class="dialog-actions"><button class="button ghost" type="button" data-record="${ui.esc(d.id)}">Registro completo</button></div>`;
+    } catch (e) { $('detailContent').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  async function vincular(btn) {
+    const id = btn.dataset.dgVincular, sel = $('dgObra-' + id); if (!sel || !sel.value) { ui.toast('Escolha a obra antes de vincular.'); if (sel) sel.focus(); return; }
+    btn.disabled = true; btn.textContent = 'Vinculando…';
+    try { const r = await ui.call('vincularDiagnosticoCPT', {registroId: id, obraId: sel.value, operacaoId: 'OP-' + crypto.randomUUID()}); ui.toast(r.resultado); render({prefixo, ativo, forcar: true}); }
+    catch (e) { ui.toast(e.message); btn.disabled = false; btn.textContent = 'Vincular'; }
+  }
+  function init(api) {
+    ui = api;
+    document.addEventListener('click', e => {
+      const t = e.target.closest && e.target.closest('[data-dg-obra],[data-dg-ver],[data-dg-gerar],[data-dg-vincular],[data-dg-copiar]'); if (!t) return;
+      if (t.dataset.dgObra) abrirObra(t.dataset.dgObra);
+      else if (t.dataset.dgVer) ver(t.dataset.dgVer);
+      else if (t.dataset.dgGerar) gerar(t);
+      else if (t.dataset.dgVincular) vincular(t);
+      else copiar();
+    });
+  }
+  return {init, render, limpar: () => { dados = null; }};
+})();
+</script>

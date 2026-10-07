@@ -5,12 +5,13 @@
    de apoio) e para a Gestão e o Administrativo. "Abrir no RDAS" procura a ficha do relato só quando alguém clica.
    Aba "Outros registros": a lista de todos os registros de campo (a consulta de antes).
    2.43: aba "Para o relatório" (Socioambiental, Comunicação, Gestão e Administrativo): ação social, articulação institucional,
-   CAO e DDS do mês ficam pendentes de revisão; revisar (texto e fotos, prompt opcional para o Gemini) gera o Google Docs. */
+   CAO e DDS do mês ficam pendentes de revisão; revisar (texto e fotos, prompt opcional para o Gemini) gera o Google Docs.
+   2.46: aba "Diagnósticos" (toda a equipe): diagnósticos por obra, tabela-resumo e documento da obra (Diagnosticos.html). */
 window.CPTRelatos = (() => {
   let ui = null, dados = null, rel = null, filtroTipo = '', parte = 'relatos', ticket = 0, filtro = {busca: '', bairro: '', meus: false, pontos: false}, limite = 24, buscaTimer = null;
   const $ = id => document.getElementById(id), POR_VEZ = 24;
   const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  function abas() { return `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de Relatos">${[['relatos', 'Relatos']].concat(revisa() ? [['relatorio', 'Para o relatório']] : [], [['outros', 'Outros registros']]).map(([k, t]) => `<button role="tab" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-rel-parte="${k}">${t}</button>`).join('')}</div>`; }
+  function abas() { return `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de Relatos">${[['relatos', 'Relatos']].concat(revisa() ? [['relatorio', 'Para o relatório']] : [], [['diagnosticos', 'Diagnósticos'], ['outros', 'Outros registros']]).map(([k, t]) => `<button role="tab" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-rel-parte="${k}">${t}</button>`).join('')}</div>`; }
   const revisa = () => (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao', 'socioambiental', 'comunicacao'].includes(p));
   function cabecalho() { return ui.intro('Relatos', 'Os relatos de atividade do mês. Quem fez a atividade vê aqui o que pode melhorar no texto, com dicas; a Gestão e o Administrativo veem todos.'); }
   /** Abre a aba atual. Filtros vindos de outros lugares (ex.: "ações sem público") levam direto a Outros registros. */
@@ -19,6 +20,7 @@ window.CPTRelatos = (() => {
     if (parte === 'outros') { ui.renderRecords(); return; }
     if (parte === 'relatorio' && revisa()) { carregarRelatorio(); return; }
     if (parte === 'relatorio') parte = 'relatos';
+    if (parte === 'diagnosticos' && window.CPTDiagnosticos) { window.CPTDiagnosticos.render({prefixo: cabecalho() + abas(), ativo: () => ui.state.route === 'registros' && parte === 'diagnosticos'}); return; }
     carregar();
   }
   async function carregar() {

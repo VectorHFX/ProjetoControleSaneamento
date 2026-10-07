@@ -23,6 +23,16 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.46.0 — diagnósticos por obra (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.46.0`, Nova versão). Arquivos novos: `DiagnosticosCPT` (script) e `Diagnosticos` (HTML); o atualizador cria. Nenhuma permissão nova (Docs e Drive já são usados pelos relatos).
+2. **Relatos → aba "Diagnósticos"** (toda a equipe): um cartão por obra do catálogo com os diagnósticos de área dela. A obra é achada pelo Obra ID, pelo nome (oficial ou de uso) ou pelo apelido, também no "Título da frente de serviço".
+   - **Ver tabela:** a tabela-resumo da obra (data, trecho, IPVS, perfil socioeconômico, imóveis residenciais/comerciais, escolas, UBS e pontos críticos). **Copiar tabela** cola formatada no Docs/e-mail e em colunas na planilha. **Ver** abre o diagnóstico inteiro, por blocos, com as fotos.
+   - **Sem obra do catálogo:** a Gestão e o Administrativo escolhem a obra e clicam em **Vincular** (o mesmo vínculo de "outra obra"; a linha da base não muda).
+3. **Gerar documento da obra** (Socioambiental, Comunicação, Gestão e Administrativo): Google Docs num modelo limpo — dados da obra, tabela-resumo e uma página por diagnóstico (relato, blocos preenchidos, observação final e até 4 fotos com a legenda do item 2). Fica em **CPT • Diagnósticos/<obra>**; gerar de novo cria a v2 e a anterior vai para "Versões anteriores". Foto sem acesso vira aviso e a seguinte entra no lugar.
+4. Se entrar diagnóstico novo na obra (ou um registro mudar), o cartão mostra **Mudou desde o documento**.
+5. Confira na primeira vez: abra uma obra com diagnóstico, gere o documento e veja se os blocos e as fotos vieram como esperado.
+
 ## Atualização 2.45.0 — comentários da gestão nos gráficos (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.45.0`, Nova versão). Arquivo novo: `NotasGraficosCPT` (script); o atualizador cria. Nenhuma permissão nova.
