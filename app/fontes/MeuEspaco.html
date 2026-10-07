@@ -352,7 +352,7 @@ window.CPTEspaco = (() => {
       : x.tipo === 'devolutiva' ? `<button class="button secondary" data-missao-devolutiva="${ui.esc(x.id)}">Ler comentário</button>`
       : x.tipo === 'caso' ? `<button class="button secondary" data-case="${ui.esc(x.protocolo)}">Abrir a ficha ${ui.icon('arrow')}</button>`
       : x.pendente ? `<button class="button secondary" data-pending="${ui.esc(x.pendente)}">Fazer agora ${ui.icon('arrow')}</button>`
-      : `<button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? (x.rota === 'painel' ? 'data-painel-ir' : 'data-obra-ir') + `="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button>`;
+      : `<button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? (x.rota === 'painel' ? 'data-painel-ir' : x.rota === 'registros' ? 'data-relatos-ir' : 'data-obra-ir') + `="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button>`;
     box.innerHTML = lista.length ? `<h3 class="peek-title">${ic('target', '🎯')} Missões de hoje</h3><ul class="missoes">${lista.map(x => `<li class="missao t-${ui.esc(x.tipo || 'rota')}" data-missao="${ui.esc(x.id)}"><span class="missao-alvo" aria-hidden="true"></span><span class="missao-texto"><strong>${ui.esc(x.titulo)}</strong><small>${ui.esc(x.texto)}</small></span>${botao(x)}</li>`).join('')}</ul>` : '';
   }
   // Dicas de relato já vistas ficam só neste navegador (conveniência; nada é gravado na base).

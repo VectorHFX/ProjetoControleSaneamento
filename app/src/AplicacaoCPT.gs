@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.42.1';
+const VERSAO_CPT = '2.43.0';
 
 /**
  * Cada planilha é aberta uma vez por execução e reaproveitada (o equivalente a um "pool" de conexões no Apps Script).
@@ -80,7 +80,7 @@ function instalarAplicacaoCPT() {
  */
 function doGet() {
   // Classes não ficam em globalThis: a referência direta lança ReferenceError se um arquivo faltar.
-  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, ConectoresCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, GaleriaCPT, PessoalCPT, ConteudoSaneamentoCPT, RevisaoConteudoCPT, QuizCPT, JogosCPT, PlacarCPT, OrganogramaCPT, ControleContratoCPT, LevantamentoCPT, AlertasGestaoCPT, RotinaCPT, AnexosCPT, MatrizCPT, ParceirosCPT, AtendimentoDiaCPT]; }
+  try { void [DadosDaAplicacao, PerfisCPT, DesempenhoCPT, ObservacoesCPT, ObrasCPT, CacheCPT, CicloAtendimentoCPT, FichaOficialCPT, SocioambientalCPT, ObrasDoDiaCPT, MapaCPT, MissoesCPT, RelatosCPT, ConectoresCPT, PaineisGestaoCPT, AuditoriaAtendimentosCPT, ColecaoCPT, RecadosCPT, ContatosCPT, LembretesCPT, MateriaisCPT, GaleriaCPT, PessoalCPT, ConteudoSaneamentoCPT, RevisaoConteudoCPT, QuizCPT, JogosCPT, PlacarCPT, OrganogramaCPT, ControleContratoCPT, LevantamentoCPT, AlertasGestaoCPT, RotinaCPT, AnexosCPT, MatrizCPT, ParceirosCPT, AtendimentoDiaCPT, RelatosRelatorioCPT]; }
   catch (_) { throw new Error('Instalação incompleta: confira todos os arquivos da versão ' + VERSAO_CPT + ' antes de publicar.'); }
   const t = HtmlService.createTemplateFromFile('Aplicacao');
   t.inicial = dadosIniciaisCPT_();

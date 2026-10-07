@@ -23,6 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.43.0 — relatos ilustrados para o relatório (≈ 4 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.43.0`, Nova versão). Arquivo novo: `RelatosRelatorioCPT` (script); o atualizador cria. Nenhuma permissão nova.
+2. **A máscara do Programa Parceiros** já usa a Planilha Google nova (`10YIKpK3…Ktltw`); o endereço antigo (Excel), se estiver salvo, é trocado sozinho.
+3. **Relatos → aba Para o relatório** (Socioambiental, Comunicação, Gestão e Administrativo). Entram os relatos de atividade do mês dos tipos **Ação social externa**, **Ação social interna**, **Articulação institucional** e **CAO ou DDS** (pela atividade escolhida no formulário). Cada um aparece como **Pendente de revisão**; há também uma missão no Meu espaço com quantos faltam.
+4. **Revisar:** a janela traz o título, objetivo, relato e resultados vindos do registro (local, equipe, público e interrupção em "Mais detalhes") e as fotos (até 8). **Copiar prompt** leva os dados para o Gemini (sem nomes de moradores, sem inventar nada); cole o texto revisado nos campos. **A revisão humana é sempre obrigatória**: só o botão "Revisado: gerar o documento" cria o arquivo.
+5. **Documento:** Google Docs no modelo do relato ilustrado (o mesmo de antes: tabela de dados, objetivo, relato, resultados, interrupção e registro fotográfico em grade), na pasta **"CPT • Relatos do relatório / AAAA / MM - mês / Tipo"**. Seções vazias (resultados, interrupção) saem do documento. Foto sem acesso vira aviso, não erro.
+   - Na primeira vez, a aplicação cria o modelo **"MODELO - Relato ilustrado da atividade social"** dentro da pasta. Dá para ajustar cores e fontes no Docs (botão "Abrir modelo"), sem apagar os marcadores {{…}}. Se preferir usar o modelo antigo, me mande o link dele.
+   - Revisar de novo cria a versão seguinte; a anterior vai para "Versões anteriores" da mesma pasta.
+   - Se o registro mudar no Campo 4.0 depois da revisão, o relato aparece como **Mudou na origem** para conferir.
+
 ## Atualização 2.42.1 — revisão das entregas 2.41 e 2.42 (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.42.1`, Nova versão). Nada a configurar.

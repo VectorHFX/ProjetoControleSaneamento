@@ -31,6 +31,8 @@ class MissoesCPT {
     if (this.tem('administrativo', 'gestao')) fonte('controle', () => new ControleContratoCPT(this.ctx).missoes());
     // 2.42: casos escolhidos na mensagem do dia (Atendimento, Gestão, Administrativo e Comunicação).
     fonte('dia', () => new AtendimentoDiaCPT(this.ctx).missoes());
+    // 2.43: relatos para o relatório aguardando revisão (Socioambiental, Comunicação, Gestão e Administrativo).
+    fonte('relatorio', () => RelatosRelatorioCPT.missoes(this.ctx));
     return out;
   }
   /** Comentários da gestão sobre relatos da pessoa, ainda não vistos. */

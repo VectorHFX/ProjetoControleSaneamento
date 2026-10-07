@@ -76,6 +76,8 @@ assert.equal(masc.rows[17][col-1],'Os participantes avaliam bem o abastecimento.
 r=run(`carregarParceirosCPT({mes:'${M}'})`);assert.equal(r.textos.nome,'Adm');assert.match(r.textos.saneamento,/abastecimento/);assert.equal(locked,false);
 // Rótulo da linha 18 mudou: nada é gravado.
 masc.rows[17][1]='Outra coisa';assert.throws(()=>run(`gravarTextosParceirosCPT({mes:'${M}',saneamento:'x y',qualidade:'',operacaoId:'OP-${crypto.randomUUID()}'})`),/mudou na linha 18/);masc.rows[17][1]=rot[18];
+// Endereço antigo (Excel) salvo em Conectores: troca pela Planilha Google.
+props.set('CPT_CONECTORES',JSON.stringify({parceiros:{id:'1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m'}}));assert.equal(run('ParceirosCPT.id()'),'10YIKpK3uk8EwySF-e2ox6MlEzWDAnlNlHyC_T1Ktltw');props.set('CPT_CONECTORES',JSON.stringify({parceiros:{id:'mascara'}}));
 // 7. Cabeçalhos de mês e Excel.
 assert.equal(run("ParceirosCPT.mesDoCabecalho('Agosto')"),'2026-08');assert.equal(run("ParceirosCPT.mesDoCabecalho('Setembro/2026')"),'2026-09');assert.equal(run("ParceirosCPT.mesDoCabecalho('set/27')"),'2027-09');assert.equal(run("ParceirosCPT.mesDoCabecalho('Dados')"),'');
 props.set('CPT_CONECTORES',JSON.stringify({parceiros:{id:'xlsx'}}));assert.match(run(`carregarParceirosCPT({mes:'${M}'})`).erro,/Salvar como Planilhas Google/);

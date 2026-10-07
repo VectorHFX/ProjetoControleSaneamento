@@ -3,17 +3,22 @@
    Aba "Relatos": os relatos de atividade do mês em cartões, para toda a equipe, com filtros simples (busca, bairro, "os meus").
    Pontos de melhoria (o que a conferência achou faltando, com dica): só para quem fez a atividade (responsável e colaboradores
    de apoio) e para a Gestão e o Administrativo. "Abrir no RDAS" procura a ficha do relato só quando alguém clica.
-   Aba "Outros registros": a lista de todos os registros de campo (a consulta de antes). */
+   Aba "Outros registros": a lista de todos os registros de campo (a consulta de antes).
+   2.43: aba "Para o relatório" (Socioambiental, Comunicação, Gestão e Administrativo): ação social, articulação institucional,
+   CAO e DDS do mês ficam pendentes de revisão; revisar (texto e fotos, prompt opcional para o Gemini) gera o Google Docs. */
 window.CPTRelatos = (() => {
-  let ui = null, dados = null, parte = 'relatos', ticket = 0, filtro = {busca: '', bairro: '', meus: false, pontos: false}, limite = 24, buscaTimer = null;
+  let ui = null, dados = null, rel = null, filtroTipo = '', parte = 'relatos', ticket = 0, filtro = {busca: '', bairro: '', meus: false, pontos: false}, limite = 24, buscaTimer = null;
   const $ = id => document.getElementById(id), POR_VEZ = 24;
   const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  function abas() { return `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de Relatos">${[['relatos', 'Relatos'], ['outros', 'Outros registros']].map(([k, t]) => `<button role="tab" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-rel-parte="${k}">${t}</button>`).join('')}</div>`; }
+  function abas() { return `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de Relatos">${[['relatos', 'Relatos']].concat(revisa() ? [['relatorio', 'Para o relatório']] : [], [['outros', 'Outros registros']]).map(([k, t]) => `<button role="tab" aria-selected="${parte === k}" class="${parte === k ? 'chosen' : ''}" data-rel-parte="${k}">${t}</button>`).join('')}</div>`; }
+  const revisa = () => (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao', 'socioambiental', 'comunicacao'].includes(p));
   function cabecalho() { return ui.intro('Relatos', 'Os relatos de atividade do mês. Quem fez a atividade vê aqui o que pode melhorar no texto, com dicas; a Gestão e o Administrativo veem todos.'); }
   /** Abre a aba atual. Filtros vindos de outros lugares (ex.: "ações sem público") levam direto a Outros registros. */
   function render() {
     if ((ui.state.filters || {}).pendencia) parte = 'outros';
     if (parte === 'outros') { ui.renderRecords(); return; }
+    if (parte === 'relatorio' && revisa()) { carregarRelatorio(); return; }
+    if (parte === 'relatorio') parte = 'relatos';
     carregar();
   }
   async function carregar() {
@@ -53,6 +58,71 @@ window.CPTRelatos = (() => {
       ${l.length > vis.length ? `<div class="load-more"><button class="button secondary" type="button" data-rel-mais>Mostrar mais (${l.length - vis.length})</button></div>` : ''}`;
     if (manterFoco) { const i = $('relBusca'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }
   }
+  // ---------- Para o relatório (2.43) ----------
+  const SIT = {pendente: ['Pendente de revisão', 'orange'], mudou: ['Mudou na origem', 'orange'], revisado: ['Revisado', 'green']};
+  async function carregarRelatorio(forcar) {
+    const mine = ++ticket, mes = ui.state.mes;
+    if (!rel || rel.mes !== mes || forcar) {
+      ui.view.innerHTML = cabecalho() + abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os relatos do relatório…</div>';
+      try { const d = await ui.call('listarRelatosRelatorioCPT', {mes}); if (mine !== ticket || ui.state.route !== 'registros' || parte !== 'relatorio') return; rel = d; }
+      catch (e) { if (mine === ticket) ui.view.innerHTML = cabecalho() + abas() + `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    }
+    desenharRelatorio();
+  }
+  function desenharRelatorio() {
+    if (ui.state.route !== 'registros' || parte !== 'relatorio' || !rel) return;
+    const conta = s => rel.itens.filter(x => x.situacao === s).length, l = rel.itens.filter(x => !filtroTipo || x.tipo === filtroTipo), pasta = rel.pasta;
+    const tile = (r, n, nota) => `<div class="stat-tile"><span class="stat-label">${r}</span><span class="stat-value">${ui.num(n)}</span><span class="stat-note">${nota}</span></div>`;
+    const card = x => { const [t, cor] = SIT[x.situacao]; return `<article class="relato-card rel-card rr-card"><div class="card-top"><span class="badge">${ui.esc(ui.date(x.data))}</span><span class="badge">${ui.esc(x.tipo)}</span><span class="badge ${cor}">${t}</span></div>
+      <h4>${ui.esc(x.atividade)}</h4><p class="small muted">${ui.esc([x.frente, x.bairro].filter(Boolean).join(' · ') || 'Local não informado')}</p><p class="small">${ui.esc(x.responsavel)}${x.publico != null ? ' · ' + ui.num(x.publico) + ' pessoas' : ''}</p>
+      ${x.revisadoPor ? `<p class="small muted">Revisado por ${ui.esc(x.revisadoPor)}${x.revisadoEm ? ' em ' + ui.esc(new Date(x.revisadoEm).toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo'})) : ''}.</p>` : ''}
+      <div class="card-bottom"><span>${x.doc ? `<a class="button ghost" href="${ui.esc(x.doc)}" target="_blank" rel="noopener">Abrir documento</a>` : ''}</span><span><button class="button ${x.situacao === 'revisado' ? 'secondary' : ''}" type="button" data-rr-revisar="${ui.esc(x.id)}">${x.situacao === 'revisado' ? 'Revisar de novo' : 'Revisar'}</button></span></div></article>`; };
+    ui.view.innerHTML = cabecalho() + abas() + `<section class="stat-row" aria-label="Relatos do relatório">${tile('Pendentes', conta('pendente'), 'Aguardando revisão.')}${tile('Mudaram na origem', conta('mudou'), 'Revisados, mas o registro mudou depois.')}${tile('Revisados', conta('revisado'), 'Documento gerado.')}</section>
+      <section class="panel filter-panel"><form class="filters rr-filtros" onsubmit="return false"><label class="field">Tipo<select id="rrTipo"><option value="">Todos</option>${rel.tipos.map(t => `<option ${filtroTipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label>
+        <div class="rr-links">${pasta ? `<a class="button secondary" href="${ui.esc(pasta)}" target="_blank" rel="noopener">Abrir pasta</a>` : ''}${rel.modelo ? `<a class="button ghost" href="${ui.esc(rel.modelo)}" target="_blank" rel="noopener">Abrir modelo</a>` : ''}</div></form></section>
+      <div class="results-head"><span>${l.length} ${l.length === 1 ? 'relato' : 'relatos'} · ação social, articulação institucional, CAO e DDS</span><span>Revisão humana sempre; o Gemini só ajuda no texto</span></div>
+      <div class="rel-cards">${l.map(card).join('') || '<p class="empty-line">Nenhum relato desses tipos neste mês.</p>'}</div>`;
+  }
+  const $d = id => document.getElementById(id);
+  let rr = null;
+  async function abrirRevisao(id) {
+    $d('detailType').textContent = 'RELATO PARA O RELATÓRIO'; $d('detailTitle').textContent = 'Abrindo o relato…'; $d('detailContent').innerHTML = '<div class="loading-label"><span class="spinner"></span>Lendo o registro…</div>';
+    if (!$d('detailDialog').open) $d('detailDialog').showModal();
+    try { rr = await ui.call('abrirRelatoRelatorioCPT', {id}); desenharRevisao(); }
+    catch (e) { $d('detailContent').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function desenharRevisao() {
+    const c = rr.campos, v = rr.revisao, campo = (n, rot, max, val, area, linhas = 3) => `<label class="field">${rot}${area ? `<textarea name="${n}" rows="${linhas}" maxlength="${max}">${ui.esc(val || '')}</textarea>` : `<input name="${n}" maxlength="${max}" value="${ui.esc(val || '')}">`}</label>`;
+    $d('detailTitle').textContent = rr.tipo + ' · ' + c.dataHorario.split(' · ')[0];
+    $d('detailContent').innerHTML = `${v ? `<div class="notice ${v.mudou ? 'warning' : ''}">${v.mudou ? 'O registro mudou depois da revisão de ' + ui.esc(v.nome) + '. Confira e gere de novo.' : 'Revisado por ' + ui.esc(v.nome) + ' (versão ' + v.versao + ').'} <a href="${ui.esc(v.doc)}" target="_blank" rel="noopener">Abrir documento</a></div>` : ''}
+      <p class="small muted">O documento usa o modelo do relato ilustrado. Revise o texto (se quiser, com o Gemini), escolha as fotos e gere. Nada vai para o relatório sem esta revisão.</p>
+      <div class="dialog-actions"><button class="button secondary" type="button" data-rr-prompt>${ui.icon('file')}Copiar prompt</button><a class="button ghost" href="https://gemini.google.com/app" target="_blank" rel="noopener">Abrir o Gemini</a></div>
+      <form id="rrForm" class="stack-form"><div id="rrErro" class="notice" hidden></div>
+        ${campo('titulo', 'Título', 200, c.titulo)}
+        ${campo('objetivo', 'Objetivo', 2000, c.objetivo, true, 2)}
+        ${campo('relato', 'Relato da atividade', 12000, c.relato, true, 8)}
+        ${campo('resultados', 'Resultados e encaminhamentos (opcional)', 4000, c.resultados, true, 3)}
+        <details class="mais-detalhes"><summary>Mais detalhes <small>local, endereço, mediação, equipe, público e interrupção</small></summary><div class="mais-detalhes-corpo">
+          <div class="form-row">${campo('local', 'Local', 200, c.local)}${campo('endereco', 'Endereço e bairro', 300, c.endereco)}</div>
+          <div class="form-row">${campo('mediacao', 'Mediação', 200, c.mediacao)}${campo('equipe', 'Equipe registrada', 400, c.equipe)}</div>
+          <div class="form-row">${campo('publico', 'Público', 300, c.publico)}${campo('interrupcao', 'Interrupção informada (opcional)', 1000, c.interrupcao)}</div></div></details>
+        <fieldset class="rr-fotos"><legend>Fotos do documento (até ${rr.max})</legend>${rr.fotos.length ? rr.fotos.map((f, i) => `<label class="rr-foto"><input type="checkbox" name="foto" value="${ui.esc(f.id)}" ${f.escolhida ? 'checked' : ''}><img src="${ui.esc(f.thumb)}" alt="Foto ${i + 1}" loading="lazy" referrerpolicy="no-referrer"><span>Foto ${i + 1} · <a href="${ui.esc(f.url)}" target="_blank" rel="noopener">abrir</a></span></label>`).join('') : '<p class="muted">O registro não tem fotos.</p>'}</fieldset>
+        <div class="dialog-actions"><button class="button" type="submit">${ui.icon('check')}Revisado: gerar o documento</button></div></form>`;
+  }
+  async function enviarRevisao(f) {
+    const b = f.querySelector('[type=submit]'), dados_ = Object.fromEntries([...new FormData(f)].filter(([k]) => k !== 'foto')), fotos = [...f.querySelectorAll('[name=foto]:checked')].map(x => x.value), err = $d('rrErro');
+    if (fotos.length > rr.max) { err.hidden = false; err.textContent = 'Escolha no máximo ' + rr.max + ' fotos.'; return; }
+    b.disabled = true; b.textContent = 'Gerando o documento… (até 1 minuto)'; err.hidden = true;
+    try {
+      const r = await ui.call('revisarRelatoRelatorioCPT', {...dados_, id: rr.id, fotos, operacaoId: 'OP-' + crypto.randomUUID()});
+      ui.toast(r.resultado); rr.revisao = r.revisao; const x = rel && rel.itens.find(i => i.id === rr.id); if (x) { x.situacao = 'revisado'; x.doc = r.doc; x.revisadoPor = r.revisao.nome; x.revisadoEm = r.revisao.em; }
+      desenharRevisao(); desenharRelatorio();
+    } catch (e) { err.hidden = false; err.textContent = e.message; b.disabled = false; b.innerHTML = ui.icon('check') + 'Revisado: gerar o documento'; }
+  }
+  async function copiarPrompt() {
+    try { await navigator.clipboard.writeText(rr.prompt); ui.toast('Prompt copiado. Cole no Gemini, revise e traga o texto para os campos.'); }
+    catch (_) { ui.toast('Não deu para copiar o prompt neste navegador.'); }
+  }
   async function abrirRdas(btn) {
     // A janela abre já no clique (o navegador não bloqueia) e recebe o endereço quando a ficha é achada.
     const w = window.open('', '_blank'), txt = btn.textContent; btn.disabled = true; btn.textContent = 'Procurando a ficha…';
@@ -65,7 +135,10 @@ window.CPTRelatos = (() => {
   }
   function init(api) {
     ui = api;
+    document.addEventListener('click', e => { const ir = e.target.closest && e.target.closest('[data-relatos-ir]'); if (ir) parte = ir.dataset.relatosIr; }, true);
     document.addEventListener('click', e => {
+      const rv = e.target.closest('[data-rr-revisar]'); if (rv) { abrirRevisao(rv.dataset.rrRevisar); return; }
+      if (e.target.closest('[data-rr-prompt]') && rr) { copiarPrompt(); return; }
       if (ui.state.route !== 'registros') return;
       const t = e.target.closest('[data-rel-parte],[data-rel-rdas],[data-rel-mais]'); if (!t) return;
       if (t.dataset.relParte) { if (t.dataset.relParte === parte) return; parte = t.dataset.relParte; if (parte === 'relatos') ui.state.filters = {busca: '', procedimento: '', bairro: '', obra: '', pendencia: ''}; render(); return; }
@@ -77,7 +150,10 @@ window.CPTRelatos = (() => {
       filtro.busca = e.target.value; limite = POR_VEZ; clearTimeout(buscaTimer);
       buscaTimer = setTimeout(() => { if ($('relBusca')) desenhar(true); }, 220);
     });
+    document.addEventListener('submit', e => { if (e.target.id === 'rrForm') { e.preventDefault(); enviarRevisao(e.target); } });
     document.addEventListener('change', e => {
+      if (e.target.name === 'foto' && e.target.closest('#rrForm') && rr && e.target.checked && e.target.closest('#rrForm').querySelectorAll('[name=foto]:checked').length > rr.max) { e.target.checked = false; ui.toast('Escolha no máximo ' + rr.max + ' fotos.'); return; }
+      if (e.target.id === 'rrTipo') { filtroTipo = e.target.value; desenharRelatorio(); return; }
       if (ui.state.route !== 'registros') return;
       if (e.target.id === 'relBairro') { filtro.bairro = e.target.value; limite = POR_VEZ; desenhar(); }
       else if (e.target.dataset.relChip) { filtro[e.target.dataset.relChip] = e.target.checked; limite = POR_VEZ; desenhar(); }

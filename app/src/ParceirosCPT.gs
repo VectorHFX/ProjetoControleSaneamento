@@ -35,7 +35,8 @@ class ParceirosCPT {
   static get textos() { return {18: {chave: 'saneamento', rotulo: 'transcreva os depoimentos dos participantes sobre os servicos de saneamento'}, 20: {chave: 'qualidade', rotulo: 'transcreva os depoimentos dos participantes sobre a qualidade de vida'}}; }
 
   constructor(ctx) { this.ctx = ctx; this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil); this.fuso = 'America/Sao_Paulo'; }
-  static id() { return ConectoresCPT.id('parceiros'); }
+  /** A máscara em Excel no Drive foi trocada pela Planilha Google em 07/10/2026: se o endereço antigo estiver salvo, vale o novo. */
+  static id() { const id = ConectoresCPT.id('parceiros'); return id === '1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m' ? ConectoresCPT.item('parceiros').padrao : id; }
   static link() { return 'https://docs.google.com/spreadsheets/d/' + ParceirosCPT.id() + '/edit'; }
   abrir() {
     let ss;
