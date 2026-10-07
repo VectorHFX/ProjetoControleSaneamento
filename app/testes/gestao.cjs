@@ -119,7 +119,7 @@ console.log('PASS: auditoria — recebidos parados, acima de 30 dias, sem próxi
 
 // 6. Conectores e trava.
 email='gestao@example.com';assert.throws(()=>run('conferirConectoresCPT()'),/administração técnica/);assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'https://docs.google.com/spreadsheets/d/NOVOIDNOVOIDNOVOIDNOVOID123/edit'})"),/administração técnica/);
-email='victor@example.com';const c=run('conferirConectoresCPT()');assert.equal(c.travada,true);assert.equal(c.conectores.length,5);assert.ok(c.conectores.every(x=>x.ok));
+email='victor@example.com';const c=run('conferirConectoresCPT()');assert.equal(c.travada,true);assert.equal(c.conectores.length,6);assert.ok(c.conectores.every(x=>x.ok));
 assert.ok(c.pastas.some(x=>x.nome==='Fotos (File responses)'&&x.equipeVe===true),'pasta das fotos encontrada pelos registros');
 run("configurarConectorCPT({chave:'rdas',id:'https://docs.google.com/spreadsheets/d/NOVOIDNOVOIDNOVOIDNOVOID123/edit#gid=0'})");assert.equal(JSON.parse(props.get('CPT_CONECTORES')).rdas.id,'NOVOIDNOVOIDNOVOIDNOVOID123');
 assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'sem-acesso-sem-acesso-123'})"),/não abre/);

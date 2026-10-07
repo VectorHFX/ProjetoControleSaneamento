@@ -23,6 +23,18 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.41.0 — Programa Parceiros: números automáticos e depoimentos com o Gemini (≈ 5 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.41.0`, Nova versão). Arquivo novo: `ParceirosCPT` (script); o atualizador cria. Nenhuma permissão nova. A rotina das 12h e 0h ganhou o passo do Programa Parceiros.
+2. **A máscara precisa ser Planilha Google.** O endereço conhecido (`1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m`) parece ser um arquivo Excel no Drive. Se a aba mostrar o aviso: abra no Drive → **Arquivo → Salvar como Planilhas Google** → copie o endereço → **Conectores e pastas → Máscara do Programa Parceiros** → cole e salve (ou me mande o link, como fez com os Anexos).
+3. **Visão do mês → aba Programa Parceiros** (Gestão e Administrativo). Ao abrir, confere sem gravar; **Atualizar agora** grava. Números automáticos na coluna do mês, cada um com nota de fonte:
+   - 8 e 9: ações do mês abertas à comunidade e pessoas presentes (fora diagnósticos, DDS, ações internas e articulação institucional);
+   - 17 e 19: médias das notas das pesquisas de satisfação (serviços de saneamento; melhoria na qualidade de vida, só de quem respondeu);
+   - 23 a 28: entradas e concluídas de elogio, solicitação e reclamação; 29: reclamações "Não procedente";
+   - 31: prazo médio (dias entre abertura e conclusão das fichas concluídas no mês); 32: publicações concluídas em Materiais.
+   O resto da máscara continua à mão. Mês atual e, até o dia 10, o anterior; nunca antes da primeira gravação. Se o bloco do mês ainda não existir na linha 2, ele é criado copiando a formatação do último bloco (ex.: "Outubro/2026").
+4. **Depoimentos (linhas 18 e 20):** na mesma aba, para o mês escolhido em Competência: **Copiar prompt** (as respostas abertas das pesquisas, já sem nomes, telefones e e-mails, com as regras: texto curto, sem inventar dados, com abstrações como "sem notas de qualidade de vida = sem alteração percebida") → **Abrir o Gemini** → cole, revise → cole os dois textos na tela → **Gravar na máscara**. Fica registrado quem gravou e quando.
+
 ## Atualização 2.40.1 — revisão das entregas 2.38 a 2.40 (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.40.1`, Nova versão). Nada a configurar.

@@ -17,6 +17,8 @@ class ConectoresCPT {
         uso: 'Painel anterior da gestão. As visões dele agora estão na aplicação (Painel da gestão).'},
       {chave: 'anexos', nome: 'Anexos do relatório (planilha oficial)', tipo: 'planilha', padrao: '1Lxm4a6qs9XGwhGokUTYUBcOuCWQssOEWlOBsU3R3REc',
         uso: 'A aplicação mantém o Controle de manifestações e as linhas automáticas dos Indicadores 2026 (12h, 0h e Atualizar agora). Precisa ser Planilha Google.'},
+      {chave: 'parceiros', nome: 'Máscara do Programa Parceiros', tipo: 'planilha', padrao: '1ekpoNrPSdIbc18YxWp5ncQsTiWluS--m',
+        uso: 'A aplicação escreve os números automáticos e, depois de revisados, os textos das linhas 18 e 20. Precisa ser Planilha Google.'},
       {chave: 'contrato', nome: 'Planilha de controle do contrato', tipo: 'planilha', padrao: '1pQJ5B8wRzsdlU8udlh9ZzcWXozT3BOh4', aba: 733716505,
         uso: 'Preenchida 100% à mão pela Gestão, todo mês. A aplicação só abre o link e lembra (Visão do mês · Contrato); nunca escreve nela.'}
     ];

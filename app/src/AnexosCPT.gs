@@ -277,9 +277,9 @@ class AnexosCPT {
   }
   static ultima() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(AnexosCPT.chaveUltima) || 'null'); } catch (_) { return null; } }
   /** Uma atualização por vez (tela ou rotina). */
-  static sozinho(fn) {
-    const cache = CacheService.getScriptCache(), chave = 'CPT_ANEXOS_LOTE', ja = cache.get(chave);
-    if (ja) throw new Error('Os Anexos já estão sendo atualizados (desde ' + ja + '). Tente de novo em alguns minutos.');
+  static sozinho(fn, chave, nome) {
+    chave = chave || 'CPT_ANEXOS_LOTE'; const cache = CacheService.getScriptCache(), ja = cache.get(chave);
+    if (ja) throw new Error((nome || 'Os Anexos') + ' já está sendo atualizad' + (nome ? 'a' : 'os') + ' (desde ' + ja + '). Tente de novo em alguns minutos.');
     cache.put(chave, Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'HH:mm'), 600);
     try { return fn(); } finally { cache.remove(chave); }
   }

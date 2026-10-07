@@ -4,16 +4,18 @@
  * - Fichas oficiais: gera as que faltam ou mudaram e move para a pasta organizada (FichaOficialCPT.atualizarTodas).
  * - Matriz de Contatos (2.40): contatos aprovados que ficaram "a gravar" na planilha.
  * - Anexos do relatório (2.39): Controle de manifestações e linhas automáticas dos Indicadores (AnexosCPT).
+ * - Programa Parceiros (2.41): números automáticos da máscara (ParceirosCPT).
  * O resultado da última rodada fica guardado (CPT_ROTINA) e aparece na tela das fichas.
  */
 class RotinaCPT {
   static get chave() { return 'CPT_ROTINA'; }
   /** Passos em ordem, com o tempo de cada um (segundos); o total fica abaixo dos 6 minutos do Apps Script. */
   static get passos() {
-    return [{id: 'fichas', nome: 'Fichas oficiais', segundos: 180, fazer: (ctx, s) => { const r = new FichaOficialCPT(ctx).atualizarTodas(s); return r.geradas + ' gerada(s), ' + r.movidas + ' movida(s)' + (r.faltam ? ', ' + r.faltam + ' para a próxima rodada' : '') + (r.erros.length ? ', ' + r.erros.length + ' com erro' : ''); }},
+    return [{id: 'fichas', nome: 'Fichas oficiais', segundos: 150, fazer: (ctx, s) => { const r = new FichaOficialCPT(ctx).atualizarTodas(s); return r.geradas + ' gerada(s), ' + r.movidas + ' movida(s)' + (r.faltam ? ', ' + r.faltam + ' para a próxima rodada' : '') + (r.erros.length ? ', ' + r.erros.length + ' com erro' : ''); }},
       // 2.39: depois das fichas, os Anexos leem os dados oficiais já em dia.
       {id: 'matriz', nome: 'Matriz de Contatos', segundos: 30, fazer: ctx => { const r = new MatrizCPT(ctx).gravarPendentes(); return r.gravados + ' gravado(s) na Matriz' + (r.faltam ? ', ' + r.faltam + ' ainda a gravar' + (r.erro ? ' (' + r.erro + ')' : '') : ''); }},
-      {id: 'anexos', nome: 'Anexos do relatório', segundos: 90, fazer: ctx => AnexosCPT.texto(AnexosCPT.resumir(AnexosCPT.sozinho(() => new AnexosCPT(ctx).rodar(true)))) }];
+      {id: 'anexos', nome: 'Anexos do relatório', segundos: 90, fazer: ctx => AnexosCPT.texto(AnexosCPT.resumir(AnexosCPT.sozinho(() => new AnexosCPT(ctx).rodar(true)))) },
+      {id: 'parceiros', nome: 'Programa Parceiros', segundos: 45, fazer: ctx => ParceirosCPT.texto(AnexosCPT.sozinho(() => new ParceirosCPT(ctx).rodar(true), 'CPT_PARCEIROS_LOTE', 'A máscara do Programa Parceiros')) }];
   }
   static ultima() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(RotinaCPT.chave) || 'null'); } catch (_) { return null; } }
   static rodar() {

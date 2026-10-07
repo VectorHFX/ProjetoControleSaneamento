@@ -3,6 +3,8 @@
  * Gestão 2.7.0 — Painel da gestão (contrato, frentes de serviço, relatos em resumo) e Conectores.
  * Painel: só leitura, com o que pede atenção primeiro. Frentes e relatos abrem o registro ou a ficha de sempre.
  * 2.27: o Programa Parceiros saiu da aplicação junto com o fechamento do relatório.
+ * 2.41: aba "Programa Parceiros": números automáticos da máscara (conferir/atualizar), "Copiar prompt" com os depoimentos do
+ *      mês (sem nomes) para o Gemini e os textos revisados gravados nas linhas 18 e 20.
  * 2.39: aba "Anexos do relatório": confere (sem gravar) o Controle de manifestações e as linhas automáticas dos Indicadores
  *      e atualiza na hora; a rotina das 12h e 0h faz o mesmo sozinha.
  */
@@ -44,7 +46,7 @@ window.CPTGestao = (() => {
   // 2.11: o painel vive dentro da Visão do mês, em abas (Resumo do mês · Contrato · Frentes · Relatos).
   async function renderPainel(atualizar = false) {
     const mine = ++ticket, mes = ui.state.mes;
-    if (atualizar) { comparacao = null; anexos = null; }
+    if (atualizar) { comparacao = null; anexos = null; parceiros = null; }
     if (!painel || painel.mes !== mes) { relatos = null; ui.view.innerHTML = abas() + '<div class="loading-label"><span class="spinner"></span>Reunindo os números do mês…</div><div class="stat-row">' + '<div class="skeleton"></div>'.repeat(4) + '</div>'; }
     try {
       const d = await ui.call('carregarPainelGestaoCPT', {mes, atualizar}); if (mine !== ticket || ui.state.route !== 'painel') return;
@@ -54,15 +56,16 @@ window.CPTGestao = (() => {
   /** Abas da Visão do mês para a gestão. sel: aba marcada ('resumo' na própria Visão do mês). */
   function abas(sel) {
     const atual = sel || aba;
-    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['cronograma', 'Cronograma']].concat(ui.state.route === 'painel' || ui.podeVer('painel') ? [['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo'], ['anexos', 'Anexos do relatório']] : []).map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
+    return `<div class="segmented painel-tabs mes-tabs" role="tablist" aria-label="Partes da Visão do mês">${[['resumo', 'Resumo do mês'], ['cronograma', 'Cronograma']].concat(ui.state.route === 'painel' || ui.podeVer('painel') ? [['contrato', 'Contrato'], ['frentes', 'Frentes de serviço'], ['relatos', 'Relatos em resumo'], ['anexos', 'Anexos do relatório'], ['parceiros', 'Programa Parceiros']] : []).map(([k, n]) => `<button role="tab" aria-selected="${atual === k}" class="${atual === k ? 'chosen' : ''}" data-painel-aba="${k}">${n}</button>`).join('')}</div>`;
   }
   function desenharPainel() {
-    const corpo = aba === 'frentes' ? frentes() : aba === 'anexos' ? '<div id="anexosBox"></div>' : aba === 'relatos' ? '<div id="relatosQualidade"></div><div id="relatosResumo"></div>' : contrato();
+    const corpo = aba === 'frentes' ? frentes() : aba === 'anexos' ? '<div id="anexosBox"></div>' : aba === 'parceiros' ? '<div id="parceirosBox"></div>' : aba === 'relatos' ? '<div id="relatosQualidade"></div><div id="relatosResumo"></div>' : contrato();
     ui.view.innerHTML = abas() + `<div class="painel-body">${corpo}</div><p class="small muted painel-foot">Atualizado às ${new Date(painel.atualizadoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'})}. Use o botão Atualizar no topo para recalcular.</p>`;
     if (aba === 'contrato') carregarControle();
     if (aba === 'relatos') { carregarQualidade(); carregarRelatos(); }
     if (aba === 'frentes') carregarComparacao();
     if (aba === 'anexos') carregarAnexos();
+    if (aba === 'parceiros') carregarParceiros();
   }
   function contrato() {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
@@ -143,12 +146,63 @@ window.CPTGestao = (() => {
     finally { anexosOcupado = false; }
     if (ui.state.route === 'painel' && aba === 'anexos') desenharAnexos();
   }
+  // ---------- Programa Parceiros (2.41) ----------
+  let parceiros = null, parceirosOcupado = false;
+  async function carregarParceiros(gravar = false) {
+    const box = $('parceirosBox'), mes = ui.state.mes; if (!box || parceirosOcupado) return;
+    if (parceiros && parceiros.mes === mes && !gravar) { desenharParceiros(); return; }
+    box.innerHTML = `<section class="panel"><div class="loading-label"><span class="spinner"></span>${gravar ? 'Atualizando a máscara…' : 'Conferindo a máscara e reunindo os depoimentos do mês…'}</div></section>`;
+    parceirosOcupado = true;
+    try {
+      if (gravar) { const r = await ui.call('atualizarParceirosCPT'); ui.toast('Máscara atualizada.'); parceiros = {...(parceiros || {}), numeros: r, erro: ''}; }
+      else parceiros = await ui.call('carregarParceirosCPT', {mes});
+    } catch (e) { const b = $('parceirosBox'); if (b) b.innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; return; }
+    finally { parceirosOcupado = false; }
+    if (ui.state.route === 'painel' && aba === 'parceiros') desenharParceiros();
+  }
+  function desenharParceiros() {
+    const box = $('parceirosBox'), P = parceiros; if (!box || !P) return;
+    const n = P.numeros, d = P.depoimentos, t = P.textos || {}, link = ui.safeURL(P.link), u = P.ultima;
+    const numeros = n ? n.meses.map(m => m.semBloco ? tabelaLinhas(m, false, ' · o bloco do mês ainda não existe na máscara: é criado ao atualizar') : tabelaLinhas(m, n.gravado, m.criado ? ' · bloco do mês criado agora' : '')).join('') : `<div class="notice warning">${ui.esc(P.erro)}</div>`;
+    box.innerHTML = `<section class="panel anexos-topo"><div class="panel-head"><div><span class="eyebrow">MÁSCARA DE LANÇAMENTO</span><h2>Programa Parceiros</h2>
+        <p>${n && n.gravado ? 'Atualizado agora.' : 'Conferido agora: nada foi gravado.'} ${u ? 'Última gravação: ' + ui.esc(quando(u.em)) + '.' : 'Ainda não foi gravada pela aplicação.'} A rotina das 12h e 0h atualiza os números sozinha; o resto da máscara é preenchido à mão.</p></div></div>
+        <div class="dialog-actions"><button class="button" data-parceiros-atualizar ${n ? '' : 'disabled'}>${ui.icon('refresh')}Atualizar agora</button>${link ? `<a class="button secondary" href="${ui.esc(link)}" target="_blank" rel="noopener">Abrir máscara</a>` : ''}</div></section>
+      <div class="painel-grid">
+        <section class="panel wide"><div class="panel-head"><div><span class="eyebrow">NÚMEROS AUTOMÁTICOS</span><h2>Linhas 8, 9, 17, 19, 23 a 29, 31 e 32</h2><p>Cada célula ganha uma nota com a fonte. Rótulo diferente do esperado ou célula com fórmula: a linha é pulada.</p></div></div>${numeros}</section>
+        <section class="panel wide pp-depo"><div class="panel-head"><div><span class="eyebrow">DEPOIMENTOS · ${ui.esc(mesLongo(P.mes).toUpperCase())}</span><h2>Linhas 18 e 20 com ajuda do Gemini</h2><p>1. Copie o prompt (já sem nomes, telefones e e-mails) e cole no Gemini. 2. Revise o texto. 3. Cole abaixo e grave na máscara.</p></div></div>
+          <section class="stat-row" aria-label="Pesquisas do mês">${tile('Pesquisas', ui.num(d.pesquisas), 'Pesquisas de satisfação no mês.')}${tile('Sobre saneamento', ui.num(d.saneamento.respostas.length), 'Respostas abertas (nota média ' + (d.saneamento.media === '' ? '—' : d.saneamento.media) + ').')}${tile('Qualidade de vida', ui.num(d.qualidade.sim) + '<small> sim</small>', d.qualidade.nao + ' não · ' + d.qualidade.semResposta + ' sem resposta.')}${tile('Notas de melhoria', ui.num(d.qualidade.notas), 'Média ' + (d.qualidade.media === '' ? '—' : d.qualidade.media) + '. Sem notas = sem alteração percebida.')}</section>
+          <div class="dialog-actions"><button class="button" data-parceiros-prompt>${ui.icon('file')}Copiar prompt</button><a class="button secondary" href="https://gemini.google.com/app" target="_blank" rel="noopener">Abrir o Gemini</a></div>
+          <details class="mais-detalhes"><summary>Ver o prompt</summary><pre class="pp-prompt">${ui.esc(P.prompt)}</pre></details>
+          <form id="ppTextos" class="stack-form"><div id="ppErro" class="notice" hidden></div>
+            <label class="field">Serviços de saneamento (linha 18)<textarea name="saneamento" rows="3" maxlength="3000" placeholder="Cole aqui o texto revisado.">${ui.esc(t.saneamento || '')}</textarea></label>
+            <label class="field">Qualidade de vida (linha 20)<textarea name="qualidade" rows="3" maxlength="3000" placeholder="Cole aqui o texto revisado.">${ui.esc(t.qualidade || '')}</textarea></label>
+            <div class="dialog-actions"><button class="button" type="submit">Gravar na máscara</button>${t.em ? `<span class="small muted">Gravado por ${ui.esc(t.nome)} em ${ui.esc(quando(t.em))}.</span>` : ''}</div></form></section>
+      </div>`;
+  }
+  async function copiarPrompt() {
+    const txt = parceiros && parceiros.prompt; if (!txt) return;
+    try { await navigator.clipboard.writeText(txt); ui.toast('Prompt copiado. Cole no Gemini e revise o texto antes de gravar.'); }
+    catch (_) { const ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;left:-9999px'; document.body.append(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (_) {} ta.remove(); ui.toast(ok ? 'Prompt copiado. Cole no Gemini e revise o texto antes de gravar.' : 'Não deu para copiar: abra "Ver o prompt" e copie à mão.'); }
+  }
+  const opsPP = new Map();
+  async function gravarTextos(f) {
+    const b = f.querySelector('[type=submit]'), dados = {mes: parceiros.mes, saneamento: f.elements.saneamento.value, qualidade: f.elements.qualidade.value}, sig = JSON.stringify(dados);
+    if (!opsPP.has(sig)) opsPP.set(sig, 'OP-' + crypto.randomUUID()); b.disabled = true; const e0 = $('ppErro'); if (e0) e0.hidden = true;
+    try { const r = await ui.call('gravarTextosParceirosCPT', {...dados, operacaoId: opsPP.get(sig)}); parceiros.textos = {saneamento: r.textos.saneamento, qualidade: r.textos.qualidade, nome: r.textos.nome, em: r.textos.gravadoEm}; ui.toast(r.resultado); desenharParceiros(); }
+    catch (e) { const x = $('ppErro'); if (x) { x.hidden = false; x.textContent = e.message; } b.disabled = false; }
+  }
+  /** Linhas automáticas de um mês (Anexos e Programa Parceiros): o que está na planilha, o calculado, a fonte e a situação. */
+  function tabelaLinhas(m, gravado, extra = '') {
+    if (m.erro) return `<div class="notice warning">${ui.esc(m.erro)}</div>`;
+    const selo = x => x.situacao === 'muda' ? `<span class="badge orange">${gravado ? 'Atualizado' : 'Vai mudar'}</span>` : x.situacao === 'igual' ? '<span class="badge green">Igual</span>' : `<span class="badge">${{formula: 'Fórmula', 'sem dado': 'Sem dado'}[x.situacao] || 'Pulada'}</span>`;
+    const val = v => v === '' || v == null ? '—' : typeof v === 'number' ? ui.num(v) : ui.esc(String(v));
+    return `<div class="tabela-rolagem"><table class="anexos-ind"><caption>${ui.esc(mesLongo(m.mes).replace(/^./, x => x.toUpperCase()))}${extra}</caption><thead><tr><th scope="col">Linha</th><th scope="col">Indicador</th><th scope="col" class="num">Na planilha</th><th scope="col" class="num">Calculado</th><th scope="col">Fonte</th><th scope="col"><span class="sr-only">Situação</span></th></tr></thead>
+      <tbody>${m.linhas.map(x => `<tr class="${x.situacao === 'muda' ? 'is-muda' : ''}"><td>${x.linha}</td><td>${ui.esc(x.rotulo)}${x.aviso ? `<small class="alert-detalhe">${ui.esc(x.aviso)}</small>` : ''}</td><td class="num">${val(x.atual)}</td><td class="num"><strong>${val(x.valor)}</strong></td><td class="small muted">${ui.esc(x.fonte)}</td><td>${selo(x)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
   function desenharAnexos() {
     const box = $('anexosBox'); if (!box || !anexos) return;
     const a = anexos, c = a.controle, u = a.ultima, link = ui.safeURL(a.links.planilha), xlsx = ui.safeURL(a.links.xlsx);
-    const selo = x => x.situacao === 'muda' ? `<span class="badge orange">${a.gravado ? 'Atualizado' : 'Vai mudar'}</span>` : x.situacao === 'igual' ? '<span class="badge green">Igual</span>' : `<span class="badge">${x.situacao === 'formula' ? 'Fórmula' : 'Pulada'}</span>`;
-    const tabela = m => m.erro ? `<div class="notice warning">${ui.esc(m.erro)}</div>` : `<div class="tabela-rolagem"><table class="anexos-ind"><caption>${ui.esc(mesLongo(m.mes).replace(/^./, x => x.toUpperCase()))}</caption><thead><tr><th scope="col">Linha</th><th scope="col">Indicador</th><th scope="col" class="num">Na planilha</th><th scope="col" class="num">Calculado</th><th scope="col">Fonte</th><th scope="col"><span class="sr-only">Situação</span></th></tr></thead>
-      <tbody>${m.linhas.map(x => `<tr class="${x.situacao === 'muda' ? 'is-muda' : ''}"><td>${x.linha}</td><td>${ui.esc(x.rotulo)}${x.aviso ? `<small class="alert-detalhe">${ui.esc(x.aviso)}</small>` : ''}</td><td class="num">${x.atual === '' || x.atual == null ? '—' : ui.esc(String(x.atual))}</td><td class="num"><strong>${ui.num(x.valor)}</strong></td><td class="small muted">${ui.esc(x.fonte)}</td><td>${selo(x)}</td></tr>`).join('')}</tbody></table></div>`;
+    const tabela = m => tabelaLinhas(m, a.gravado);
     const lista = (t, ids) => ids.length ? `<p class="small"><strong>${t}:</strong> ${ids.slice(0, 12).map(ui.esc).join(', ')}${ids.length > 12 ? ' e mais ' + (ids.length - 12) : ''}</p>` : '';
     box.innerHTML = `<section class="panel anexos-topo"><div class="panel-head"><div><span class="eyebrow">PLANILHA OFICIAL</span><h2>Anexos do relatório</h2>
         <p>${a.gravado ? 'Atualizado agora.' : 'Conferido agora: nada foi gravado.'} ${u ? 'Última gravação: ' + ui.esc(quando(u.em)) + '.' : 'Ainda não foi gravada pela aplicação.'} A rotina das 12h e 0h atualiza sozinha.</p></div></div>
@@ -283,6 +337,8 @@ window.CPTGestao = (() => {
     document.addEventListener('click', e => {
       const t = e.target.closest('[data-painel-aba]'); if (t) { if (t.dataset.painelAba === 'resumo') { ui.navigate('inicio'); return; } if (t.dataset.painelAba === 'cronograma') { ui.navigate('cronograma'); return; } aba = t.dataset.painelAba; if (ui.state.route !== 'painel') ui.navigate('painel'); else if (painel) desenharPainel(); return; }
       if (e.target.closest('[data-anexos-atualizar]')) { carregarAnexos(true); return; }
+      if (e.target.closest('[data-parceiros-atualizar]')) { carregarParceiros(true); return; }
+      if (e.target.closest('[data-parceiros-prompt]')) { copiarPrompt(); return; }
       const cm = e.target.closest('[data-controle-marcar]'); if (cm) { marcarControle(cm.dataset.controleMarcar === 'sim'); return; }
       const f = e.target.closest('[data-frente]'); if (f) { abrirFrente(Number(f.dataset.frente)); return; }
       const dv = e.target.closest('[data-devolver]'); if (dv) { abrirDevolver(dv.dataset.devolver); return; }
@@ -306,6 +362,7 @@ window.CPTGestao = (() => {
       const f = e.target.closest('#frenteFiltro'); if (f && e.target.name === 'andamento') { filtroFrente.andamento = e.target.checked; desenharPainel(); return; }
       const r = e.target.closest('#relatoFiltro'); if (r && e.target.name === 'item') { filtroRelato.item = e.target.value; desenharRelatos(); }
     });
+    document.addEventListener('submit', e => { if (e.target.id === 'ppTextos') { e.preventDefault(); gravarTextos(e.target); } });
     document.addEventListener('submit', async e => {
       const f = e.target.closest('.connector-form'); if (!f) return; e.preventDefault();
       const b = f.querySelector('button'); b.disabled = true;
