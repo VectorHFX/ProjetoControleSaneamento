@@ -23,6 +23,12 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.42.1 — revisão das entregas 2.41 e 2.42 (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.42.1`, Nova versão). Nada a configurar.
+2. **Meu espaço mais leve:** as missões "Caso do dia" ficam em cache e só são recalculadas quando um caso muda (pela aplicação ou pelo Campo 4.0).
+3. **Programa Parceiros:** a conferência lê os atendimentos uma vez só, mesmo quando confere dois meses (até o dia 10).
+
 ## Atualização 2.42.0 — o dia e o mês do atendimento (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.42.0`, Nova versão). Arquivo novo: `AtendimentoDiaCPT` (script); o atualizador cria. Nenhuma permissão nova. **Nenhum e-mail é enviado pela aplicação.**

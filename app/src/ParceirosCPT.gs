@@ -100,7 +100,7 @@ class ParceirosCPT {
   static nota(v) { const s = String(v == null ? '' : v).trim().replace(',', '.'), n = Number(s); return s !== '' && isFinite(n) && n >= 0 && n <= 10 ? n : null; }
   static media(l) { const v = l.filter(n => n !== null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length * 10) / 10 : ''; }
   numeros(mes) {
-    const N = ParceirosCPT.norm, relatos = PaineisGestaoCPT.relatosDoMes(this.dados, this.ctx, mes).itens, fichas = new AnexosCPT(this.ctx).fichas(), pesq = this.pesquisas(mes);
+    const N = ParceirosCPT.norm, relatos = PaineisGestaoCPT.relatosDoMes(this.dados, this.ctx, mes).itens, fichas = (this._anexos || (this._anexos = new AnexosCPT(this.ctx))).fichas(), pesq = this.pesquisas(mes);
     // Mesma regra de antes: ações dos itens 3, 4.x e 7 abertas à comunidade (fora diagnósticos, DDS/ações internas e articulação).
     const abertas = relatos.filter(r => ['3', '4.1', '4.2', '4.3', '4.4', '4.5', '7'].includes(r.item) && !/articulacao/.test(N(r.atividade)));
     const entrou = x => x.abertura.startsWith(mes), saiu = x => x.concluido && x.conclusao.startsWith(mes), tipo = (x, re) => re.test(x.tipo);

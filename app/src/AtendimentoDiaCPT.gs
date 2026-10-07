@@ -72,6 +72,11 @@ class AtendimentoDiaCPT {
   missoes() {
     if (!AtendimentoDiaCPT.recebe(this.ctx.perfil)) return [];
     const m = this.deHoje(); if (!m) return [];
+    // Em cache pela mensagem e pela versão dos atendimentos (sobe a cada ação num caso): abrir o Meu espaço não relê a base.
+    const a = this.dados.atendimentos(), mov = this.ctx.base.getSheetByName('Movimentações'), chave = 'missao-dia:' + this.ctx.config.baseId + ':' + m.id + ':' + m.versao + ':' + a.getLastRow() + ':' + (mov ? mov.getLastRow() : 0) + ':' + (PropertiesService.getScriptProperties().getProperty('CPT_ATD_VERSAO') || 0);
+    return CacheCPT.obter(chave, 600, () => this.missoesDe(m));
+  }
+  missoesDe(m) {
     const casos = new Map(this.casos().map(c => [c.protocolo, c]));
     return m.escolhidos.filter(e => { const c = casos.get(e.protocolo); return c && !c.concluido && !(c.alteradoEm && c.alteradoEm > m.publicadaEm); })
       .map(e => ({id: 'caso-do-dia:' + e.protocolo, titulo: 'Caso do dia: ' + AtendimentoDiaCPT.rotulo(e), texto: (e.area ? 'Com ' + e.area + '. ' : '') + (e.proximaAcao ? 'Próxima ação: ' + e.proximaAcao + '. ' : '') + 'Registre o andamento na ficha.', tipo: 'caso', protocolo: e.protocolo}));

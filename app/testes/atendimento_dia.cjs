@@ -43,7 +43,7 @@ const miss=()=>run('new AtendimentoDiaCPT(AplicacaoCPT.identidade()).missoes()')
 for(const e of ['atd@example.com','com@example.com','adm@example.com']){email=e;assert.deepEqual(miss().map(m=>m.protocolo),['ATD20260002','ATD20260003'],e);}
 email='social@example.com';assert.deepEqual(miss(),[]);assert.equal(run('mensagemDiaCPT()').mensagem,null);
 email='atd@example.com';assert.match(run('mensagemDiaCPT()').mensagem.texto,/Para trabalhar hoje/);assert.equal(miss()[0].tipo,'caso');
-atd.rows[2][13]='2026-10-07T13:00:00.000Z';assert.deepEqual(miss().map(m=>m.protocolo),['ATD20260003'],'caso 2 atualizado depois da mensagem: missão cumprida');
+atd.rows[2][13]='2026-10-07T13:00:00.000Z';props.set('CPT_ATD_VERSAO','1');assert.deepEqual(miss().map(m=>m.protocolo),['ATD20260003'],'caso 2 atualizado depois da mensagem: missão cumprida');
 // 4. No dia seguinte: "desde" passa a ser o dia da última mensagem e as missões de ontem somem.
 agoraMs=RealDate.parse('2026-10-08T12:00:00Z');email='adm@example.com';r=run('preparoMensagemDiaCPT()');assert.equal(r.desde,'2026-10-07');assert.equal(r.atual,null);email='atd@example.com';assert.deepEqual(miss(),[]);
 // 5. E-mail de setembro: casos do pacote (abertos no mês, concluídos no mês, em andamento no fim do mês), nome completo, com quem está, observações e link do pacote.
