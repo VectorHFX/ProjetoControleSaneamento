@@ -3,7 +3,7 @@
  * Implantação: executar como o PROPRIETÁRIO, acesso "Qualquer pessoa em veolia.com".
  * A equipe não precisa de compartilhamento nas planilhas: a autorização é feita aqui, pelo cadastro.
  */
-const VERSAO_CPT = '2.46.0';
+const VERSAO_CPT = '2.46.1';
 
 /**
  * Cada planilha é aberta uma vez por execução e reaproveitada (o equivalente a um "pool" de conexões no Apps Script).
@@ -36,6 +36,7 @@ class AplicacaoCPT {
   static identidade() {
     const email = this.conta(), c = this.config();
     if (c.dominio && !email.endsWith('@' + c.dominio)) throw new Error('Esta aplicação é exclusiva para contas @' + c.dominio + '. Você entrou como ' + email + '.');
+    if (typeof LEITURAS_CPT_ !== 'undefined') LEITURAS_CPT_.clear(); // 2.46.1: leituras da aba Registros desta execução
     if (typeof ObrasDoDiaCPT !== 'undefined') ObrasDoDiaCPT.iniciar(c); // vínculos de "outra obra" são relidos uma vez nesta execução
     // emTeste: a tela esconde as páginas novas (marcadas emTeste nas ROTAS) de quem não é o proprietário até liberar.
     const perfil = PerfisCPT.obter(email, c); perfil.emTeste = PerfisCPT.travada();

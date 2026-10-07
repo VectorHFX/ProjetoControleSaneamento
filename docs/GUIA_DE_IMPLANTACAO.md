@@ -23,6 +23,17 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.46.1 — revisão das entregas 2.43–2.46 e tempo de resposta (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.46.1`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova.
+2. **Mais rápido ao abrir** (medido com uma base fictícia de 4.000 registros; o número exato depende da base real):
+   - **Meu espaço:** com o cache em dia, de ~15 chamadas à planilha para 1 (a última linha de cada coleção fica guardada a cada gravação).
+   - **Missões:** de 23 para 11 chamadas com cache; logo depois de chegar formulário novo (cache vencido), de ~119 para ~49 e de ~470 mil para ~98 mil células lidas — a aba Registros passa a ser lida uma vez por pedido, e não uma vez por missão.
+   - **Obras** (tela, busca e catálogo usado no mapa, painéis e diagnósticos): a aba Obras e a aba Bairros são lidas numa chamada cada.
+   - **Diagnósticos:** o resumo de cada diagnóstico fica numa aba nova, **"Índice dos diagnósticos"**, na planilha de dados da aplicação (criada sozinha; pode apagar que refaz). Os detalhes de cada registro são lidos uma vez só.
+3. **Correções:** a agenda não quebra mais para quem não é da gestão se algum evento antigo estiver sem responsável; o documento da obra lê os diagnósticos antes de ser criado (se a base mudar, não fica documento pela metade).
+4. Nada muda nas telas. Linha acrescentada **à mão** numa aba de coleção (Recados, Contatos…) aparece em até 1 hora; pela aplicação, na hora, como sempre.
+
 ## Atualização 2.46.0 — diagnósticos por obra (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.46.0`, Nova versão). Arquivos novos: `DiagnosticosCPT` (script) e `Diagnosticos` (HTML); o atualizador cria. Nenhuma permissão nova (Docs e Drive já são usados pelos relatos).

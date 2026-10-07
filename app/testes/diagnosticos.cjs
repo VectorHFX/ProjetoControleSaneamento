@@ -75,6 +75,9 @@ assert.deepEqual(a1.linhas[0],{id:ID(1),data:'2026-08-10',trecho:'Rua Um, 100',i
 assert.equal(a1.linhas[1].ipvs,'Grupo 5 (alta)','detalhes no arquivo à parte');assert.equal(a1.linhas[1].trecho,'Rua Dois, 200');
 // 2. Cache: a segunda consulta não relê os detalhes; registro alterado relê.
 const lidas=leiturasDetalhe;listar();assert.equal(leiturasDetalhe,lidas,'detalhes em cache');
+assert.equal(books.get('agenda-0123456789').getSheetByName('Índice dos diagnósticos').rows.length,6,'índice gravado (cabeçalho + 5)');
+cacheMap.clear();listar();assert.equal(leiturasDetalhe,lidas,'sem cache: o índice evita reler os detalhes');
+registros.rows[4][19]='h4-novo';cacheMap.clear();listar();assert.equal(leiturasDetalhe,lidas+1,'registro alterado: só ele é relido');
 // 3. Abrir: blocos com só os campos preenchidos.
 let d=run(`abrirDiagnosticoCPT({id:'${ID(1)}'})`);
 assert.deepEqual(d.campos.map(c=>c[0]),['Território','Equipamentos do entorno','Infraestrutura sanitária','População','Imóveis e pontos de atenção']);
@@ -109,7 +112,7 @@ assert.equal(grade[0].linhas[1][0].texto,'10/08/2026 - Rua Um, 100 - Diagnóstic
 assert.ok(!P.some(t=>/Calçadas/.test(t))&&!T.some(t=>t.linhas.some(x=>x[0].texto==='Calçadas')),'campo vazio fora do documento');
 l=listar();let o1=l.obras.find(o=>o.obraId==='OBR-0001');assert.equal(o1.situacaoDoc,'ok');assert.equal(o1.geradoPor,'Social Fictícia');assert.match(l.pasta,/drive\.google\.com\/drive\/folders\//);
 // 6. Registro mudou → "mudou desde o documento"; gerar de novo cria a v2 e guarda a anterior.
-registros.rows[2][19]='h2-novo';o1=listar().obras.find(o=>o.obraId==='OBR-0001');assert.equal(o1.situacaoDoc,'mudou');
+registros.rows[2][19]='h2-novo';cacheMap.clear()/* 10 minutos depois */;o1=listar().obras.find(o=>o.obraId==='OBR-0001');assert.equal(o1.situacaoDoc,'mudou');
 r=call('gerarDiagnosticoObraCPT',{obraId:'OBR-0001'});assert.equal(r.versaoDoc,2);assert.match(arquivos.get(r.doc.match(/\/d\/([A-Za-z0-9_-]+)/)[1]).nome,/· v2$/);
 assert.equal(caminho(docId),'CPT • Diagnósticos/Coletor A/Versões anteriores');assert.equal(listar().obras.find(o=>o.obraId==='OBR-0001').situacaoDoc,'ok');
 assert.equal(locked,false);

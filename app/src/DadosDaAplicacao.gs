@@ -1,4 +1,9 @@
 /** DadosDaAplicacao 2.6.0. Somente leitura; compatível com a base Campo 4.0 importada. */
+/**
+ * 2.46.1: a aba Registros (a aplicação nunca grava nela) é lida uma vez por execução e reaproveitada: missões, alertas,
+ * obras e relatos liam as mesmas milhares de linhas, cada um por conta própria. Zerada no início de cada execução.
+ */
+const LEITURAS_CPT_ = new Map();
 class DadosDaAplicacao {
   constructor(base, perfil) { this.perfil=perfil; this.base = base; this.fuso = base.getSpreadsheetTimeZone(); }
   /** 2.27: utilidades que eram do fechamento do relatório e continuam em uso (legendas, lembrete do contrato, metas de pesquisa). */
@@ -33,9 +38,11 @@ class DadosDaAplicacao {
   static get colunas() { return ['ID','Procedimento','Data do procedimento','Mês','Carimbo do envio','Origem','ID legado','Bairro','Bairro ID','Obra de referência','Obra ID','Responsável','Área','Atividade','Público informado','Protocolo informado','Situação do vínculo','Pesquisa','Conferência dos campos','Hash','Detalhes JSON']; }
   static get colunasAtd() { return ['Protocolo','Protocolo principal','Situação do protocolo','Status','Data de abertura','Data de conclusão','Nome','Assunto','Endereço','Frente de obra','Área responsável','Responsável','Próxima ação','Atualização operacional','Documento','PDF','Origem','Pesquisa','Hash','Detalhes JSON']; }
   tabela(nome, h) {
+    // 2.46.1: conferida uma vez por execução (cada fonte das missões abria e conferia a mesma aba de novo).
+    const k = 'aba:' + (this.base.getId ? this.base.getId() : '') + ':' + nome; if (LEITURAS_CPT_.has(k)) return LEITURAS_CPT_.get(k);
     const a = this.base.getSheetByName(nome);
     if (!a || a.getRange(1,1,1,h.length).getValues()[0].some((x,i) => x !== h[i])) throw new Error('A estrutura da tabela ' + nome + ' precisa ser conferida pelo administrador.');
-    return a;
+    LEITURAS_CPT_.set(k, a); return a;
   }
   // Consulta comum a toda a equipe (requisito): nenhum tipo de registro é ocultado por perfil.
   permitido(r){return true;}
@@ -45,7 +52,14 @@ class DadosDaAplicacao {
   mesCelula(v) { return v instanceof Date ? Utilities.formatDate(v,this.fuso,'yyyy-MM') : String(v || ''); }
   data(v) { return v instanceof Date ? Utilities.formatDate(v,this.fuso,'yyyy-MM-dd') : String(v || '').slice(0,10); }
   texto(v) { return String(v == null ? '' : v); }
-  ler(a, largura) { const n = a.getLastRow()-1, v = n > 0 ? a.getRange(2,1,n,largura).getValues() : []; return a === this._reg && largura >= 11 ? v.map(r => this.vincular(r)) : v; }
+  ler(a, largura) {
+    const n = a.getLastRow()-1, reg = a === this._reg, k = reg && n > 0 ? (this.base.getId ? this.base.getId() : '') + ':' + n : '', m = k && LEITURAS_CPT_.get(k);
+    let v;
+    if (m) v = m.map(r => r.slice(0, largura));
+    else if (k && largura >= 11 && largura <= 20) { const todos = a.getRange(2,1,n,20).getValues(); LEITURAS_CPT_.set(k, todos); v = todos.map(r => r.slice(0, largura)); }
+    else v = n > 0 ? a.getRange(2,1,n,largura).getValues() : [];
+    return reg && largura >= 11 ? v.map(r => this.vincular(r)) : v;
+  }
   /** "Outra obra" vinculada pela gerência: a obra entra na leitura (J e K); a linha da base não é alterada. */
   vincular(r) { if (typeof ObrasDoDiaCPT === 'undefined' || String(r[10] || '')) return r; const v = ObrasDoDiaCPT.mapaVinculos().get(String(r[0])); if (v) { r[9] = v.rotulo; r[10] = v.id; } return r; }
   registro(r) { return {id:this.texto(r[0]),procedimento:this.texto(r[1]),data:this.data(r[2]),mes:this.mesCelula(r[3]),origem:this.texto(r[5]),bairro:this.texto(r[7]),bairroId:this.texto(r[8]),obra:this.texto(r[9]),obraId:this.texto(r[10]),responsavel:this.texto(r[11]),area:this.texto(r[12]),atividade:this.texto(r[13]),publico:r[14] === '' ? null : /^\d+$/.test(String(r[14])) ? Number(r[14]) : null,protocolo:this.texto(r[15]),conferencia:this.texto(r[18])}; }

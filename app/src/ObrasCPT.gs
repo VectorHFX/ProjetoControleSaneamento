@@ -23,25 +23,29 @@ class ObrasCPT {
   static get marcador() { return 'PENDENTE — alterado pela aplicação'; }
 
   constructor(ctx) { this.ctx = ctx; this.fuso = ctx.base.getSpreadsheetTimeZone(); }
-  aba(nome) { const a = this.ctx.base.getSheetByName(nome); if (!a) throw new Error('A aba ' + nome + ' não foi encontrada na base.'); return a; }
+  aba(nome) { const m = this._abas || (this._abas = {}); if (m[nome]) return m[nome]; const a = this.ctx.base.getSheetByName(nome); if (!a) throw new Error('A aba ' + nome + ' não foi encontrada na base.'); return (m[nome] = a); }
   static norm(v) { return DadosDaAplicacao.norm(v); }
   data(v) { return v instanceof Date ? Utilities.formatDate(v, this.fuso, 'yyyy-MM-dd') : /^\d{4}-\d{2}-\d{2}/.test(String(v || '')) ? String(v).slice(0, 10) : ''; }
   instante(v) { return v instanceof Date ? v.toISOString() : String(v || ''); }
 
   bairros() {
-    const a = this.aba('Bairros'), n = a.getLastRow() - 1, c = ObrasCPT.colunaApelidoBairro.coluna;
-    const extra = n > 0 && a.getMaxColumns() >= c ? a.getRange(2, c, n, 1).getValues() : [];
-    return (n > 0 ? a.getRange(2, 1, n, 5).getValues() : []).map((r, i) => ({r, linha: i + 2, apelidos: extra[i] ? extra[i][0] : ''})).filter(o => o.r[0] && o.r[1])
+    // 2.46.1: A:E e o apelido (L) numa leitura só.
+    const a = this.aba('Bairros'), n = a.getLastRow() - 1, c = ObrasCPT.colunaApelidoBairro.coluna, largura = n > 0 ? Math.min(a.getMaxColumns(), c) : 0;
+    const tudo = n > 0 ? a.getRange(2, 1, n, Math.max(5, largura)).getValues() : [];
+    return tudo.map((r, i) => ({r: r.slice(0, 5), linha: i + 2, apelidos: largura >= c ? r[c - 1] : ''})).filter(o => o.r[0] && o.r[1])
       .map(o => ({id: String(o.r[0]).trim(), nome: String(o.r[1]).trim(), noFormulario: o.r[2] === true, especial: String(o.r[4]) === 'Opção especial', apelidos: ObrasCPT.apelidos(o.apelidos), linha: o.linha}));
   }
-  /** Lê A:Z e o bloco AF:AK. Uma linha inválida não impede a consulta das demais. */
+  /**
+   * Lê A:Z e o bloco AF:AK. Uma linha inválida não impede a consulta das demais.
+   * 2.46.1: uma leitura só, da linha 1 até AK — inclui o controle do formulário (AB1 e AB5:AB6), guardado para statusFormulario.
+   */
   ler() {
-    const a = this.aba('Obras'), n = a.getLastRow() - 1;
+    const a = this.aba('Obras'), ultima = a.getLastRow(), n = ultima - 1;
     if (n < 1) return {aba: a, linhas: []};
-    const largura = Math.min(a.getMaxColumns(), 26), base = a.getRange(2, 1, n, largura).getValues();
-    const c = ObrasCPT.colunasApp, largura2 = Math.max(0, Math.min(c.cabecalho.length, a.getMaxColumns() - c.inicio + 1));
-    const extra = (largura2 ? a.getRange(2, c.inicio, n, largura2).getValues() : base.map(() => [])).map(x => x.concat(Array(c.cabecalho.length - x.length).fill('')));
-    const linhas = base.map((r, i) => ({linha: i + 2, r, x: extra[i]})).filter(o => String(o.r[0] || '').trim());
+    const c = ObrasCPT.colunasApp, max = a.getMaxColumns(), fim = c.inicio + c.cabecalho.length - 1, largura = Math.min(max, fim), tudo = a.getRange(1, 1, ultima, largura).getValues();
+    this._controle = max >= 30 ? {titulo: tudo[0][27], texto: tudo[4] ? tudo[4][27] : '', quando: tudo[5] ? tudo[5][27] : ''} : null;
+    const linhas = tudo.slice(1).map((r, i) => ({linha: i + 2, r: r.slice(0, Math.min(max, 26)), x: r.slice(c.inicio - 1).concat(Array(Math.max(0, fim - Math.max(largura, c.inicio - 1))).fill('')).slice(0, c.cabecalho.length)}))
+      .filter(o => String(o.r[0] || '').trim());
     return {aba: a, linhas};
   }
   publico(o) {
@@ -67,8 +71,10 @@ class ObrasCPT {
   /** Mensagem do último salvamento das listas do formulário (área de controle AB5:AB6 do Campo 4.0). */
   statusFormulario() {
     try {
-      const a = this.aba('Obras'); if (a.getMaxColumns() < 30 || String(a.getRange(1, 28).getValue()) !== 'ATUALIZAR FORMULÁRIO') return {situacao: 'desconhecida', texto: 'Controle do formulário não encontrado na aba Obras.'};
-      const [[texto], [quando]] = a.getRange(5, 28, 2, 1).getValues(), q = String(quando || '');
+      // 2.46.1: o que ler() já trouxe; sem ele (ou aba curta), lê as células como antes.
+      const a = this.aba('Obras'), k = this._controle;
+      if (k === null || (!k && (a.getMaxColumns() < 30 || String(a.getRange(1, 28).getValue()) !== 'ATUALIZAR FORMULÁRIO')) || (k && String(k.titulo) !== 'ATUALIZAR FORMULÁRIO')) return {situacao: 'desconhecida', texto: 'Controle do formulário não encontrado na aba Obras.'};
+      const [[texto], [quando]] = k ? [[k.texto], [k.quando]] : a.getRange(5, 28, 2, 1).getValues(), q = String(quando || '');
       if (q.startsWith(ObrasCPT.marcador)) return {situacao: 'pendente', texto: 'Alterações aguardando o formulário (atualiza em até 1 hora).'};
       return {situacao: /não foi possível|falha/i.test(String(texto)) ? 'erro' : 'ok', texto: String(texto || ''), quando: quando instanceof Date ? quando.toISOString() : q};
     } catch (e) { return {situacao: 'desconhecida', texto: e.message}; }
@@ -204,6 +210,7 @@ class ObrasCPT {
   marcarSincronizacao(aba) {
     // Toda mudança de obra ou bairro passa aqui: o mapa (em cache) é recalculado na próxima abertura.
     try { MapaCPT.invalidar(); } catch (_) {}
+    this._controle = undefined; // o status do formulário volta a ser lido da aba
     if (aba.getMaxColumns() < 30) return;
     if (String(aba.getRange(1, 28).getValue()) !== 'ATUALIZAR FORMULÁRIO') return;
     aba.getRange(6, 28).setValue(ObrasCPT.marcador + ' em ' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'));

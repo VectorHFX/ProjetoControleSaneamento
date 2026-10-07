@@ -30,10 +30,23 @@ class ColecaoCPT {
     if (!a) { a = ss.insertSheet(this.nome); a.getRange(1, 1, 1, 6).setValues([ColecaoCPT.cabecalho]); a.setFrozenRows(1); }
     return a;
   }
+  /**
+   * 2.46.1: última linha de cada coleção, guardada a cada gravação (e ao ler sem cache). Com ela a leitura em cache não abre
+   * a aba: Meu espaço, missões e contatos juntam várias coleções e gastavam 2 chamadas à planilha por coleção só para a chave.
+   * Linha acrescentada à mão na aba aparece quando o cache vence (até 1 hora) — pela aplicação, na hora.
+   */
+  chaveLinhas() { return 'CPT_LINHAS:' + String(this.ctx.config.agendaId).slice(-10) + ':' + this.nome; }
+  marcar(ultima) { try { PropertiesService.getScriptProperties().setProperty(this.chaveLinhas(), String(ultima)); } catch (e) { console.warn('Marca ' + this.nome + ': ' + e.message); } }
+  /** Antes de gravar, a conferência de versão usa a aba de verdade (pela última linha), nunca o atalho. */
+  paraEscrever() { this.escrita = true; if (this.atalho) { this.cache = null; this.atalho = false; } }
+  chaveCache(n) { return 'colecao:' + this.ctx.config.agendaId + ':' + this.nome + ':' + n; }
   /** Estado atual de todos os itens. Cache compartilhado pela última linha da aba (uma revisão nova invalida sozinha). */
   itens() {
     if (this.cache) return this.cache;
-    const a = this.aba(), ultima = a.getLastRow(), n = ultima - 1, chave = 'colecao:' + this.ctx.config.agendaId + ':' + this.nome + ':' + n;
+    const marca = this.ctx.config.agendaId ? Number(PropertiesService.getScriptProperties().getProperty(this.chaveLinhas()) || 0) : 0;
+    if (marca >= 1 && !this.escrita) { const s = CacheCPT.ler(this.chaveCache(marca - 1)); if (s) { this.cache = s; this.atalho = true; return s; } }
+    const a = this.aba(), ultima = a.getLastRow(), n = ultima - 1, chave = this.chaveCache(n);
+    if (ultima > marca) this.marcar(ultima); // só sobe: uma leitura antiga nunca desfaz a marca de uma gravação mais nova
     const salvo = CacheCPT.ler(chave); if (salvo) { this.cache = salvo; return salvo; }
     const atuais = new Map(), soma = e => { if (!e || !e.id) return; const x = atuais.get(e.id); if (!x || x.versao < e.versao) atuais.set(e.id, e); };
     // Retrato + cauda; sem retrato válido (ou histórico mexido à mão), lê tudo como antes.
@@ -72,14 +85,15 @@ class ColecaoCPT {
   /** idFixo: para itens de uma pessoa (ex.: PES-email, CAD-email-data), o primeiro salvamento usa esse ID. */
   gravar(item, versaoEsperada, operacaoId, idFixo) {
     if (typeof operacaoId !== 'string' || !/^OP-[\w-]{8,70}$/.test(operacaoId)) throw new Error('Operação inválida. Recarregue a página.');
+    this.paraEscrever();
     const a = this.aba(), ja = this.porOperacao(operacaoId); if (ja) return ja;
     const antigo = idFixo ? this.obter(idFixo) : item.id ? this.obter(item.id) : null;
     if (!idFixo && item.id && !antigo) throw new Error('Item não encontrado. Atualize a página.');
     if (antigo && Number(versaoEsperada) !== antigo.versao) throw new Error('Outra pessoa alterou este item agora há pouco. Seu texto continua na tela: atualize e confira antes de salvar de novo.');
     const agora = new Date().toISOString(), e = {...item, id: antigo ? antigo.id : idFixo || this.prefixo + '-' + Utilities.getUuid(), versao: (antigo ? antigo.versao : 0) + 1,
       criadoPor: antigo ? antigo.criadoPor : this.ctx.email, criadoEm: antigo ? antigo.criadoEm : agora, alteradoPor: this.ctx.email, alteradoEm: agora};
-    a.getRange(a.getLastRow() + 1, 1, 1, 6).setValues([[e.id, e.versao, operacaoId, agora, this.ctx.email, JSON.stringify(e)]]);
-    this.cache = null; return e;
+    const linha = a.getLastRow() + 1; a.getRange(linha, 1, 1, 6).setValues([[e.id, e.versao, operacaoId, agora, this.ctx.email, JSON.stringify(e)]]);
+    this.marcar(linha); this.cache = null; return e;
   }
   /**
    * 2.26.7: várias revisões numa escrita só (para ações em bloco feitas pelo proprietário no editor).
@@ -87,14 +101,15 @@ class ColecaoCPT {
    */
   gravarLote(lista, operacaoBase) {
     if (!lista.length) return [];
+    this.paraEscrever();
     const a = this.aba(), agora = new Date().toISOString(), linhas = [], out = [];
     lista.forEach(({item, idFixo}, i) => {
       const antigo = this.obter(idFixo), e = {...item, id: idFixo, versao: (antigo ? antigo.versao : 0) + 1,
         criadoPor: antigo ? antigo.criadoPor : this.ctx.email, criadoEm: antigo ? antigo.criadoEm : agora, alteradoPor: this.ctx.email, alteradoEm: agora};
       linhas.push([e.id, e.versao, operacaoBase + '-' + i, agora, this.ctx.email, JSON.stringify(e)]); out.push(e);
     });
-    a.getRange(a.getLastRow() + 1, 1, linhas.length, 6).setValues(linhas);
-    this.cache = null; return out;
+    const de = a.getLastRow() + 1; a.getRange(de, 1, linhas.length, 6).setValues(linhas);
+    this.marcar(de + linhas.length - 1); this.cache = null; return out;
   }
   /** O item gravado por esta operação, se ela já aconteceu (para repetir sem duplicar). 2.37: procura só nas últimas
    *  1000 revisões (uma repetição chega em segundos ou minutos), em vez de ler a coluna inteira. */

@@ -162,8 +162,9 @@ class PaineisGestaoCPT {
       const indice = IndiceRelatosCPT.ler(ctx, mes), faltam = idx.filter(i => { const x = indice.get(String(base[i][0])); return !x || x.chave !== IndiceRelatosCPT.chave(base[i]); });
       if (faltam.length) {
         const json = new Map();
-        // Faixas contínuas (as linhas do mês costumam estar juntas): poucas leituras da coluna de detalhes.
-        for (let i = 0; i < faltam.length;) { let j = i; while (j + 1 < faltam.length && faltam[j + 1] === faltam[j] + 1) j++; const v = a.getRange(faltam[i] + 2, 21, faltam[j] - faltam[i] + 1, 1).getValues(); v.forEach((x, k) => json.set(faltam[i] + k, x[0])); i = j + 1; }
+        // Faixas contínuas (as linhas do mês costumam estar juntas): poucas leituras da coluna de detalhes. 2.46.1: buracos de até
+        // 3 linhas (pesquisas e vistorias no meio) entram na mesma faixa — uma leitura um pouco maior custa menos que outra chamada.
+        for (let i = 0; i < faltam.length;) { let j = i; while (j + 1 < faltam.length && faltam[j + 1] - faltam[j] <= 4) j++; const v = a.getRange(faltam[i] + 2, 21, faltam[j] - faltam[i] + 1, 1).getValues(); v.forEach((x, k) => json.set(faltam[i] + k, x[0])); i = j + 1; }
         faltam.forEach(i => indice.set(String(base[i][0]), {chave: IndiceRelatosCPT.chave(base[i]), x: IndiceRelatosCPT.extrair(json.get(i))}));
         try { IndiceRelatosCPT.gravar(ctx, mes, idx.map(i => String(base[i][0])), indice); } catch (e) { console.warn('Índice dos relatos ' + mes + ': ' + e.message); }
       }

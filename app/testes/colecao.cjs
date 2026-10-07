@@ -62,4 +62,13 @@ ctx.q={id:ids[1],op:op()};const g=()=>run("ColecaoCPT.executar('t',c=>{const col
 const n0=hist().getLastRow(),v1=g(),v2=g();assert.equal(v1.versao,v2.versao);assert.equal(hist().getLastRow(),n0+1,'repetição não duplica');
 // 8. Com cache ligado (uso real), o resultado é o mesmo.
 usarCache=true;confere('com cache');
+// 9. 2.46.1: leitura em cache não abre a aba (marca da última linha, guardada na gravação); gravação nova aparece na hora;
+// linha acrescentada à mão aparece quando o cache vence; antes de gravar, a versão é conferida na aba de verdade.
+ler();let toques=0;const gl=Sheet.prototype.getLastRow;Sheet.prototype.getLastRow=function(){toques++;return gl.call(this);};
+ler();assert.equal(toques,0,'em cache: nenhuma chamada à aba');Sheet.prototype.getLastRow=gl;
+escrever(ids[4],'depois da marca');assert.equal(ler().find(x=>x.id===ids[4]).texto,'depois da marca','gravação aparece na hora');confere('marca após gravar');
+{const e=JSON.parse(hist().rows[hist().rows.length-1][5]);e.versao++;e.texto='à mão';hist().rows.push([e.id,e.versao,'OP-manual-0001','','',JSON.stringify(e)]);
+ assert.notEqual(ler().find(x=>x.id===e.id).texto,'à mão','à mão: espera o cache vencer');
+ assert.throws(()=>{ctx.p={id:e.id,v:e.versao-1,op:op()};run("ColecaoCPT.executar('t',c=>{const col=new ColecaoCPT(c,'Notas','NOT');col.itens();return col.gravar({id:p.id,texto:'x'},p.v,p.op);},true)");},/Outra pessoa alterou/,'gravar confere a aba de verdade');
+ cacheMap.clear();assert.equal(ler().find(x=>x.id===e.id).texto,'à mão','cache vencido: lê a aba');confere('linha à mão');}
 console.log('PASS: coleções — retrato do estado atual + cauda: igual à leitura completa a cada passo, leitura toca ~'+'20 linhas em vez de '+n0+', segura com queda no meio da troca, falha ao gravar o retrato e histórico mexido à mão; repetição não duplica.');

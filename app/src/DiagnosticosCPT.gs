@@ -43,22 +43,75 @@ class DiagnosticosCPT {
     if (!this._linhas) this._linhas = this.dados.ler(this.dados.registros(), 20).map((r, i) => ({r, linha: i + 2})).filter(x => x.r[0] && DiagnosticosCPT.eDiagnostico(x.r));
     return this._linhas;
   }
-  /** Campos de um diagnóstico a partir do registro (detalhes na célula ou no arquivo à parte). */
-  ler(x) {
-    const D = DadosDaAplicacao, celula = this.dados.registros().getRange(x.linha, 21).getValue(); let bruto = String(celula || ''), c = D.campos(bruto);
-    if (!c && /arquivoDetalhesId/.test(bruto)) try { const d = D.lerDetalhes(bruto); bruto = JSON.stringify(d); c = D.campos(bruto); } catch (_) { c = null; }
-    const v = re => D.valor(c, re), r = x.r, campos = DiagnosticosCPT.grupos.map(([titulo, lista]) => [titulo, lista.map(([rot, re]) => [rot, v(re).slice(0, 2000)]).filter(([, val]) => val)]).filter(([, l]) => l.length);
-    const fotos = [...new Set((bruto.match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).map(s => s.replace(/^(?:\/d\/|[?&]id=)/, '')))];
-    return {id: String(r[0]), data: this.dados.data(r[2]), bairro: String(r[7] || ''), obraTexto: SocioambientalCPT.frente(r[9]), obraId: String(r[10] || ''), responsavel: String(r[11] || ''), hash: String(r[19] || ''),
-      frente: v(/^titulo da frente/), endereco: v(/^endereco da frente|^endereco completo/), relato: v(/^relato do diagnostico|^relato da atividade/).slice(0, 12000), observacao: v(/^observacao final/).slice(0, 4000),
-      ipvs: v(/^indice paulista de vulnerabilidade|\bipvs\b/), perfil: v(/^perfil socioeconomico/), residenciais: v(/^quantidade de imoveis residenciais/), comerciais: v(/^quantidade de imoveis comerciais/),
-      escolas: v(/^quantidade de escolas/) || v(/^existem escolas/), ubs: v(/^quantidade de ubs/) || v(/^existe ubs ou hospitais/), pontos: v(/^pontos criticos/).slice(0, 300), campos, fotos};
+  /** Detalhes do registro: os campos do formulário (na célula ou no arquivo à parte) e o texto bruto (para achar as fotos). */
+  static detalhes(celula) {
+    const D = DadosDaAplicacao; let bruto = String(celula || ''), c = D.campos(bruto);
+    if (!c && /arquivoDetalhesId/.test(bruto)) try { bruto = JSON.stringify(D.lerDetalhes(bruto)); c = D.campos(bruto); } catch (_) { c = null; }
+    return {v: re => D.valor(c, re), c, bruto};
   }
-  /** Todos os diagnósticos lidos, em cache pela identidade e pelo hash de cada linha (registro novo ou alterado invalida). */
+  static fotosDe(bruto) { return [...new Set((bruto.match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).map(s => s.replace(/^(?:\/d\/|[?&]id=)/, '')))]; }
+  /** O que a lista e a tabela-resumo usam dos detalhes (vai para o índice). */
+  static extrair(celula) {
+    const {v, bruto} = DiagnosticosCPT.detalhes(celula);
+    return {frente: v(/^titulo da frente/).slice(0, 300), endereco: v(/^endereco da frente|^endereco completo/).slice(0, 300), ipvs: v(/^indice paulista de vulnerabilidade|\bipvs\b/).slice(0, 200),
+      perfil: v(/^perfil socioeconomico/).slice(0, 300), residenciais: v(/^quantidade de imoveis residenciais/).slice(0, 60), comerciais: v(/^quantidade de imoveis comerciais/).slice(0, 60),
+      escolas: (v(/^quantidade de escolas/) || v(/^existem escolas/)).slice(0, 100), ubs: (v(/^quantidade de ubs/) || v(/^existe ubs ou hospitais/)).slice(0, 100), pontos: v(/^pontos criticos/).slice(0, 300), nFotos: DiagnosticosCPT.fotosDe(bruto).length};
+  }
+  /** Colunas da base (sempre atuais) + o resumo do índice. */
+  static item(x, dados, resumo) {
+    const r = x.r; return {id: String(r[0]), linha: x.linha, data: dados.data(r[2]), bairro: String(r[7] || ''), obraTexto: SocioambientalCPT.frente(r[9]), obraId: String(r[10] || ''), responsavel: String(r[11] || ''), hash: String(r[19] || ''), ...resumo};
+  }
+  // Índice dos diagnósticos (planilha de dados da aplicação), como o dos relatos: os detalhes de cada registro são lidos uma vez
+  // só; o registro que mudar (hash) é relido. Pode ser apagado sem perda: refaz sozinho.
+  static get abaIndice() { return 'Índice dos diagnósticos'; }
+  static chave(r) { return String(r[19] || '') + '|1'; }
+  lerIndice() {
+    const out = new Map(); let a = null; try { a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName(DiagnosticosCPT.abaIndice); } catch (_) { return out; }
+    if (!a || a.getLastRow() < 2) return out;
+    a.getRange(2, 1, a.getLastRow() - 1, 3).getValues().forEach(r => { if (r[0]) try { out.set(String(r[0]), {chave: String(r[1]), x: JSON.parse(r[2])}); } catch (_) {} });
+    return out;
+  }
+  gravarIndice(lista, indice) {
+    const ss = planilhaCPT_(this.ctx.config.agendaId); let a = ss.getSheetByName(DiagnosticosCPT.abaIndice);
+    if (!a) { a = ss.insertSheet(DiagnosticosCPT.abaIndice); a.getRange(1, 1, 1, 3).setValues([['ID do registro', 'Chave', 'Resumo para a tela (pode apagar: refaz sozinho)']]); a.setFrozenRows(1); }
+    const linhas = lista.map(x => { const e = indice.get(String(x.r[0])); return [String(x.r[0]), e.chave, JSON.stringify(e.x)]; });
+    const sobra = a.getLastRow() - 1 - linhas.length; if (linhas.length) a.getRange(2, 1, linhas.length, 3).setValues(linhas);
+    if (sobra > 0) a.getRange(linhas.length + 2, 1, sobra, 3).clearContent();
+  }
+  /**
+   * Todos os diagnósticos (resumo). Cache de 10 minutos pela última linha da base e pelos vínculos de obra (como os relatos):
+   * a consulta em cache não lê a aba Registros; registro editado aparece em até 10 minutos. Só os novos ou alterados leem
+   * os detalhes (índice).
+   */
   diagnosticos() {
     if (this._diag) return this._diag;
-    const l = this.linhas(), chave = 'diag:' + this.ctx.config.baseId + ':' + DiagnosticosCPT.resumo(l.map(x => x.r[0] + '|' + x.r[19] + '|' + x.r[10] + '|' + x.r[9]).join(';'));
-    return (this._diag = CacheCPT.obter(chave, 21600, () => l.map(x => this.ler(x))));
+    const chave = 'diag3:' + this.ctx.config.baseId + ':' + this.dados.registros().getLastRow() + ':' + ObrasDoDiaCPT.versaoVinculos();
+    return (this._diag = CacheCPT.obter(chave, 600, () => {
+      const l = this.linhas();
+      const indice = this.lerIndice(), faltam = l.filter(x => { const e = indice.get(String(x.r[0])); return !e || e.chave !== DiagnosticosCPT.chave(x.r); }).sort((a, b) => a.linha - b.linha);
+      if (faltam.length) {
+        const a = this.dados.registros();
+        // Faixas de linhas próximas numa leitura só (buracos de até 3 linhas): poucas chamadas mesmo com muitos diagnósticos novos.
+        // Muitas faixas (primeira montagem com centenas de diagnósticos): uma leitura só, do primeiro ao último.
+        const faixas = faltam.filter((x, k) => k === 0 || x.linha - faltam[k - 1].linha > 4).length, gap = faixas > 40 ? Infinity : 4;
+        for (let i = 0; i < faltam.length;) {
+          let j = i; while (j + 1 < faltam.length && faltam[j + 1].linha - faltam[j].linha <= gap) j++;
+          const v = a.getRange(faltam[i].linha, 21, faltam[j].linha - faltam[i].linha + 1, 1).getValues();
+          for (let k = i; k <= j; k++) indice.set(String(faltam[k].r[0]), {chave: DiagnosticosCPT.chave(faltam[k].r), x: DiagnosticosCPT.extrair(v[faltam[k].linha - faltam[i].linha][0])});
+          i = j + 1;
+        }
+        try { this.gravarIndice(l, indice); } catch (e) { console.warn('Índice dos diagnósticos: ' + e.message); }
+      }
+      return l.map(x => DiagnosticosCPT.item(x, this.dados, indice.get(String(x.r[0])).x));
+    }));
+  }
+  /** Um diagnóstico com todos os blocos (lê a linha dele): tela de detalhe e documento. */
+  completo(d) {
+    const r = this.dados.registros().getRange(d.linha, 1, 1, 21).getValues()[0];
+    if (String(r[0]) !== d.id) throw new Error('A base mudou de ordem. Atualize a página.');
+    const {v, bruto} = DiagnosticosCPT.detalhes(r[20]);
+    const campos = DiagnosticosCPT.grupos.map(([titulo, lista]) => [titulo, lista.map(([rot, re]) => [rot, v(re).slice(0, 2000)]).filter(([, val]) => val)]).filter(([, l]) => l.length);
+    return {...d, hash: String(r[19] || ''), relato: v(/^relato do diagnostico|^relato da atividade/).slice(0, 12000), observacao: v(/^observacao final/).slice(0, 4000), campos, fotos: DiagnosticosCPT.fotosDe(bruto)};
   }
   /** Obra do catálogo de um diagnóstico: pelo ID; senão pelo nome da obra ou pelo título da frente. */
   obraDe(d, porId, porNome) {
@@ -73,7 +126,7 @@ class DiagnosticosCPT {
     grupos.forEach(g => g.lista.sort((a, b) => a.data.localeCompare(b.data)));
     return {grupos, sem: sem.sort((a, b) => b.data.localeCompare(a.data)), obras};
   }
-  static linhaResumo(d) { return {id: d.id, data: d.data, trecho: d.endereco || d.frente || d.bairro, ipvs: d.ipvs, perfil: d.perfil, residenciais: d.residenciais, comerciais: d.comerciais, escolas: d.escolas, ubs: d.ubs, pontos: d.pontos, responsavel: d.responsavel, fotos: d.fotos.length}; }
+  static linhaResumo(d) { return {id: d.id, data: d.data, trecho: d.endereco || d.frente || d.bairro, ipvs: d.ipvs, perfil: d.perfil, residenciais: d.residenciais, comerciais: d.comerciais, escolas: d.escolas, ubs: d.ubs, pontos: d.pontos, responsavel: d.responsavel, fotos: d.nFotos}; }
   listar() {
     const {grupos, sem, obras} = this.agrupar(), docs = new Map(this.col.itens().map(x => [x.obraId, x])), c = AplicacaoCPT.config(), vincula = ObrasDoDiaCPT.pode(this.ctx.perfil);
     const lista = [...grupos.values()].map(({obra: o, lista: l}) => {
@@ -86,7 +139,7 @@ class DiagnosticosCPT {
       catalogo: vincula ? obras.map(o => ({id: o.id, exibir: o.exibir, situacao: o.situacao})).sort((a, b) => (a.situacao === 'Finalizada') - (b.situacao === 'Finalizada') || a.exibir.localeCompare(b.exibir, 'pt-BR')) : []};
   }
   /** Um diagnóstico completo (todos os blocos), para a tela de detalhe. */
-  abrir(id) { const d = this.diagnosticos().find(x => x.id === String(id || '')); if (!d) throw new Error('Diagnóstico não encontrado. Atualize a página.'); return {...d, fotos: d.fotos.map(f => ({id: f, url: 'https://drive.google.com/file/d/' + f + '/view', thumb: 'https://drive.google.com/thumbnail?id=' + f + '&sz=w320'}))}; }
+  abrir(id) { const r = this.diagnosticos().find(x => x.id === String(id || '')); if (!r) throw new Error('Diagnóstico não encontrado. Atualize a página.'); const d = this.completo(r); return {...d, fotos: d.fotos.map(f => ({id: f, url: 'https://drive.google.com/file/d/' + f + '/view', thumb: 'https://drive.google.com/thumbnail?id=' + f + '&sz=w320'}))}; }
   /** Vincula um diagnóstico sem obra do catálogo (e sem Obra ID na base), pelo mesmo vínculo de "outra obra". */
   vincular(p) {
     p = p || {}; const livres = new Set(this.agrupar().sem.filter(d => !d.obraId).map(d => d.id));
@@ -108,14 +161,15 @@ class DiagnosticosCPT {
     if (!g) throw new Error('Esta obra não tem diagnósticos. Atualize a página.');
     const o = g.obra, antigo = this.col.obter('DGO-' + o.id), versaoDoc = (antigo && antigo.versaoDoc || 0) + 1, br = DadosDaAplicacao.br;
     const pasta = RelatosRelatorioCPT.subpasta(this.raiz(), DiagnosticosCPT.limpo(o.exibir) || o.id), hoje = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd-MM-yyyy');
+    const completos = g.lista.map(d => this.completo(d)); // lê antes de criar o documento: se a base mudou, nada fica pela metade
     const doc = DocumentApp.create('Diagnóstico socioambiental · ' + DiagnosticosCPT.limpo(o.exibir) + ' · ' + hoje + (versaoDoc > 1 ? ' · v' + versaoDoc : ''));
-    const avisos = DiagnosticosCPT.montar(doc, o, g.lista, br(g.lista[0].data) + ' a ' + br(g.lista[g.lista.length - 1].data) + ' · ' + o.id + ' · ' + FichaOficialCPT.empresa);
+    const avisos = DiagnosticosCPT.montar(doc, o, completos, br(g.lista[0].data) + ' a ' + br(g.lista[g.lista.length - 1].data) + ' · ' + o.id + ' · ' + FichaOficialCPT.empresa);
     doc.saveAndClose();
     const arquivo = DriveApp.getFileById(doc.getId()); arquivo.moveTo(pasta);
     const url = 'https://docs.google.com/document/d/' + doc.getId() + '/edit';
     if (antigo && antigo.doc) { const velho = (antigo.doc.match(/\/d\/([A-Za-z0-9_-]{20,})/) || [])[1]; if (velho) try { DriveApp.getFileById(velho).moveTo(RelatosRelatorioCPT.subpasta(pasta, 'Versões anteriores')); } catch (_) {} }
     const lock = LockService.getScriptLock(); if (!lock.tryLock(15000)) throw new Error('O documento foi gerado, mas não foi registrado agora. Gere de novo em instantes.');
-    let e; try { e = this.col.gravar({obraId: o.id, obra: o.exibir, doc: url, versaoDoc, diagnosticos: g.lista.length, hashOrigem: DiagnosticosCPT.hashObra(g.lista), geradoPor: this.ctx.email, nome: this.ctx.perfil.nome, geradoEm: new Date().toISOString()}, antigo ? antigo.versao : 0, p.operacaoId, 'DGO-' + o.id); }
+    let e; try { e = this.col.gravar({obraId: o.id, obra: o.exibir, doc: url, versaoDoc, diagnosticos: g.lista.length, hashOrigem: DiagnosticosCPT.hashObra(completos), geradoPor: this.ctx.email, nome: this.ctx.perfil.nome, geradoEm: new Date().toISOString()}, antigo ? antigo.versao : 0, p.operacaoId, 'DGO-' + o.id); }
     finally { lock.releaseLock(); }
     return {resultado: 'Documento gerado com ' + g.lista.length + (g.lista.length === 1 ? ' diagnóstico' : ' diagnósticos') + ' na pasta ' + DiagnosticosCPT.nomeRaiz + '/' + (DiagnosticosCPT.limpo(o.exibir) || o.id) + '.' + (avisos.length ? ' Atenção: ' + avisos.join(' ') : ''),
       doc: url, versaoDoc, geradoPor: e.nome, geradoEm: e.geradoEm};
