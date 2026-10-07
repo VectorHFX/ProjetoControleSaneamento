@@ -16,13 +16,16 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Revisar: prompt, fotos, relato curto barrado, gera.
   await p.locator('[data-rr-revisar="REG-rr1"]').click();await p.locator('#rrForm').waitFor();
   await p.locator('[data-rr-prompt]').click();await p.waitForFunction(()=>[...document.querySelectorAll('.toast,#toast,[role=status]')].some(t=>/Prompt copiado/.test(t.textContent)));assert.match(await p.evaluate(()=>navigator.clipboard.readText()),/não invente/);
-  assert.equal(await p.locator('#rrForm [name=foto]:checked').count(),3);await p.locator('.rr-foto').nth(1).click();assert.equal(await p.locator('#rrForm [name=foto]:checked').count(),2);
+  assert.equal(await p.locator('#rrForm [name=foto]:checked').count(),2,'as 2 primeiras marcadas');await p.locator('.rr-foto').nth(2).locator('input[type=checkbox]').click();assert.equal(await p.locator('#rrForm [name=foto]:checked').count(),2,'no máximo 2');
+  await p.locator('.rr-foto').nth(1).locator('input[type=checkbox]').click();assert.equal(await p.locator('#rrForm [name=foto]:checked').count(),1);assert.match(await p.getAttribute('[data-rr-legenda=FOTO1]','placeholder'),/ - Evento - /);await p.fill('[data-rr-legenda=FOTO1]','Roda de conversa na praça');
+  assert.equal(await p.locator('#rrForm [name=interrupcao], #rrForm [name=equipe]').count(),0,'quadro da Central: sem equipe e interrupção');assert.equal(await p.locator('#rrForm [name=atividade]').count(),1);
   await p.fill('#rrForm [name=relato]','Curto demais.');await p.locator('#rrForm [type=submit]').click();await p.locator('#rrErro:not([hidden])').waitFor();assert.match(await p.locator('#rrErro').textContent(),/curto demais/);
   await p.fill('#rrForm [name=relato]','A equipe social realizou roda de conversa com os moradores sobre a obra de esgoto, explicou as etapas e registrou as dúvidas sobre o acesso das garagens.');
   await p.locator('#rrForm [type=submit]').click();await p.locator('#detailContent .notice',{hasText:'Revisado por Victor (prévia) (versão 2)'}).waitFor();
+  assert.match(await p.locator('#detailContent .rr-docs').textContent(),/FINAL: Docs · PDF · ORIGINAL: Docs · PDF/);assert.equal(await p.inputValue('[data-rr-legenda=FOTO1]'),'Roda de conversa na praça');
   await foto('relatorio-revisao');await p.locator('#closeDialog').click();
   assert.match(await p.locator('.rr-card').first().textContent(),/Revisado/);assert.deepEqual((await p.locator('.stat-row .stat-value').allTextContents()).map(t=>t.trim()),['0','1','2']);
   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(200);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=390),true);
   assert.deepEqual(erros,[]);await b.close();
-  console.log('PASS: para o relatório na tela — aba só para quem revisa, situação (pendente, mudou na origem, revisado), filtro por tipo, prompt copiado, fotos escolhidas, relato curto barrado, documento gerado e celular sem rolagem lateral.');
+  console.log('PASS: para o relatório na tela — aba só para quem revisa, situação (pendente, mudou na origem, revisado), filtro por tipo, prompt copiado, fotos escolhidas, no máximo 2 fotos com legenda, relato curto barrado, FINAL e ORIGINAL gerados (Docs e PDF) e celular sem rolagem lateral.');
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -279,7 +279,7 @@
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.47.0.');
+  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.48.0.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});

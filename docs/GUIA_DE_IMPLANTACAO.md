@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.48.0 — relatos para o relatório como na Central CPT 4.0 (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.48.0`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova.
+2. **Relatos → Para o relatório** sai agora no **layout do relato ilustrado da Central**: faixa "Relato da atividade", título, quadro de 6 linhas (Atividade, Local, Endereço e bairro, Data e horário, Mediação, Público), Objetivo, Relato da atividade, Resultados e encaminhamentos (só o que tiver texto) e o registro fotográfico com **até 2 fotos lado a lado, cada uma com legenda** (sem legenda, vale o padrão "dd/mm/aaaa - Evento - Local").
+3. **Revisado: gerar FINAL e ORIGINAL** cria o **FINAL** (texto revisado) e, na primeira vez, o **ORIGINAL** (como veio do campo), cada um em **Google Docs + PDF**, na pasta **CPT • Relatos do relatório/AAAA/MM - mês**. Revisar de novo refaz só o FINAL; o anterior vai para "Versões anteriores".
+4. Na revisão, "Mais detalhes" traz o quadro da atividade (os 6 campos); saíram "Equipe registrada" e "Interrupção", que não existem no relato da Central. O prompt para o Gemini continua.
+5. Relatos revisados na 2.43 continuam abrindo; ao revisar de novo, o documento antigo vai para "Versões anteriores" e o relato ganha FINAL e ORIGINAL. O modelo com marcadores da 2.43 não é mais usado (pode ficar no Drive).
+
 ## Atualização 2.47.0 — diagnósticos como na Central CPT 4.0 (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.47.0`, Nova versão). Nenhum arquivo novo. **Permissão nova: Google Slides** (para a apresentação) — ao executar `instalarAplicacaoCPT` no editor, o Google pede para autorizar; autorize com a conta proprietária antes de publicar a Nova versão (sem isso, gerar a apresentação falha).

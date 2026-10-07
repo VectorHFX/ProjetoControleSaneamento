@@ -6,6 +6,7 @@
    Aba "Outros registros": a lista de todos os registros de campo (a consulta de antes).
    2.43: aba "Para o relatório" (Socioambiental, Comunicação, Gestão e Administrativo): ação social, articulação institucional,
    CAO e DDS do mês ficam pendentes de revisão; revisar (texto e fotos, prompt opcional para o Gemini) gera o Google Docs.
+   2.48: relato no layout da Central — até 2 fotos com legenda, FINAL e ORIGINAL em Docs e PDF.
    2.46: aba "Diagnósticos" (toda a equipe): diagnósticos por obra, tabela-resumo e documento da obra (Diagnosticos.html). */
 window.CPTRelatos = (() => {
   let ui = null, dados = null, rel = null, filtroTipo = '', parte = 'relatos', ticket = 0, filtro = {busca: '', bairro: '', meus: false, pontos: false}, limite = 24, buscaTimer = null;
@@ -78,7 +79,7 @@ window.CPTRelatos = (() => {
     const card = x => { const [t, cor] = SIT[x.situacao]; return `<article class="relato-card rel-card rr-card"><div class="card-top"><span class="badge">${ui.esc(ui.date(x.data))}</span><span class="badge">${ui.esc(x.tipo)}</span><span class="badge ${cor}">${t}</span></div>
       <h4>${ui.esc(x.atividade)}</h4><p class="small muted">${ui.esc([x.frente, x.bairro].filter(Boolean).join(' · ') || 'Local não informado')}</p><p class="small">${ui.esc(x.responsavel)}${x.publico != null ? ' · ' + ui.num(x.publico) + ' pessoas' : ''}</p>
       ${x.revisadoPor ? `<p class="small muted">Revisado por ${ui.esc(x.revisadoPor)}${x.revisadoEm ? ' em ' + ui.esc(new Date(x.revisadoEm).toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo'})) : ''}.</p>` : ''}
-      <div class="card-bottom"><span>${x.doc ? `<a class="button ghost" href="${ui.esc(x.doc)}" target="_blank" rel="noopener">Abrir documento</a>` : ''}</span><span><button class="button ${x.situacao === 'revisado' ? 'secondary' : ''}" type="button" data-rr-revisar="${ui.esc(x.id)}">${x.situacao === 'revisado' ? 'Revisar de novo' : 'Revisar'}</button></span></div></article>`; };
+      <div class="card-bottom"><span>${x.doc ? `<a class="button ghost" href="${ui.esc(x.pdf || x.doc)}" target="_blank" rel="noopener">${x.pdf ? 'Abrir PDF' : 'Abrir documento'}</a>` : ''}</span><span><button class="button ${x.situacao === 'revisado' ? 'secondary' : ''}" type="button" data-rr-revisar="${ui.esc(x.id)}">${x.situacao === 'revisado' ? 'Revisar de novo' : 'Revisar'}</button></span></div></article>`; };
     ui.view.innerHTML = cabecalho() + abas() + `<section class="stat-row" aria-label="Relatos do relatório">${tile('Pendentes', conta('pendente'), 'Aguardando revisão.')}${tile('Mudaram na origem', conta('mudou'), 'Revisados, mas o registro mudou depois.')}${tile('Revisados', conta('revisado'), 'Documento gerado.')}</section>
       <section class="panel filter-panel"><form class="filters rr-filtros" onsubmit="return false"><label class="field">Tipo<select id="rrTipo"><option value="">Todos</option>${rel.tipos.map(t => `<option ${filtroTipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label>
         <div class="rr-links">${pasta ? `<a class="button secondary" href="${ui.esc(pasta)}" target="_blank" rel="noopener">Abrir pasta</a>` : ''}${rel.modelo ? `<a class="button ghost" href="${ui.esc(rel.modelo)}" target="_blank" rel="noopener">Abrir modelo</a>` : ''}</div></form></section>
@@ -96,30 +97,35 @@ window.CPTRelatos = (() => {
   function desenharRevisao() {
     const c = rr.campos, v = rr.revisao, campo = (n, rot, max, val, area, linhas = 3) => `<label class="field">${rot}${area ? `<textarea name="${n}" rows="${linhas}" maxlength="${max}">${ui.esc(val || '')}</textarea>` : `<input name="${n}" maxlength="${max}" value="${ui.esc(val || '')}">`}</label>`;
     $d('detailTitle').textContent = rr.tipo + ' · ' + c.dataHorario.split(' · ')[0];
-    $d('detailContent').innerHTML = `${v ? `<div class="notice ${v.mudou ? 'warning' : ''}">${v.mudou ? 'O registro mudou depois da revisão de ' + ui.esc(v.nome) + '. Confira e gere de novo.' : 'Revisado por ' + ui.esc(v.nome) + ' (versão ' + v.versao + ').'} <a href="${ui.esc(v.doc)}" target="_blank" rel="noopener">Abrir documento</a></div>` : ''}
-      <p class="small muted">O documento usa o modelo do relato ilustrado. Revise o texto (se quiser, com o Gemini), escolha as fotos e gere. Nada vai para o relatório sem esta revisão.</p>
+    const arq = (v && v.arquivos) || {}, links = (a, t) => a && a.doc ? `${t}: <a href="${ui.esc(a.doc)}" target="_blank" rel="noopener">Docs</a>${a.pdf ? ` · <a href="${ui.esc(a.pdf)}" target="_blank" rel="noopener">PDF</a>` : ''}` : '';
+    $d('detailContent').innerHTML = `${v ? `<div class="notice ${v.mudou ? 'warning' : ''}">${v.mudou ? 'O registro mudou depois da revisão de ' + ui.esc(v.nome) + '. Confira e gere de novo.' : 'Revisado por ' + ui.esc(v.nome) + ' (versão ' + v.versao + ').'}
+        <span class="rr-docs">${[links(arq.final || (v.doc ? {doc: v.doc, pdf: v.pdf} : null), 'FINAL'), links(arq.original, 'ORIGINAL')].filter(Boolean).join(' · ')}</span></div>` : ''}
+      <p class="small muted">Sai no layout do relato ilustrado da Central: quadro da atividade, objetivo, relato, resultados e até ${rr.max} fotos lado a lado com legenda. Gera o FINAL (revisado) e, na primeira vez, o ORIGINAL (como veio do campo), em Docs e PDF. Nada vai para o relatório sem esta revisão.</p>
       <div class="dialog-actions"><button class="button secondary" type="button" data-rr-prompt>${ui.icon('file')}Copiar prompt</button><a class="button ghost" href="https://gemini.google.com/app" target="_blank" rel="noopener">Abrir o Gemini</a></div>
       <form id="rrForm" class="stack-form"><div id="rrErro" class="notice" hidden></div>
         ${campo('titulo', 'Título', 200, c.titulo)}
         ${campo('objetivo', 'Objetivo', 2000, c.objetivo, true, 2)}
         ${campo('relato', 'Relato da atividade', 12000, c.relato, true, 8)}
         ${campo('resultados', 'Resultados e encaminhamentos (opcional)', 4000, c.resultados, true, 3)}
-        <details class="mais-detalhes"><summary>Mais detalhes <small>local, endereço, mediação, equipe, público e interrupção</small></summary><div class="mais-detalhes-corpo">
+        <details class="mais-detalhes"><summary>Mais detalhes <small>o quadro da atividade: atividade, local, endereço, data e horário, mediação e público</small></summary><div class="mais-detalhes-corpo">
+          <div class="form-row">${campo('atividade', 'Atividade', 200, c.atividade)}${campo('dataHorario', 'Data e horário', 120, c.dataHorario)}</div>
           <div class="form-row">${campo('local', 'Local', 200, c.local)}${campo('endereco', 'Endereço e bairro', 300, c.endereco)}</div>
-          <div class="form-row">${campo('mediacao', 'Mediação', 200, c.mediacao)}${campo('equipe', 'Equipe registrada', 400, c.equipe)}</div>
-          <div class="form-row">${campo('publico', 'Público', 300, c.publico)}${campo('interrupcao', 'Interrupção informada (opcional)', 1000, c.interrupcao)}</div></div></details>
-        <fieldset class="rr-fotos"><legend>Fotos do documento (até ${rr.max})</legend>${rr.fotos.length ? rr.fotos.map((f, i) => `<label class="rr-foto"><input type="checkbox" name="foto" value="${ui.esc(f.id)}" ${f.escolhida ? 'checked' : ''}><img src="${ui.esc(f.thumb)}" alt="Foto ${i + 1}" loading="lazy" referrerpolicy="no-referrer"><span>Foto ${i + 1} · <a href="${ui.esc(f.url)}" target="_blank" rel="noopener">abrir</a></span></label>`).join('') : '<p class="muted">O registro não tem fotos.</p>'}</fieldset>
-        <div class="dialog-actions"><button class="button" type="submit">${ui.icon('check')}Revisado: gerar o documento</button></div></form>`;
+          <div class="form-row">${campo('mediacao', 'Mediação', 200, c.mediacao)}${campo('publico', 'Público', 300, c.publico)}</div></div></details>
+        <fieldset class="rr-fotos"><legend>Fotos (até ${rr.max}, lado a lado no documento)</legend>${rr.fotos.length ? rr.fotos.map((f, i) => `<div class="rr-foto dg-foto"><label><input type="checkbox" name="foto" value="${ui.esc(f.id)}" ${f.escolhida ? 'checked' : ''}><img src="${ui.esc(f.thumb)}" alt="Foto ${i + 1}" loading="lazy" referrerpolicy="no-referrer"></label>
+          <input class="dg-legenda" data-rr-legenda="${ui.esc(f.id)}" maxlength="300" placeholder="${ui.esc(rr.legendaPadrao || '')}" value="${ui.esc(f.legenda || '')}" aria-label="Legenda da foto ${i + 1}"><span><a href="${ui.esc(f.url)}" target="_blank" rel="noopener">abrir a foto ${i + 1}</a></span></div>`).join('') : '<p class="muted">O registro não tem fotos.</p>'}</fieldset>
+        <div class="dialog-actions"><button class="button" type="submit">${ui.icon('check')}Revisado: gerar FINAL e ORIGINAL</button></div></form>`;
   }
   async function enviarRevisao(f) {
-    const b = f.querySelector('[type=submit]'), dados_ = Object.fromEntries([...new FormData(f)].filter(([k]) => k !== 'foto')), fotos = [...f.querySelectorAll('[name=foto]:checked')].map(x => x.value), err = $d('rrErro');
+    const b = f.querySelector('[type=submit]'), dados_ = Object.fromEntries([...new FormData(f)].filter(([k]) => k !== 'foto')), err = $d('rrErro'),
+      fotos = [...f.querySelectorAll('[name=foto]:checked')].map(x => ({id: x.value, legenda: (f.querySelector(`[data-rr-legenda="${CSS.escape(x.value)}"]`) || {}).value || ''}));
     if (fotos.length > rr.max) { err.hidden = false; err.textContent = 'Escolha no máximo ' + rr.max + ' fotos.'; return; }
-    b.disabled = true; b.textContent = 'Gerando o documento… (até 1 minuto)'; err.hidden = true;
+    b.disabled = true; b.textContent = 'Gerando os documentos… (até 1 minuto)'; err.hidden = true;
     try {
       const r = await ui.call('revisarRelatoRelatorioCPT', {...dados_, id: rr.id, fotos, operacaoId: 'OP-' + crypto.randomUUID()});
-      ui.toast(r.resultado); rr.revisao = r.revisao; const x = rel && rel.itens.find(i => i.id === rr.id); if (x) { x.situacao = 'revisado'; x.doc = r.doc; x.revisadoPor = r.revisao.nome; x.revisadoEm = r.revisao.em; }
+      ui.toast(r.resultado); rr.revisao = r.revisao; rr.fotos.forEach(ft => { const s = fotos.find(y => y.id === ft.id); ft.escolhida = !!s; ft.legenda = s ? s.legenda : ft.legenda; });
+      const x = rel && rel.itens.find(i => i.id === rr.id); if (x) { x.situacao = 'revisado'; x.doc = r.doc; x.pdf = r.revisao.pdf; x.revisadoPor = r.revisao.nome; x.revisadoEm = r.revisao.em; }
       desenharRevisao(); desenharRelatorio();
-    } catch (e) { err.hidden = false; err.textContent = e.message; b.disabled = false; b.innerHTML = ui.icon('check') + 'Revisado: gerar o documento'; }
+    } catch (e) { err.hidden = false; err.textContent = e.message; b.disabled = false; b.innerHTML = ui.icon('check') + 'Revisado: gerar FINAL e ORIGINAL'; }
   }
   async function copiarPrompt() {
     try { await navigator.clipboard.writeText(rr.prompt); ui.toast('Prompt copiado. Cole no Gemini, revise e traga o texto para os campos.'); }
