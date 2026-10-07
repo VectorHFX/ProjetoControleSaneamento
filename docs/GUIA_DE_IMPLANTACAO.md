@@ -23,6 +23,20 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.37.0 — revisão geral e desempenho (≈ 5 min + 2 min opcionais)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.37.0`, Nova versão). Nenhuma permissão nova.
+2. **O que ficou mais rápido (sozinho, sem mudar nada nas telas):**
+   - **Recados, caderno, checklist, lembretes, contatos e demais coleções:** cada gravação continua indo para o histórico (nada é apagado), mas a leitura passa a usar uma aba **"<coleção> · atual"** com a última versão de cada item, mais as poucas linhas novas do histórico. Antes, toda leitura passava por todas as revisões (o caderno salva a cada pausa na digitação, então isso crescia rápido). O retrato é refeito sozinho numa gravação, a cada 300 revisões novas.
+   - **Relatos (ferramenta, painel, qualidade e dicas do Meu espaço):** cada relato tem os detalhes lidos **uma vez só** e guardados na aba **"Índice dos relatos · AAAA-MM"**. Antes, a cada registro novo, os detalhes do mês inteiro eram lidos de novo (e, nos relatos grandes, o arquivo no Drive).
+   - **Cronograma:** a lista vem do cache enquanto ninguém altera uma atividade.
+   - As abas novas ficam na planilha "CPT • Dados da aplicação". Podem ser apagadas sem perda: elas se refazem sozinhas.
+3. **Conferir funcionamento** (Como usar, proprietário) agora mostra o tamanho de cada coleção e se o retrato está em dia, e quais meses já têm índice dos relatos.
+4. **Opcional — aquecimento (recomendado quando a equipe começar a usar):** deixa prontos no cache, a cada 10 minutos (das 6h às 21h), os números do mês, os relatos, o painel, os alertas e o cronograma, para ninguém esperar o cálculo depois de um registro novo.
+   1. No editor do Apps Script, clique em **Acionadores** (ícone de relógio, à esquerda) → **Adicionar acionador**.
+   2. Função: **aquecerCPT** · Implantação: **Principal** · Origem do evento: **Baseado no tempo** · Tipo: **Contador de minutos** · Intervalo: **A cada 10 minutos** → **Salvar**.
+   3. Para desligar, apague o acionador. Ele não muda dados da equipe; só prepara o cache e os índices.
+
 ## Atualização 2.36.0 — alertas da Gestão e do Administrativo (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.36.0`, Nova versão). Arquivo novo: `AlertasGestaoCPT` (script); o atualizador cria.

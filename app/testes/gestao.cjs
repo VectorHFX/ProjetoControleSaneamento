@@ -204,3 +204,23 @@ console.log('PASS: qualidade dos relatos — % completos nos 6 meses, pontos que
  // Só a gerência recebe alertas.
  email='atd@example.com';assert.deepEqual(run('alertasGestaoCPT()').alertas,[]);email='gestao@example.com';assert.ok(Array.isArray(run('alertasGestaoCPT()').alertas));}
 console.log('PASS: alertas da gestão — caso aberto há mais de 30 dias, dias úteis sem ação (sem fim de semana, feriado e o dia de hoje), ritmo de pesquisas abaixo da metade a partir do dia 10, obras confirmadas ontem sem relato, ações sem público; feriados iguais aos do cronograma; painel com as mesmas regras; só para a gerência.');
+
+// 2.37: índice mensal dos relatos — os detalhes (coluna 21) são lidos uma vez por registro; resultado igual à regra antiga.
+{let col21=0;const g0=registros.getRange.bind(registros);registros.getRange=(r,c,n,m)=>{if(c===21)col21+=n||1;return g0(r,c,n,m);};
+ agenda.sheets=agenda.sheets.filter(s=>!s.name.startsWith('Índice dos relatos'));cacheMap.clear();email='gestao@example.com';
+ const r1=run("carregarRelatosResumoCPT('2026-09')");assert.ok(col21>0,'primeira vez lê os detalhes');
+ const aba=agenda.getSheetByName('Índice dos relatos · 2026-09');assert.ok(aba,'índice do mês criado');assert.equal(aba.rows.length-1,r1.itens.length);
+ cacheMap.clear();col21=0;const r2=run("carregarRelatosResumoCPT('2026-09')");assert.equal(col21,0,'com o índice, não lê a coluna de detalhes');assert.deepEqual(r2.itens.map(({...x})=>x),r1.itens.map(({...x})=>x),'mesmo resultado');
+ // Conferência igual à regra antiga (doRegistro sobre os detalhes completos).
+ r2.itens.forEach(it=>{const row=registros.rows.find(r=>r[0]===it.id);ctx.rowX=row;const q=run("(()=>{const c=DadosDaAplicacao.campos(rowX[20]);return RelatosCPT.ehRelato(rowX[1])&&c?RelatosCPT.doRegistro(rowX,c):null;})()");assert.deepEqual(it.qualidade,q,'conferência igual para '+it.id);});
+ // Registro alterado (hash muda): só ele é relido.
+ const alvo=registros.rows.find(r=>r[0]===r1.itens[0].id);alvo[19]='hash-novo';cacheMap.clear();col21=0;run("carregarRelatosResumoCPT('2026-09')");assert.equal(col21,1,'só o registro alterado é relido');
+ // Índice apagado à mão: refaz sozinho.
+ agenda.sheets=agenda.sheets.filter(s=>!s.name.startsWith('Índice dos relatos'));cacheMap.clear();assert.equal(run("carregarRelatosResumoCPT('2026-09')").itens.length,r1.itens.length);
+ registros.getRange=g0;}
+console.log('PASS: índice dos relatos — detalhes lidos uma vez por registro (depois, nenhuma leitura da coluna de detalhes), conferência igual à regra antiga, registro alterado relido sozinho, índice apagado refeito.');
+
+// 2.37: aquecimento opcional — prepara início, relatos (índice), painel, alertas e cronograma; um passo com falha não derruba os outros.
+{email='victor@example.com';cacheMap.clear();const r=run('aquecerCPT()');assert.equal(r.resultado,'AQUECIDO',JSON.stringify(r.falhas));assert.deepEqual(r.feitos,['inicio','relatos','painel','alertas','cronograma']);
+ const fmt=ctx.Utilities.formatDate;ctx.Utilities.formatDate=(d,z,f)=>f==='H'?'23':fmt(d,z,f);assert.equal(run('aquecerCPT()').resultado,'FORA DO HORÁRIO');ctx.Utilities.formatDate=fmt;}
+console.log('PASS: aquecimento — prepara início, relatos, painel, alertas e cronograma; fora das 6h às 21h não faz nada.');

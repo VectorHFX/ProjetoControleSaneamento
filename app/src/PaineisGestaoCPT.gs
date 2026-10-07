@@ -127,24 +127,70 @@ class PaineisGestaoCPT {
     dados.mes(mes);
     const a = dados.registros(), chave = 'relatos-resumo:' + ctx.base.getId() + ':' + mes + ':' + a.getLastRow() + ':' + (PropertiesService.getScriptProperties().getProperty('CPT_ENTREGAS_VERSAO') || 0);
     return CacheCPT.obter(chave, 600, () => {
-      const base = dados.ler(a, 19), idx = []; base.forEach((r, i) => { if (r[0] && dados.mesCelula(r[3]) === mes && SocioambientalCPT.destino(r[1], r[13], r[17])) idx.push(i); });
-      const json = new Map();
-      // Faixas contínuas (as linhas do mês costumam estar juntas): poucas leituras da coluna de detalhes.
-      for (let i = 0; i < idx.length;) { let j = i; while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++; const v = a.getRange(idx[i] + 2, 21, idx[j] - idx[i] + 1, 1).getValues(); v.forEach((x, k) => json.set(idx[i] + k, x[0])); i = j + 1; }
-      const entregas = dados.situacoesEntregas(), R = DadosDaAplicacao;
-      const itens = idx.map(i => {
-        // Relato grande: o Campo 4.0 guarda os detalhes num arquivo à parte. Sem lê-lo, a conferência acusaria falta de tudo.
-        let campos = R.campos(json.get(i));
-        if (!campos && /arquivoDetalhesId/.test(String(json.get(i) || ''))) try { campos = R.campos(JSON.stringify(DadosDaAplicacao.lerDetalhes(json.get(i)))); } catch (_) { campos = null; }
-        const r = base[i], texto = R.valor(campos, /^relato|relato da atividade|relato do diagnostico|descreva|como foi/) || '';
-        return {id: String(r[0]), data: dados.data(r[2]), atividade: String(r[13] || r[1]), procedimento: String(r[1]), bairro: String(r[7]), frente: SocioambientalCPT.frente(r[9]), responsavel: String(r[11]),
-          publico: r[14] !== '' && /^\d+$/.test(String(r[14])) ? Number(r[14]) : null, item: SocioambientalCPT.destino(r[1], r[13], r[17]),
-          resumo: texto.length > 360 ? texto.slice(0, 357).replace(/\s+\S*$/, '') + '…' : texto, objetivo: R.valor(campos, /^objetivo/).slice(0, 200), apoio: R.valor(campos, /^colaboradores de apoio/).slice(0, 400),
-          fotos: (String(json.get(i) || '').match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).length, situacao: (entregas.get(String(r[0])) || {}).situacao || '',
-          qualidade: RelatosCPT.ehRelato(r[1]) && campos ? RelatosCPT.doRegistro(r, campos) : null};
-      }).sort((x, y) => y.data.localeCompare(x.data));
+      // 2.37: 20 colunas — a 20ª é o hash do registro (chave do índice: muda quando o conteúdo muda).
+      const base = dados.ler(a, 20), idx = []; base.forEach((r, i) => { if (r[0] && dados.mesCelula(r[3]) === mes && SocioambientalCPT.destino(r[1], r[13], r[17])) idx.push(i); });
+      // 2.37: o que vem dos detalhes (texto, objetivo, apoio, fotos…) é extraído uma vez por registro e guardado no índice do mês.
+      // Só os registros novos (ou alterados: o hash muda) leem a coluna de detalhes — e o arquivo no Drive, nos relatos grandes.
+      const indice = IndiceRelatosCPT.ler(ctx, mes), faltam = idx.filter(i => { const x = indice.get(String(base[i][0])); return !x || x.chave !== IndiceRelatosCPT.chave(base[i]); });
+      if (faltam.length) {
+        const json = new Map();
+        // Faixas contínuas (as linhas do mês costumam estar juntas): poucas leituras da coluna de detalhes.
+        for (let i = 0; i < faltam.length;) { let j = i; while (j + 1 < faltam.length && faltam[j + 1] === faltam[j] + 1) j++; const v = a.getRange(faltam[i] + 2, 21, faltam[j] - faltam[i] + 1, 1).getValues(); v.forEach((x, k) => json.set(faltam[i] + k, x[0])); i = j + 1; }
+        faltam.forEach(i => indice.set(String(base[i][0]), {chave: IndiceRelatosCPT.chave(base[i]), x: IndiceRelatosCPT.extrair(json.get(i))}));
+        try { IndiceRelatosCPT.gravar(ctx, mes, idx.map(i => String(base[i][0])), indice); } catch (e) { console.warn('Índice dos relatos ' + mes + ': ' + e.message); }
+      }
+      const entregas = dados.situacoesEntregas();
+      const itens = idx.map(i => IndiceRelatosCPT.item(base[i], indice.get(String(base[i][0])).x, dados, entregas)).sort((x, y) => y.data.localeCompare(x.data));
       return {mes, itens};
     });
+  }
+}
+
+/**
+ * IndiceRelatosCPT 2.37.0. Índice mensal dos relatos na planilha de dados da aplicação (aba "Índice dos relatos · AAAA-MM"):
+ * uma linha por registro com o que a tela precisa dos detalhes (texto do relato, objetivo, apoio, quantidade de fotos e os
+ * campos da conferência). Assim a coluna de detalhes (e o arquivo no Drive dos relatos grandes) é lida uma vez só por registro.
+ * A chave junta o hash do registro (muda se o conteúdo mudar) e a versão do índice (muda se a regra de extração mudar).
+ * O índice se refaz sozinho: linha faltando ou chave diferente → lê os detalhes de novo. Pode ser apagado sem perda.
+ */
+class IndiceRelatosCPT {
+  static get versao() { return '1'; }
+  static aba(mes) { return 'Índice dos relatos · ' + mes; }
+  static chave(r) { return String(r[19] || '') + '|' + IndiceRelatosCPT.versao; }
+  static ler(ctx, mes) {
+    const out = new Map(); let a = null;
+    try { a = planilhaCPT_(ctx.config.agendaId).getSheetByName(IndiceRelatosCPT.aba(mes)); } catch (_) { return out; }
+    if (!a || a.getLastRow() < 2) return out;
+    a.getRange(2, 1, a.getLastRow() - 1, 3).getValues().forEach(r => { if (!r[0]) return; try { out.set(String(r[0]), {chave: String(r[1]), x: JSON.parse(r[2])}); } catch (_) {} });
+    return out;
+  }
+  static gravar(ctx, mes, ids, indice) {
+    if (!ctx.config || !ctx.config.agendaId) return;
+    const ss = planilhaCPT_(ctx.config.agendaId), nome = IndiceRelatosCPT.aba(mes); let a = ss.getSheetByName(nome);
+    if (!a) { a = ss.insertSheet(nome); a.getRange(1, 1, 1, 3).setValues([['ID do registro', 'Chave', 'Dados para a tela (pode apagar: refaz sozinho)']]); a.setFrozenRows(1); }
+    const linhas = ids.map(id => { const e = indice.get(id); return [id, e.chave, JSON.stringify(e.x)]; });
+    if (linhas.length) a.getRange(2, 1, linhas.length, 3).setValues(linhas);
+  }
+  /** Só o que a tela usa dos detalhes. Sem detalhes legíveis, temCampos = false (a conferência fica de fora, como antes). */
+  static extrair(celula) {
+    const R = DadosDaAplicacao; let campos = R.campos(celula);
+    // Relato grande: o Campo 4.0 guarda os detalhes num arquivo à parte. Sem lê-lo, a conferência acusaria falta de tudo.
+    if (!campos && /arquivoDetalhesId/.test(String(celula || ''))) try { campos = R.campos(JSON.stringify(R.lerDetalhes(celula))); } catch (_) { campos = null; }
+    const v = re => R.valor(campos, re) || '';
+    return {temCampos: !!campos, texto: v(/^relato|relato da atividade|relato do diagnostico|descreva|como foi/).slice(0, 20000), complemento: v(/^complemento/).slice(0, 500),
+      objetivo: v(/^objetivo/).slice(0, 500), observacao: v(/^observacao final/).slice(0, 1500), endereco: v(/^endereco completo|^endereco da atividade|^local da atividade/).slice(0, 300),
+      publicoAlvo: v(/^publico-alvo|^publico alvo/).slice(0, 300), apoio: v(/^colaboradores de apoio/).slice(0, 400),
+      fotos: (String(celula || '').match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).length};
+  }
+  /** Item da tela: colunas da base (sempre atuais) + o que veio do índice. */
+  static item(r, x, dados, entregas) {
+    const publico = r[14] !== '' && /^\d+$/.test(String(r[14])) ? Number(r[14]) : null, texto = x.texto || '';
+    return {id: String(r[0]), data: dados.data(r[2]), atividade: String(r[13] || r[1]), procedimento: String(r[1]), bairro: String(r[7]), frente: SocioambientalCPT.frente(r[9]), responsavel: String(r[11]),
+      publico, item: SocioambientalCPT.destino(r[1], r[13], r[17]),
+      resumo: texto.length > 360 ? texto.slice(0, 357).replace(/\s+\S*$/, '') + '…' : texto, objetivo: (x.objetivo || '').slice(0, 200), apoio: x.apoio || '',
+      fotos: x.fotos || 0, situacao: (entregas.get(String(r[0])) || {}).situacao || '',
+      qualidade: RelatosCPT.ehRelato(r[1]) && x.temCampos ? RelatosCPT.conferir({atividade: r[13], complemento: x.complemento, texto, objetivo: x.objetivo, observacao: x.observacao,
+        bairro: r[7], endereco: x.endereco, publico, publicoAlvo: x.publicoAlvo}) : null};
   }
 }
 

@@ -8,7 +8,7 @@ cd "$(dirname "$0")/../.."
 ok=0; falhas=(); log="$(mktemp -d)"
 roda(){ local nome="$1"; shift; local arq="$log/${nome//\//_}.log"; if timeout 600 "$@" >"$arq" 2>&1; then ok=$((ok+1)); printf '  ok      %s\n' "$nome"; else falhas+=("$nome"); printf '  FALHOU  %s  (detalhes: %s)\n' "$nome" "$arq"; fi; }
 echo "Servidor da aplicação"
-for t in cronograma obras_relatorio inventario gestao comunicacao espaco quiz mascotes jogos tema desempenho levantamento; do roda "app/$t" node "app/testes/$t.cjs"; done
+for t in cronograma obras_relatorio inventario gestao comunicacao espaco quiz mascotes jogos tema desempenho levantamento colecao; do roda "app/$t" node "app/testes/$t.cjs"; done
 echo "Atualizador"
 roda atualizador node atualizador/testes/atualizador.cjs
 roda cloudshell bash atualizador/testes/cloudshell.sh

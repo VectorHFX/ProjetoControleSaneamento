@@ -3,12 +3,25 @@
  * Cada linha guarda o estado completo de um item e é uma revisão: nada é apagado, o histórico fica na aba.
  * O estado atual é a maior versão de cada ID. Usada por Recados, Contatos, Lembretes, Materiais e Mídias extras.
  * Salvamento: versão esperada (conflito), operação idempotente (a mesma operação não grava duas vezes) e trava.
+ * 2.37 — retrato do estado atual: a aba "<coleção> · atual" guarda a última versão de cada item até uma linha do histórico
+ * (Script Properties CPT_RETRATO:…). A leitura junta o retrato com as linhas novas do histórico (a "cauda"), em vez de ler
+ * todas as revisões. O histórico continua inteiro na aba original. O retrato é refeito numa escrita (com a trava), quando a
+ * cauda passa de limiteCauda linhas. A ordem dos itens no retrato é estável (novos no fim): uma leitura que pegue o retrato
+ * no meio da troca continua certa, porque cada item fica com a maior versão entre retrato e cauda.
  */
 class ColecaoCPT {
   static get cabecalho() { return ['ID', 'Versão', 'Operação ID', 'Alterado em', 'Alterado por', 'Conteúdo JSON']; }
   /** Uma instância por aba em cada pedido (2.21): telas que juntam vários módulos (Meu espaço) leem cada aba uma vez só. */
   static de(ctx, aba, prefixo) { const m = ctx.colecoesCPT || (ctx.colecoesCPT = {}); return m[aba] || (m[aba] = new ColecaoCPT(ctx, aba, prefixo)); }
-  constructor(ctx, aba, prefixo) { this.ctx = ctx; this.nome = aba; this.prefixo = prefixo; this.cache = null; }
+  constructor(ctx, aba, prefixo) { this.ctx = ctx; this.nome = aba; this.prefixo = prefixo; this.cache = null; (ctx.colecoesTodasCPT || (ctx.colecoesTodasCPT = [])).push(this); }
+  static get limiteCauda() { return 300; }
+  chaveRetrato() { return 'CPT_RETRATO:' + String(this.ctx.config.agendaId).slice(-10) + ':' + this.nome; }
+  retrato() { try { const r = JSON.parse(PropertiesService.getScriptProperties().getProperty(this.chaveRetrato()) || 'null'); return r && r.ate >= 1 && r.n >= 0 ? r : null; } catch (_) { return null; } }
+  abaRetrato(criar) {
+    const ss = planilhaCPT_(this.ctx.config.agendaId), nome = this.nome + ' · atual'; let a = ss.getSheetByName(nome);
+    if (!a && criar) { a = ss.insertSheet(nome); a.getRange(1, 1, 1, 3).setValues([['ID', 'Versão', 'Estado atual (o histórico completo fica na aba ' + this.nome + ')']]); a.setFrozenRows(1); }
+    return a;
+  }
   /** A aba já existe? (para ler sem criar a aba de quem só consulta) */
   static existe(ctx, aba) { try { return !!planilhaCPT_(ctx.config.agendaId).getSheetByName(aba); } catch (_) { return false; } }
   aba() {
@@ -20,12 +33,35 @@ class ColecaoCPT {
   /** Estado atual de todos os itens. Cache compartilhado pela última linha da aba (uma revisão nova invalida sozinha). */
   itens() {
     if (this.cache) return this.cache;
-    const a = this.aba(), n = a.getLastRow() - 1, chave = 'colecao:' + this.ctx.config.agendaId + ':' + this.nome + ':' + n;
+    const a = this.aba(), ultima = a.getLastRow(), n = ultima - 1, chave = 'colecao:' + this.ctx.config.agendaId + ':' + this.nome + ':' + n;
     const salvo = CacheCPT.ler(chave); if (salvo) { this.cache = salvo; return salvo; }
-    const atuais = new Map();
-    (n > 0 ? a.getRange(2, 1, n, 6).getValues() : []).forEach(r => { if (!r[0]) return; let e; try { e = JSON.parse(r[5]); } catch (_) { return; } const x = atuais.get(e.id); if (!x || x.versao < e.versao) atuais.set(e.id, e); });
+    const atuais = new Map(), soma = e => { if (!e || !e.id) return; const x = atuais.get(e.id); if (!x || x.versao < e.versao) atuais.set(e.id, e); };
+    // Retrato + cauda; sem retrato válido (ou histórico mexido à mão), lê tudo como antes.
+    let de = 2; const r = this.retrato(), ar = r && r.ate <= ultima ? this.abaRetrato(false) : null;
+    if (ar) {
+      (r.n ? ar.getRange(2, 3, r.n, 1).getValues() : []).forEach(x => { try { soma(JSON.parse(x[0])); } catch (_) {} });
+      // Retrato incompleto (aba mexida à mão): descarta e lê o histórico inteiro, como antes.
+      if (atuais.size < r.n) atuais.clear(); else de = r.ate + 1;
+    }
+    if (ultima >= de) a.getRange(de, 1, ultima - de + 1, 6).getValues().forEach(x => { if (!x[0]) return; try { soma(JSON.parse(x[5])); } catch (_) {} });
     this.cache = [...atuais.values()]; CacheCPT.gravar(chave, this.cache, 3600); return this.cache;
   }
+  /** Refaz o retrato quando a cauda ficou longa. Só dentro de uma escrita (a trava já está com esta execução). */
+  refazerSePreciso() {
+    if (!this.ctx.config || !this.ctx.config.agendaId) return false;
+    const a = planilhaCPT_(this.ctx.config.agendaId).getSheetByName(this.nome); if (!a) return false;
+    const ultima = a.getLastRow(), r = this.retrato(), base = r && r.ate <= ultima ? r.ate : 1;
+    // Refaz também quando a aba do retrato sumiu ou ficou menor do que a marca diz (mexida à mão).
+    const ar = r ? this.abaRetrato(false) : null, estragado = !!r && (!ar || ar.getLastRow() - 1 < r.n);
+    if (!estragado && ultima - base <= ColecaoCPT.limiteCauda) return false;
+    this.cache = null; const itens = this.itens(), linhas = itens.map(e => [e.id, e.versao, JSON.stringify(e)]);
+    // Primeiro o retrato (numa escrita só), depois a marca: quem ler no meio usa a marca antiga e continua certo.
+    if (linhas.length) this.abaRetrato(true).getRange(2, 1, linhas.length, 3).setValues(linhas); else this.abaRetrato(true);
+    PropertiesService.getScriptProperties().setProperty(this.chaveRetrato(), JSON.stringify({ate: ultima, n: linhas.length, em: new Date().toISOString()}));
+    return true;
+  }
+  /** Depois de uma escrita: mantém o retrato de cada coleção usada nesta execução. Nunca derruba a escrita. */
+  static manter(ctx) { (ctx.colecoesTodasCPT || []).forEach(c => { try { c.refazerSePreciso(); } catch (e) { console.warn('Retrato ' + c.nome + ': ' + e.message); } }); }
   /** Índice por ID (montado uma vez por leitura da coleção): busca direta em vez de percorrer a lista. */
   obter(id) {
     const itens = this.itens();
@@ -60,11 +96,12 @@ class ColecaoCPT {
     a.getRange(a.getLastRow() + 1, 1, linhas.length, 6).setValues(linhas);
     this.cache = null; return out;
   }
-  /** O item gravado por esta operação, se ela já aconteceu (para repetir sem duplicar). */
+  /** O item gravado por esta operação, se ela já aconteceu (para repetir sem duplicar). 2.37: procura só nas últimas
+   *  1000 revisões (uma repetição chega em segundos ou minutos), em vez de ler a coluna inteira. */
   porOperacao(operacaoId) {
-    const a = this.aba(), n = a.getLastRow() - 1; if (n < 1) return null;
-    const i = a.getRange(2, 3, n, 1).getValues().findIndex(r => String(r[0]) === operacaoId);
-    return i >= 0 ? JSON.parse(a.getRange(i + 2, 6).getValue()) : null;
+    const a = this.aba(), ultima = a.getLastRow(); if (ultima < 2) return null;
+    const de = Math.max(2, ultima - 999), i = a.getRange(de, 3, ultima - de + 1, 1).getValues().findIndex(r => String(r[0]) === operacaoId);
+    return i >= 0 ? JSON.parse(a.getRange(de + i, 6).getValue()) : null;
   }
   /** Revisões de um item, da mais nova para a mais antiga. */
   historico(id) {
@@ -96,7 +133,7 @@ class ColecaoCPT {
     return DesempenhoCPT.medir(nome, () => {
       if (!escrita) return fn(AplicacaoCPT.identidade());
       const lock = LockService.getScriptLock(); if (!lock.tryLock(15000)) throw new Error('Há outro salvamento em andamento. Tente de novo em alguns segundos.');
-      try { return fn(AplicacaoCPT.identidade()); } finally { lock.releaseLock(); }
+      try { const ctx = AplicacaoCPT.identidade(), r = fn(ctx); ColecaoCPT.manter(ctx); return r; } finally { lock.releaseLock(); }
     });
   }
 }
