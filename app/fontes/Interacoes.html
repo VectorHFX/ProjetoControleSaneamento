@@ -90,7 +90,7 @@
   function limparDetalhe(){$('detailDialog').classList.remove('is-side');document.body.classList.remove('detail-side');document.querySelectorAll('.list-row.is-open').forEach(x=>x.classList.remove('is-open'));}
   $('detailDialog').addEventListener('close',limparDetalhe);
   // ---------- Busca geral (Ctrl+K): páginas, ações, protocolos, obras e contatos ----------
-  const BUSCA={obras:null,contatos:null,casos:[],casosDe:'',timer:null,seq:0,sel:0,itens:[]};
+  const BUSCA={obras:null,contatos:null,matriz:null,casos:[],casosDe:'',timer:null,seq:0,sel:0,itens:[]};
   const ACOES=[{titulo:'Novo recado',rota:'recados',chave:'recado mensagem avisar escrever',alvo:'[data-rec-novo]'},{titulo:'Nova atividade no cronograma',rota:'cronograma',chave:'agenda evento atividade marcar',alvo:'[data-agenda-action="new"]'},
     {titulo:'Novo contato',rota:'contatos',chave:'contato telefone cadastrar pessoa',alvo:'[data-con-novo]'},
     {titulo:'Visão do mês · Contrato',rota:'painel',chave:'painel contrato gestao numeros',aba:'contrato'},{titulo:'Visão do mês · Frentes de serviço',rota:'painel',chave:'painel frentes obras servico',aba:'frentes'},
@@ -98,7 +98,7 @@
   const normBusca=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   function abrirBusca(){const d=$('searchDialog');if(d.open)return;if(document.body.classList.contains('nav-open'))abrirMenu(false);d.showModal();$('searchInput').value='';BUSCA.sel=0;desenharBusca();$('searchInput').focus();
     if(!BUSCA.obras)call('listarObrasCPT').then(r=>{BUSCA.obras=(r&&r.obras)||[];desenharBusca();}).catch(()=>{BUSCA.obras=[];});
-    if(!BUSCA.contatos)call('listarContatosCPT').then(r=>{BUSCA.contatos=(r&&r.itens)||[];desenharBusca();}).catch(()=>{BUSCA.contatos=[];});}
+    if(!BUSCA.contatos)call('listarContatosCPT').then(r=>{BUSCA.contatos=(r&&r.itens)||[];BUSCA.matriz=(r&&r.matriz)||[];desenharBusca();}).catch(()=>{BUSCA.contatos=[];BUSCA.matriz=[];});}
   function fecharBusca(){const d=$('searchDialog');if(d.open)d.close();}
   /** Monta a lista de resultados para o texto digitado (sem texto: atalhos). Atendimentos vêm do servidor, com espera curta. */
   function resultadosBusca(q){const n=normBusca(q).trim(),out=[],tem=t=>!n||normBusca(t).includes(n);
@@ -107,7 +107,9 @@
     if(n.length>=2){
       BUSCA.casos.forEach(c=>out.push({tipo:'Atendimento',titulo:(c.caso?c.caso+' · ':'')+c.protocolo+' · '+(c.nome||'Sem nome'),detalhe:[c.assunto,c.status].filter(Boolean).join(' · '),icone:'#i-case',ir:()=>{navigate('atendimentos');window.CPTAtendimentos.abrir(c.protocolo);}}));
       (BUSCA.obras||[]).filter(o=>normBusca([o.nome,o.nomeUso,(o.apelidos||[]).join(' '),(o.bairros||[]).join(' '),o.id].join(' ')).includes(n)).slice(0,5).forEach(o=>out.push({tipo:'Obra',titulo:o.exibir||o.nome,detalhe:[(o.bairros||[]).join(', '),o.situacao].filter(Boolean).join(' · '),icone:'#i-pin',ir:()=>{window.CPTObras.irPara('catalogo');navigate('obras');preencherQuandoAparecer('#obraFiltros [name=busca]',o.exibir||o.nome);}}));
-      (BUSCA.contatos||[]).filter(c=>normBusca([c.nome,c.instituicao,c.bairro,c.etiquetas,c.telefone].join(' ')).includes(n)).slice(0,5).forEach(c=>out.push({tipo:'Contato',titulo:c.nome||c.instituicao,detalhe:[c.instituicao,c.bairro].filter(Boolean).join(' · '),icone:'#i-contact',ir:()=>{navigate('contatos');clicarQuandoAparecer('[data-con-abrir="'+String(c.id).replace(/"/g,'')+'"]');}}));}
+      (BUSCA.contatos||[]).filter(c=>normBusca([c.nome,c.instituicao,c.bairro,c.etiquetas,c.telefone].join(' ')).includes(n)).slice(0,5).forEach(c=>out.push({tipo:'Contato',titulo:c.nome||c.instituicao,detalhe:[c.instituicao,c.bairro].filter(Boolean).join(' · '),icone:'#i-contact',ir:()=>{navigate('contatos');clicarQuandoAparecer('[data-con-abrir="'+String(c.id).replace(/"/g,'')+'"]');}}));
+      // 2.40: contatos da Matriz Sabesp (aprovados e ativos) também aparecem.
+      (BUSCA.matriz||[]).filter(c=>normBusca([c.nome,c.pessoa,c.secao,c.telefone,c.email].join(' ')).includes(n)).slice(0,5).forEach(c=>out.push({tipo:'Matriz Sabesp',titulo:c.nome,detalhe:[c.pessoa,c.telefone,c.secao].filter(Boolean).join(' · '),icone:'#i-contact',ir:()=>{window.CPTRecados.irMatriz(c.id);navigate('contatos');}}));}
     return out.slice(0,14);}
   function desenharBusca(){const q=$('searchInput').value,lista=resultadosBusca(q);BUSCA.itens=lista;BUSCA.sel=Math.min(BUSCA.sel,Math.max(0,lista.length-1));
     $('searchResults').innerHTML=lista.length?lista.map((r,i)=>`<button type="button" class="search-item${i===BUSCA.sel?' is-sel':''}" role="option" aria-selected="${i===BUSCA.sel}" data-busca="${i}"><svg class="icon" aria-hidden="true"><use href="${esc(r.icone)}"/></svg><span class="search-text"><strong>${esc(r.titulo)}</strong>${r.detalhe?`<small>${esc(r.detalhe)}</small>`:''}</span><span class="search-kind">${esc(r.tipo)}</span></button>`).join('')
@@ -277,7 +279,7 @@
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.39.1.');
+  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.40.0.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});

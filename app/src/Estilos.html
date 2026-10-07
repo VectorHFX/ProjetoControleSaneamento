@@ -1467,4 +1467,12 @@ html[data-theme=dark] .stat-tile.is-bad .stat-value{color:#f19a90}
 .anexos-ind th,.anexos-ind td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.anexos-ind th{font-size:11px;color:var(--muted);font-weight:650}.anexos-ind .num{text-align:right;white-space:nowrap}
 .anexos-ind tr.is-muda td{background:color-mix(in srgb,#d08a2a 8%,transparent)}.anexos-ind td:nth-child(5){min-width:180px}.anexos-topo .dialog-actions{margin:0 0 10px}
 @media (max-width:640px){.anexos-ind td:nth-child(5),.anexos-ind th:nth-child(5){display:none}}
+/* 2.40: Matriz Sabesp — propostas aguardando aprovação (antes → depois) e histórico de auditoria. */
+.mat-fila{margin-bottom:18px}.mat-proposta{border:1px solid var(--line);border-left:4px solid #d08a2a;border-radius:12px;padding:14px 16px;margin:0 0 12px;background:var(--bg)}
+.mat-proposta header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin-bottom:8px}.mat-proposta .dialog-actions{margin:10px 0 0}
+.mat-diff{display:grid;gap:6px;margin:0}.mat-diff div{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:10px;font-size:13px}.mat-diff dt{color:var(--muted);font-size:12px}.mat-diff dd{margin:0;overflow-wrap:anywhere}
+.mat-diff del{color:var(--muted)}.mat-diff ins{text-decoration:none;font-weight:650;color:var(--ink);background:color-mix(in srgb,var(--mint) 16%,transparent);border-radius:4px;padding:0 3px}
+.mat-historico{list-style:none;margin:0;padding:0;display:grid;gap:8px}.mat-historico li{border-left:2px solid var(--line);padding:2px 0 2px 12px;font-size:13px}.mat-historico small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.list-row.is-inativo .c-nome,.list-row.is-inativo .c-inst{color:var(--muted)}
+@media (max-width:640px){.mat-diff div{grid-template-columns:1fr;gap:2px}}
 </style>

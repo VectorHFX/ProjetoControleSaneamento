@@ -23,6 +23,21 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.40.0 — Matriz de Contatos da Sabesp na aplicação (≈ 5 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.40.0`, Nova versão). Arquivo novo: `MatrizCPT` (script); o atualizador cria. Nenhuma permissão nova. A rotina das 12h e 0h ganhou o passo da Matriz (sem mudar os acionadores).
+2. **Contatos → aba Matriz Sabesp.** Os contatos da Matriz (documento do cliente) ficam separados dos contatos internos (aba Equipe), mas aparecem na **busca geral (Ctrl+K)** para todo o time — para atendimento, parceiros de ações, personagens etc.
+3. **Importar (uma vez, Gestão ou Administrativo):** na aba Matriz Sabesp → **Importar a Matriz**. Cada linha de contato da aba "Matriz de Contatos" vira um contato aprovado, com a seção de origem (ex.: "REGIÃO/LOCALIDADE · LIDERANÇAS LOCAIS", "ESCOLAS MUNICIPAIS E ESTADUAIS"). A planilha não é alterada na importação. Depois disso, **a aplicação é a fonte**: não edite a Matriz à mão.
+4. **Propor (todo o time):** **Propor contato** (escolhe a seção), **Propor alteração** ou **Propor inativar** (com motivo) no contato. Nada vale antes da aprovação.
+5. **Aprovar ou recusar (Gestão e Administrativo):** a fila "Aguardando aprovação" mostra o que muda (antes → depois). Recusar pede o motivo. Aprovado vai para a planilha na hora:
+   - alteração no lugar (a linha é achada pelo nome e pessoa de contato);
+   - contato novo no fim da sua seção, com a formatação da linha de cima;
+   - a coluna **ATUALIZAÇÃO** recebe a data da aprovação;
+   - **nenhuma linha é apagada**: inativar escreve "Inativo desde dd/mm/aaaa." na observação (reativar devolve a observação de antes).
+6. **Auditoria:** cada contato mostra o histórico (importado, proposto, aprovado/recusado, gravado na Matriz — quem e quando), e cada versão fica guardada na aba "Matriz Sabesp" da planilha de dados da aplicação.
+7. Se a planilha não abrir na hora da aprovação, ou a linha tiver sido mudada à mão, o contato fica **"A gravar na planilha"** (com o motivo) e a rotina tenta de novo. Nada é escrito em lugar errado.
+8. A linha 15 dos Indicadores continua contando os contatos da Matriz (2.39.1).
+
 ## Atualização 2.39.1 — planilha nova dos Anexos, Tenda pelos relatos e parceiros pela Matriz (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.39.1`, Nova versão).

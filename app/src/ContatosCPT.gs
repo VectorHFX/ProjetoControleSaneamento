@@ -13,7 +13,8 @@ class ContatosCPT {
   publico(c) { return {...c, podeEditar: this.podeEditar(c)}; }
   listar() {
     const itens = this.col.itens().filter(c => !c.arquivado).map(c => this.publico(c)).sort((a, b) => (a.nome || a.instituicao).localeCompare(b.nome || b.instituicao, 'pt-BR'));
-    return {itens, tipos: ContatosCPT.tipos, canais: ContatosCPT.canais, podeCadastrar: true};
+    // 2.40: os contatos da Matriz Sabesp (aprovados e ativos) também aparecem na busca e nas ferramentas.
+    return {itens, tipos: ContatosCPT.tipos, canais: ContatosCPT.canais, podeCadastrar: true, matriz: typeof MatrizCPT === 'undefined' ? [] : MatrizCPT.busca(this.ctx)};
   }
   salvar(p) {
     p = p || {}; const antigo = p.id ? this.col.obter(String(p.id)) : null;

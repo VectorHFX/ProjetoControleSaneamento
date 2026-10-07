@@ -5,12 +5,14 @@
  * Recados: para uma frente ou pessoa, com aviso na lateral, leitura registrada, resposta e "resolvido".
  *   Não envia e-mail nem WhatsApp. Pode levar um vínculo (material, protocolo, registro, lembrete, obra).
  * Contatos: matriz comum com observação interna e o caderno de conversas de cada contato.
+ * 2.40: aba "Matriz Sabesp" — a Matriz de Contatos do cliente: todos consultam e propõem (novo, alteração, inativar);
+ *      Gestão e Administrativo aprovam ou recusam com motivo; cada contato mostra o histórico; aprovado vai para a planilha.
  * Formulários abrem na janela de detalhes; o texto digitado fica na tela se algo falhar.
  */
 window.CPTRecados = (() => {
   'use strict';
   const ic = (n, e) => window.CPTic ? window.CPTic(n, e) : e; // ícone no visual novo, emoji no atual
-  let ui = null, ticket = 0, rec = null, alvo = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: '', limite: 50}, rascunhoVinculo = null;
+  let ui = null, ticket = 0, abaCon = 'equipe', mat = null, filtroMat = {busca: '', secao: '', limite: 50}, abrirMat = '', rec = null, alvo = null, aba = 'recebidos', con = null, filtroCon = {busca: '', tipo: '', limite: 50}, rascunhoVinculo = null;
   const LIMITE_CON = 50; // contatos por vez (2.13: linhas); "Mostrar mais" traz o resto aos poucos
   const $ = id => document.getElementById(id);
   const ops = new Map(), opId = (k, c) => { const s = JSON.stringify(c), a = ops.get(k); if (a && a.s === s) return a.id; const id = 'OP-' + crypto.randomUUID(); ops.set(k, {s, id}); return id; };
@@ -113,7 +115,9 @@ window.CPTRecados = (() => {
 
   // ---------------- Contatos ----------------
   const INTRO_C = ['Contatos', 'Matriz de contatos da equipe. Procure antes de cadastrar e registre cada conversa no contato.'];
+  const abasCon = () => `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de contatos">${[['equipe', 'Equipe'], ['matriz', 'Matriz Sabesp']].map(([k, n]) => `<button role="tab" aria-selected="${abaCon === k}" class="${abaCon === k ? 'chosen' : ''}" data-con-aba="${k}">${n}</button>`).join('')}</div>`;
   async function renderContatos() {
+    if (abaCon === 'matriz') { renderMatriz(); return; }
     const mine = ++ticket; ui.view.innerHTML = ui.intro(...INTRO_C) + '<div class="loading-label"><span class="spinner"></span>Abrindo a matriz de contatos…</div><div class="skel-list" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div></div>';
     try { con = await ui.call('listarContatosCPT'); if (mine !== ticket || ui.state.route !== 'contatos') return; desenharContatos(); }
     catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO_C) + `<div class="notice">${ui.esc(e.message)}</div>`; }
@@ -126,7 +130,7 @@ window.CPTRecados = (() => {
     const acoes = c => { const f = fone(c.telefone); return (c.telefone ? `<a class="row-icon" href="tel:${ui.esc(f)}" aria-label="Ligar para ${ui.esc(c.nome || c.instituicao)}" title="Ligar">${ic('phone', '📞')}</a>` : '') + (f.length >= 10 ? `<a class="row-icon" href="https://wa.me/55${ui.esc(f.replace(/^55/, ''))}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de ${ui.esc(c.nome || c.instituicao)}" title="WhatsApp">${ic('message', '💬')}</a>` : ''); };
     const lista_ = vis.map(c => `<div class="list-row cor-${ui.esc(c.cor)}" role="button" tabindex="0" data-con-abrir="${ui.esc(c.id)}" aria-label="${ui.esc(c.nome || c.instituicao)}"><span class="c-nome">${ui.esc(c.nome || c.instituicao)}${c.registros && c.registros.length ? ` <small class="muted">· ${c.registros.length} ${c.registros.length === 1 ? 'conversa' : 'conversas'}</small>` : ''}</span><span class="c-inst">${ui.esc(c.nome ? c.instituicao || '—' : '—')}</span><span class="c-tipo">${ui.esc(c.tipo)}</span><span class="c-bairro">${ui.esc([c.bairro, c.frente].filter(Boolean).join(' · ') || '—')}</span><span class="c-acoes">${acoes(c)}</span></div>`).join('');
     const cabCon = '<div class="list-head" aria-hidden="true"><span data-col>Nome</span><span data-col>Instituição</span><span data-col>Tipo</span><span data-col>Bairro</span><span data-col></span></div>';
-    const html = ui.intro(...INTRO_C) + `<section class="panel filter-panel"><form id="conFiltro" class="filters"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroCon.busca)}" placeholder="Nome, instituição, bairro, telefone…" maxlength="100"></span></label>
+    const html = ui.intro(...INTRO_C) + abasCon() + `<section class="panel filter-panel"><form id="conFiltro" class="filters"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroCon.busca)}" placeholder="Nome, instituição, bairro, telefone…" maxlength="100"></span></label>
       <label class="field">Tipo<select name="tipo"><option value="">Todos</option>${con.tipos.map(t => `<option ${filtroCon.tipo === t ? 'selected' : ''}>${ui.esc(t)}</option>`).join('')}</select></label><button class="button" type="button" data-con-novo>${ui.icon('plus')}Novo contato</button></form></section>
       <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'contato' : 'contatos'}</span><span>Dados de pessoas: use só para o trabalho</span></div>${lista_ ? `<div class="list-table contacts-table">${cabCon}${lista_}</div>` : '<p class="empty-line">Nenhum contato encontrado. Cadastre com "Novo contato".</p>'}${lista.length > vis.length ? `<div class="load-more"><button class="button secondary" data-con-mais>Mostrar mais ${Math.min(LIMITE_CON, lista.length - vis.length)}</button></div>` : ''}`;
     const pos = manterFoco ? document.activeElement.selectionStart : null; ui.view.innerHTML = html;
@@ -168,6 +172,96 @@ window.CPTRecados = (() => {
     catch (e) { erro('conErro', e); } finally { b.disabled = false; }
   }
 
+  // ---------------- Matriz Sabesp (2.40) ----------------
+  const INTRO_M = ['Contatos', 'Matriz de Contatos da Sabesp: documento do cliente. Todos consultam e propõem; a Gestão ou o Administrativo aprovam antes de valer.'];
+  const TIPOS_P = {novo: 'Contato novo', alteracao: 'Alteração', inativar: 'Inativar', reativar: 'Reativar'};
+  async function renderMatriz() {
+    const mine = ++ticket;
+    ui.view.innerHTML = ui.intro(...INTRO_M) + abasCon() + '<div class="loading-label"><span class="spinner"></span>Abrindo a Matriz de Contatos…</div>';
+    try {
+      mat = await ui.call('listarMatrizCPT'); if (mine !== ticket || ui.state.route !== 'contatos' || abaCon !== 'matriz') return;
+      desenharMatriz(); if (abrirMat) { const id = abrirMat; abrirMat = ''; abrirMatriz(id); }
+    } catch (e) { if (mine === ticket) ui.view.innerHTML = ui.intro(...INTRO_M) + abasCon() + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  const nomeMat = c => (c.situacao === 'pendente' && c.proposta ? c.proposta.campos.nome : c.nome) || 'Contato';
+  /** O que a proposta muda: campos do contato novo, ou "antes → depois" na alteração. */
+  function diff(c) {
+    const p = c.proposta; if (!p) return '';
+    if (p.tipo === 'novo') return `<dl class="mat-diff">${Object.entries(mat.campos).filter(([k]) => p.campos[k]).map(([k, n]) => `<div><dt>${n}</dt><dd>${ui.esc(p.campos[k])}</dd></div>`).join('')}<div><dt>Seção</dt><dd>${ui.esc(p.secao)}</dd></div></dl>`;
+    if (p.tipo === 'alteracao') return `<dl class="mat-diff">${Object.entries(mat.campos).filter(([k]) => String(p.campos[k] || '') !== String(c[k] || '')).map(([k, n]) => `<div><dt>${n}</dt><dd><del>${ui.esc(c[k] || '—')}</del> → <ins>${ui.esc(p.campos[k] || '—')}</ins></dd></div>`).join('')}</dl>`;
+    return p.motivo ? `<p class="small">Motivo: ${ui.esc(p.motivo)}</p>` : '';
+  }
+  function desenharMatriz(manterFoco) {
+    const m = mat, b = ui.norm(filtroMat.busca);
+    if (!m.importada) {
+      ui.view.innerHTML = ui.intro(...INTRO_M) + abasCon() + `<section class="panel"><div class="panel-head"><div><span class="eyebrow">PRIMEIRO PASSO</span><h2>Trazer a Matriz para a aplicação</h2><p>Uma vez só: cada contato da aba "Matriz de Contatos" vira um contato aprovado, com a seção de origem. A planilha não é alterada na importação. Depois disso, a aplicação passa a ser a fonte e grava na planilha o que for aprovado.</p></div></div>
+        ${m.podeAprovar ? '<div id="msErro" class="notice" hidden></div><button class="button" data-ms-importar>Importar a Matriz</button>' : '<p class="muted">A Gestão ou o Administrativo fazem a importação.</p>'}</section>`;
+      return;
+    }
+    const pend = m.itens.filter(c => c.proposta), lista = m.itens.filter(c => c.situacao !== 'pendente' && (!filtroMat.secao || c.secao === filtroMat.secao) && (!b || ui.norm([c.nome, c.pessoa, c.secao, c.telefone, c.email, c.endereco].join(' ')).includes(b)));
+    const vis = lista.slice(0, filtroMat.limite), num = t => String(t || '').replace(/\D/g, '');
+    const selos = c => (c.ativo ? '' : ' <span class="badge">Inativo</span>') + (c.proposta ? ' <span class="badge orange">Proposta aguardando</span>' : '') + (c.aGravar ? ' <span class="badge orange">A gravar na planilha</span>' : '');
+    const acoes = c => { const n = num(c.telefone); return n ? `<a class="row-icon" href="tel:${ui.esc(n)}" aria-label="Ligar para ${ui.esc(c.nome)}" title="Ligar">${ic('phone', '📞')}</a>` + (n.length >= 10 ? `<a class="row-icon" href="https://wa.me/55${ui.esc(n.replace(/^55/, ''))}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de ${ui.esc(c.nome)}" title="WhatsApp">${ic('message', '💬')}</a>` : '') : ''; };
+    const linhas = vis.map(c => `<div class="list-row ${c.ativo ? '' : 'is-inativo'}" role="button" tabindex="0" data-ms-abrir="${ui.esc(c.id)}" aria-label="${ui.esc(c.nome)}"><span class="c-nome">${ui.esc(c.nome)}${selos(c)}</span><span class="c-inst">${ui.esc(c.pessoa || '—')}</span><span class="c-tipo">${ui.esc(c.secao)}</span><span class="c-bairro">${ui.esc(c.telefone || c.email || '—')}</span><span class="c-acoes">${acoes(c)}</span></div>`).join('');
+    const fila = pend.length ? `<section class="panel mat-fila"><div class="panel-head"><div><span class="eyebrow">AGUARDANDO APROVAÇÃO</span><h2>${pend.length} ${pend.length === 1 ? 'proposta' : 'propostas'}</h2><p>${m.podeAprovar ? 'Confira e aprove ou recuse (com motivo). O aprovado vai para a planilha do cliente com a data de hoje.' : 'A Gestão ou o Administrativo vão conferir.'}</p></div></div>
+      ${pend.map(c => `<article class="mat-proposta" data-ms-prop="${ui.esc(c.id)}"><header><strong>${ui.esc(TIPOS_P[c.proposta.tipo])} · ${ui.esc(nomeMat(c))}</strong><small class="muted">por ${ui.esc(c.proposta.nome || c.proposta.por)} · ${ui.esc(quando(c.proposta.em))}</small></header>${diff(c)}
+        ${m.podeAprovar ? `<div class="dialog-actions"><button class="button" data-ms-decidir data-id="${ui.esc(c.id)}">${ui.icon('check')}Aprovar</button><button class="button secondary" data-ms-recusar="${ui.esc(c.id)}">Recusar</button></div>` : ''}</article>`).join('')}</section>` : '';
+    const html = ui.intro(...INTRO_M) + abasCon() + fila + `<section class="panel filter-panel"><form id="msFiltro" class="filters"><label class="field">Procurar<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtroMat.busca)}" placeholder="Nome, pessoa, seção, telefone…" maxlength="100"></span></label>
+      <label class="field">Seção<select name="secao"><option value="">Todas</option>${m.secoes.map(x => `<option ${filtroMat.secao === x ? 'selected' : ''}>${ui.esc(x)}</option>`).join('')}</select></label><button class="button" type="button" data-ms-novo>${ui.icon('plus')}Propor contato</button></form></section>
+      <div class="results-head"><span>${lista.length} ${lista.length === 1 ? 'contato' : 'contatos'} na Matriz</span><span>Documento do cliente: mudanças só com aprovação</span></div>
+      ${linhas ? `<div class="list-table contacts-table mat-table"><div class="list-head" aria-hidden="true"><span data-col>Nome / função</span><span data-col>Pessoa de contato</span><span data-col>Seção</span><span data-col>Telefone ou e-mail</span><span data-col></span></div>${linhas}</div>` : '<p class="empty-line">Nenhum contato encontrado.</p>'}
+      ${lista.length > vis.length ? `<div class="load-more"><button class="button secondary" data-ms-mais>Mostrar mais ${Math.min(50, lista.length - vis.length)}</button></div>` : ''}`;
+    const pos = manterFoco ? document.activeElement.selectionStart : null; ui.view.innerHTML = html;
+    if (manterFoco) { const i = $('msFiltro').elements.busca; i.focus(); i.setSelectionRange(pos, pos); }
+  }
+  function abrirMatriz(id) {
+    const c = mat && mat.itens.find(x => x.id === id); if (!c) return;
+    const hist = c.historico.slice().reverse().map(h => `<li><strong>${ui.esc(h.acao)}</strong> · ${ui.esc(quando(h.em))} · ${ui.esc(h.nome || h.por)}${h.detalhe ? `<small>${ui.esc(h.detalhe)}</small>` : ''}</li>`).join('');
+    dialogo('MATRIZ SABESP', c.nome, `<dl class="detail-summary">${[['Seção', c.secao], ['Pessoa de contato', c.pessoa], ['Telefone', c.telefone], ['E-mail', c.email], ['Endereço', c.endereco], ['Observação', c.observacao], ['Atualização', c.atualizacao ? ui.date(c.atualizacao) : ''], ['Situação', c.ativo ? 'Ativo' : 'Inativo']].filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${ui.esc(v)}</dd></div>`).join('')}</dl>
+      ${c.aGravar ? `<div class="notice warning">Aprovado, mas ainda não gravado na planilha.${c.erroPlanilha ? ' ' + ui.esc(c.erroPlanilha) : ''} A rotina das 12h e 0h tenta de novo.</div>` : ''}
+      ${c.proposta ? `<div class="notice">Há uma proposta (${ui.esc(TIPOS_P[c.proposta.tipo])}) aguardando aprovação.</div>` : `<div class="dialog-actions"><button class="button" data-ms-alterar="${ui.esc(c.id)}">${ui.icon('pencil')}Propor alteração</button><button class="button secondary" data-ms-ativo="${ui.esc(c.id)}">${c.ativo ? 'Propor inativar' : 'Propor reativar'}</button></div>`}
+      <h3 class="answers-head">Histórico (auditoria)</h3><ul class="mat-historico">${hist || '<li class="muted">Sem registros.</li>'}</ul>`);
+  }
+  function formMatriz(c) {
+    const novo = !c, v = c || {};
+    dialogo('MATRIZ SABESP', novo ? 'Propor contato' : 'Propor alteração', `<form id="msForm" class="stack-form" data-id="${ui.esc(v.id || '')}" data-versao="${v.versao || 0}"><div id="msErro" class="notice" hidden></div>
+      <p class="small muted">A proposta só vale depois que a Gestão ou o Administrativo aprovar.</p>
+      ${novo ? `<label class="field">Seção da Matriz<select name="secao" required><option value="">Escolha</option>${mat.secoes.map(x => `<option ${filtroMat.secao === x ? 'selected' : ''}>${ui.esc(x)}</option>`).join('')}</select></label>` : ''}
+      <div class="form-row"><label class="field">Nome / função / cargo<input name="nome" maxlength="200" required value="${ui.esc(v.nome || '')}"></label><label class="field">Pessoa de contato<input name="pessoa" maxlength="160" value="${ui.esc(v.pessoa || '')}"></label></div>
+      <label class="field">Telefone<input name="telefone" maxlength="80" inputmode="tel" value="${ui.esc(v.telefone || '')}"></label>
+      <details class="mais-detalhes" ${v.email || v.endereco || v.observacao ? 'open' : ''}><summary>Mais detalhes <small>e-mail, endereço e observação</small></summary><div class="mais-detalhes-corpo">
+        <div class="form-row"><label class="field">E-mail<input name="email" type="email" maxlength="160" value="${ui.esc(v.email || '')}"></label><label class="field">Endereço<input name="endereco" maxlength="300" value="${ui.esc(v.endereco || '')}"></label></div>
+        <label class="field">Observação (vai para a planilha do cliente)<textarea name="observacao" rows="2" maxlength="1000">${ui.esc(v.observacao || '')}</textarea></label></div></details>
+      <div class="dialog-actions"><button class="button" type="submit">Enviar para aprovação</button></div></form>`);
+  }
+  function formMotivo(c, tipo) {
+    const titulo = {recusar: 'Recusar proposta', inativar: 'Propor inativar', reativar: 'Propor reativar'}[tipo] + ' · ' + nomeMat(c);
+    dialogo('MATRIZ SABESP', titulo, `<form id="msMotivo" class="stack-form" data-id="${ui.esc(c.id)}" data-versao="${c.versao}" data-tipo="${tipo}"><div id="msErro" class="notice" hidden></div>
+      ${tipo === 'inativar' ? '<p class="small muted">A linha continua na planilha; a observação passa a dizer desde quando o contato está inativo.</p>' : ''}
+      <label class="field">${tipo === 'recusar' ? 'Motivo da recusa' : 'Motivo'}<textarea name="motivo" rows="2" maxlength="500" ${tipo === 'reativar' ? '' : 'required'}></textarea></label>
+      <div class="dialog-actions"><button class="button" type="submit">${tipo === 'recusar' ? 'Recusar' : 'Enviar para aprovação'}</button></div></form>`);
+  }
+  function trocar(c) { const i = mat.itens.findIndex(x => x.id === c.id); if (c.situacao === 'recusado') { if (i >= 0) mat.itens.splice(i, 1); } else if (i >= 0) mat.itens[i] = c; else mat.itens.push(c); }
+  async function enviarMatriz(f) {
+    const b = f.querySelector('[type=submit]'), d = Object.fromEntries(new FormData(f)), id = f.dataset.id, versao = Number(f.dataset.versao); let fn = 'proporMatrizCPT', p;
+    if (f.id === 'msForm') p = {...d, id, tipo: id ? 'alteracao' : 'novo', versao};
+    else if (f.dataset.tipo === 'recusar') { fn = 'decidirMatrizCPT'; p = {id, decisao: 'recusar', motivo: d.motivo, versao}; }
+    else p = {id, tipo: f.dataset.tipo, motivo: d.motivo, versao};
+    b.disabled = true;
+    try { const r = await ui.call(fn, {...p, operacaoId: opId('mat-' + fn + id, p)}); trocar(r.contato); ui.toast(r.resultado); fechar(); desenharMatriz(); }
+    catch (e) { erro('msErro', e); } finally { b.disabled = false; }
+  }
+  async function aprovarMatriz(btn) {
+    const c = mat.itens.find(x => x.id === btn.dataset.id); if (!c) return; btn.disabled = true;
+    try { const p = {id: c.id, decisao: 'aprovar', versao: c.versao}, r = await ui.call('decidirMatrizCPT', {...p, operacaoId: opId('mat-ap' + c.id, p)}); trocar(r.contato); ui.toast(r.resultado); desenharMatriz(); }
+    catch (e) { ui.toast(e.message); btn.disabled = false; }
+  }
+  async function importarMatriz(btn) {
+    btn.disabled = true; btn.textContent = 'Importando…';
+    try { const r = await ui.call('importarMatrizCPT'); ui.toast(r.resultado); renderMatriz(); }
+    catch (e) { erro('msErro', e); btn.disabled = false; btn.textContent = 'Importar a Matriz'; }
+  }
+
   function init(api) {
     ui = api;
     document.addEventListener('click', e => {
@@ -176,22 +270,36 @@ window.CPTRecados = (() => {
       const a = e.target.closest('[data-rec-abrir]'); if (a) { abrir(a.dataset.recAbrir); return; }
       const s = e.target.closest('[data-rec-situacao]'); if (s) { agir(s.dataset.recSituacao); return; }
       if (e.target.closest('[data-con-novo]')) { formContato(); return; }
+      const ca = e.target.closest('[data-con-aba]'); if (ca) { abaCon = ca.dataset.conAba; renderContatos(); return; }
+      const mi = e.target.closest('[data-ms-importar]'); if (mi) { importarMatriz(mi); return; }
+      if (e.target.closest('[data-ms-novo]')) { formMatriz(); return; }
+      if (e.target.closest('[data-ms-mais]')) { filtroMat.limite += 50; desenharMatriz(); return; }
+      const ma = e.target.closest('[data-ms-abrir]'); if (ma && !e.target.closest('a')) { abrirMatriz(ma.dataset.msAbrir); return; }
+      const mal = e.target.closest('[data-ms-alterar]'); if (mal) { formMatriz(mat.itens.find(x => x.id === mal.dataset.msAlterar)); return; }
+      const mt = e.target.closest('[data-ms-ativo]'); if (mt) { const c = mat.itens.find(x => x.id === mt.dataset.msAtivo); formMotivo(c, c.ativo ? 'inativar' : 'reativar'); return; }
+      const md = e.target.closest('[data-ms-decidir]'); if (md) { aprovarMatriz(md); return; }
+      const mr = e.target.closest('[data-ms-recusar]'); if (mr) { formMotivo(mat.itens.find(x => x.id === mr.dataset.msRecusar), 'recusar'); return; }
       if (e.target.closest('[data-con-mais]')) { filtroCon.limite = (filtroCon.limite || LIMITE_CON) + LIMITE_CON; const y = window.scrollY; desenharContatos(); window.scrollTo({top: y, behavior: 'auto'}); return; }
       const c = e.target.closest('[data-con-abrir]'); if (c && !e.target.closest('a')) { abrirContato(c.dataset.conAbrir); return; }
       const ed = e.target.closest('[data-con-editar]'); if (ed) { formContato(con.itens.find(x => x.id === ed.dataset.conEditar)); return; }
       if (e.target.closest('[data-con-arquivar]') && confirm('Arquivar este contato? Ele sai da lista, mas continua no histórico.')) salvarContato($('conForm'), true);
     });
     document.addEventListener('submit', e => {
-      const f = e.target; if (!['recForm', 'recResposta', 'conForm', 'conConversa'].includes(f.id)) return; e.preventDefault();
+      const f = e.target; if (f.id === 'msForm' || f.id === 'msMotivo') { e.preventDefault(); enviarMatriz(f); return; }
+      if (!['recForm', 'recResposta', 'conForm', 'conConversa'].includes(f.id)) return; e.preventDefault();
       if (f.id === 'recForm') enviar(f); else if (f.id === 'recResposta') agir('responder', f.elements.texto.value); else if (f.id === 'conForm') salvarContato(f); else registrarConversa(f);
     });
     let buscaTimer = null; // debounce: redesenha quando a pessoa para de digitar
     document.addEventListener('input', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'busca') { filtroCon.busca = e.target.value; filtroCon.limite = LIMITE_CON; clearTimeout(buscaTimer); buscaTimer = setTimeout(() => { const ff = $('conFiltro'); if (ff) desenharContatos(document.activeElement === ff.elements.busca); }, 220); } });
+    document.addEventListener('input', e => { const f = e.target.closest('#msFiltro'); if (f && e.target.name === 'busca') { filtroMat.busca = e.target.value; filtroMat.limite = 50; clearTimeout(buscaTimer); buscaTimer = setTimeout(() => { const ff = $('msFiltro'); if (ff) desenharMatriz(document.activeElement === ff.elements.busca); }, 220); } });
+    document.addEventListener('change', e => { const f = e.target.closest('#msFiltro'); if (f && e.target.name === 'secao') { filtroMat.secao = e.target.value; filtroMat.limite = 50; desenharMatriz(); } });
     document.addEventListener('change', e => { const f = e.target.closest('#conFiltro'); if (f && e.target.name === 'tipo') { filtroCon.tipo = e.target.value; filtroCon.limite = LIMITE_CON; desenharContatos(); } });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.state.perfil && Date.now() - ultimaContagem > 60000) contar(true); });
   }
   /** Recados novos para mim (mais recentes primeiro), ou null se a lista ainda não foi carregada. */
   const novos = () => rec ? rec.itens.filter(r => r.paraMim && !r.meu && !r.lido && r.situacao !== 'resolvido').sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm)) : null;
-  return {init, embutir, abrir, novos, renderContatos, novo, contar, copiarAvisos: marcar};
+  /** Busca geral: a próxima abertura de Contatos vai para a aba Matriz Sabesp com o contato aberto. */
+  const irMatriz = id => { abaCon = 'matriz'; abrirMat = id; };
+  return {init, embutir, abrir, novos, renderContatos, novo, contar, copiarAvisos: marcar, irMatriz};
 })();
 </script>

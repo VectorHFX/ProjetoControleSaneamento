@@ -47,7 +47,8 @@ class AnexosCPT {
     const b = 'https://docs.google.com/spreadsheets/d/' + AnexosCPT.id();
     return {planilha: b + '/edit', xlsx: b + '/export?format=xlsx'};
   }
-  abrir() {
+  abrir() { return AnexosCPT.abrirPlanilha(); }
+  static abrirPlanilha() {
     try { return SpreadsheetApp.openById(AnexosCPT.id()); }
     catch (e) {
       let tipo = ''; try { tipo = DriveApp.getFileById(AnexosCPT.id()).getMimeType(); } catch (_) {}

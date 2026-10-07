@@ -60,7 +60,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:fmt,computeDigest:(_,v)=>[...crypto.createHash('sha256').update(v).digest()].map(b=>b>127?b-256:b),DigestAlgorithm:{SHA_256:1},Charset:{UTF_8:1}},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','FichaOficialCPT','ColecaoCPT','ComunicacaoCPT','RelatosCPT','PaineisGestaoCPT','ConectoresCPT','AplicacaoCPT','AnexosCPT','RotinaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','FichaOficialCPT','ColecaoCPT','ComunicacaoCPT','RelatosCPT','PaineisGestaoCPT','ConectoresCPT','AplicacaoCPT','AnexosCPT','MatrizCPT','RotinaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Linhas que já estão na planilha: caso 1 (com nota, histórico velho, Obs. com fórmula), caso 2 (igual, sem nota), uma linha à mão e o caso 6 concluído.
 const val=n=>vm.runInContext("new AnexosCPT(AplicacaoCPT.contexto()).fichas()",ctx).find(x=>x.id==='ATD2026000'+n).valores.slice();
@@ -114,5 +114,5 @@ props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'xlsx-no-drive'}}));assert
 props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'1Et4M0nr4CxlRj7J6EDoru91aC4PJ-G2Y'}}));assert.equal(run('AnexosCPT.id()'),'1Lxm4a6qs9XGwhGokUTYUBcOuCWQssOEWlOBsU3R3REc');props.set('CPT_CONECTORES',JSON.stringify({anexos:{id:'anexos'}}));
 // 8. Rotina: passo dos Anexos depois das fichas.
 email='victor@example.com';vm.runInContext("FichaOficialCPT.prototype.atualizarTodas=()=>({geradas:0,movidas:0,faltam:0,erros:[]})",ctx);
-r=run('rotinaCPT()');assert.deepEqual(r.passos.map(p=>p.id),['fichas','anexos']);assert.equal(r.passos[1].ok,true);assert.match(r.passos[1].texto,/caso\(s\) novo\(s\)/);
+r=run('rotinaCPT()');assert.deepEqual(r.passos.map(p=>p.id),['fichas','matriz','anexos']);assert.equal(r.passos[1].texto,'0 gravado(s) na Matriz');assert.equal(r.passos[2].ok,true);assert.match(r.passos[2].texto,/caso\(s\) novo\(s\)/);
 console.log('PASS: anexos — Controle de manifestações (dados oficiais, nada apagado nem reordenado, fórmula e linha à mão intactas, reaberto avisado, novos no fim com formatação e nota) e Indicadores (coluna do mês, nota de fonte, rótulo e fórmula conferidos, sem mexer em meses anteriores à ativação), conferir sem gravar, duplicidade barrada, Excel avisado e passo na rotina.');
