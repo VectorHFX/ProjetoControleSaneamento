@@ -58,7 +58,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,MimeType:{GOOGLE_SHEET
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)}},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);
-for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT','ControleContratoCPT','OrganogramaCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','CicloAtendimentoCPT','AplicacaoCPT','ConectoresCPT','PaineisGestaoCPT','RelatosCPT','AuditoriaAtendimentosCPT','ControleContratoCPT','OrganogramaCPT','AlertasGestaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 
 
@@ -167,3 +167,40 @@ console.log('PASS: ferramenta Relatos — cartões dos relatos do mês para todo
  assert.equal(run("carregarPainelGestaoCPT({mes:'2026-09'})").porPessoa,undefined,'painel sem contagem por pessoa');
  assert.throws(()=>run("qualidadeRelatosCPT({mes:'x'})"),/mês válido/);}
 console.log('PASS: qualidade dos relatos — % completos nos 6 meses, pontos que mais faltam (ordenados) e completude por frente, iguais aos cartões; sem nomes e sem contagem por pessoa.');
+
+// 2.36: alertas da gestão (mesmas regras no painel, nas missões e no cartão). Datas fixas: hoje = qua 14/10/2026 (12/10 é feriado).
+{const R=(i,proc,data,obraId,ativ,pub)=>reg(5000+i,proc,data,obraId,obraId?'Obra '+obraId:'',ativ,pub);
+ const acao=(i,data,pub=10,obra='OBR-0001')=>R(i,'Relato de atividade',data,obra,'Ação Social Externa',pub);
+ const pesq=(i,data)=>R(i,'Pesquisa de Satisfação',data,'','','');
+ ctx.linhasA=[acao(1,'2026-10-01'),acao(2,'2026-10-02'),acao(3,'2026-10-05'),acao(4,'2026-10-06',''),acao(5,'2026-10-07'),acao(6,'2026-10-08'),acao(7,'2026-10-13',8,'OBR-0001'),pesq(8,'2026-10-02')];
+ ctx.fichasA=[{concluido:false,dias:31},{concluido:false,dias:30},{concluido:true,dias:90}];
+ const calc=(hoje,mes,extra='')=>run("AlertasGestaoCPT.calcular({mes:'"+mes+"',hoje:'"+hoje+"',linhas:linhasA,fichas:fichasA,ontem:ontemA,nomes:new Map([['OBR-0001','Coletor A'],['OBR-0002','Coletor B']]),D:new DadosDaAplicacao(SpreadsheetApp.openById('base'))})");
+ ctx.ontemA={obras:['OBR-0001','OBR-0002'],nenhuma:false};
+ let a=calc('2026-10-14','2026-10');const por=id=>a.find(x=>x.id===id);
+ assert.deepEqual(a.map(x=>x.id),['casos-30','dias-sem-acao','ritmo-pesquisas','obras-ontem','sem-publico'],'ordem: urgente → informativo');
+ assert.match(por('casos-30').titulo,/^1 atendimento em aberto há mais de 30 dias$/,'30 dias exatos ainda não conta');
+ assert.match(por('dias-sem-acao').titulo,/^1 dia útil sem ação em outubro$/);assert.match(por('dias-sem-acao').texto,/^09\/10\./,'fim de semana e o feriado de 12/10 não contam; hoje (14) também não');
+ assert.match(por('ritmo-pesquisas').texto,/^1 até hoje; para a data, o esperado seria 27 \(meta de 60 no mês\)/);
+ assert.match(por('obras-ontem').titulo,/^1 obra confirmada ontem sem relato$/);assert.match(por('obras-ontem').texto,/^Coletor B\./);assert.equal(por('obras-ontem').aba,'frentes');
+ assert.equal(por('sem-publico').pendente,'publico');assert.match(por('sem-publico').titulo,/^1 ação sem público/);
+ // Ritmo: com metade do esperado já não alerta; antes do dia 10 também não.
+ for(let i=0;i<13;i++)ctx.linhasA.push(pesq(100+i,'2026-10-0'+(1+i%9)));
+ assert.equal(calc('2026-10-14','2026-10').some(x=>x.id==='ritmo-pesquisas'),false,'14 de 27 esperadas = acima da metade');
+ ctx.linhasA=ctx.linhasA.slice(0,8);assert.equal(calc('2026-10-09','2026-10').some(x=>x.id==='ritmo-pesquisas'),false,'antes do dia 10, sem alerta de ritmo');
+ // Ontem sem confirmação, ou "nenhuma obra": sem alerta de obras.
+ ctx.ontemA=null;assert.equal(calc('2026-10-14','2026-10').some(x=>x.id==='obras-ontem'),false);
+ ctx.ontemA={obras:[],nenhuma:true};assert.equal(calc('2026-10-14','2026-10').some(x=>x.id==='obras-ontem'),false);
+ // Dia 1: nada de "dias sem ação" (o mês acabou de começar).
+ assert.equal(calc('2026-10-01','2026-10').some(x=>x.id==='dias-sem-acao'),false);
+ // Mês passado (painel de setembro visto em outubro): o mês inteiro conta; ritmo e obras de ontem não.
+ a=calc('2026-10-14','2026-09');assert.match(a.find(x=>x.id==='dias-sem-acao').titulo,/dias úteis sem ação em setembro/);assert.equal(a.some(x=>x.id==='ritmo-pesquisas'||x.id==='obras-ontem'),false);
+ // Feriados iguais aos do cronograma (Agenda.html).
+ const src=fs.readFileSync(__dirname+'/../src/Agenda.html','utf8').replace(/^<script>\s*/,'').replace(/\s*<\/script>\s*$/,''),cli={window:{},document:{addEventListener(){},getElementById(){return null}},console,Intl,Date,Math,TextEncoder,Uint8Array,Uint32Array,DataView,ArrayBuffer,Blob:function(){},URL};
+ vm.createContext(cli);vm.runInContext(src,cli);
+ for(const ano of [2025,2026,2027,2028,2029,2030])assert.deepEqual(run('[...AlertasGestaoCPT.feriados('+ano+')].sort()'),Object.keys(cli.window.CPTAgenda.feriados(ano)).sort(),'feriados '+ano);
+ // Painel da gestão usa as mesmas regras (com o detalhe) e o botão de "sem público" abre a lista filtrada.
+ email='gestao@example.com';const pg=run("carregarPainelGestaoCPT({mes:'2026-09',atualizar:true})");assert.ok(pg.alertas.every((x,i)=>!i||({alto:0,medio:1,baixo:2})[pg.alertas[i-1].nivel]<=({alto:0,medio:1,baixo:2})[x.nivel]),'painel em ordem de urgência');
+ assert.ok(pg.alertas.some(x=>/dias? úte(l|is) sem ação/.test(x.texto)&&x.detalhe),'painel mostra dias úteis sem ação com detalhe');
+ // Só a gerência recebe alertas.
+ email='atd@example.com';assert.deepEqual(run('alertasGestaoCPT()').alertas,[]);email='gestao@example.com';assert.ok(Array.isArray(run('alertasGestaoCPT()').alertas));}
+console.log('PASS: alertas da gestão — caso aberto há mais de 30 dias, dias úteis sem ação (sem fim de semana, feriado e o dia de hoje), ritmo de pesquisas abaixo da metade a partir do dia 10, obras confirmadas ontem sem relato, ações sem público; feriados iguais aos do cronograma; painel com as mesmas regras; só para a gerência.');

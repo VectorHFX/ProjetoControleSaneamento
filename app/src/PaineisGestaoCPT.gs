@@ -18,11 +18,13 @@ class PaineisGestaoCPT {
     this.dados.mes(mes);
     const reg = this.dados.registros(), atd = this.dados.atendimentos(), p = PropertiesService.getScriptProperties();
     const hoje = Utilities.formatDate(new Date(), this.dados.fuso, 'yyyy-MM-dd');
-    const chave = 'painel:' + this.ctx.base.getId() + ':' + mes + ':' + reg.getLastRow() + ':' + atd.getLastRow() + ':' + (p.getProperty('CPT_ATD_VERSAO') || 0) + ':' + (p.getProperty('CPT_ENTREGAS_VERSAO') || 0) + ':' + hoje;
+    // 2.36: confirmação das obras de ontem entra nos alertas (e na chave: confirmar tarde atualiza o painel).
+    let ontem = null; try { ontem = new ObrasDoDiaCPT(this.ctx).confirmacao(ObrasDoDiaCPT.diaAnterior(hoje)); } catch (_) {}
+    const chave = 'painel:' + this.ctx.base.getId() + ':' + mes + ':' + reg.getLastRow() + ':' + atd.getLastRow() + ':' + (p.getProperty('CPT_ATD_VERSAO') || 0) + ':' + (p.getProperty('CPT_ENTREGAS_VERSAO') || 0) + ':' + hoje + ':' + (ontem ? ontem.versao : 0);
     return CacheCPT.obter(chave, 600, () => {
       let obras = [];
       try { const o = new ObrasCPT(this.ctx); obras = o.ler().linhas.map(x => o.publico(x)); } catch (_) {}
-      return this.calcular({mes, hoje, linhas: this.dados.ler(reg, 19), fichas: this.dados.ler(atd, 18), obras, entregas: this.dados.situacoesEntregas()});
+      return this.calcular({mes, hoje, linhas: this.dados.ler(reg, 19), fichas: this.dados.ler(atd, 18), obras, entregas: this.dados.situacoesEntregas(), ontem});
     }, atualizar === true);
   }
 
@@ -87,15 +89,14 @@ class PaineisGestaoCPT {
       atividades: f.atividades.sort((a, b) => b.data.localeCompare(a.data)).slice(0, 15), casos: f.casos.sort((a, b) => (b.dias || 0) - (a.dias || 0)).slice(0, 20)}))
       .sort((a, b) => (a.situacao === 'Em andamento' ? 0 : 1) - (b.situacao === 'Em andamento' ? 0 : 1) || b.acoes - a.acoes || a.nome.localeCompare(b.nome, 'pt-BR'));
 
-    // Alertas em português simples, do mais urgente ao informativo.
-    const alertas = [];
-    if (contrato.casos.acima30) alertas.push({nivel: 'alto', texto: contrato.casos.acima30 + ' atendimento(s) em aberto há mais de 30 dias.', rota: 'atendimentos'});
-    if (semana && semana.total < semana.meta) alertas.push({nivel: 'medio', texto: 'Pesquisas de satisfação nesta semana: ' + semana.total + ' de ' + semana.meta + '.', rota: 'registros'});
-    if (hoje.startsWith(mes)) { const dia = Number(hoje.slice(8, 10)), fim = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).getUTCDate(), esperado = Math.round(DadosDaAplicacao.metaMensal * dia / fim);
-      if (pesquisas.length < esperado) alertas.push({nivel: 'medio', texto: 'Ritmo de pesquisas abaixo da meta: ' + pesquisas.length + ' até hoje (o esperado para a data é ' + esperado + ' de ' + DadosDaAplicacao.metaMensal + ').', rota: 'registros'}); }
+    // Alertas em português simples, do mais urgente ao informativo. 2.36: as regras comuns ficam em AlertasGestaoCPT
+    // (as mesmas das missões e do cartão da Visão do mês); aqui entram só as do painel (semana de pesquisas, frentes paradas).
+    const alertas = AlertasGestaoCPT.calcular({mes, hoje, linhas: e.linhas, fichas, ontem: e.ontem || null, nomes: new Map(e.obras.map(o => [o.id, o.exibir])), D})
+      .map(a => ({nivel: a.nivel, texto: a.titulo + '.', detalhe: a.texto, rota: a.rota === 'painel' ? '' : a.rota, aba: a.aba, pendente: a.pendente}));
+    if (semana && semana.total < semana.meta) alertas.push({nivel: 'medio', texto: 'Pesquisas de satisfação nesta semana: ' + semana.total + ' de ' + semana.meta + '.', rota: 'inicio'});
     const paradas = lista.filter(f => f.situacao === 'Em andamento' && (f.diasSemRegistro === null || f.diasSemRegistro > PaineisGestaoCPT.diasSemRegistro));
     if (paradas.length) alertas.push({nivel: 'medio', texto: paradas.length + ' frente(s) em andamento sem registro há mais de ' + PaineisGestaoCPT.diasSemRegistro + ' dias: ' + paradas.slice(0, 4).map(f => f.nome).join('; ') + (paradas.length > 4 ? '…' : '') + '.', aba: 'frentes'});
-    if (contrato.semPublico) alertas.push({nivel: 'baixo', texto: contrato.semPublico + ' ação(ões) sem público informado (o total de pessoas alcançadas fica menor).', rota: 'registros'});
+    const ordem = {alto: 0, medio: 1, baixo: 2}; alertas.sort((a, b) => ordem[a.nivel] - ordem[b.nivel]);
     return {mes, hoje, contrato, serie, porItem, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
   }
 

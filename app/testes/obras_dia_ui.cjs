@@ -12,7 +12,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.equal(await p.locator('.pet-option').count(),8);assert.equal(await p.locator('.pet-option svg.chibi').count(),8);assert.equal(await p.locator('[data-esp-especie=sapo]').count(),1);
   await espaco();assert.equal(await p.locator('.hero-pet svg.chibi').count(),1);assert.ok(await p.locator('.hero-pet svg.chibi path[fill="#f7f5ef"]').count()>0,'capacete branco do kit');
   // Duas missões para a gerência; cada uma leva direto à parte certa de Obras.
-  await p.locator('.missao.t-rota').first().waitFor();assert.equal(await p.locator('.missao.t-rota').count(),2);
+  await p.locator('.missao.t-rota').first().waitFor();assert.equal(await p.locator('.missao.t-rota:not([data-missao^="alerta:"])').count(),2,'2.36: os alertas da gestão são missões à parte');
   await p.locator('.missao[data-missao=obras-hoje] .button').click();await p.locator('#obrasHojeForm').waitFor();
   assert.equal(await p.locator('[data-obra-aba=hoje]').getAttribute('aria-selected'),'true');
   assert.equal(await p.locator('.hoje-obra',{hasText:'Viela Carijós'}).locator('.hoje-sugerida').count(),1,'sugerida pelo cronograma/ontem');
@@ -21,7 +21,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.locator('#obrasHojeForm [name=nenhuma]').check();assert.equal(await p.locator('#obrasHojeForm [name=obra]:checked').count(),0);
   await p.locator('.hoje-obra',{hasText:'Viela Carijós'}).locator('input').check();assert.ok(!(await p.locator('#obrasHojeForm [name=nenhuma]').isChecked()));
   await p.locator('#obrasHojeForm button[type=submit]').click();await toast(/1 obra confirmada/);await p.getByText(/Confirmado: 1 obra/).waitFor();
-  await espaco();await p.waitForFunction(()=>document.querySelectorAll('.missao.t-rota').length===1);
+  await espaco();await p.waitForFunction(()=>document.querySelectorAll('.missao.t-rota:not([data-missao^="alerta:"])').length===1);
   await p.locator('.missao[data-missao=vincular-obra] .button').click();await p.locator('.vinculo-card').waitFor();
   assert.match(await p.locator('.vinculo-card').textContent(),/Rua das Flores/);
   await p.locator('.vinculo-card [data-vincular]').click();await toast(/escolha a obra/);
@@ -38,7 +38,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   // Obra finalizada (ação pós-obra) também pode ser escolhida.
   await p.locator('.vinculos-feitos summary').click().catch(()=>{});if(!(await p.locator('.vinculo-feito [data-vinc-busca]').isVisible()))await p.locator('.vinculos-feitos summary').click();
   await p.locator('.vinculo-feito [data-vinc-busca]').fill('rede do cipreste');await p.locator('.vinculo-feito [data-escolher-obra="OBR-0042"]').click();await p.locator('.vinculo-feito [data-vincular]').click();await toast(/trocado para Rede coletora Jardim Cipreste/);
-  await espaco();await p.locator('#espLista').waitFor();await p.waitForTimeout(300);assert.equal(await p.locator('.missao.t-rota').count(),0,'missões cumpridas somem');
+  await espaco();await p.locator('#espLista').waitFor();await p.waitForTimeout(300);assert.equal(await p.locator('.missao.t-rota:not([data-missao^="alerta:"])').count(),0,'missões cumpridas somem');
   // Painel da gestão: obras ativas × ações por dia.
   await p.selectOption('#viewSwitch','gestao');await p.locator('.nav-item[data-route=inicio]').click();await p.locator('[data-painel-aba=frentes]').click();
   await p.locator('.cmp-dia').first().waitFor();assert.ok(await p.locator('.cmp-dia').count()>=1);

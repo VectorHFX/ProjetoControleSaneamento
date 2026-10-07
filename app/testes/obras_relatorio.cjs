@@ -36,7 +36,7 @@ const ctx={Date,console:{log(){},warn(){},error(){}},JSON,
   CacheService:{getScriptCache:()=>({get:k=>cacheMap.get(k)||null,put:(k,v)=>cacheMap.set(k,v),remove:k=>cacheMap.delete(k)}),getUserCache:()=>({get:()=>null,put(){}})},
   Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(d,_,f)=>{const s=new Date(d.getTime()-3*3600e3).toISOString();return f==='yyyy-MM'?s.slice(0,7):f==='yyyy-MM-dd'?s.slice(0,10):s.slice(0,16)},newBlob:t=>({getBytes:()=>Buffer.from(t)})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true},releaseLock:()=>locked=false})}};
-vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','MissoesCPT','MapaCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT','ConectoresCPT','RecadosCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
+vm.createContext(ctx);for(const f of ['CacheCPT','DesempenhoCPT','DadosDaAplicacao','SocioambientalCPT','PerfisCPT','CronogramaCPT','ObservacoesCPT','ObrasCPT','ColecaoCPT','ObrasDoDiaCPT','PaineisGestaoCPT','RelatosCPT','MissoesCPT','MapaCPT','CicloAtendimentoCPT','FichaOficialCPT','AplicacaoCPT','ConectoresCPT','RecadosCPT','AlertasGestaoCPT'])vm.runInContext(fs.readFileSync(__dirname+'/../src/'+f+'.gs','utf8'),ctx);
 const run=s=>JSON.parse(JSON.stringify(vm.runInContext(s,ctx)));
 // Obras: consulta para todos, edição só para Administrativo/Gestão.
 email='social@example.com';let l=run('listarObrasCPT()');assert.equal(l.obras.length,2);assert.equal(l.podeEditar,false);assert.deepEqual(l.bairros,['Jardim','Vila Linda']);
@@ -122,6 +122,8 @@ ctx.relogio('2026-10-07T13:00:00Z');email='social@example.com';
 props.set('CPT_TRAVA_CONFIG','travada');assert.deepEqual(run('missoesCPT()').missoes,[],'período de testes: ninguém além do proprietário recebe missão');props.set('CPT_TRAVA_CONFIG','liberada');
 let ms=run('missoesCPT()').missoes;const dica=ms.find(m=>m.tipo==='dica');assert(dica,'dica para quem escreveu');assert.equal(dica.registroId,RELS);assert.match(dica.texto,/encaminhamento/);assert(!ms.some(m=>m.id==='casos-antigos'),'Socioambiental não recebe casos');
 email='atd@example.com';ms=run('missoesCPT()').missoes;assert(ms.some(m=>m.id==='casos-antigos'));assert(!ms.some(m=>m.tipo==='dica'),'ninguém recebe dica do relato de outra pessoa');
+// 2.36: a gerência recebe os alertas como missões (com o caso antigo dentro deles), sem a missão de casos repetida.
+email='adm@example.com';ms=run('missoesCPT()').missoes;assert(ms.some(m=>m.id==='alerta:casos-30'&&m.rota==='atendimentos'),'alerta de caso antigo vira missão');assert(!ms.some(m=>m.id==='casos-antigos'),'sem missão repetida');assert(ms.filter(m=>m.id.startsWith('alerta:')).every(m=>m.titulo&&m.texto&&(m.rota||m.pendente)));
 // Devolutiva: privada (autor e gerência), travada no período de testes, autor responde e some da lista de missões.
 email='social@example.com';ctx.v={registroId:RELS,comentario:'Faltou dizer o que ficou combinado.',operacaoId:'OP-devolutiva-0001'};assert.throws(()=>run('devolverRelatoCPT(v)'),/Gestão ou pelo Administrativo/);
 email='adm@example.com';props.set('CPT_TRAVA_CONFIG','travada');assert.throws(()=>run('devolverRelatoCPT(v)'),/período de testes/);props.set('CPT_TRAVA_CONFIG','liberada');

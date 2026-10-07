@@ -63,7 +63,7 @@ window.CPTGestao = (() => {
   }
   function contrato() {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
-    const alertas = painel.alertas.length ? `<ul class="alert-list">${painel.alertas.map(a => `<li class="alert-${a.nivel}"><span class="alert-dot" aria-hidden="true"></span><span>${ui.esc(a.texto)}</span>${a.rota ? `<button class="button ghost" data-route="${a.rota}">Abrir</button>` : a.aba ? `<button class="button ghost" data-painel-aba="${a.aba}">Ver</button>` : ''}</li>`).join('')}</ul>` : '<p class="ok-line">Nada pedindo atenção agora. Bom trabalho da equipe.</p>';
+    const alertas = painel.alertas.length ? `<ul class="alert-list">${painel.alertas.map(a => `<li class="alert-${a.nivel}"><span class="alert-dot" aria-hidden="true"></span><span>${ui.esc(a.texto)}${a.detalhe ? `<small class="alert-detalhe">${ui.esc(a.detalhe)}</small>` : ''}</span>${a.pendente ? `<button class="button ghost" data-pending="${ui.esc(a.pendente)}">Abrir</button>` : a.rota ? `<button class="button ghost" data-route="${a.rota}">Abrir</button>` : a.aba ? `<button class="button ghost" data-painel-aba="${a.aba}">Ver</button>` : ''}</li>`).join('')}</ul>` : '<p class="ok-line">Nada pedindo atenção agora. Bom trabalho da equipe.</p>';
     return `<section class="panel controle-contrato" id="controleContrato" aria-live="polite"><div class="loading-label"><span class="spinner"></span>Planilha de controle do contrato…</div></section>
       <section class="panel attention"><div class="panel-head"><div><span class="eyebrow">PEDE ATENÇÃO</span><h2>${painel.alertas.length ? painel.alertas.length + (painel.alertas.length === 1 ? ' ponto' : ' pontos') : 'Tudo em dia'}</h2></div></div>${alertas}</section>
       <section class="stat-row" aria-label="Números do contrato no mês">
@@ -278,6 +278,8 @@ window.CPTGestao = (() => {
       catch (err) { ui.toast(err.message); } finally { b.disabled = false; }
     });
   }
+  // Missões e cartões que levam a uma aba do painel (ex.: obras de ontem → Frentes): marca a aba antes de navegar.
+  document.addEventListener('click', ev => { const ir = ev.target.closest && ev.target.closest('[data-painel-ir]'); if (ir) aba = ir.dataset.painelIr; }, true);
   return {init, renderPainel, renderConectores, colunas, barrasH, abas, irPara: k => { aba = k; }};
 })();
 

@@ -4,6 +4,8 @@
  * - Quem escreveu um relato: dicas do que falta nos relatos dos últimos 7 dias; comentário da gestão sobre um relato.
  * - Atendimento: casos abertos há 30 dias ou mais.
  * - Gestão e Administrativo (2.26): responder a planilha de controle do contrato do mês anterior (ControleContratoCPT).
+ * - Gestão e Administrativo (2.36): os alertas de AlertasGestaoCPT (dia útil sem ação, ação sem público, caso aberto há mais
+ *   de 30 dias, ritmo de pesquisas, obras de ontem sem relato) — no lugar da missão de casos antigos.
  * Nada é ranqueado nem comparado entre pessoas: cada um vê só as próprias missões.
  * Período de testes: só o proprietário recebe missões (as demais pessoas não veem nada novo até liberar).
  * Desempenho: pedido à parte (depois da tela) e cada fonte em cache; quem não tem missão não abre a base.
@@ -23,7 +25,8 @@ class MissoesCPT {
     fonte('obras', () => new ObrasDoDiaCPT(this.ctx).missoes());
     fonte('devolutivas', () => this.devolutivas());
     fonte('relatos', () => this.dicasDeRelato());
-    if (this.tem('atendimento', 'administrativo', 'gestao')) fonte('casos', () => this.casosAntigos());
+    if (PerfisCPT.gerencia(this.perfil)) fonte('alertas', () => new AlertasGestaoCPT(this.ctx).listar().map(a => ({id: 'alerta:' + a.id, titulo: a.titulo, texto: a.texto, rota: a.rota, aba: a.aba, pendente: a.pendente, tipo: a.pendente ? 'pendente' : 'rota'})));
+    else if (this.tem('atendimento')) fonte('casos', () => this.casosAntigos());
     if (this.tem('administrativo', 'gestao')) fonte('controle', () => new ControleContratoCPT(this.ctx).missoes());
     return out;
   }

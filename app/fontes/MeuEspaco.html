@@ -350,7 +350,8 @@ window.CPTEspaco = (() => {
     const vistas = dicasVistas(), lista = m.filter(x => !(x.tipo === 'dica' && vistas.includes(x.id)));
     const botao = x => x.tipo === 'dica' ? `<button class="button secondary" data-missao-dica="${ui.esc(x.id)}">Ver dicas</button>`
       : x.tipo === 'devolutiva' ? `<button class="button secondary" data-missao-devolutiva="${ui.esc(x.id)}">Ler comentário</button>`
-      : `<button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? `data-obra-ir="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button>`;
+      : x.pendente ? `<button class="button secondary" data-pending="${ui.esc(x.pendente)}">Fazer agora ${ui.icon('arrow')}</button>`
+      : `<button class="button secondary" data-route="${ui.esc(x.rota)}" ${x.aba ? (x.rota === 'painel' ? 'data-painel-ir' : 'data-obra-ir') + `="${ui.esc(x.aba)}"` : ''}>Fazer agora ${ui.icon('arrow')}</button>`;
     box.innerHTML = lista.length ? `<h3 class="peek-title">${ic('target', '🎯')} Missões de hoje</h3><ul class="missoes">${lista.map(x => `<li class="missao t-${ui.esc(x.tipo || 'rota')}" data-missao="${ui.esc(x.id)}"><span class="missao-alvo" aria-hidden="true"></span><span class="missao-texto"><strong>${ui.esc(x.titulo)}</strong><small>${ui.esc(x.texto)}</small></span>${botao(x)}</li>`).join('')}</ul>` : '';
   }
   // Dicas de relato já vistas ficam só neste navegador (conveniência; nada é gravado na base).

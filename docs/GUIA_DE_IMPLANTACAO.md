@@ -23,6 +23,18 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.36.0 — alertas da Gestão e do Administrativo (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.36.0`, Nova versão). Arquivo novo: `AlertasGestaoCPT` (script); o atualizador cria.
+2. Alertas (sem nomes de pessoas), iguais em três lugares — o cartão **Pede atenção** na Visão do mês (Resumo), as **missões** do Meu espaço e o **Pede atenção** do Contrato:
+   - **atendimentos em aberto há mais de 30 dias** → abre Atendimentos;
+   - **dias úteis sem ação** no mês (do dia 1 até ontem; fim de semana, feriados e Carnaval não contam);
+   - **pesquisas de satisfação abaixo da metade do ritmo** esperado, a partir do dia 10 (ex.: no dia 14 de um mês de 31 dias, o esperado é 27; alerta com menos de 14);
+   - **obras confirmadas ontem sem relato** (Obras → Obras de hoje) → abre Visão do mês · Frentes;
+   - **ações sem público informado** → abre a lista dessas ações.
+3. Só Gestão e Administrativo veem. Os alertas somem sozinhos quando o ponto é resolvido (o cartão confere de novo a cada 10 minutos).
+4. Mudança de regra: o alerta de ritmo de pesquisas do painel agora segue a mesma regra (metade do esperado, a partir do dia 10); antes avisava a qualquer atraso, desde o dia 1.
+
 ## Atualização 2.35.1 — revisão das entregas 2.34 e 2.35 (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.35.1`, Nova versão).

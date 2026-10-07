@@ -106,7 +106,7 @@ window.CPTInicio = (() => {
     ui.view.innerHTML = abasMes + `<section class="home-hero"><div class="home-hero-art" aria-hidden="true">${window.CPTArte ? window.CPTArte.pagina('inicio') : ''}</div><div><span class="eyebrow">${nome ? 'OLÁ, ' + ui.esc(nome.toUpperCase()) : 'VISÃO GERAL'} · TELA DE ${ui.esc((window.CPTAgenda.names[visao] || '').toUpperCase())}</span><h1>${ui.esc(nomeMes(d.mes).replace(/^./, c => c.toUpperCase()))} <span>${d.mes.slice(0, 4)}</span></h1>
         <p class="home-phrase">${ui.esc(k.frase || 'Números pela data em que cada atividade foi realizada.')}</p>${k.relatosSemPublico ? `<p><button class="chip-alert" data-pending="publico">${ui.num(k.relatosSemPublico)} ${k.relatosSemPublico === 1 ? 'ação' : 'ações'} sem público informado · conferir</button></p>` : ''}</div>
         <div class="hero-actions">${ui.formLink().replace('button white', 'button')}</div></section>
-      ${atalhos(visao, d)}
+      ${atalhos(visao, d)}${ui.podeVer('painel') ? '<div id="homeAlertas"></div>' : ''}
       <section class="stat-row" aria-label="Números do mês">
         ${tile('Ações socioambientais', k.acoes ?? k.registros, delta(k.acoes ?? k.registros, d.comparacao?.anterior, d.comparacao?.mesAnterior), '', 'registros', 'relatos')}
         ${tile('Pessoas alcançadas', k.pessoas ?? k.participacoes, ui.num(k.frentes || 0) + ' frentes acompanhadas · ' + ui.num(k.diagnosticos || 0) + ' diagnósticos.', '', 'registros', 'relatos')}
@@ -120,7 +120,22 @@ window.CPTInicio = (() => {
         <section class="panel panel-agenda"><div class="panel-head"><div><span class="eyebrow">EM EQUIPE</span><h2>Agenda</h2></div><button class="icon-button" data-route="cronograma" aria-label="Abrir cronograma">↗</button></div><div id="homeAgenda"></div></section>
         <section class="panel panel-recentes"><div class="panel-head"><div><h2>Últimos registros</h2></div><button class="button ghost" data-route="registros">Ver todos</button></div><div class="mini-list">${d.recentes.length ? d.recentes.map(r => `<button class="mini-row" data-record="${ui.esc(r.id)}"><strong>${ui.esc(r.atividade || r.procedimento)}</strong><small>${ui.date(r.data)} · ${ui.esc(r.bairro || 'Bairro não informado')}</small></button>`).join('') : '<p class="muted">Os novos registros aparecem aqui depois do processamento.</p>'}</div></section>
       </aside></div>`;
-    desenharAgenda();
+    desenharAgenda(); carregarAlertas();
+  }
+  /** 2.36: cartão "Pede atenção" (Gestão e Administrativo): os mesmos alertas das missões, pedido à parte e guardado por 10 minutos. */
+  let alertas = {em: 0, itens: null, pedido: null};
+  function cartaoAlertas(l) {
+    if (!l.length) return '<p class="ok-line home-ok">Nada pedindo atenção hoje. Bom trabalho da equipe.</p>';
+    const botao = a => a.pendente ? `<button class="button ghost" data-pending="${ui.esc(a.pendente)}">Abrir</button>` : a.rota === 'painel' ? `<button class="button ghost" data-route="painel" data-painel-ir="${ui.esc(a.aba || 'contrato')}">Ver</button>` : a.rota && a.rota !== 'inicio' ? `<button class="button ghost" data-route="${ui.esc(a.rota)}">Abrir</button>` : '';
+    return `<section class="panel attention home-alertas" aria-label="Pede atenção"><div class="panel-head"><div><span class="eyebrow">PEDE ATENÇÃO</span><h2>${l.length} ${l.length === 1 ? 'ponto' : 'pontos'}</h2></div></div>
+      <ul class="alert-list">${l.map(a => `<li class="alert-${ui.esc(a.nivel)}"><span class="alert-dot" aria-hidden="true"></span><span>${ui.esc(a.titulo)}<small class="alert-detalhe">${ui.esc(a.texto)}</small></span>${botao(a)}</li>`).join('')}</ul></section>`;
+  }
+  async function carregarAlertas() {
+    if (!document.getElementById('homeAlertas')) return;
+    const desenhar = () => { const b = document.getElementById('homeAlertas'); if (b && alertas.itens) b.innerHTML = cartaoAlertas(alertas.itens); };
+    if (alertas.itens && Date.now() - alertas.em < 600000) { desenhar(); return; }
+    if (!alertas.pedido) alertas.pedido = ui.call('alertasGestaoCPT').then(r => { alertas = {em: Date.now(), itens: (r && r.alertas) || [], pedido: null}; }).catch(() => { alertas.pedido = null; });
+    await alertas.pedido; desenhar();
   }
   function tooltip(ev) {
     const alvo = ev.target.closest && ev.target.closest('.day-chart .hit'), wrap = alvo && alvo.closest('.chart-wrap');
