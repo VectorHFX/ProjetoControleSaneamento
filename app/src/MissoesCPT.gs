@@ -33,6 +33,8 @@ class MissoesCPT {
     fonte('dia', () => new AtendimentoDiaCPT(this.ctx).missoes());
     // 2.43: relatos para o relatório aguardando revisão (Socioambiental, Comunicação, Gestão e Administrativo).
     fonte('relatorio', () => RelatosRelatorioCPT.missoes(this.ctx));
+    // 2.47: diagnósticos (aprovação para a gerência; sem revisão para quem revisa).
+    fonte('diagnosticos', () => DiagnosticosCPT.missoes(this.ctx));
     return out;
   }
   /** Comentários da gestão sobre relatos da pessoa, ainda não vistos. */

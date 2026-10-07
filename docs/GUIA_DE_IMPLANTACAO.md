@@ -23,6 +23,19 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.47.0 — diagnósticos como na Central CPT 4.0 (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.47.0`, Nova versão). Nenhum arquivo novo. **Permissão nova: Google Slides** (para a apresentação) — ao executar `instalarAplicacaoCPT` no editor, o Google pede para autorizar; autorize com a conta proprietária antes de publicar a Nova versão (sem isso, gerar a apresentação falha).
+2. **Modelo oficial da ficha:** a aplicação usa o mesmo modelo DIAGNÓSTICO LOCAL de antes (`1QT0ly_LVwYpl6CtYHadNKc-SQZflbSa7Lvp6avkrY4g`). Ele é conferido antes de cada ficha (uma guia, uma tabela de 23 linhas, rótulos no lugar e nada fora dos campos) e **nunca é alterado** — a aplicação faz uma cópia e só preenche. Para usar outro modelo, ponha o ID em `modeloDiagnosticoId` na configuração.
+3. **Relatos → Diagnósticos** agora funciona como na Central:
+   - **Lista** (toda a equipe): cada diagnóstico com a situação — **Sem revisão, Rascunho, Em revisão, Revisado** — e os PDFs gerados. Filtro por situação e busca.
+   - **Revisar** (Socioambiental, Comunicação, Gestão e Administrativo): o registro de campo como veio (nunca é alterado), **título, síntese e próximos passos**, situação, a **ficha oficial** (24 campos já preenchidos pelo formulário, em "Mais detalhes") e **até 12 fotos com legenda**. Cada salvamento é uma versão (histórico na própria tela).
+   - **Revisado** (aprovação) é com a **Gestão e o Administrativo**; quem prepara salva "Em revisão". A gerência recebe a missão "diagnósticos aguardando aprovação"; quem revisa, "diagnósticos sem revisão".
+   - **Gerar ficha Sabesp** (Google Docs + PDF) e **Gerar apresentação** (Google Slides + PDF, no desenho da Central: capa azul, indicadores, temas, próximos passos e as fotos com legenda). Ficam em **CPT • Diagnósticos/AAAA/MM - mês**; gerar de novo guarda a anterior em "Versões anteriores".
+   - Se o registro de campo mudar depois da revisão, aparece **Mudou no campo** e é preciso salvar de novo antes de gerar.
+   - **Por obra:** a tabela-resumo de cada obra continua, **só para consulta** (Copiar tabela); o documento consolidado por obra da 2.46 saiu (os já gerados continuam no Drive).
+4. Confira na primeira vez: revise um diagnóstico, gere a ficha e a apresentação e abra os PDFs.
+
 ## Atualização 2.46.1 — revisão das entregas 2.43–2.46 e tempo de resposta (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.46.1`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova.
