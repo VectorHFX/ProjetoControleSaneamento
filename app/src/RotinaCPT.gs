@@ -11,9 +11,9 @@ class RotinaCPT {
   static get chave() { return 'CPT_ROTINA'; }
   /** Passos em ordem, com o tempo de cada um (segundos); o total fica abaixo dos 6 minutos do Apps Script. */
   static get passos() {
-    return [{id: 'fichas', nome: 'Fichas oficiais', segundos: 150, fazer: (ctx, s) => { const r = new FichaOficialCPT(ctx).atualizarTodas(s); return r.geradas + ' gerada(s), ' + r.movidas + ' movida(s)' + (r.faltam ? ', ' + r.faltam + ' para a próxima rodada' : '') + (r.erros.length ? ', ' + r.erros.length + ' com erro' : ''); }},
+    return [{id: 'fichas', nome: 'Fichas oficiais', segundos: 150, fazer: (ctx, s) => { const r = new FichaOficialCPT(ctx).atualizarTodas(s); return DadosDaAplicacao.plural(r.geradas, 'gerada', 'geradas') + ', ' + DadosDaAplicacao.plural(r.movidas, 'movida', 'movidas') + (r.faltam ? ', ' + r.faltam + ' para a próxima rodada' : '') + (r.erros.length ? ', ' + r.erros.length + ' com erro' : ''); }},
       // 2.39: depois das fichas, os Anexos leem os dados oficiais já em dia.
-      {id: 'matriz', nome: 'Matriz de Contatos', segundos: 30, fazer: ctx => { const r = new MatrizCPT(ctx).gravarPendentes(); return r.gravados + ' gravado(s) na Matriz' + (r.faltam ? ', ' + r.faltam + ' ainda a gravar' + (r.erro ? ' (' + r.erro + ')' : '') : ''); }},
+      {id: 'matriz', nome: 'Matriz de Contatos', segundos: 30, fazer: ctx => { const r = new MatrizCPT(ctx).gravarPendentes(); return DadosDaAplicacao.plural(r.gravados, 'gravado', 'gravados') + ' na Matriz' + (r.faltam ? ', ' + r.faltam + ' ainda a gravar' + (r.erro ? ' (' + r.erro + ')' : '') : ''); }},
       {id: 'anexos', nome: 'Anexos do relatório', segundos: 90, fazer: ctx => AnexosCPT.texto(AnexosCPT.resumir(AnexosCPT.sozinho(() => new AnexosCPT(ctx).rodar(true)))) },
       {id: 'parceiros', nome: 'Programa Parceiros', segundos: 45, fazer: ctx => ParceirosCPT.texto(AnexosCPT.sozinho(() => new ParceirosCPT(ctx).rodar(true), 'CPT_PARCEIROS_LOTE', 'A máscara do Programa Parceiros')) }];
   }

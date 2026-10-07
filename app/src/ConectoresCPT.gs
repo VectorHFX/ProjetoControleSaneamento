@@ -34,7 +34,7 @@ class ConectoresCPT {
       if (/DOMAIN/.test(a)) return {equipeVe: /VIEW|COMMENT|EDIT/.test(p), texto: 'Compartilhada com o domínio (' + (/EDIT/.test(p) ? 'edição' : 'leitura') + ')'};
       if (/ANYONE/.test(a)) return {equipeVe: true, texto: 'Aberta para quem tiver o link'};
       const pessoas = arquivo.getViewers().length + arquivo.getEditors().length;
-      return {equipeVe: false, texto: pessoas ? 'Restrita a ' + pessoas + ' pessoa(s)' : 'Só o proprietário'};
+      return {equipeVe: false, texto: pessoas ? 'Restrita a ' + DadosDaAplicacao.plural(pessoas, 'pessoa', 'pessoas') : 'Só o proprietário'};
     } catch (_) { return {equipeVe: null, texto: 'Não foi possível ler o compartilhamento'}; }
   }
   constructor(ctx) { this.ctx = ctx; }

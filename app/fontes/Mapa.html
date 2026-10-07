@@ -9,6 +9,7 @@
  */
 window.CPTMapa = (() => {
   'use strict';
+  const pl = (n, um, varios) => ui.num(n) + ' ' + (n === 1 ? um : varios); // 2.48.1: "1 ação", "2 ações"
   const LEAFLET = {js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     jsSri: 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=', cssSri: 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='};
   const FUNDO = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -88,10 +89,10 @@ window.CPTMapa = (() => {
     const semPontoObras = d.obras.filter(o => o.lat == null && ['Em andamento', 'Paralisada'].includes(o.situacao)), semPontoBairros = d.bairros.filter(b => b.lat == null);
     box.innerHTML = `<p class="eyebrow">${per.de === per.ate ? ui.date(per.de) : ui.date(per.de) + ' a ' + ui.date(per.ate)}</p>
       <dl class="mapa-totais"><div><dt><span class="bola" style="--cor:${COR.acao}"></span>Ações</dt><dd>${ui.num(t.acoes)}</dd></div><div><dt>Pessoas</dt><dd>${ui.num(t.pessoas)}</dd></div><div><dt><span class="bola" style="--cor:${COR.caso}"></span>Atendimentos</dt><dd>${ui.num(t.casos)}</dd></div></dl>
-      ${d.semLocal.acoes || d.semLocal.casos ? `<p class="small muted">Sem local no mapa: ${ui.num(d.semLocal.acoes)} ações e ${ui.num(d.semLocal.casos)} atendimentos (bairro sem ponto ou não identificado).</p>` : ''}
+      ${d.semLocal.acoes || d.semLocal.casos ? `<p class="small muted">Sem local no mapa: ${pl(d.semLocal.acoes, 'ação', 'ações')} e ${pl(d.semLocal.casos, 'atendimento', 'atendimentos')} (bairro sem ponto ou não identificado).</p>` : ''}
       <h3 class="mapa-sub">Frentes hoje</h3>${hoje.length ? `<ul class="mapa-mini">${hoje.map(o => `<li><span class="bola" style="--cor:${COR.hoje}"></span>${ui.esc(o.nome)}${o.lat == null ? ' <small class="muted">(sem ponto)</small>' : ''}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma obra confirmada hoje (Obras → Obras de hoje).</p>'}
       ${top.length ? `<h3 class="mapa-sub">Onde houve mais ação</h3><ul class="mapa-mini">${top.map(b => `<li><span>${ui.esc(b.nome)}</span><strong>${b.acoes}</strong></li>`).join('')}</ul>` : ''}
-      ${d.podePosicionar ? `<details class="mapa-posicionar" ${posicionando || semPontoObras.length + semPontoBairros.length ? 'open' : ''}><summary><strong>Posicionar no mapa</strong> <span class="muted">${ui.num(semPontoObras.length)} obras e ${ui.num(semPontoBairros.length)} bairros sem ponto</span></summary>
+      ${d.podePosicionar ? `<details class="mapa-posicionar" ${posicionando || semPontoObras.length + semPontoBairros.length ? 'open' : ''}><summary><strong>Posicionar no mapa</strong> <span class="muted">${pl(semPontoObras.length, 'obra', 'obras')} e ${pl(semPontoBairros.length, 'bairro', 'bairros')} sem ponto</span></summary>
         <label class="field">Escolha e clique no mapa<select id="mapaAlvo"><option value="">—</option>
           <optgroup label="Obras ativas">${d.obras.filter(o => ['Em andamento', 'Paralisada', 'A confirmar'].includes(o.situacao)).sort((a, b) => (a.lat == null ? 0 : 1) - (b.lat == null ? 0 : 1) || a.nome.localeCompare(b.nome, 'pt-BR')).map(o => `<option value="obra|${ui.esc(o.id)}" ${posicionando && posicionando.id === o.id ? 'selected' : ''}>${o.lat == null ? '○ ' : '● '}${ui.esc(o.nome)}</option>`).join('')}</optgroup>
           <optgroup label="Bairros">${d.bairros.slice().sort((a, b) => (a.lat == null ? 0 : 1) - (b.lat == null ? 0 : 1) || a.nome.localeCompare(b.nome, 'pt-BR')).map(b => `<option value="bairro|${ui.esc(b.id)}" ${posicionando && posicionando.id === b.id ? 'selected' : ''}>${b.lat == null ? '○ ' : '● '}${ui.esc(b.nome)}</option>`).join('')}</optgroup></select></label>

@@ -274,7 +274,7 @@ class AnexosCPT {
     return {em: r.em, novos: r.controle.novos.length, atualizados: r.controle.atualizados.length, avisos: r.controle.avisos.length, indicadores: ind};
   }
   static texto(s) {
-    return s.novos + ' caso(s) novo(s), ' + s.atualizados + ' atualizado(s) no Controle; Indicadores: ' + s.indicadores.map(m => m.erro ? m.mes + ' sem coluna' : m.mes + ' ' + m.mudaram + ' linha(s)').join(', ') + (s.avisos ? '; ' + s.avisos + ' aviso(s)' : '');
+    return DadosDaAplicacao.plural(s.novos, 'caso novo', 'casos novos') + ', ' + DadosDaAplicacao.plural(s.atualizados, 'atualizado', 'atualizados') + ' no Controle; Indicadores: ' + s.indicadores.map(m => m.erro ? m.mes + ' sem coluna' : m.mes + ' ' + DadosDaAplicacao.plural(m.mudaram, 'linha', 'linhas')).join(', ') + (s.avisos ? '; ' + DadosDaAplicacao.plural(s.avisos, 'aviso', 'avisos') : '');
   }
   // ---------------- Histórico (2.44): os números já entregues alimentam os gráficos do contrato ----------------
   static get chaveHistorico() { return 'CPT_ANEXOS_HISTORICO'; }

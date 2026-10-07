@@ -26,6 +26,8 @@ class DadosDaAplicacao {
     const achado = campos.find(([t, v]) => re.test(DadosDaAplicacao.norm(t)) && v !== '' && v != null && !(Array.isArray(v) && !v.length));
     return achado ? (Array.isArray(achado[1]) ? achado[1].join(', ') : String(achado[1])) : '';
   }
+  /** "1 caso" / "3 casos" (2.48.1: no lugar de "caso(s)"). */
+  static plural(n, um, varios) { return n + ' ' + (Number(n) === 1 ? um : varios); }
   static mesValido(v) { const s = String(v || ''); if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) throw new Error('Escolha um mês válido.'); return s; }
   static mesAnterior(m) { const d = new Date(m + '-15T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() - 1); return d.toISOString().slice(0, 7); }
   static norm(v) { return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }

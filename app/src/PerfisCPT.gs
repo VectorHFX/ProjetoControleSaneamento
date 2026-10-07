@@ -73,7 +73,7 @@ function liberarConfiguracaoCPT() { PropertiesService.getScriptProperties().setP
  */
 function liberarParaEquipeCPT() {
   const conteudo = aprovarTodoConteudoCPT(), trava = liberarConfiguracaoCPT();
-  return {resultado: 'Liberado para a equipe. Conteúdo: ' + conteudo.aprovados + ' aprovado(s) agora, ' + conteudo.jaAprovados + ' já aprovado(s), ' + conteudo.suspensos + ' suspenso(s). ' + trava.resultado,
+  return {resultado: 'Liberado para a equipe. Conteúdo: ' + DadosDaAplicacao.plural(conteudo.aprovados, 'aprovado', 'aprovados') + ' agora, ' + DadosDaAplicacao.plural(conteudo.jaAprovados, 'já aprovado', 'já aprovados') + ', ' + DadosDaAplicacao.plural(conteudo.suspensos, 'suspenso', 'suspensos') + '. ' + trava.resultado,
     conteudo};
 }
 /** Execute no editor para voltar a travar. */

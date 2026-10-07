@@ -111,7 +111,7 @@ class PaineisGestaoCPT {
       .map(a => ({nivel: a.nivel, texto: a.titulo + '.', detalhe: a.texto, rota: a.rota === 'painel' ? '' : a.rota, aba: a.aba, pendente: a.pendente}));
     if (semana && semana.total < semana.meta) alertas.push({nivel: 'medio', texto: 'Pesquisas de satisfação nesta semana: ' + semana.total + ' de ' + semana.meta + '.', rota: 'inicio'});
     const paradas = lista.filter(f => f.situacao === 'Em andamento' && (f.diasSemRegistro === null || f.diasSemRegistro > PaineisGestaoCPT.diasSemRegistro));
-    if (paradas.length) alertas.push({nivel: 'medio', texto: paradas.length + ' frente(s) em andamento sem registro há mais de ' + PaineisGestaoCPT.diasSemRegistro + ' dias: ' + paradas.slice(0, 4).map(f => f.nome).join('; ') + (paradas.length > 4 ? '…' : '') + '.', aba: 'frentes'});
+    if (paradas.length) alertas.push({nivel: 'medio', texto: DadosDaAplicacao.plural(paradas.length, 'frente', 'frentes') + ' em andamento sem registro há mais de ' + PaineisGestaoCPT.diasSemRegistro + ' dias: ' + paradas.slice(0, 4).map(f => f.nome).join('; ') + (paradas.length > 4 ? '…' : '') + '.', aba: 'frentes'});
     const ordem = {alto: 0, medio: 1, baixo: 2}; alertas.sort((a, b) => ordem[a.nivel] - ordem[b.nivel]);
     return {mes, hoje, contrato, serie, destaques, porItem, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
   }

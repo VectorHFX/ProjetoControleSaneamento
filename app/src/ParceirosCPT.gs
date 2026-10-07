@@ -197,7 +197,7 @@ class ParceirosCPT {
     }
     return r;
   }
-  static texto(r) { return r.meses.map(m => m.mes + ': ' + m.linhas.filter(x => x.situacao === 'muda').length + ' número(s)' + (m.criado ? ' (bloco do mês criado)' : '')).join(', '); }
+  static texto(r) { return r.meses.map(m => m.mes + ': ' + DadosDaAplicacao.plural(m.linhas.filter(x => x.situacao === 'muda').length, 'número', 'números') + (m.criado ? ' (bloco do mês criado)' : '')).join(', '); }
   static ultima() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(ParceirosCPT.chaveUltima) || 'null'); } catch (_) { return null; } }
   /** Tela: números (conferidos, sem gravar), depoimentos do mês escolhido, prompt e textos já gravados. */
   carregar(mes) {

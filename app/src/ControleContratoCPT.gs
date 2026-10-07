@@ -30,7 +30,7 @@ class ControleContratoCPT {
     const hoje = ColecaoCPT.hoje(), pedido = String(p && p.mes || ''), mes = /^\d{4}-(0[1-9]|1[0-2])$/.test(pedido) ? pedido : ControleContratoCPT.mesAnterior(hoje), prazo = ControleContratoCPT.prazo(mes);
     const reg = this.registro(mes), x = reg && reg.respondida ? reg : null; let indicadores = null;
     try { const c = new PaineisGestaoCPT(this.ctx).carregar(mes).contrato; indicadores = [
-      {nome: 'Ações socioambientais', valor: c.acoes}, {nome: 'Pessoas alcançadas', valor: c.pessoas, nota: c.semPublico ? c.semPublico + ' ação(ões) sem público informado' : ''},
+      {nome: 'Ações socioambientais', valor: c.acoes}, {nome: 'Pessoas alcançadas', valor: c.pessoas, nota: c.semPublico ? DadosDaAplicacao.plural(c.semPublico, 'ação', 'ações') + ' sem público informado' : ''},
       {nome: 'Frentes com atividade', valor: c.frentes}, {nome: 'Bairros com ação', valor: c.bairros}, {nome: 'Diagnósticos', valor: c.diagnosticos},
       {nome: 'Pesquisas de satisfação', valor: c.pesquisas.mes, nota: 'meta ' + c.pesquisas.meta}, {nome: 'Atendimentos recebidos', valor: c.casos.recebidosMes},
       {nome: 'Atendimentos concluídos', valor: c.casos.concluidosMes, nota: c.casos.prazoMedio != null ? 'prazo médio ' + c.casos.prazoMedio + ' dias' : ''},

@@ -22,8 +22,8 @@ window.CPTGraficos = (() => {
     const id = 'g' + (++seq); reg.set(id, dados); if (reg.size > LIMITE) reg.delete(reg.keys().next().value);
     dados.chave = dados.id || slug(dados.titulo); dados.mesNota = dados.mes || (ui && ui.state && ui.state.mes) || '';
     if (!notas) carregarNotas();
-    return `<div class="graf-acoes" role="group" aria-label="Levar o gráfico ${esc(dados.titulo)}"><button type="button" class="link-button" data-graf-img="${id}">Copiar imagem</button><span aria-hidden="true">·</span><button type="button" class="link-button" data-graf-tab="${id}">Copiar tabela</button></div>
-      <div class="graf-notas" data-graf-notas="${esc(dados.chave)}" data-graf-mes="${esc(dados.mesNota)}">${htmlNotas(dados.chave, dados.mesNota)}</div>`;
+    return `<div class="graf-acoes" role="group" aria-label="Levar o gráfico ${esc(dados.titulo)}"><button type="button" class="link-button" data-graf-img="${id}">Copiar imagem</button><span aria-hidden="true">·</span><button type="button" class="link-button" data-graf-tab="${id}">Copiar tabela</button>
+      <div class="graf-notas" data-graf-notas="${esc(dados.chave)}" data-graf-mes="${esc(dados.mesNota)}">${htmlNotas(dados.chave, dados.mesNota)}</div></div>`;
   }
   // ---------- Comentários ----------
   const notasDe = (chave, mes) => notas ? notas.lista.filter(n => n.grafico === chave && (!n.mes || n.mes === mes)).sort((a, b) => (a.mes ? 1 : 0) - (b.mes ? 1 : 0)) : [];

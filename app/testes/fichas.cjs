@@ -111,7 +111,7 @@ r=run("montarPacoteFichasCPT({mes:'2026-09'})");assert.deepEqual([r.geradas,r.co
 assert.equal(caminho(copia2.id),'CPT • Fichas oficiais da Sabesp/Pacotes/2026-09/Substituídas');assert.equal(noPacote().length,4,'continua um arquivo por caso e um índice');
 assert.equal(locked,false);
 // 7. Rotina das 12h/0h (acionador do proprietário): põe as fichas em dia e guarda o resultado para a tela.
-email='victor@example.com';r=run('rotinaCPT()');assert.equal(r.passos[0].id,'fichas');assert.equal(r.passos[0].ok,true);assert.match(r.passos[0].texto,/^1 gerada\(s\), 0 movida\(s\)$/);
+email='victor@example.com';r=run('rotinaCPT()');assert.equal(r.passos[0].id,'fichas');assert.equal(r.passos[0].ok,true);assert.match(r.passos[0].texto,/^1 gerada, 0 movidas$/);
 email='atd@example.com';e=run('estadoFichasCPT()');assert.equal(e.rotina.passos[0].texto,r.passos[0].texto);assert.equal(e.gerar,0);
 cacheMap.set('CPT_FICHAS_LOTE','23:59');email='victor@example.com';r=run('rotinaCPT()');assert.equal(r.passos[0].ok,false);assert.match(r.passos[0].texto,/já estão sendo atualizadas/);cacheMap.delete('CPT_FICHAS_LOTE');
 // 8. Ficha em dia, mas o arquivo antigo sumiu (apagado à mão): em vez de travar no erro, a ficha é gerada de novo.

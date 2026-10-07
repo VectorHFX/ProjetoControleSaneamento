@@ -35,9 +35,9 @@ const url=q=>'file://'+path.resolve(__dirname,'../previa/CPT_Previa_1_2_1.html')
   await p.selectOption('#viewSwitch','gestao');await p.locator('.shortcuts').waitFor();await p.locator('.panel-dias').waitFor();
   // 2.11: o painel são abas da Visão do mês (Resumo · Contrato · Frentes · Relatos); o menu mantém a Visão do mês marcada.
   await p.locator('.nav-item[data-route=inicio]').click();await p.locator('.mes-tabs [data-painel-aba=resumo][aria-selected=true]').waitFor();assert.equal(await p.locator('.nav-item[data-route=painel]').count(),0,'painel fora do menu');
-  await p.locator('[data-painel-aba=contrato]').click();await p.locator('.alert-list').waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');
+  await p.locator('[data-painel-aba=contrato]').click();await p.locator('.mini-chart').first().waitFor();assert.equal(await p.locator('.nav-item.active').getAttribute('data-route'),'inicio');
   assert.equal(await p.locator('#pageLabel').textContent(),'Visão do mês');
-  assert.match(await p.locator('.attention').textContent(),/3 pontos/);assert.equal(await p.locator('.mini-chart').count(),4);
+  assert.equal(await p.locator('#view .attention').count(),0,'2.48.1: "Pede atenção" só no Resumo');assert.equal(await p.locator('.mini-chart').count(),4);
   await p.locator('[role=tab][data-painel-aba=frentes]').click();await p.locator('.front-card').first().waitFor();
   assert.equal(await p.locator('.front-card.is-late').count(),1);
   await p.locator('#frenteFiltro [name=busca]').fill('viela');await p.waitForFunction(()=>document.querySelectorAll('.front-card').length===1);assert.equal(await p.locator('#frenteFiltro [name=busca]').inputValue(),'viela','filtro com espera curta mantém o texto');

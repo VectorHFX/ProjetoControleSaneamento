@@ -79,7 +79,7 @@ class FichaOficialCPT {
       atual.a.getRange(atual.linha, 15, 1, 2).setValues([[docUrl, pdfUrl]]);
       atual.a.getRange(atual.linha, 20).setValue(JSON.stringify(dd).slice(0, 49000));
       this.ciclo.aba('Movimentações').appendRow(['MOV-FICHA-' + hash.slice(0, 20), reg.protocolo, new Date(), 'Ficha oficial gerada', String(atual.r[3]), this.ctx.perfil.nome + ' <' + this.ctx.email + '>',
-        'Documento e PDF no modelo oficial' + (reg.fotos.length ? ' · ' + Math.min(reg.fotos.length, FichaOficialCPT.limiteFotos) + ' foto(s)' : ''), 'Aplicação CPT', '', '{}']);
+        'Documento e PDF no modelo oficial' + (reg.fotos.length ? ' · ' + DadosDaAplicacao.plural(Math.min(reg.fotos.length, FichaOficialCPT.limiteFotos), 'foto', 'fotos') : ''), 'Aplicação CPT', '', '{}']);
     } finally { lock.releaseLock(); }
     // Versão anterior que já estava na pasta nova vai para "Versões anteriores"; as da pasta antiga ficam onde estão
     // (a pasta antiga pode ser apagada inteira quando tudo estiver na nova).

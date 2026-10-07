@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.48.1 — revisão final de telas (≈ 1 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.48.1`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova.
+2. **Como usar** reescrito para a versão final: seis cartões (Começar o dia, Registrar o trabalho, Relatos e diagnósticos, Atendimentos, Entender o mês, Obras/mapa/contatos) e a **Rotina do mês: onde fica cada entrega** (relatório, Anexos, Programa Parceiros, planilha de controle, fichas oficiais, mensagem do dia).
+3. **Visão do mês → Contrato:** saiu o "Pede atenção" repetido (ficava diferente do Resumo do mês, que continua com a lista completa). O destaque "mês com mais ações" mostra o nome do mês por extenso.
+4. **Gráficos:** gráfico de porcentagem não mostra mais "Total 294%" (só a média); "Comentar" fica na mesma linha de Copiar imagem · Copiar tabela quando há espaço.
+5. **Textos:** plurais certos em toda a aplicação ("1 diagnóstico", "2 ações sem público", "1 frente", "3 casos novos"…), no lugar de "(s)" e "(ões)".
+6. **Celular:** os blocos de números ficam compactos, para o conteúdo aparecer sem rolar meia tela.
+
 ## Atualização 2.48.0 — relatos para o relatório como na Central CPT 4.0 (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.48.0`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova.

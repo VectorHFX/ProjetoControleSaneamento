@@ -35,7 +35,9 @@ window.CPTGestao = (() => {
     // 2.44: resumo do período embaixo do gráfico (total, média e melhor mês; ou o total de cada série).
     const vals = c => serie.map(s => s[c.k]).filter(v => v != null), fmt = v => ui.num(v) + suf;
     const rodape = o.resumo === false ? '' : campos.length === 1 ? (() => { const v = vals(campos[0]); if (!v.length) return ''; const tot = v.reduce((a, b) => a + b, 0), top = serie.filter(s => s[campos[0].k] != null).sort((a, b) => b[campos[0].k] - a[campos[0].k])[0];
-        return `<p class="chart-resumo">${o.media ? 'Média ' + fmt(Math.round(tot / v.length * 10) / 10) : 'Total ' + fmt(tot) + ' · média ' + fmt(Math.round(tot / v.length))}/mês · melhor: ${mesCurto(top.mes)} (${fmt(top[campos[0].k])})</p>`; })()
+        // 2.48.1: porcentagem não se soma (era "Total 294%"): mostra só a média.
+        const pct = suf === '%', media = o.media || pct;
+        return `<p class="chart-resumo">${media ? 'Média ' + fmt(Math.round(tot / v.length * (pct ? 1 : 10)) / (pct ? 1 : 10)) + (pct ? '' : '/mês') : 'Total ' + fmt(tot) + ' · média ' + fmt(Math.round(tot / v.length)) + '/mês'} · melhor: ${mesCurto(top.mes)} (${fmt(top[campos[0].k])})</p>`; })()
       : `<p class="chart-resumo">${campos.map(c => c.nome + ': ' + fmt(vals(c).reduce((a, b) => a + b, 0))).join(' · ')} no período</p>`;
     const copiar = window.CPTGraficos ? window.CPTGraficos.acoes({titulo, subtitulo: o.subtitulo || (n === 6 ? 'Últimos seis meses' : 'De ' + mesLongo(serie[0].mes)) + ' · até ' + mesLongo(serie[serie.length - 1].mes), tipo: 'colunas', sufixo: suf, max: o.max,
       fonte: o.fonte, rotulos: serie.map(s => mesCurto(s.mes)), rotuloTabela: 'Mês', series: campos.map(c => ({nome: c.nome, valores: serie.map(s => s[c.k] == null ? null : s[c.k])})), tabela: o.tabela}) : '';
@@ -77,14 +79,13 @@ window.CPTGestao = (() => {
   }
   function contrato() {
     const c = painel.contrato, s = c.pesquisas, k = c.casos;
-    const alertas = painel.alertas.length ? `<ul class="alert-list">${painel.alertas.map(a => `<li class="alert-${a.nivel}"><span class="alert-dot" aria-hidden="true"></span><span>${ui.esc(a.texto)}${a.detalhe ? `<small class="alert-detalhe">${ui.esc(a.detalhe)}</small>` : ''}</span>${a.pendente ? `<button class="button ghost" data-pending="${ui.esc(a.pendente)}">Abrir</button>` : a.rota ? `<button class="button ghost" data-route="${a.rota}">Abrir</button>` : a.aba ? `<button class="button ghost" data-painel-aba="${a.aba}">Ver</button>` : ''}</li>`).join('')}</ul>` : '<p class="ok-line">Nada pedindo atenção agora. Bom trabalho da equipe.</p>';
     return `<section class="panel controle-contrato" id="controleContrato" aria-live="polite"><div class="loading-label"><span class="spinner"></span>Planilha de controle do contrato…</div></section>
-      <section class="panel attention"><div class="panel-head"><div><span class="eyebrow">PEDE ATENÇÃO</span><h2>${painel.alertas.length ? painel.alertas.length + (painel.alertas.length === 1 ? ' ponto' : ' pontos') : 'Tudo em dia'}</h2></div></div>${alertas}</section>
+      ${/* 2.48.1: o "Pede atenção" fica só no Resumo do mês (aqui repetia, com outra lista). */ ''}
       <section class="stat-row" aria-label="Números do contrato no mês">
         ${tile('Ações socioambientais', ui.num(c.acoes), ui.num(c.pessoas) + ' pessoas alcançadas · ' + ui.num(c.frentes) + ' frentes · ' + ui.num(c.bairros) + ' bairros.')}
         ${tile('Pesquisas de satisfação', ui.num(s.mes) + '<small> / ' + s.meta + '</small>', s.semana ? 'Nesta semana: ' + s.semana.total + ' de ' + s.semana.meta + '.' : 'Meta: 15 por semana, 60 no mês.', medidor(s.mes, s.meta))}
         ${tile('Atendimentos em aberto', ui.num(k.abertos), ui.num(k.recebidosMes) + ' recebidos e ' + ui.num(k.concluidosMes) + ' concluídos no mês' + (k.prazoMedio != null ? ' · prazo médio ' + k.prazoMedio + ' dias' : '') + '.')}
-        ${tile('Relatos de atividade', ui.num(c.relatos.total), ui.num(c.diagnosticos) + ' diagnósticos no mês.')}
+        ${tile('Relatos de atividade', ui.num(c.relatos.total), ui.num(c.diagnosticos) + (c.diagnosticos === 1 ? ' diagnóstico no mês.' : ' diagnósticos no mês.'))}
       </section>
       <div class="painel-grid">
         ${destaques()}<section class="panel wide"><div class="panel-head"><div><h2>${painel.serie.length === 6 && painel.serie[0].mes < '2026-05' ? 'Últimos seis meses' : 'Desde ' + mesLongo(painel.serie[0].mes)}</h2><p>Pela data de realização de cada atividade${painel.destaques && painel.destaques.mesesAnexos.length ? '; meses mais claros vêm dos Anexos do relatório (números já entregues ao cliente)' : ''}.</p></div></div><div class="mini-charts">
@@ -101,7 +102,7 @@ window.CPTGestao = (() => {
     const de = mesLongo(d.de).replace(/ de \d{4}$/, ''), itens = [
       item(ui.num(d.acoes), 'ações socioambientais desde ' + de, ui.num(d.pessoas) + ' pessoas alcançadas no período.'),
       d.porAcao != null ? item(String(d.porAcao).replace('.', ','), 'pessoas por ação, em média', d.porAcaoMes != null ? 'Em ' + mesCurto(d.ate) + ': ' + String(d.porAcaoMes).replace('.', ',') + '.' : '') : '',
-      d.melhor ? item(mesCurto(d.melhor.mes), 'mês com mais ações', ui.num(d.melhor.acoes) + ' ações.') : '',
+      d.melhor ? item(mesLongo(d.melhor.mes).split(' de ')[0].replace(/^./, x => x.toUpperCase()), 'mês com mais ações', ui.num(d.melhor.acoes) + ' ações.') : '',
       d.variacao != null ? item(pct(d.variacao), 'ações em ' + mesCurto(d.ate) + ' vs ' + mesCurto(d.anterior), d.variacao >= 0 ? 'Mais ações que no mês anterior.' : 'Menos ações que no mês anterior.', d.variacao >= 0 ? 'is-up' : 'is-down') : '',
       item(ui.num(d.concluidos) + '<small>/' + ui.num(d.recebidos) + '</small>', 'atendimentos concluídos / recebidos', d.saldo >= 0 ? 'A carteira diminuiu no período.' : 'Entraram ' + ui.num(-d.saldo) + ' casos a mais do que saíram.', d.saldo >= 0 ? 'is-up' : 'is-down'),
       d.impressos ? item(ui.num(d.impressos), 'materiais impressos entregues', 'Comunicados, panfletos e cartas (Anexos).') : '',

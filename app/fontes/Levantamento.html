@@ -146,7 +146,7 @@ window.CPTLevantamento = (() => {
         if (x.casa) guardarNaLista(x.casa);
         if (x.situacao === 'duplicada' || x.situacao === 'invalida') m.atencao = m.atencao.filter(a => a.operacaoId !== c.operacaoId).concat([{...c, situacao: x.situacao, mensagem: x.mensagem || '', existente: x.casa || null}]); });
       salvarLocal(m); falhas = 0; ultimoErro = '';
-      if (r.duplicadas || r.invalidas) ui.toast((r.duplicadas + r.invalidas) + ' casa(s) precisam de você no levantamento.');
+      if (r.duplicadas || r.invalidas) ui.toast((r.duplicadas + r.invalidas) === 1 ? '1 casa precisa de você no levantamento.' : (r.duplicadas + r.invalidas) + ' casas precisam de você no levantamento.');
       if (m.fila.length) agendarEnvio(300);
     } catch (e) { falhas++; ultimoErro = navigator.onLine === false ? '' : e.message; agendarEnvio(Math.min(60000, 5000 * falhas)); }
     finally { enviando = false; if (ui.state.route === 'levantamento') { atualizarPartes(); if (parte === 'resultados') desenhar(); } }
