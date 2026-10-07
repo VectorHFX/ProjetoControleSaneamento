@@ -23,6 +23,14 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.44.0 — gráficos do contrato desde maio, com os números dos Anexos (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.44.0`, Nova versão). Nenhuma permissão nova.
+2. **Os meses antes da aplicação vêm dos Anexos:** toda vez que os Anexos são conferidos ou atualizados (aba Anexos do relatório, botão Atualizar agora ou a rotina das 12h/0h), a aplicação guarda os números de todas as colunas de mês da aba Indicadores 2026. Na **Visão do mês → Contrato**, os meses **antes da primeira gravação dos Anexos pela aplicação** usam esses números (os que já foram entregues ao cliente): ações (linha 29), pessoas (28), atendimentos recebidos (9) e concluídos (13). Esses meses aparecem **mais claros** nos gráficos. As pesquisas de satisfação não estão nos Anexos e continuam vindo dos registros.
+   - Para trazer o histórico agora: abra **Visão do mês → Anexos do relatório** uma vez (só conferir já basta).
+3. **Gráficos desde maio de 2026** (até 12 meses), cada um com o resumo do período embaixo: total, média por mês e o melhor mês.
+4. **Destaques do contrato** (novo cartão): ações e pessoas desde maio, média de pessoas por ação, mês com mais ações, variação em relação ao mês anterior, atendimentos concluídos/recebidos (e se a carteira cresceu ou diminuiu), materiais impressos entregues, pessoas atendidas na tenda/UMS e contatos na Matriz da Sabesp (esses três vêm dos Anexos).
+
 ## Atualização 2.43.0 — relatos ilustrados para o relatório (≈ 4 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.43.0`, Nova versão). Arquivo novo: `RelatosRelatorioCPT` (script); o atualizador cria. Nenhuma permissão nova.

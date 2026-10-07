@@ -3,6 +3,8 @@
  * Gestão 2.7.0 — Painel da gestão (contrato, frentes de serviço, relatos em resumo) e Conectores.
  * Painel: só leitura, com o que pede atenção primeiro. Frentes e relatos abrem o registro ou a ficha de sempre.
  * 2.27: o Programa Parceiros saiu da aplicação junto com o fechamento do relatório.
+ * 2.44: gráficos do contrato desde maio (meses antes da aplicação vêm dos Anexos do relatório, marcados), resumo do período
+ *      em cada gráfico e "Destaques do contrato".
  * 2.41: aba "Programa Parceiros": números automáticos da máscara (conferir/atualizar), "Copiar prompt" com os depoimentos do
  *      mês (sem nomes) para o Gemini e os textos revisados gravados nas linhas 18 e 20.
  * 2.39: aba "Anexos do relatório": confere (sem gravar) o Controle de manifestações e as linhas automáticas dos Indicadores
@@ -25,13 +27,19 @@ window.CPTGestao = (() => {
     if (!serie || !serie.length) return `<figure class="mini-chart"><figcaption>${titulo}</figcaption><p class="muted small">Sem dados no período.</p></figure>`;
     const W = 300, H = 150, base = 118, alto = 92, n = serie.length, passo = W / n, max = o.max || Math.max(1, ...serie.flatMap(s => campos.map(c => s[c.k] || 0))), suf = o.sufixo || '';
     const larg = Math.min(26, (passo - 10) / campos.length);
+    const anexo = s => o.anexos !== false && s.fonte === 'anexos';
     const barras = serie.map((s, i) => campos.map((c, j) => { const v = s[c.k], h = Math.round((v || 0) / max * alto), x = i * passo + (passo - larg * campos.length) / 2 + j * larg, t = v == null ? '—' : v + suf;
-      return `<rect class="col-bar ${c.cls || ''}" x="${x}" y="${base - h}" width="${larg - 2}" height="${h}" rx="3"><title>${ui.esc(c.nome + ' em ' + mesLongo(s.mes) + ': ' + t)}</title></rect><text class="col-val" x="${x + (larg - 2) / 2}" y="${base - h - 4}" text-anchor="middle">${t}</text>`; }).join('') +
+      return `<rect class="col-bar ${c.cls || ''} ${anexo(s) ? 'is-anexo' : ''}" x="${x}" y="${base - h}" width="${larg - 2}" height="${h}" rx="3"><title>${ui.esc(c.nome + ' em ' + mesLongo(s.mes) + ': ' + t + (anexo(s) ? ' (Anexos do relatório)' : ''))}</title></rect><text class="col-val" x="${x + (larg - 2) / 2}" y="${base - h - 4}" text-anchor="middle">${n > 8 && String(t).length > 3 ? '' : t}</text>`; }).join('') +
       `<text class="axis" x="${i * passo + passo / 2}" y="${H - 12}" text-anchor="middle">${mesCurto(s.mes)}</text>`).join('');
     const resumo = serie.map(s => mesLongo(s.mes) + ': ' + campos.map(c => c.nome + ' ' + (s[c.k] == null ? 'sem dados' : s[c.k] + suf)).join(', ')).join('; ');
-    const copiar = window.CPTGraficos ? window.CPTGraficos.acoes({titulo, subtitulo: o.subtitulo || 'Últimos seis meses · até ' + mesLongo(serie[serie.length - 1].mes), tipo: 'colunas', sufixo: suf, max: o.max,
+    // 2.44: resumo do período embaixo do gráfico (total, média e melhor mês; ou o total de cada série).
+    const vals = c => serie.map(s => s[c.k]).filter(v => v != null), fmt = v => ui.num(v) + suf;
+    const rodape = o.resumo === false ? '' : campos.length === 1 ? (() => { const v = vals(campos[0]); if (!v.length) return ''; const tot = v.reduce((a, b) => a + b, 0), top = serie.filter(s => s[campos[0].k] != null).sort((a, b) => b[campos[0].k] - a[campos[0].k])[0];
+        return `<p class="chart-resumo">${o.media ? 'Média ' + fmt(Math.round(tot / v.length * 10) / 10) : 'Total ' + fmt(tot) + ' · média ' + fmt(Math.round(tot / v.length))}/mês · melhor: ${mesCurto(top.mes)} (${fmt(top[campos[0].k])})</p>`; })()
+      : `<p class="chart-resumo">${campos.map(c => c.nome + ': ' + fmt(vals(c).reduce((a, b) => a + b, 0))).join(' · ')} no período</p>`;
+    const copiar = window.CPTGraficos ? window.CPTGraficos.acoes({titulo, subtitulo: o.subtitulo || (n === 6 ? 'Últimos seis meses' : 'De ' + mesLongo(serie[0].mes)) + ' · até ' + mesLongo(serie[serie.length - 1].mes), tipo: 'colunas', sufixo: suf, max: o.max,
       fonte: o.fonte, rotulos: serie.map(s => mesCurto(s.mes)), rotuloTabela: 'Mês', series: campos.map(c => ({nome: c.nome, valores: serie.map(s => s[c.k] == null ? null : s[c.k])})), tabela: o.tabela}) : '';
-    return `<figure class="mini-chart"><figcaption>${titulo}</figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${ui.esc(titulo + '. ' + resumo)}"><line class="baseline" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${barras}</svg>${campos.length > 1 ? `<p class="chart-key">${campos.map(c => `<span class="key-swatch ${c.cls || ''}"></span>${c.nome}`).join(' ')}</p>` : ''}${copiar}</figure>`;
+    return `<figure class="mini-chart"><figcaption>${titulo}</figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${ui.esc(titulo + '. ' + resumo)}"><line class="baseline" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${barras}</svg>${campos.length > 1 ? `<p class="chart-key">${campos.map(c => `<span class="key-swatch ${c.cls || ''}"></span>${c.nome}`).join(' ')}</p>` : ''}${rodape}${copiar}</figure>`;
   }
   /** Barras horizontais com rótulo e número (lista acessível). o (opcional): {titulo, subtitulo, max, sufixo, texto: x => '…', serie, tabela}. */
   function barrasH(lista, vazio, o = {}) {
@@ -79,12 +87,27 @@ window.CPTGestao = (() => {
         ${tile('Relatos de atividade', ui.num(c.relatos.total), ui.num(c.diagnosticos) + ' diagnósticos no mês.')}
       </section>
       <div class="painel-grid">
-        <section class="panel wide"><div class="panel-head"><div><h2>Últimos seis meses</h2><p>Pela data de realização de cada atividade.</p></div></div><div class="mini-charts">
+        ${destaques()}<section class="panel wide"><div class="panel-head"><div><h2>${painel.serie.length === 6 && painel.serie[0].mes < '2026-05' ? 'Últimos seis meses' : 'Desde ' + mesLongo(painel.serie[0].mes)}</h2><p>Pela data de realização de cada atividade${painel.destaques && painel.destaques.mesesAnexos.length ? '; meses mais claros vêm dos Anexos do relatório (números já entregues ao cliente)' : ''}.</p></div></div><div class="mini-charts">
           ${colunas(painel.serie, [{k: 'acoes', nome: 'Ações'}], 'Ações socioambientais')}${colunas(painel.serie, [{k: 'pessoas', nome: 'Pessoas'}], 'Pessoas alcançadas')}
-          ${colunas(painel.serie, [{k: 'pesquisas', nome: 'Pesquisas'}], 'Pesquisas de satisfação')}${colunas(painel.serie, [{k: 'recebidos', nome: 'Recebidos', cls: 'b'}, {k: 'concluidos', nome: 'Concluídos', cls: 'c'}], 'Atendimentos')}</div></section>
+          ${colunas(painel.serie, [{k: 'pesquisas', nome: 'Pesquisas'}], 'Pesquisas de satisfação', {anexos: false})}${colunas(painel.serie, [{k: 'recebidos', nome: 'Recebidos', cls: 'b'}, {k: 'concluidos', nome: 'Concluídos', cls: 'c'}], 'Atendimentos')}</div></section>
         <section class="panel"><div class="panel-head"><div><h2>Ações por eixo</h2><p>Contagem do mês por tipo de atividade.</p></div></div>${barrasH(painel.porItem.map(x => ({rotulo: x.item + ' · ' + x.titulo, quantidade: x.quantidade})), 'Sem ações no mês.', {titulo: 'Ações por eixo', serie: 'Ações', rotuloTabela: 'Eixo'})}</section>
         <section class="panel"><div class="panel-head"><div><h2>Tipos de atividade</h2><p>As mais frequentes no mês.</p></div></div>${barrasH(painel.porTipo, 'Sem ações no mês.', {titulo: 'Tipos de atividade', serie: 'Ações', rotuloTabela: 'Tipo'})}</section>
       </div>`;
+  }
+  /** 2.44: números que contam a história do período. */
+  function destaques() {
+    const d = painel.destaques; if (!d) return '';
+    const pct = v => (v > 0 ? '+' : '') + v + '%', item = (n, t, nota, cls = '') => `<div class="destaque ${cls}"><strong>${n}</strong><span>${t}</span>${nota ? `<small>${nota}</small>` : ''}</div>`;
+    const de = mesLongo(d.de).replace(/ de \d{4}$/, ''), itens = [
+      item(ui.num(d.acoes), 'ações socioambientais desde ' + de, ui.num(d.pessoas) + ' pessoas alcançadas no período.'),
+      d.porAcao != null ? item(String(d.porAcao).replace('.', ','), 'pessoas por ação, em média', d.porAcaoMes != null ? 'Em ' + mesCurto(d.ate) + ': ' + String(d.porAcaoMes).replace('.', ',') + '.' : '') : '',
+      d.melhor ? item(mesCurto(d.melhor.mes), 'mês com mais ações', ui.num(d.melhor.acoes) + ' ações.') : '',
+      d.variacao != null ? item(pct(d.variacao), 'ações em ' + mesCurto(d.ate) + ' vs ' + mesCurto(d.anterior), d.variacao >= 0 ? 'Mais ações que no mês anterior.' : 'Menos ações que no mês anterior.', d.variacao >= 0 ? 'is-up' : 'is-down') : '',
+      item(ui.num(d.concluidos) + '<small>/' + ui.num(d.recebidos) + '</small>', 'atendimentos concluídos / recebidos', d.saldo >= 0 ? 'A carteira diminuiu no período.' : 'Entraram ' + ui.num(-d.saldo) + ' casos a mais do que saíram.', d.saldo >= 0 ? 'is-up' : 'is-down'),
+      d.impressos ? item(ui.num(d.impressos), 'materiais impressos entregues', 'Comunicados, panfletos e cartas (Anexos).') : '',
+      d.tenda ? item(ui.num(d.tenda), 'pessoas atendidas na tenda / UMS', 'Soma do período (Anexos).') : '',
+      d.parceiros ? item(ui.num(d.parceiros.valor), 'contatos na Matriz da Sabesp', 'Em ' + mesCurto(d.parceiros.mes) + '.') : ''].filter(Boolean);
+    return `<section class="panel wide destaques-contrato"><div class="panel-head"><div><span class="eyebrow">DESTAQUES DO CONTRATO</span><h2>De ${ui.esc(mesLongo(d.de))} a ${ui.esc(mesLongo(d.ate))}</h2></div></div><div class="destaques">${itens.join('')}</div></section>`;
   }
   function frentes() {
     const b = ui.norm(filtroFrente.busca), lista = painel.frentes.filter(f => (!filtroFrente.andamento || f.situacao === 'Em andamento' || f.acoes || f.casosAbertos) && (!b || ui.norm(f.nome + ' ' + f.bairros.join(' ')).includes(b)));

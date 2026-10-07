@@ -95,6 +95,8 @@ assert.ok(!ctl.rows.some(x=>x[1]==='Morador 5'),'sem nome fica fora');
 // Indicadores: coluna do mês preenchida com nota de fonte; outras colunas e linhas manuais intactas.
 assert.equal(ind.rows[8][colM-1],3);assert.equal(ind.rows[33][colM-1],1240);assert.match(ind.notes['34:'+colM],/^CPT: automático · Fonte: panfletos entregues/);
 assert.equal(ind.rows[14][colM-1],3,'linha 15 = contatos da Matriz (seção e linha só com nome não contam)');assert.equal(anexos.getSheetByName('Matriz de Contatos').rows.length,10,'Matriz não é alterada');assert.equal(ind.rows[8][colM-2]||'','','mês anterior não é tocado (antes da ativação)');
+// 2.44: o histórico (todas as colunas de mês) fica guardado para os gráficos do contrato.
+{const h=JSON.parse(props.get('CPT_ANEXOS_HISTORICO'));assert.equal(h.meses[M].abertas,3);assert.equal(h.meses[M].impressos,1240);assert.equal(h.meses[M].parceiros,3);assert.equal(h.meses['2025-08'],undefined,'coluna vazia fica de fora');}
 // 4. De novo: nada muda (nem notas).
 r=run('atualizarAnexosCPT()');assert.deepEqual([r.controle.novos.length,r.controle.atualizados.length,r.controle.marcados],[0,0,0]);assert.equal(r.indicadores[0].linhas.filter(x=>x.situacao==='muda').length,0);
 assert.equal(ctl.rows.length,7);

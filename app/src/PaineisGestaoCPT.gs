@@ -12,6 +12,12 @@ class PaineisGestaoCPT {
     this.dados = new DadosDaAplicacao(ctx.base, ctx.perfil);
   }
   static meses(mes, n) { const out = []; for (let i = n - 1; i >= 0; i--) { const d = new Date(mes + '-15T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() - i); out.push(d.toISOString().slice(0, 7)); } return out; }
+  /** 2.44: os gráficos do contrato começam em maio de 2026 (até 12 meses; no mínimo 6). */
+  static get inicioContrato() { return '2026-05'; }
+  static mesesContrato(mes) {
+    const [a, m] = mes.split('-').map(Number), [a0, m0] = PaineisGestaoCPT.inicioContrato.split('-').map(Number), n = (a - a0) * 12 + (m - m0) + 1;
+    return PaineisGestaoCPT.meses(mes, Math.max(6, Math.min(12, n)));
+  }
   static chaveObra(nome) { return DadosDaAplicacao.norm(String(nome || '').replace(/\s*\[OBR-\d+\]\s*$/, '').split(' — ')[0]); }
 
   carregar(mes, atualizar) {
@@ -20,17 +26,18 @@ class PaineisGestaoCPT {
     const hoje = Utilities.formatDate(new Date(), this.dados.fuso, 'yyyy-MM-dd');
     // 2.36: confirmação das obras de ontem entra nos alertas (e na chave: confirmar tarde atualiza o painel).
     let ontem = null; try { ontem = new ObrasDoDiaCPT(this.ctx).confirmacao(ObrasDoDiaCPT.diaAnterior(hoje)); } catch (_) {}
-    const chave = 'painel:' + this.ctx.base.getId() + ':' + mes + ':' + reg.getLastRow() + ':' + atd.getLastRow() + ':' + (p.getProperty('CPT_ATD_VERSAO') || 0) + ':' + (p.getProperty('CPT_ENTREGAS_VERSAO') || 0) + ':' + hoje + ':' + (ontem ? ontem.versao : 0);
+    const hist = typeof AnexosCPT === 'undefined' ? null : AnexosCPT.historico(), desde = this.ctx.config.anexosDesde || '';
+    const chave = 'painel:' + this.ctx.base.getId() + ':' + mes + ':' + (hist ? hist.lido : '') + ':' + desde + ':' + reg.getLastRow() + ':' + atd.getLastRow() + ':' + (p.getProperty('CPT_ATD_VERSAO') || 0) + ':' + (p.getProperty('CPT_ENTREGAS_VERSAO') || 0) + ':' + hoje + ':' + (ontem ? ontem.versao : 0);
     return CacheCPT.obter(chave, 600, () => {
       let obras = [];
       try { const o = new ObrasCPT(this.ctx); obras = o.ler().linhas.map(x => o.publico(x)); } catch (_) {}
-      return this.calcular({mes, hoje, linhas: this.dados.ler(reg, 19), fichas: this.dados.ler(atd, 18), obras, entregas: this.dados.situacoesEntregas(), ontem});
+      return this.calcular({mes, hoje, linhas: this.dados.ler(reg, 19), fichas: this.dados.ler(atd, 18), obras, entregas: this.dados.situacoesEntregas(), ontem, historico: hist, anexosDesde: desde});
     }, atualizar === true);
   }
 
   /** Separado da leitura para ser testável. */
   calcular(e) {
-    const D = this.dados, N = DadosDaAplicacao.norm, S = SocioambientalCPT, mes = e.mes, hoje = e.hoje, meses = PaineisGestaoCPT.meses(mes, 6);
+    const D = this.dados, N = DadosDaAplicacao.norm, S = SocioambientalCPT, mes = e.mes, hoje = e.hoje, meses = PaineisGestaoCPT.mesesContrato(mes);
     const linhas = e.linhas.filter(r => r[0]).map(r => ({r, mes: D.mesCelula(r[3]), data: D.data(r[2]), destino: S.destino(r[1], r[13], r[17]), satisfacao: /satisfac/.test(N(r[1]))}));
     const fichas = e.fichas.filter(r => D.principal(r)).map(r => D.atendimento(r));
     const doMes = linhas.filter(x => x.mes === mes), acoes = doMes.filter(x => x.destino && x.destino !== '2');
@@ -54,8 +61,17 @@ class PaineisGestaoCPT {
     const serie = meses.map(m => {
       const l = linhas.filter(x => x.mes === m), a = l.filter(x => x.destino && x.destino !== '2');
       return {mes: m, acoes: a.length, pessoas: a.reduce((n, x) => n + (publico(x) || 0), 0), pesquisas: l.filter(x => x.satisfacao).length,
-        recebidos: fichas.filter(c => c.abertura.startsWith(m)).length, concluidos: fichas.filter(c => c.concluido && c.conclusao.startsWith(m)).length};
+        recebidos: fichas.filter(c => c.abertura.startsWith(m)).length, concluidos: fichas.filter(c => c.concluido && c.conclusao.startsWith(m)).length, fonte: 'aplicacao'};
     });
+    // 2.44: meses antes de a aplicação escrever nos Anexos usam os números já entregues ao cliente (aba Indicadores 2026).
+    // Pesquisas de satisfação não estão nos Anexos: continuam vindo dos registros.
+    const hist = (e.historico && e.historico.meses) || {}, ativa = e.anexosDesde || hoje.slice(0, 7);
+    serie.forEach(s => {
+      const h = hist[s.mes]; if (!h || s.mes >= ativa) return; let usou = false;
+      [['acoes', 'acoes'], ['pessoas', 'pessoas'], ['recebidos', 'abertas'], ['concluidos', 'concluidas']].forEach(([k, kh]) => { if (h[kh] != null) { s[k] = h[kh]; usou = true; } });
+      if (usou) s.fonte = 'anexos';
+    });
+    const destaques = PaineisGestaoCPT.destaques(serie, hist, mes);
     const contar = (lista, f) => { const m = new Map(); lista.forEach(x => { const k = f(x) || 'Não informado'; m.set(k, (m.get(k) || 0) + 1); }); return [...m].map(([nome, quantidade]) => ({nome, quantidade})).sort((a, b) => b.quantidade - a.quantidade); };
     const porItem = S.itens.filter(i => i.tipo !== 'consolidado').map(i => ({item: i.item, titulo: i.titulo, quantidade: doMes.filter(x => x.destino === i.item).length}));
     // 2.35: sem contagem por pessoa (nada de ranking individual).
@@ -97,7 +113,19 @@ class PaineisGestaoCPT {
     const paradas = lista.filter(f => f.situacao === 'Em andamento' && (f.diasSemRegistro === null || f.diasSemRegistro > PaineisGestaoCPT.diasSemRegistro));
     if (paradas.length) alertas.push({nivel: 'medio', texto: paradas.length + ' frente(s) em andamento sem registro há mais de ' + PaineisGestaoCPT.diasSemRegistro + ' dias: ' + paradas.slice(0, 4).map(f => f.nome).join('; ') + (paradas.length > 4 ? '…' : '') + '.', aba: 'frentes'});
     const ordem = {alto: 0, medio: 1, baixo: 2}; alertas.sort((a, b) => ordem[a.nivel] - ordem[b.nivel]);
-    return {mes, hoje, contrato, serie, porItem, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
+    return {mes, hoje, contrato, serie, destaques, porItem, porTipo, frentes: lista, alertas, atualizadoEm: new Date().toISOString()};
+  }
+
+  /** 2.44: números que contam a história do período (desde maio): acumulados, média por ação, melhor mês, variação e o que vem dos Anexos. */
+  static destaques(serie, hist, mes) {
+    const soma = k => serie.reduce((n, s) => n + (s[k] || 0), 0), atual = serie[serie.length - 1], anterior = serie[serie.length - 2];
+    const comAcao = serie.filter(s => s.acoes), melhor = comAcao.slice().sort((a, b) => b.acoes - a.acoes)[0] || null;
+    const somaHist = k => serie.reduce((n, s) => n + ((hist[s.mes] || {})[k] || 0), 0), ultimoHist = k => { for (let i = serie.length - 1; i >= 0; i--) { const v = (hist[serie[i].mes] || {})[k]; if (v != null) return {valor: v, mes: serie[i].mes}; } return null; };
+    const acoes = soma('acoes'), pessoas = soma('pessoas'), recebidos = soma('recebidos'), concluidos = soma('concluidos');
+    return {de: serie[0].mes, ate: mes, acoes, pessoas, porAcao: acoes ? Math.round(pessoas / acoes * 10) / 10 : null, porAcaoMes: atual.acoes ? Math.round(atual.pessoas / atual.acoes * 10) / 10 : null,
+      melhor: melhor ? {mes: melhor.mes, acoes: melhor.acoes} : null, variacao: anterior && anterior.acoes ? Math.round((atual.acoes - anterior.acoes) / anterior.acoes * 100) : null, anterior: anterior ? anterior.mes : '',
+      recebidos, concluidos, saldo: concluidos - recebidos, pesquisas: soma('pesquisas'), impressos: somaHist('impressos'), tenda: somaHist('tenda'), elogios: somaHist('elogios'), vistorias: somaHist('vistorias'),
+      parceiros: ultimoHist('parceiros'), mesesAnexos: serie.filter(s => s.fonte === 'anexos').map(s => s.mes)};
   }
 
   /**

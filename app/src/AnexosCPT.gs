@@ -252,6 +252,7 @@ class AnexosCPT {
       });
       out.push({mes, coluna: col, linhas});
     });
+    try { AnexosCPT.guardarHistorico(a.getRange(1, 1, 45, larg).getValues(), rotulos, ss.getSpreadsheetTimeZone ? ss.getSpreadsheetTimeZone() : this.fuso); } catch (e) { console.warn('Histórico dos Anexos: ' + e.message); }
     return out;
   }
 
@@ -275,6 +276,24 @@ class AnexosCPT {
   static texto(s) {
     return s.novos + ' caso(s) novo(s), ' + s.atualizados + ' atualizado(s) no Controle; Indicadores: ' + s.indicadores.map(m => m.erro ? m.mes + ' sem coluna' : m.mes + ' ' + m.mudaram + ' linha(s)').join(', ') + (s.avisos ? '; ' + s.avisos + ' aviso(s)' : '');
   }
+  // ---------------- Histórico (2.44): os números já entregues alimentam os gráficos do contrato ----------------
+  static get chaveHistorico() { return 'CPT_ANEXOS_HISTORICO'; }
+  /** Linhas lidas para o histórico: [chave, linha, conferência do rótulo]. */
+  static get linhasHistorico() {
+    return [['abertas', 9, /abertas/], ['elogios', 12, /^elogio/], ['concluidas', 13, /^conclu/], ['parceiros', 15, /parceiros/], ['pessoas', 28, /participantes/], ['acoes', 29, /total de acoes/],
+      ['vistorias', 31, /vistoria cautelar/], ['impressos', 34, /impress/], ['tenda', 43, /total de atendimentos/]];
+  }
+  /** Guarda, por mês (coluna da linha 3), os números das linhas acima; célula vazia ou texto fica de fora. */
+  static guardarHistorico(valores, rotulos, fuso) {
+    const meses = {}, linhas = AnexosCPT.linhasHistorico.filter(([, l, re]) => re.test(rotulos[l - 1] || ''));
+    (valores[2] || []).forEach((v, c) => {
+      const mes = AnexosCPT.mesDaCelula(v, fuso); if (!mes) return; const m = {};
+      linhas.forEach(([k, l]) => { const x = valores[l - 1][c]; if (typeof x === 'number' && isFinite(x)) m[k] = x; });
+      if (Object.keys(m).length) meses[mes] = m;
+    });
+    PropertiesService.getScriptProperties().setProperty(AnexosCPT.chaveHistorico, JSON.stringify({lido: new Date().toISOString(), meses}));
+  }
+  static historico() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(AnexosCPT.chaveHistorico) || 'null'); } catch (_) { return null; } }
   static ultima() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(AnexosCPT.chaveUltima) || 'null'); } catch (_) { return null; } }
   /** Uma atualização por vez (tela ou rotina). */
   static sozinho(fn, chave, nome) {

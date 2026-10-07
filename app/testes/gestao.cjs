@@ -68,6 +68,19 @@ email='atd@example.com';assert.throws(()=>run("carregarPainelGestaoCPT({mes:'202
 email='gestao@example.com';const p=run("carregarPainelGestaoCPT({mes:'2026-09'})");
 assert.equal(p.contrato.acoes,2);assert.equal(p.contrato.pessoas,35);assert.equal(p.contrato.diagnosticos,1);assert.equal(p.contrato.pesquisas.mes,2);
 assert.equal(p.contrato.casos.abertos,2);assert.equal(p.contrato.casos.concluidosMes,2);assert.equal(p.serie.length,6);assert.equal(p.serie[4].acoes,1,'agosto');
+// 2.44: com o histórico dos Anexos, os meses antes da aplicação usam os números já entregues (pesquisas continuam da base); destaques do período.
+{vm.runInContext(fs.readFileSync(__dirname+'/../src/AnexosCPT.gs','utf8'),ctx);
+ props.set('CPT_ANEXOS_HISTORICO',JSON.stringify({lido:'2026-10-07T10:00:00Z',meses:{'2026-05':{acoes:54,pessoas:82,abertas:4,concluidas:2,impressos:70,tenda:2,elogios:1,parceiros:79},'2026-06':{acoes:55,pessoas:163,abertas:6,concluidas:0,impressos:200,parceiros:77},'2026-07':{acoes:0,pessoas:0,impressos:220}}}));
+ const h=run("carregarPainelGestaoCPT({mes:'2026-09',atualizar:true})"),sm=m=>h.serie.find(x=>x.mes===m);
+ assert.deepEqual(h.serie.map(x=>x.mes),['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09']);
+ assert.deepEqual([sm('2026-05').acoes,sm('2026-05').pessoas,sm('2026-05').recebidos,sm('2026-05').fonte],[54,82,4,'anexos']);assert.equal(sm('2026-07').acoes,0);assert.equal(sm('2026-08').fonte,'aplicacao');assert.equal(sm('2026-08').acoes,1);
+ assert.equal(sm('2026-05').pesquisas,p.serie.find(x=>x.mes==='2026-05').pesquisas,'pesquisas não vêm dos Anexos');
+ const d=h.destaques;assert.equal(d.acoes,54+55+0+1+2);assert.equal(d.impressos,490);assert.deepEqual(d.parceiros,{valor:77,mes:'2026-06'});assert.deepEqual(d.mesesAnexos,['2026-05','2026-06','2026-07']);assert.equal(d.melhor.mes,'2026-06');
+ assert.equal(d.variacao,100,'set (2) vs ago (1)');
+ // Depois da ativação, o mês é da aplicação mesmo que o histórico tenha número.
+ {const c=JSON.parse(props.get('CPT_APLICACAO_1'));c.anexosDesde='2026-06';props.set('CPT_APLICACAO_1',JSON.stringify(c));const h2=run("carregarPainelGestaoCPT({mes:'2026-09',atualizar:true})");
+  assert.equal(h2.serie.find(x=>x.mes==='2026-06').fonte,'aplicacao');assert.equal(h2.serie.find(x=>x.mes==='2026-05').fonte,'anexos');delete c.anexosDesde;props.set('CPT_APLICACAO_1',JSON.stringify(c));}
+ assert.equal(run("PaineisGestaoCPT.mesesContrato('2027-02').length"),10,'de maio/2026 a fevereiro/2027');assert.equal(run("PaineisGestaoCPT.mesesContrato('2027-09').length"),12);props.delete('CPT_ANEXOS_HISTORICO');}
 const fa=p.frentes.find(f=>f.id==='OBR-0001'),fb=p.frentes.find(f=>f.id==='OBR-0002');
 assert.equal(fa.acoes,2);assert.equal(fa.diagnosticos,1);assert.equal(fa.casosAbertos,2);assert.equal(fb.acoes,0);assert.equal(fb.ultimo,'');
 assert.ok(p.alertas.some(a=>/sem registro/.test(a.texto)&&/Coletor B/.test(a.texto)),'frente parada aparece nos alertas');
