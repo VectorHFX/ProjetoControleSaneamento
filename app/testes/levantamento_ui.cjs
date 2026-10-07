@@ -47,6 +47,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await p.evaluate(()=>window.CPT_LEV.itens.push({id:'LEV-x',obraId:'OBR-0117',obra:'Viela Carijós',bairro:'Vila Linda',rua:'Rua das Flores',numero:'20',tipo:'Residencial',imovel:'Casa',resultado:'Comunicado',observacao:'',visitadaEm:'2026-10-06T12:00:00Z',nome:'Colega',atualizadoEm:''}));
   await casa('Rua das Flores','20','Contato com morador');
   await p.locator('.lev-atencao [data-lev-atualizar]').waitFor();assert.match(await p.locator('.lev-atencao').textContent(),/Colega/);
+  assert.match(await p.locator('.lev-recentes li',{hasText:'Rua das Flores, 20'}).textContent(),/precisa de você/,'nas últimas casas não aparece como enviada');assert.match(await p.locator('#levStatus').textContent(),/1 precisa de você/);
   await p.locator('.lev-atencao [data-lev-atualizar]').click();
   await p.waitForFunction(()=>window.CPT_LEV.itens.find(c=>c.numero==='20').resultado==='Contato com morador');
   await p.waitForFunction(()=>!document.querySelector('.lev-atencao'));

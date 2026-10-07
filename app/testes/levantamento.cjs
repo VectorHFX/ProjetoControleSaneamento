@@ -28,8 +28,10 @@ const aba=()=>books.get('agenda').getSheetByName('Levantamento de traçado');
 const casa=(x={})=>({operacaoId:op(),obraId:'OBR-1',bairro:'Vila Linda',rua:'Rua das Flores',numero:'10',tipo:'Residencial',imovel:'Casa',resultado:'Comunicado',observacao:'',visitadaEm:new Date(Date.now()-36e5).toISOString(),...x});
 const enviar=itens=>{ctx.p={itens};return run('enviarLevantamentoCPT(p)');};
 
+// 0. Aba criada à mão e vazia: o primeiro envio põe o cabeçalho (sem ele, a primeira casa viraria cabeçalho).
+books.get('agenda').insertSheet('Levantamento de traçado');
 // 1. Consulta sem nada levantado: não cria a aba; obras com o nome de uso, ativas primeiro.
-let l=run('listarLevantamentoCPT()');assert.equal(l.itens.length,0);assert.equal(aba(),null,'só consultar não cria a aba');
+let l=run('listarLevantamentoCPT()');assert.equal(l.itens.length,0);assert.equal(aba().rows.length,0,'só consultar não escreve na aba');
 assert.deepEqual(l.obras.map(o=>o.nome),['Viela Carijós','Rede Nova','Coletor Antigo']);assert.deepEqual(l.obras[0].bairros,['Vila Linda','Jardim do Estádio']);
 assert.deepEqual(l.resultados,['Comunicado','Contato com morador']);
 console.log('PASS: consulta — sem aba criada à toa, obras pelo nome de uso (ativas primeiro) com os bairros e as opções.');
@@ -37,7 +39,7 @@ console.log('PASS: consulta — sem aba criada à toa, obras pelo nome de uso (a
 // 2. Lote: três casas numa gravação só; a mesma operação não grava duas vezes.
 const a=casa(),b=casa({numero:'12',tipo:'Comercial',resultado:'Contato com morador'}),c=casa({numero:'14 A',bairro:'Bairro Inventado'});
 let r=enviar([a,b,c]);assert.equal(r.salvas,3);assert.deepEqual(r.resultados.map(x=>x.situacao),['salva','salva','salva']);
-assert.equal(aba().rows.length,4);assert.equal(aba().escritas,2,'cabeçalho + um bloco com as três casas');
+assert.equal(aba().rows.length,4);assert.equal(aba().rows[0][0],'ID','cabeçalho na aba vazia');assert.equal(aba().escritas,2,'cabeçalho + um bloco com as três casas');
 assert.equal(r.resultados[0].casa.nome,'Ana');assert.equal(r.resultados[0].casa.obra,'Viela Carijós');
 assert.equal(r.resultados[2].casa.bairro,'Vila Linda','bairro fora da obra vira o primeiro bairro da obra');
 r=enviar([a]);assert.equal(r.resultados[0].situacao,'ja-recebida');assert.equal(aba().rows.length,4,'reenvio (conexão caiu) não duplica');

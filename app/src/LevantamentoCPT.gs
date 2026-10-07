@@ -19,7 +19,8 @@ class LevantamentoCPT {
   aba(criar) {
     if (!this.ctx.config.agendaId) throw new Error('Os dados da aplicação ainda não foram preparados. Avise a administração técnica.');
     const ss = planilhaCPT_(this.ctx.config.agendaId), cab = LevantamentoCPT.cabecalho; let a = ss.getSheetByName(LevantamentoCPT.abaNome);
-    if (!a && criar) { a = ss.insertSheet(LevantamentoCPT.abaNome); a.getRange(1, 1, 1, cab.length).setValues([cab]); a.setFrozenRows(1); }
+    if (!a && criar) a = ss.insertSheet(LevantamentoCPT.abaNome);
+    if (a && criar && a.getLastRow() === 0) { a.getRange(1, 1, 1, cab.length).setValues([cab]); a.setFrozenRows(1); } // nova ou criada à mão e vazia
     if (a && a.getLastRow() > 0 && a.getRange(1, 1, 1, cab.length).getValues()[0].some((v, i) => v !== cab[i]))
       throw new Error('Cabeçalho do Levantamento de traçado incompatível. Nenhum dado foi substituído.');
     return a;

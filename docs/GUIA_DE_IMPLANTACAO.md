@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.33.1 — revisão das entregas 2.32 e 2.33 (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.33.1`, Nova versão).
+2. O que a revisão encontrou e corrigiu no Levantamento de traçado:
+   - Uma casa que voltou como "já levantada" aparecia como "enviada" em Últimas casas; agora mostra "precisa de você". "Manter o que estava" tira a casa da lista.
+   - "Tudo enviado" agora avisa quando ainda há casas esperando sua decisão.
+   - Se alguém criar à mão uma aba "Levantamento de traçado" vazia, o primeiro envio coloca o cabeçalho (antes, a primeira casa viraria cabeçalho).
+3. Conferido sem mudança: formulários da 2.32/2.32.1, reenvio sem duplicar, trava de envio, planilha .xlsx e o cronograma (que divide o mesmo gerador de planilha).
+
 ## Atualização 2.33.0 — Levantamento de traçado (≈ 5 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.33.0`, Nova versão). Arquivos novos: `LevantamentoCPT` (script) e `Levantamento` (HTML); o atualizador cria os dois.

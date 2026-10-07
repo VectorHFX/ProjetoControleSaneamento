@@ -8,7 +8,7 @@ window.CPTLevantamento = (() => {
   let ui = null, dados = null, parte = 'campo', ticket = 0, enviando = false, timer = null, falhas = 0, ultimoErro = '', verObra = null, buscaObra = '';
   const $ = id => document.getElementById(id);
   const LOTE = 100, RECENTES = 8;
-  const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
   const chave = (obraId, rua, numero) => [String(obraId), norm(rua), norm(numero).replace(/\s+/g, '')].join('|');
   const novoId = () => 'OP-lev-' + (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
   const quando = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'}).replace(',', ''); };
@@ -72,7 +72,7 @@ window.CPTLevantamento = (() => {
   }
   function status(l) {
     const n = l.fila.length;
-    if (!n) return `<span class="lev-ok">${ui.icon('check')} Tudo enviado</span>`;
+    if (!n) return `<span class="lev-ok">${ui.icon('check')} Tudo enviado</span>${l.atencao.length ? ` · ${l.atencao.length} ${l.atencao.length === 1 ? 'precisa' : 'precisam'} de você (abaixo)` : ''}`;
     if (enviando) return `<span class="spinner"></span> Enviando ${n} ${n === 1 ? 'casa' : 'casas'}…`;
     if (navigator.onLine === false) return `${n} ${n === 1 ? 'casa guardada' : 'casas guardadas'} no celular. Vão sozinhas quando a internet voltar.`;
     return `${n} ${n === 1 ? 'casa aguardando' : 'casas aguardando'} envio${ultimoErro ? ' <small class="muted">(' + ui.esc(ultimoErro) + ')</small>' : ''} <button class="button ghost small-button" type="button" data-lev-enviar>Enviar agora</button>`;
@@ -82,9 +82,10 @@ window.CPTLevantamento = (() => {
     return `<section class="panel lev-atencao"><h2>Precisam de você (${l.atencao.length})</h2><ul class="lev-lista">${l.atencao.map(c => `<li><div><strong>${ui.esc(c.rua)}, ${ui.esc(c.numero)}</strong> <span class="muted">· ${ui.esc(c.obra)}</span><br><span class="small">${c.situacao === 'duplicada' && c.existente ? `Já estava no levantamento: ${ui.esc(c.existente.resultado)} · ${ui.esc(c.existente.nome)} · ${ui.esc(quando(c.existente.visitadaEm))}. O novo: ${ui.esc(c.resultado)}.` : ui.esc(c.mensagem || 'Não foi aceita.')}</span></div><div class="lev-acoes">${c.situacao === 'duplicada' ? `<button class="button small-button" type="button" data-lev-atualizar="${ui.esc(c.operacaoId)}">Atualizar com o novo</button><button class="button ghost small-button" type="button" data-lev-descartar="${ui.esc(c.operacaoId)}">Manter o que estava</button>` : `<button class="button ghost small-button" type="button" data-lev-descartar="${ui.esc(c.operacaoId)}">Descartar</button>`}</div></li>`).join('')}</ul></section>`;
   }
   function recentes(l) {
-    const fila = new Set(l.fila.map(c => c.operacaoId)), lista = l.recentes.filter(c => l.sessao && c.obraId === l.sessao.obraId);
+    const fila = new Set(l.fila.map(c => c.operacaoId)), presa = new Set(l.atencao.map(c => c.operacaoId)), lista = l.recentes.filter(c => l.sessao && c.obraId === l.sessao.obraId);
+    const selo = c => fila.has(c.operacaoId) ? '<span class="badge">no celular</span>' : presa.has(c.operacaoId) ? '<span class="badge status-andamento">precisa de você</span>' : '<span class="badge status-concluida">enviada</span>';
     if (!lista.length) return '';
-    return `<section class="panel lev-recentes"><h2>Últimas casas</h2><ul class="lev-lista">${lista.map(c => `<li><div><strong>${ui.esc(c.rua)}, ${ui.esc(c.numero)}</strong><br><span class="small muted">${ui.esc([c.tipo, c.imovel, c.resultado].join(' · '))}</span></div><span class="badge ${fila.has(c.operacaoId) ? '' : 'status-concluida'}">${fila.has(c.operacaoId) ? 'no celular' : 'enviada'}</span></li>`).join('')}</ul></section>`;
+    return `<section class="panel lev-recentes"><h2>Últimas casas</h2><ul class="lev-lista">${lista.map(c => `<li><div><strong>${ui.esc(c.rua)}, ${ui.esc(c.numero)}</strong><br><span class="small muted">${ui.esc([c.tipo, c.imovel, c.resultado].join(' · '))}</span></div>${selo(c)}</li>`).join('')}</ul></section>`;
   }
   function iniciar(id) {
     const o = obras().find(x => x.id === id); if (!o) return;
@@ -190,7 +191,7 @@ window.CPTLevantamento = (() => {
       linhas: gs.map(g => verObra ? [g.nome, g.casas, g.comunicado, g.contato, g.Residencial, g.Comercial, g.Outro] : [g.nome, g.casas, g.comunicado, g.contato, g.ruas.size]), larguras: verObra ? [40, 10, 14, 20, 13, 13, 10] : [48, 10, 14, 20, 10]};
     const lista = {nome: 'Casas', titulo: 'Casas levantadas · ' + nomeObra, subtitulo: 'Uma linha por casa · horário de Brasília', cab: ['Obra', 'Bairro', 'Rua', 'Número', 'Tipo', 'Imóvel', 'Resultado', 'Observação', 'Visitada em', 'Quem levantou'],
       linhas: casas.map(c => [c.obra, c.bairro, c.rua, c.numero, c.tipo, c.imovel, c.resultado, c.observacao, quando(c.visitadaEm), c.nome]), larguras: [34, 20, 32, 10, 13, 10, 20, 36, 16, 22]};
-    const arquivo = 'Levantamento_' + (verObra ? nomeObra : 'todas').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').slice(0, 40) + '.xlsx';
+    const arquivo = 'Levantamento_' + (verObra ? nomeObra : 'todas').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '_').slice(0, 40) + '.xlsx';
     window.CPTAgenda.baixar(window.CPTAgenda.xlsxTabelas([resumo, lista]), arquivo); ui.toast('Planilha preparada: abas ' + resumo.nome + ' e Casas.');
   }
 
@@ -207,6 +208,7 @@ window.CPTLevantamento = (() => {
       if (t.hasAttribute('data-lev-xlsx')) { baixarPlanilha(); return; }
       const id = t.dataset.levAtualizar || t.dataset.levDescartar, l = local(), c = l.atencao.find(x => x.operacaoId === id); if (!c) return;
       l.atencao = l.atencao.filter(x => x.operacaoId !== id);
+      if (t.dataset.levDescartar) l.recentes = l.recentes.filter(x => x.operacaoId !== id);
       if (t.dataset.levAtualizar) { const {situacao, mensagem, existente: _e, ...casa} = c; l.fila.push({...casa, atualizar: true}); agendarEnvio(300); }
       salvarLocal(l); atualizarPartes();
     });
