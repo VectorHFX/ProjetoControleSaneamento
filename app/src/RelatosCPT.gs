@@ -6,6 +6,9 @@
  *   Quem escreveu marca como visto e pode responder. A resposta original do formulário nunca é alterada.
  * - Período de testes: devolver e responder ficam só com o proprietário (PerfisCPT.exigirConfiguracao).
  * - Dados na coleção "Devolutivas de relato" (uma linha por revisão).
+ * 2.34 — ferramenta Relatos: os relatos do mês em cartões para toda a equipe. Os pontos de melhoria (o que a conferência
+ *   achou faltando) aparecem só para quem fez a atividade (responsável e "Colaboradores de apoio na atividade") e para a
+ *   Gestão e o Administrativo, que veem todos. "Abrir no RDAS" procura a ficha do relato na hora do clique.
  */
 class RelatosCPT {
   static get minimo() { return 400; }
@@ -50,7 +53,35 @@ class RelatosCPT {
     return p ? {email: p.email, nome: p.nome} : null;
   }
 
+  /** Nomes de um campo de pessoas ("Ana, Bia; Caio"), normalizados. */
+  static nomes(v) { return String(v || '').split(/\s*[,;\n]\s*/).map(x => DadosDaAplicacao.norm(x)).filter(Boolean); }
+  /** A pessoa fez a atividade: é a responsável ou está entre os colaboradores de apoio (nome igual ao do cadastro). */
+  static participou(perfil, item) { const eu = DadosDaAplicacao.norm(perfil && perfil.nome); return !!eu && (DadosDaAplicacao.norm(item.responsavel) === eu || RelatosCPT.nomes(item.apoio).includes(eu)); }
+
   constructor(ctx) { this.ctx = ctx; this.col = new ColecaoCPT(ctx, 'Devolutivas de relato', 'DEV'); }
+  /** Cartões do mês. Os pontos de melhoria e a devolutiva só vão para quem pode ver; o resto é igual para todos. */
+  ferramenta(dados, mes) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes || ''))) throw new Error('Selecione um mês válido.');
+    const ger = PerfisCPT.gerencia(this.ctx.perfil), devs = new Map(this.visiveis().map(d => [d.registroId, d]));
+    const itens = PaineisGestaoCPT.relatosDoMes(dados, this.ctx, mes).itens.filter(r => RelatosCPT.ehRelato(r.procedimento)).map(r => {
+      const meu = RelatosCPT.participou(this.ctx.perfil, r), ve = meu || ger, q = r.qualidade;
+      return {id: r.id, data: r.data, atividade: r.atividade, bairro: r.bairro, frente: r.frente, responsavel: r.responsavel, apoio: r.apoio || '', publico: r.publico, fotos: r.fotos,
+        resumo: r.resumo, meu, pontos: ve && q ? q.itens.filter(i => !i.ok).map(i => ({nome: i.nome, dica: i.dica})) : null, devolutiva: ve ? devs.get(r.id) || null : null};
+    });
+    return {mes, itens, gerencia: ger, bairros: [...new Set(itens.map(x => x.bairro).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))};
+  }
+  /** Link para a ficha do relato no RDAS (aba do dia, linha "FICHA n DE m | R4-xxxxxx | …"). Procura só quando alguém pede. */
+  rdas(dados, id) {
+    if (typeof id !== 'string' || !/^REG-[a-f0-9]{24}$/.test(id)) throw new Error('Relato inválido.');
+    const a = dados.registros(), r = dados.registro(a.getRange(dados.localizar(a, id), 1, 1, 21).getValues()[0]);
+    if (!RelatosCPT.ehRelato(r.procedimento)) throw new Error('O RDAS reúne os relatos de atividade.');
+    const ssId = ConectoresCPT.id('rdas'), url = 'https://docs.google.com/spreadsheets/d/' + ssId + '/edit', dia = r.data, dm = dia.slice(8, 10) + '/' + dia.slice(5, 7);
+    let ss; try { ss = SpreadsheetApp.openById(ssId); } catch (_) { return {url, achou: false, texto: 'Abri o RDAS: procure a aba do dia ' + dm + '.'}; }
+    const aba = ss.getSheetByName('RDAS ' + dia.slice(8, 10) + '-' + dia.slice(5, 7) + '-' + dia.slice(0, 4));
+    if (!aba) return {url, achou: false, texto: 'O dia ' + dm + ' ainda não está no RDAS (ele é montado logo depois do envio). Abri a planilha.'};
+    const codigo = 'R4-' + id.replace(/^REG-/, '').slice(0, 6).toUpperCase(), cel = aba.createTextFinder(' | ' + codigo + ' | ').matchCase(true).findNext(), link = url + '#gid=' + aba.getSheetId();
+    return cel ? {url: link + '&range=A' + cel.getRow(), achou: true, texto: 'Ficha do relato no RDAS.'} : {url: link, achou: false, texto: 'Abri a aba do dia ' + dm + '; a ficha deste relato não foi achada (relatos de antes do Campo 4.0 têm outro código).'};
+  }
   static versao() { return Number(PropertiesService.getScriptProperties().getProperty('CPT_DEVOLUTIVAS_VERSAO') || 0); }
   static subirVersao() { const p = PropertiesService.getScriptProperties(); p.setProperty('CPT_DEVOLUTIVAS_VERSAO', String(RelatosCPT.versao() + 1)); }
   publica(d) { return d ? {registroId: d.registroId, data: d.data, atividade: d.atividade, comentario: d.comentario, situacao: d.situacao, resposta: d.resposta || '', autor: d.autor || '', autorNome: d.autorNome || '', por: d.por, em: d.criadoEm, versao: d.versao} : null; }
@@ -85,6 +116,8 @@ class RelatosCPT {
   }
 }
 
+function carregarRelatosCPT(p) { return AplicacaoCPT.executar((d, ctx) => new RelatosCPT(ctx).ferramenta(d, String(p && p.mes || '')), 'relatos.ferramenta'); }
+function abrirNoRdasCPT(id) { return AplicacaoCPT.executar((d, ctx) => new RelatosCPT(ctx).rdas(d, String(id || '')), 'relatos.rdas'); }
 function devolverRelatoCPT(p) { return ColecaoCPT.executar('relatos.devolver', ctx => new RelatosCPT(ctx).devolver(p), true); }
 function responderDevolutivaCPT(p) { return ColecaoCPT.executar('relatos.responder', ctx => new RelatosCPT(ctx).responder(p), true); }
 function minhasDevolutivasCPT() {

@@ -118,7 +118,7 @@ class PaineisGestaoCPT {
         const r = base[i], texto = R.valor(campos, /^relato|relato da atividade|relato do diagnostico|descreva|como foi/) || '';
         return {id: String(r[0]), data: dados.data(r[2]), atividade: String(r[13] || r[1]), procedimento: String(r[1]), bairro: String(r[7]), frente: SocioambientalCPT.frente(r[9]), responsavel: String(r[11]),
           publico: r[14] !== '' && /^\d+$/.test(String(r[14])) ? Number(r[14]) : null, item: SocioambientalCPT.destino(r[1], r[13], r[17]),
-          resumo: texto.length > 360 ? texto.slice(0, 357).replace(/\s+\S*$/, '') + '…' : texto, objetivo: R.valor(campos, /^objetivo/).slice(0, 200),
+          resumo: texto.length > 360 ? texto.slice(0, 357).replace(/\s+\S*$/, '') + '…' : texto, objetivo: R.valor(campos, /^objetivo/).slice(0, 200), apoio: R.valor(campos, /^colaboradores de apoio/).slice(0, 400),
           fotos: (String(json.get(i) || '').match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).length, situacao: (entregas.get(String(r[0])) || {}).situacao || '',
           qualidade: RelatosCPT.ehRelato(r[1]) && campos ? RelatosCPT.doRegistro(r, campos) : null};
       }).sort((x, y) => y.data.localeCompare(x.data));

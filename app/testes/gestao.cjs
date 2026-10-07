@@ -132,3 +132,24 @@ for(let i=0;i<60;i++)registros.rows.push(reg(900+i,'Relato de atividade','2026-1
  ctx.cur=p1.proximoCursor;const p2=JSON.parse(JSON.stringify(vm.runInContext("buscarRegistrosCPT({mes:'2026-10',cursor:cur})",ctx)));assert.equal(p2.itens.length,10,'segunda página com o resto');assert.equal(p2.proximoCursor,null);
  assert.equal(new Set(p1.itens.concat(p2.itens).map(x=>x.id)).size,60,'sem repetir nem pular');}
 console.log('PASS: registros 50 por vez, sem repetir nem pular.');
+
+// 2.34: ferramenta Relatos — cartões para todos; pontos de melhoria só para quem participou (responsável ou apoio) e a gerência; RDAS no clique.
+{const r20=reg(20,'Relato de atividade','2026-09-12','OBR-0001','Coletor A [OBR-0001]','Roda de conversa',18,[{titulo:'Relato da atividade',valor:'Conversa curta.'},{titulo:'Colaboradores de apoio na atividade',valor:['Atd','Fulano de Tal']}]);r20[11]='Social';registros.rows.push(r20);
+ const id20=r20[0],id2=registros.rows.find(r=>r[13]==='DDS')[0],idPesq=registros.rows.find(r=>r[1]==='Pesquisa de Satisfação')[0];
+ email='social@example.com';let f=run("carregarRelatosCPT({mes:'2026-09'})");
+ assert.equal(f.itens.length,3,'só relatos de atividade do mês');assert.equal(f.gerencia,false);
+ const meu=f.itens.find(x=>x.id===id20),outro=f.itens.find(x=>x.id===id2);
+ assert.equal(meu.meu,true);assert.ok(Array.isArray(meu.pontos)&&meu.pontos.length>0,'responsável vê os pontos');assert.ok(meu.pontos.every(x=>x.nome&&x.dica));assert.match(meu.apoio,/Atd/);
+ assert.equal(outro.meu,false);assert.equal(outro.pontos,null,'quem não participou não vê os pontos');assert.equal(outro.devolutiva,null);assert.ok(outro.resumo!==undefined&&outro.responsavel==='Ana','o cartão em si é para todos');
+ email='atd@example.com';f=run("carregarRelatosCPT({mes:'2026-09'})");assert.equal(f.itens.find(x=>x.id===id20).meu,true,'colaborador de apoio também vê');assert.equal(f.itens.find(x=>x.id===id2).pontos,null);
+ email='gestao@example.com';f=run("carregarRelatosCPT({mes:'2026-09'})");assert.equal(f.gerencia,true);assert.ok(f.itens.every(x=>Array.isArray(x.pontos)),'gestão vê os pontos de todos');
+ assert.throws(()=>run("carregarRelatosCPT({mes:'2026-13'})"),/mês válido/);
+ // Abrir no RDAS: procura "| R4-xxxxxx |" na aba do dia, só no clique.
+ const codigo='R4-'+id20.replace(/^REG-/,'').slice(0,6).toUpperCase();let procurou=0;
+ const abaDia={getName:()=>'RDAS 12-09-2026',getSheetId:()=>7,createTextFinder:t=>{procurou++;return {matchCase:()=>({findNext:()=>t===' | '+codigo+' | '?{getRow:()=>40}:null})};}};
+ books.set('rdas-teste',{getId:()=>'rdas-teste',getSheetByName:n=>n==='RDAS 12-09-2026'?abaDia:null});props.set('CPT_CONECTORES',JSON.stringify({rdas:{id:'rdas-teste'}}));
+ email='social@example.com';let r=run("abrirNoRdasCPT('"+id20+"')");assert.equal(r.achou,true);assert.equal(r.url,'https://docs.google.com/spreadsheets/d/rdas-teste/edit#gid=7&range=A40');assert.equal(procurou,1);
+ r=run("abrirNoRdasCPT('"+id2+"')");assert.equal(r.achou,false);assert.match(r.texto,/06\/09 ainda não está no RDAS/);assert.equal(r.url,'https://docs.google.com/spreadsheets/d/rdas-teste/edit');
+ assert.throws(()=>run("abrirNoRdasCPT('"+idPesq+"')"),/relatos de atividade/);assert.throws(()=>run("abrirNoRdasCPT('x')"),/inválido/);
+ props.set('CPT_CONECTORES',JSON.stringify({rdas:{id:'sem-rdas'}}));r=run("abrirNoRdasCPT('"+id20+"')");assert.equal(r.achou,false);assert.match(r.texto,/procure a aba do dia 12\/09/);}
+console.log('PASS: ferramenta Relatos — cartões dos relatos do mês para todos, pontos de melhoria só para responsável, colaboradores de apoio e gestão; Abrir no RDAS acha a linha da ficha na aba do dia e explica quando o dia ainda não está lá.');

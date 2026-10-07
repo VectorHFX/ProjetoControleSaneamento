@@ -23,6 +23,15 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.34.0 — ferramenta Relatos (≈ 3 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.34.0`, Nova versão). Arquivo novo: `Relatos` (HTML); o atualizador cria.
+2. **Ferramentas → Relatos** agora abre os **relatos de atividade do mês em cartões**, para toda a equipe, com filtros simples (procurar, bairro, "Os meus").
+   - **Pontos para melhorar** (o que a conferência achou faltando, com dica) aparecem só para quem fez a atividade — o responsável e quem está em "Colaboradores de apoio na atividade" — e para a Gestão e o Administrativo, que veem todos (e têm o filtro "Com pontos para melhorar"). O nome no formulário precisa ser igual ao do cadastro em Equipe e acessos.
+   - **Abrir no RDAS:** abre a planilha do RDAS na aba do dia, já na linha da ficha do relato (a procura acontece só no clique). Se o dia ainda não foi montado, a planilha abre e a tela avisa.
+   - **Outros registros:** a lista de todos os registros de campo (pesquisas, diagnósticos, vistorias…), igual à de antes.
+3. O comentário privado da gestão continua em Visão do mês → Relatos em resumo; no cartão, só quem escreveu e a gestão veem esse comentário.
+
 ## Atualização 2.33.1 — revisão das entregas 2.32 e 2.33 (≈ 3 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.33.1`, Nova versão).

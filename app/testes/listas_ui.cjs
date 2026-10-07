@@ -43,7 +43,7 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   await r.click();await p.locator('#detailDialog[open] .case-status').waitFor();assert.equal(await p.evaluate(()=>document.querySelector('#detailDialog').classList.contains('is-side')),false);
   await p.locator('#closeDialog').click();await p.setViewportSize({width:1366,height:900});
   // Registros: Data · [etiqueta do procedimento] Atividade · Bairro · Responsável; os 36 do mês numa página só (50 por vez).
-  await p.locator('.nav-item[data-route=registros]').click();await p.locator('#recordResults .list-row').first().waitFor();
+  await p.locator('.nav-item[data-route=registros]').click();await p.locator('[data-rel-parte=outros]').click();/* 2.34: a lista de registros fica em Relatos · Outros registros */await p.locator('#recordResults .list-row').first().waitFor();
   assert.deepEqual(await p.$$eval('#recordResults .list-head [data-col]',l=>l.map(x=>x.textContent.trim())),['Data','Atividade','Bairro','Responsável']);
   assert.equal(await p.locator('#recordResults .list-row').count(),36);assert.equal(await p.locator('[data-action=more-records]').count(),0,'sem "mais": cabem em 50');
   assert.equal(await p.locator('#recordResults .list-row .proc-tag.tag-pesquisa').first().textContent(),'Pesquisa');assert.ok(await p.locator('#recordResults .list-row .proc-tag.tag-relato').count()>0);

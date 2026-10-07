@@ -38,7 +38,7 @@
     painel:{titulo:'Visão do mês',icone:'i-chart',menu:'inicio',acesso:['administrador','administrativo','gestao'],visoes:GESTAO,abrir:()=>window.CPTGestao.renderPainel(),atualizar:()=>window.CPTGestao.renderPainel(true),mes:()=>window.CPTGestao.renderPainel()},
     cronograma:{titulo:'Cronograma',icone:'i-calendar',menu:'inicio',abrir:()=>window.CPTAgenda.render(),atualizar:()=>window.CPTAgenda.render(),mes:()=>window.CPTAgenda.render()},
     atendimentos:{titulo:'Atendimentos',icone:'i-case',grupo:'dia',abrir:()=>window.CPTAtendimentos.render(),atualizar:()=>window.CPTAtendimentos.atualizar()},
-    registros:{titulo:'Relatos',busca:'registros relatos procedimentos formulario de campo',icone:'i-records',grupo:'ferramentas',abrir:()=>renderRecords(),mes:()=>{$('view').innerHTML=skeleton();}},
+    registros:{titulo:'Relatos',busca:'registros relatos procedimentos formulario de campo',icone:'i-records',grupo:'ferramentas',abrir:()=>window.CPTRelatos.render(),mes:()=>{$('view').innerHTML=skeleton();}},
     // 2.33: Levantamento de traçado (casa por casa, guardado no celular e enviado em lotes).
     levantamento:{titulo:'Levantamento de traçado',busca:'levantamento tracado casa por casa rua numero comunicado morador campo',icone:'i-route',grupo:'ferramentas',abrir:()=>window.CPTLevantamento.render(),atualizar:()=>window.CPTLevantamento.render(true)},
     mapa:{titulo:'Mapa',busca:'mapa santo andre bairros localizacao',icone:'i-pin',grupo:'extras',emTeste:true,abrir:()=>window.CPTMapa.render(),atualizar:()=>window.CPTMapa.render(true),mes:()=>window.CPTMapa.render(),aoSair:()=>window.CPTMapa.sair()},
@@ -174,7 +174,7 @@
   function renderHome(){window.CPTInicio.render(state.home);}
   function options(values,chosen,first){return `<option value="">${first}</option>`+values.map(x=>`<option value="${esc(x)}" ${x===chosen?'selected':''}>${esc(x)}</option>`).join('');}
   function renderRecords(){const f=state.filters,op=state.home?.filtros||{procedimentos:[],bairros:[],obras:[]};
-    $('view').innerHTML=intro('Registros de campo','Encontre o relato, o território e as evidências de cada procedimento.')+
+    $('view').innerHTML=intro('Relatos','Todos os registros de campo do mês: relatos, pesquisas, diagnósticos e vistorias, com o texto original e as evidências.')+window.CPTRelatos.abas()+
       `<section class="panel filter-panel"><form id="recordFilters" class="filters"><label class="field">Buscar nos registros<span class="search-input">${icon('search')}<input name="busca" value="${esc(f.busca)}" placeholder="Atividade, responsável, obra ou protocolo" maxlength="200"></span></label><label class="field">Procedimento<select name="procedimento">${options(op.procedimentos,f.procedimento,'Todos os procedimentos')}</select></label><label class="field">Bairro<select name="bairro">${options(op.bairros,f.bairro,'Todos os bairros')}</select></label><label class="field">Obra<select name="obra">${options(op.obras||[],f.obra,'Todas as obras')}</select></label><input type="hidden" name="pendencia" value="${esc(f.pendencia||'')}"><button type="submit" class="button">${icon('search')}Buscar</button></form>${f.pendencia?'<p class="small muted">Filtro ativo: relatos sem público válido informado.</p>':''}</section><div class="results-head"><span id="recordCount">Consultando registros…</span><button class="button ghost" data-action="clear">Limpar filtros</button></div><div id="recordResults" class="list-table records-table"></div><div id="moreRecords" class="load-more"></div>`;
     const form=$('recordFilters');form.addEventListener('submit',e=>{e.preventDefault();readFilters();loadRecords();});form.addEventListener('change',()=>{readFilters();loadRecords();});form.elements.busca.addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(()=>{if(state.route==='registros'){readFilters();loadRecords();}},400);});loadRecords();
   }
@@ -213,14 +213,14 @@
   function navigate(route,filter){if(!Object.prototype.hasOwnProperty.call(ROTAS,route))return;
     if(state.perfil&&!podeVer(route)){toast(permitido(route)?'Esta página não faz parte da tela de '+window.CPTAgenda.names[visao()]+'. Troque a visão para abri-la.':'Seu acesso não inclui esta página.');return;}
     const atual=ROTAS[state.route];if(atual&&state.route!==route){if(atual.podeSair&&!atual.podeSair())return;if(atual.aoSair)atual.aoSair();}clearTimeout(debounce);state.route=route;++state.listRequest;state.cursor=null;
-    if(filter==='relatos')state.filters.procedimento='Relato de atividade';if(route==='atendimentos'&&filter)window.CPTAtendimentos.filtrar(filter);
+    if(filter==='relatos')window.CPTRelatos.irPara('relatos');if(route==='atendimentos'&&filter)window.CPTAtendimentos.filtrar(filter);
     const alvoMenu=ROTAS[route].menu||route;document.querySelectorAll('.nav-item,.tab-item[data-route]').forEach(b=>{const active=b.dataset.route===alvoMenu;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(document.body.classList.contains('nav-open'))abrirMenu(false);{const g=document.querySelector('.nav-item[data-route="'+alvoMenu+'"]')?.closest('.nav-group');if(g&&g.classList.contains('is-closed'))abrirGrupo(g.dataset.grupo,true,false);}
     $('pageLabel').textContent=ROTAS[route].titulo;if(window.CPTVisual)window.CPTVisual.navegou();ROTAS[route].abrir();window.scrollTo({top:0,behavior:'auto'});}
   // Aviso da prévia: aparece já no começo, para a tela não "pular" quando os dados chegam.
   const AVISO_PREVIA='Prévia visual com dados fictícios. Nenhuma informação desta tela foi lida ou gravada na sua planilha.';
   /** atualizar=true ignora o cache do servidor. Se já há dados do mês na tela, atualiza em segundo plano sem esqueleto. */
   async function loadHome(atualizar=false){const ticket=++state.homeRequest;const requested=state.mes;notice(window.CPT_PREVIA?AVISO_PREVIA:'');if(window.CPT_BOOT){window.CPT_BOOT.stage='consultando base';}$('refresh').disabled=true;const silencioso=!!(state.home&&state.home.mes===requested)&&!atualizar;if(state.route==='inicio'&&!silencioso)renderHome();
-    try{const d=await call('carregarInicioCPT',{mes:requested,atualizar});if(ticket!==state.homeRequest)return;if(!d||!d.indicadores||!d.perfil||!Array.isArray(d.perfil.papeis))throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 2.3.0.');const mudou=!state.home||state.home.atualizadoEm!==d.atualizadoEm||state.home.mes!==d.mes;state.home=d;if(!state.perfil)configureProfile(d.perfil);$('updated').textContent='Atualizado às '+new Date(d.atualizadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});if(state.route==='inicio'&&mudou)renderHome();else if(state.route==='registros')renderRecords();else if(state.route==='ajuda')renderHelp();
+    try{const d=await call('carregarInicioCPT',{mes:requested,atualizar});if(ticket!==state.homeRequest)return;if(!d||!d.indicadores||!d.perfil||!Array.isArray(d.perfil.papeis))throw new Error('A base não retornou os dados esperados. Confira se todos os arquivos são da versão 2.3.0.');const mudou=!state.home||state.home.atualizadoEm!==d.atualizadoEm||state.home.mes!==d.mes;state.home=d;if(!state.perfil)configureProfile(d.perfil);$('updated').textContent='Atualizado às '+new Date(d.atualizadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});if(state.route==='inicio'&&mudou)renderHome();else if(state.route==='registros')window.CPTRelatos.render();else if(state.route==='ajuda')renderHelp();
       window.CPT_BOOT?.finish();
     }catch(e){if(ticket!==state.homeRequest)return;notice(e.message);if(state.route==='inicio'&&!silencioso)$('view').innerHTML=empty('Vamos restabelecer a conexão',e.message,'<button class="button" data-action="retry-home">Tentar novamente</button><button class="button secondary" data-check-access>Conferir meu acesso</button><p id="accessResult" style="white-space:pre-line"></p>');window.CPT_BOOT?.finish();}finally{if(ticket===state.homeRequest)$('refresh').disabled=false;}}
   function summary(pairs){return '<dl class="detail-summary">'+pairs.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v||'Não informado')}</dd></div>`).join('')+'</dl>';}
@@ -277,7 +277,7 @@
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTInicio)throw new Error('Componentes Inicio.html ou Obras.html ausentes. Confira os arquivos da versão 2.33.1.');
+  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.34.0.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
@@ -287,6 +287,7 @@
   window.CPTComunicacao.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});window.CPTRecados.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
   if(!window.CPTEspaco)throw new Error('Componente MeuEspaco.html ausente. Confira os arquivos da versão 2.9.0.');window.CPTEspaco.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,podeVer,view:$('view')});
   if(window.CPTSaber)window.CPTSaber.init({call,esc,toast,intro,state,view:$('view')});
+  window.CPTRelatos.init({call,esc,date,num,intro,toast,icon,state,view:$('view'),renderRecords,monthLabel});
   if(window.CPTLevantamento)window.CPTLevantamento.init({call,esc,num,intro,toast,icon,state,view:$('view')});
   if(window.CPTOrganograma)window.CPTOrganograma.init({call,esc,toast,intro,state,view:$('view')});
   if(window.CPTVisual)window.CPTVisual.init();
