@@ -154,7 +154,7 @@ class PaineisGestaoCPT {
  * O índice se refaz sozinho: linha faltando ou chave diferente → lê os detalhes de novo. Pode ser apagado sem perda.
  */
 class IndiceRelatosCPT {
-  static get versao() { return '1'; }
+  static get versao() { return '2'; } // 2: panfletos entregues (Anexos, linha 34)
   static aba(mes) { return 'Índice dos relatos · ' + mes; }
   static chave(r) { return String(r[19] || '') + '|' + IndiceRelatosCPT.versao; }
   static ler(ctx, mes) {
@@ -180,15 +180,17 @@ class IndiceRelatosCPT {
     return {temCampos: !!campos, texto: v(/^relato|relato da atividade|relato do diagnostico|descreva|como foi/).slice(0, 20000), complemento: v(/^complemento/).slice(0, 500),
       objetivo: v(/^objetivo/).slice(0, 500), observacao: v(/^observacao final/).slice(0, 1500), endereco: v(/^endereco completo|^endereco da atividade|^local da atividade/).slice(0, 300),
       publicoAlvo: v(/^publico-alvo|^publico alvo/).slice(0, 300), apoio: v(/^colaboradores de apoio/).slice(0, 400),
+      panfletos: IndiceRelatosCPT.inteiro(v(/^quantidade de panfletos/)),
       fotos: (String(celula || '').match(/(?:\/d\/|[?&]id=)[A-Za-z0-9_-]{25,}/g) || []).length};
   }
+  static inteiro(v) { const s = String(v == null ? '' : v).trim().replace(/\./g, ''); return /^\d{1,7}$/.test(s) ? Number(s) : 0; }
   /** Item da tela: colunas da base (sempre atuais) + o que veio do índice. */
   static item(r, x, dados, entregas) {
     const publico = r[14] !== '' && /^\d+$/.test(String(r[14])) ? Number(r[14]) : null, texto = x.texto || '';
     return {id: String(r[0]), data: dados.data(r[2]), atividade: String(r[13] || r[1]), procedimento: String(r[1]), bairro: String(r[7]), frente: SocioambientalCPT.frente(r[9]), responsavel: String(r[11]),
       publico, item: SocioambientalCPT.destino(r[1], r[13], r[17]),
       resumo: texto.length > 360 ? texto.slice(0, 357).replace(/\s+\S*$/, '') + '…' : texto, objetivo: (x.objetivo || '').slice(0, 200), apoio: x.apoio || '',
-      fotos: x.fotos || 0, situacao: (entregas.get(String(r[0])) || {}).situacao || '',
+      fotos: x.fotos || 0, panfletos: x.panfletos || 0, situacao: (entregas.get(String(r[0])) || {}).situacao || '',
       qualidade: RelatosCPT.ehRelato(r[1]) && x.temCampos ? RelatosCPT.conferir({atividade: r[13], complemento: x.complemento, texto, objetivo: x.objetivo, observacao: x.observacao,
         bairro: r[7], endereco: x.endereco, publico, publicoAlvo: x.publicoAlvo}) : null};
   }

@@ -23,6 +23,24 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.39.0 — Anexos do relatório atualizados sozinhos (≈ 5 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.39.0`, Nova versão). Arquivo novo: `AnexosCPT` (script); o atualizador cria. Nenhuma permissão nova. Os acionadores `rotinaCPT` (12h e 0h) não mudam: ganharam o passo dos Anexos.
+2. **A planilha dos Anexos precisa ser Planilha Google** (a aplicação não escreve em arquivo Excel). Se ela estiver no Drive como .xlsx: abra no Drive → **Arquivo → Salvar como Planilhas Google** → copie o endereço da cópia → **Conectores e pastas → Anexos do relatório** → cole e salve. Para mandar ao cliente em Excel, use **Baixar Excel** na aba nova.
+3. **Visão do mês → aba Anexos do relatório** (Gestão e Administrativo). Ao abrir, a aplicação **confere sem gravar** e mostra, linha a linha, o que está na planilha e o que ela calculou. **Atualizar agora** grava. A rotina das 12h e 0h faz o mesmo sozinha.
+4. **Controle de manifestações:** cada caso com os dados oficiais da ficha (as mesmas 10 colunas). Caso novo vai para o fim, com a formatação e as listas da linha de cima; caso que mudou é atualizado no lugar. Nada é apagado nem reordenado; fórmulas, linhas escritas à mão e formatação ficam como estão. Caso reaberto volta para "Em andamento" e aparece como aviso.
+5. **Indicadores 2026 — linhas automáticas** (o resto continua à mão), na coluna do mês, cada célula com uma nota de fonte:
+   - 9 a 14: fichas abertas no mês (total, Solicitação, Reclamação, Elogio), concluídas no mês e "Não procedente";
+   - 28 e 29: pessoas alcançadas e ações socioambientais (os mesmos números da Visão do mês);
+   - 31: registros "Acompanhamento de Vistoria Cautelar" do mês;
+   - 32 e 33: Materiais concluídos no mês (publicações; ferramentas: impresso, vídeo, arte e apresentação);
+   - 34: panfletos entregues informados nos relatos do mês;
+   - 43: fichas abertas no mês com canal ou local Tenda/UMS.
+   - A linha 15 (parceiros) entra na próxima entrega, com a Matriz de Contatos.
+6. **Meses que a aplicação escreve:** o mês atual e, até o dia 10, o anterior — e **nunca antes da primeira gravação** (a primeira vez que alguém clicar em Atualizar agora, ou a rotina rodar, vale a partir daquele mês). Os meses já entregues não mudam.
+7. Segurança: se o rótulo de uma linha não for o esperado (a planilha mudou de lugar) ou a célula tiver fórmula, a linha é **pulada** e avisada. Se o mesmo protocolo aparecer em duas linhas do Controle, nada é gravado até corrigir.
+8. **Confira na primeira vez:** a linha 43 tinha números altos em agosto e setembro (59 e 93), que parecem vir de outra contagem. A regra combinada é "fichas com canal ou local Tenda/UMS"; se o número esperado for outro (ex.: pessoas atendidas na tenda), me avise antes de outubro fechar.
+
 ## Atualização 2.38.0 — fichas oficiais organizadas, pacote do mês e rotina das 12h e 0h (≈ 6 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.38.0`, Nova versão). Arquivo novo: `RotinaCPT` (script); o atualizador cria. Nenhuma permissão nova.

@@ -1462,4 +1462,9 @@ html[data-theme=dark] .stat-tile.is-bad .stat-value{color:#f19a90}
 .fichas-pacote{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;margin-bottom:12px}
 .pacote-pronto{display:grid;gap:4px;justify-items:start;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--mint);border-radius:12px;background:var(--bg);margin-bottom:12px}.pacote-pronto.is-warn{border-left-color:#d08a2a}.pacote-pronto .button{margin-top:8px}
 @media (max-width:640px){.fichas-pacote{grid-template-columns:1fr}.fichas-pacote .button{width:100%}}
+/* 2.39: Anexos do relatório — tabela das linhas automáticas dos Indicadores. */
+.tabela-rolagem{overflow-x:auto;margin:0 0 8px;position:relative}.anexos-ind{width:100%;border-collapse:collapse;font-size:13px}.anexos-ind caption{text-align:left;font-weight:700;margin:0 0 8px}.anexos-ind .badge{white-space:nowrap}
+.anexos-ind th,.anexos-ind td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.anexos-ind th{font-size:11px;color:var(--muted);font-weight:650}.anexos-ind .num{text-align:right;white-space:nowrap}
+.anexos-ind tr.is-muda td{background:color-mix(in srgb,#d08a2a 8%,transparent)}.anexos-ind td:nth-child(5){min-width:180px}.anexos-topo .dialog-actions{margin:0 0 10px}
+@media (max-width:640px){.anexos-ind td:nth-child(5),.anexos-ind th:nth-child(5){display:none}}
 </style>
