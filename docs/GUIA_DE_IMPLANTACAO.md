@@ -23,6 +23,16 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.45.0 — comentários da gestão nos gráficos (≈ 2 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.45.0`, Nova versão). Arquivo novo: `NotasGraficosCPT` (script); o atualizador cria. Nenhuma permissão nova.
+2. **Embaixo de todo gráfico que tem "Copiar imagem"** (Visão do mês, Contrato, Relatos em resumo, Auditoria dos atendimentos…), a Gestão e o Administrativo veem **Comentar**:
+   - **Só neste mês:** para justificar algo (ex.: "julho ficou baixo porque a obra esteve paralisada"); aparece com a barra laranja e só no mês escolhido em Competência.
+   - **Todos os meses:** para explicar o que o gráfico mostra; aparece sempre, com a barra azul.
+   - **Editar comentário** muda o texto; salvar vazio apaga (a versão anterior fica guardada).
+3. Toda a equipe lê os comentários; só Gestão e Administrativo escrevem.
+4. O comentário **vai junto na imagem** do "Copiar imagem" (rodapé "Nota: …"), pronto para o relatório ou o WhatsApp.
+
 ## Atualização 2.44.0 — gráficos do contrato desde maio, com os números dos Anexos (≈ 2 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.44.0`, Nova versão). Nenhuma permissão nova.

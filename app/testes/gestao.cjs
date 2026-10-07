@@ -68,6 +68,16 @@ email='atd@example.com';assert.throws(()=>run("carregarPainelGestaoCPT({mes:'202
 email='gestao@example.com';const p=run("carregarPainelGestaoCPT({mes:'2026-09'})");
 assert.equal(p.contrato.acoes,2);assert.equal(p.contrato.pessoas,35);assert.equal(p.contrato.diagnosticos,1);assert.equal(p.contrato.pesquisas.mes,2);
 assert.equal(p.contrato.casos.abertos,2);assert.equal(p.contrato.casos.concluidosMes,2);assert.equal(p.serie.length,6);assert.equal(p.serie[4].acoes,1,'agosto');
+// 2.45: comentários nos gráficos — Gestão/Administrativo escrevem (geral ou do mês); todos leem; vazio apaga.
+{vm.runInContext(fs.readFileSync(__dirname+'/../src/NotasGraficosCPT.gs','utf8'),ctx);const op=()=>'OP-'+crypto.randomUUID();
+ email='atd@example.com';assert.equal(run('listarNotasGraficosCPT()').podeEditar,false);ctx.n={grafico:'acoes-socioambientais',mes:'',texto:'x',operacaoId:op()};assert.throws(()=>run('salvarNotaGraficoCPT(n)'),/Gestão e do Administrativo/);
+ email='gestao@example.com';ctx.n={grafico:'acoes-socioambientais',mes:'',texto:'O que o gráfico mostra.',operacaoId:op()};run('salvarNotaGraficoCPT(n)');
+ ctx.n={grafico:'acoes-socioambientais',mes:'2026-07',texto:'Julho: obra paralisada.',operacaoId:op()};run('salvarNotaGraficoCPT(n)');
+ ctx.n={grafico:'acoes-socioambientais',mes:'2026-07',texto:'Julho: obra paralisada por chuva.',operacaoId:op()};run('salvarNotaGraficoCPT(n)');
+ ctx.n={grafico:'../x',mes:'',texto:'y',operacaoId:op()};assert.throws(()=>run('salvarNotaGraficoCPT(n)'),/Gráfico inválido/);
+ email='atd@example.com';let ns=run('listarNotasGraficosCPT()').notas;assert.equal(ns.length,2);assert.equal(ns.find(x=>x.mes==='2026-07').texto,'Julho: obra paralisada por chuva.');
+ email='gestao@example.com';ctx.n={grafico:'acoes-socioambientais',mes:'2026-07',texto:'',operacaoId:op()};assert.match(run('salvarNotaGraficoCPT(n)').resultado,/apagado/);assert.equal(run('listarNotasGraficosCPT()').notas.length,1);
+ ctx.n={grafico:'outro',mes:'',texto:'',operacaoId:op()};assert.throws(()=>run('salvarNotaGraficoCPT(n)'),/Escreva o comentário/);}
 // 2.44: com o histórico dos Anexos, os meses antes da aplicação usam os números já entregues (pesquisas continuam da base); destaques do período.
 {vm.runInContext(fs.readFileSync(__dirname+'/../src/AnexosCPT.gs','utf8'),ctx);
  props.set('CPT_ANEXOS_HISTORICO',JSON.stringify({lido:'2026-10-07T10:00:00Z',meses:{'2026-05':{acoes:54,pessoas:82,abertas:4,concluidas:2,impressos:70,tenda:2,elogios:1,parceiros:79},'2026-06':{acoes:55,pessoas:163,abertas:6,concluidas:0,impressos:200,parceiros:77},'2026-07':{acoes:0,pessoas:0,impressos:220}}}));

@@ -279,7 +279,7 @@
   if(!window.CPTAgenda||typeof window.CPTAgenda.init!=='function')throw new Error('O componente Agenda.html está ausente ou não iniciou. Substitua-o pelo arquivo completo da versão 2.3.0.');
   window.CPTAgenda.init({call,esc,date,num,intro,toast,formLink,state,navigate,view:$('view')});
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.44.0.');
+  if(!window.CPTObras||!window.CPTInicio||!window.CPTRelatos)throw new Error('Componentes Inicio.html, Obras.html ou Relatos.html ausentes. Confira os arquivos da versão 2.45.0.');
   window.CPTInicio.init({call,esc,date,num,icon,formLink,state,visao,podeVer,view:$('view')});
   if(!window.CPTAtendimentos)throw new Error('Componente Atendimentos.html ausente. Confira os arquivos da versão 2.3.0.');
   window.CPTAtendimentos.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
@@ -289,7 +289,7 @@
   window.CPTComunicacao.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});window.CPTRecados.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,view:$('view')});
   if(!window.CPTEspaco)throw new Error('Componente MeuEspaco.html ausente. Confira os arquivos da versão 2.9.0.');window.CPTEspaco.init({call,esc,date,num,intro,toast,icon,norm,safeURL,state,navigate,visao,podeVer,view:$('view')});
   if(window.CPTSaber)window.CPTSaber.init({call,esc,toast,intro,state,view:$('view')});
-  if(window.CPTGraficos)window.CPTGraficos.init({toast});
+  if(window.CPTGraficos)window.CPTGraficos.init({toast,call,state});
   window.CPTRelatos.init({call,esc,date,num,intro,toast,icon,state,view:$('view'),renderRecords,monthLabel});
   if(window.CPTLevantamento)window.CPTLevantamento.init({call,esc,num,intro,toast,icon,state,view:$('view')});
   if(window.CPTOrganograma)window.CPTOrganograma.init({call,esc,toast,intro,state,view:$('view')});

@@ -5,18 +5,58 @@
    fica igual no tema claro ou escuro e cola bem em e-mail, WhatsApp e documentos. Se o navegador não deixar copiar,
    a imagem é baixada. A tabela vai como texto com tabulação e como tabela HTML (cola certinho no Planilhas, Excel e Docs).
    dados: {titulo, subtitulo, fonte?, tipo: 'colunas'|'barras', rotulos: [...], series: [{nome, valores: [...]}], sufixo?, max?,
-           eixo?: índices de rótulo mostrados (colunas), tabela?: {cab: [...], linhas: [[...]]}} */
+           eixo?: índices de rótulo mostrados (colunas), tabela?: {cab: [...], linhas: [[...]]}, id?: chave do gráfico, mes?: AAAA-MM}
+   2.45: comentários da gestão embaixo de cada gráfico (o que significa, para todos os meses, ou a justificativa do mês).
+   Gestão e Administrativo escrevem ("Comentar"); todos leem; o comentário também vai na imagem copiada. */
 window.CPTGraficos = (() => {
-  let ui = null, seq = 0;
+  let ui = null, seq = 0, notas = null, carregando = false;
   const reg = new Map(), LIMITE = 120;
   // Cores da imagem (fundo claro). Duas séries: azul e laranja, conferidas para daltonismo (validador de paleta).
   const COR = {fundo: '#fffdf8', tinta: '#1f2a26', suave: '#5d6b64', grade: '#e7e2d8', uma: '#2c8669', duas: ['#2672ac', '#c0712f']};
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
   const fmt = (v, d) => v == null || v === '' ? '—' : new Intl.NumberFormat('pt-BR').format(v) + (d.sufixo || '');
-  /** Botões para colocar logo abaixo do gráfico. */
+  const slug = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'grafico';
+  const mesTexto = m => new Date(m + '-15T12:00:00Z').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric', timeZone: 'UTC'});
+  /** Botões para colocar logo abaixo do gráfico, e os comentários da gestão. */
   function acoes(dados) {
     const id = 'g' + (++seq); reg.set(id, dados); if (reg.size > LIMITE) reg.delete(reg.keys().next().value);
-    return `<div class="graf-acoes" role="group" aria-label="Levar o gráfico ${esc(dados.titulo)}"><button type="button" class="link-button" data-graf-img="${id}">Copiar imagem</button><span aria-hidden="true">·</span><button type="button" class="link-button" data-graf-tab="${id}">Copiar tabela</button></div>`;
+    dados.chave = dados.id || slug(dados.titulo); dados.mesNota = dados.mes || (ui && ui.state && ui.state.mes) || '';
+    if (!notas) carregarNotas();
+    return `<div class="graf-acoes" role="group" aria-label="Levar o gráfico ${esc(dados.titulo)}"><button type="button" class="link-button" data-graf-img="${id}">Copiar imagem</button><span aria-hidden="true">·</span><button type="button" class="link-button" data-graf-tab="${id}">Copiar tabela</button></div>
+      <div class="graf-notas" data-graf-notas="${esc(dados.chave)}" data-graf-mes="${esc(dados.mesNota)}">${htmlNotas(dados.chave, dados.mesNota)}</div>`;
+  }
+  // ---------- Comentários ----------
+  const notasDe = (chave, mes) => notas ? notas.lista.filter(n => n.grafico === chave && (!n.mes || n.mes === mes)).sort((a, b) => (a.mes ? 1 : 0) - (b.mes ? 1 : 0)) : [];
+  function htmlNotas(chave, mes) {
+    if (!notas) return '';
+    const l = notasDe(chave, mes).map(n => `<div class="graf-nota${n.mes ? ' is-mes' : ''}"><p>${esc(n.texto)}</p><small>${esc(n.nome)} · ${n.mes ? 'só em ' + esc(mesTexto(n.mes)) : 'vale para todos os meses'}</small></div>`).join('');
+    return l + (notas.pode ? `<button type="button" class="link-button graf-comentar" data-graf-comentar="${esc(chave)}" data-mes="${esc(mes)}">${l ? 'Editar comentário' : 'Comentar'}</button>` : '');
+  }
+  function preencher(chave) {
+    document.querySelectorAll('[data-graf-notas]').forEach(el => { if (!chave || el.dataset.grafNotas === chave) el.innerHTML = htmlNotas(el.dataset.grafNotas, el.dataset.grafMes); });
+  }
+  async function carregarNotas() {
+    if (carregando || !ui || !ui.call) return; carregando = true;
+    try { const r = await ui.call('listarNotasGraficosCPT'); notas = {lista: r.notas || [], pode: !!r.podeEditar}; preencher(); }
+    catch (_) { notas = {lista: [], pode: false}; } finally { carregando = false; }
+  }
+  function formNota(btn) {
+    const chave = btn.dataset.grafComentar, mes = btn.dataset.mes, box = btn.closest('[data-graf-notas]'), achar = m => notas.lista.find(n => n.grafico === chave && n.mes === m);
+    const inicial = achar(mes) ? mes : achar('') ? '' : mes, txt = m => (achar(m) || {}).texto || '';
+    box.innerHTML = `<form class="graf-nota-form" data-chave="${esc(chave)}" data-mes="${esc(mes)}"><fieldset class="graf-escopo"><legend class="sr-only">Vale para</legend>
+        ${mes ? `<label><input type="radio" name="escopo" value="${esc(mes)}" ${inicial === mes ? 'checked' : ''}> Só em ${esc(mesTexto(mes))}</label>` : ''}<label><input type="radio" name="escopo" value="" ${inicial === '' ? 'checked' : ''}> Todos os meses (o que o gráfico mostra)</label></fieldset>
+      <textarea name="texto" rows="2" maxlength="600" placeholder="Ex.: julho ficou baixo porque a obra esteve paralisada.">${esc(txt(inicial))}</textarea>
+      <div class="graf-nota-botoes"><button type="submit" class="button">Salvar</button><button type="button" class="button ghost" data-graf-cancelar>Cancelar</button></div></form>`;
+    const f = box.querySelector('form'); f.texto.focus();
+    f.addEventListener('change', e => { if (e.target.name === 'escopo') f.texto.value = txt(e.target.value); });
+  }
+  async function salvarNota(f) {
+    const chave = f.dataset.chave, mes = f.elements.escopo.value, texto = f.elements.texto.value.trim(), b = f.querySelector('[type=submit]'); b.disabled = true;
+    try {
+      const r = await ui.call('salvarNotaGraficoCPT', {grafico: chave, mes, texto, operacaoId: 'OP-' + crypto.randomUUID()});
+      notas.lista = notas.lista.filter(n => !(n.grafico === chave && n.mes === mes)); if (r.nota.texto) notas.lista.push(r.nota);
+      ui.toast(r.resultado); preencher(chave);
+    } catch (e) { ui.toast(e.message); b.disabled = false; }
   }
   function tabela(d) {
     if (d.tabela) return d.tabela;
@@ -32,7 +72,11 @@ window.CPTGraficos = (() => {
   function fimArredondado(c, x, y, w, h, r) { r = Math.min(r, h / 2, w); c.beginPath(); c.moveTo(x, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r); c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x, y + h); c.closePath(); c.fill(); }
   function desenhar(d) {
     const fam = (getComputedStyle(document.body).fontFamily || 'sans-serif'), W = 960, n = d.rotulos.length, multi = d.series.length > 1;
-    const H = d.tipo === 'barras' ? 150 + n * 36 + (multi ? 26 : 0) : 470;
+    // 2.45: comentários da gestão (gerais e do mês) entram no rodapé da imagem.
+    const medir = document.createElement('canvas').getContext('2d'); medir.font = 'italic 400 13px ' + fam;
+    const quebrar = t => { const out = []; let l = ''; String(t).split(/\s+/).forEach(p => { const x = l ? l + ' ' + p : p; if (medir.measureText(x).width > W - 64 && l) { out.push(l); l = p; } else l = x; }); if (l) out.push(l); return out; };
+    const comentarios = notasDe(d.chave, d.mesNota).flatMap(nt => quebrar('Nota: ' + nt.texto));
+    const H = (d.tipo === 'barras' ? 150 + n * 36 + (multi ? 26 : 0) : 470) + (comentarios.length ? comentarios.length * 18 + 12 : 0);
     const cv = document.createElement('canvas'), k = 2; cv.width = W * k; cv.height = H * k; const c = cv.getContext('2d'); c.scale(k, k);
     c.fillStyle = COR.fundo; c.fillRect(0, 0, W, H);
     texto(c, d.titulo, 32, 46, {fam, tam: 22, peso: 700}); if (d.subtitulo) texto(c, d.subtitulo, 32, 72, {fam, tam: 14, cor: COR.suave});
@@ -63,6 +107,7 @@ window.CPTGraficos = (() => {
       c.fillStyle = '#b9b2a6'; c.fillRect(x0, base, x1 - x0, 1);
     }
     const hoje = new Date().toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo'});
+    comentarios.forEach((l, i) => texto(c, l, 32, H - 46 - (comentarios.length - 1 - i) * 18, {fam, tam: 13, cor: COR.tinta}));
     texto(c, 'Fonte: ' + (d.fonte || 'Aplicação CPT · registros do Campo 4.0') + ' · gerado em ' + hoje, 32, H - 22, {fam, tam: 12, cor: COR.suave});
     return cv;
   }
@@ -94,11 +139,14 @@ window.CPTGraficos = (() => {
   function init(api) {
     ui = api;
     document.addEventListener('click', e => {
+      const cm = e.target.closest('[data-graf-comentar]'); if (cm && notas && notas.pode) { formNota(cm); return; }
+      const cc = e.target.closest('[data-graf-cancelar]'); if (cc) { const box = cc.closest('[data-graf-notas]'); box.innerHTML = htmlNotas(box.dataset.grafNotas, box.dataset.grafMes); return; }
       const b = e.target.closest('[data-graf-img],[data-graf-tab]'); if (!b) return;
       const d = reg.get(b.dataset.grafImg || b.dataset.grafTab); if (!d) { ui.toast('Atualize a página para copiar este gráfico.'); return; }
       if (b.dataset.grafImg) copiarImagem(d); else copiarTabela(d);
     });
   }
+  document.addEventListener('submit', e => { const f = e.target.closest('.graf-nota-form'); if (f) { e.preventDefault(); salvarNota(f); } });
   return {init, acoes, desenhar, tabela};
 })();
 </script>
