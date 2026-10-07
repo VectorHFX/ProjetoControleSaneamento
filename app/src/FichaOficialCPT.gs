@@ -5,6 +5,11 @@
  * - Dados: casos novos (formulário 4.0 + execuções + conclusão) e migrados (ficha oficial antiga + o que aconteceu depois).
  * - Só gera de novo quando o conteúdo muda (hash). A versão anterior vai para "Versões anteriores"; nada é apagado.
  * - 2.27: o pacote do mês (ANEXO 4) saiu da aplicação junto com o fechamento do relatório; a ficha de cada caso continua.
+ * - 2.38: pasta organizada "CPT • Fichas oficiais da Sabesp": Casos (a ficha atual de cada caso, Docs + PDF, com o número
+ *   do caso no nome), Versões anteriores e Pacotes/AAAA-MM. Fichas antigas que já estão em dia são MOVIDAS para Casos (não
+ *   refeitas); só são geradas as que faltam ou mudaram. "Atualizar todas" trabalha por tempo (lotes) e continua de onde parou.
+ *   Pacote do mês: cópias congeladas dos PDFs dos casos abertos no mês, concluídos no mês e em andamento no fim do mês, mais
+ *   um índice em PDF. A rotina (acionadores das 12h e 0h) mantém as fichas em dia.
  */
 class FichaOficialCPT {
   static get modeloPadrao() { return '11wGNtV2E0O-PhSv6XOnVo5KPCB6GPi18rRKEYG6HN54'; }
@@ -15,14 +20,21 @@ class FichaOficialCPT {
   constructor(ctx) { this.ctx = ctx; this.ciclo = new CicloAtendimentoCPT(ctx); this.fuso = this.ciclo.fuso; }
   config() { return AplicacaoCPT.config(); }
   salvarConfig(c) { PropertiesService.getScriptProperties().setProperty(AplicacaoCPT.chave, JSON.stringify(c)); }
-  /** Pasta CPT • Fichas oficiais com Documentos, PDFs e Versões anteriores. Guardada na configuração (pode ser movida no Drive). */
+  static get nomeRaiz() { return 'CPT • Fichas oficiais da Sabesp'; }
+  /** 2.38: pasta organizada (Casos, Versões anteriores, Pacotes). Guardada na configuração (pode ser movida no Drive). */
   pasta(sub) {
-    const c = this.config(); let raiz = null;
-    if (c.pastaFichasId) { try { raiz = DriveApp.getFolderById(c.pastaFichasId); } catch (_) {} }
-    if (!raiz) { raiz = DriveApp.createFolder('CPT • Fichas oficiais'); c.pastaFichasId = raiz.getId(); this.salvarConfig(c); }
-    if (!sub) return raiz;
-    const it = raiz.getFoldersByName(sub); return it.hasNext() ? it.next() : raiz.createFolder(sub);
+    if (!this._raiz) {
+      const c = this.config(); let raiz = null;
+      if (c.pastaFichasV2Id) { try { raiz = DriveApp.getFolderById(c.pastaFichasV2Id); } catch (_) {} }
+      if (!raiz) { raiz = DriveApp.createFolder(FichaOficialCPT.nomeRaiz); c.pastaFichasV2Id = raiz.getId(); this.salvarConfig(c); }
+      this._raiz = raiz; this._subs = {};
+    }
+    if (!sub) return this._raiz;
+    return this._subs[sub] || (this._subs[sub] = FichaOficialCPT.subpasta(this._raiz, sub));
   }
+  static subpasta(pai, nome) { const it = pai.getFoldersByName(nome); return it.hasNext() ? it.next() : pai.createFolder(nome); }
+  /** Nome com o número curto do caso: "Caso 12 · ATD20260012". */
+  nome(protocolo) { let caso = ''; try { caso = this.ciclo.dados.caso(protocolo); } catch (_) {} return (caso ? caso.replace('/', '-') + ' · ' : '') + protocolo; }
   data(v, f) { const d = v instanceof Date ? v : (v ? new Date(v) : null); return d && !isNaN(d) ? Utilities.formatDate(d, this.fuso, f || 'dd/MM/yyyy') : String(v || ''); }
   hora(v) {
     if (v instanceof Date || /^\d{4}-\d{2}-\d{2}T/.test(String(v))) return this.data(v, 'HH:mm');
@@ -42,34 +54,131 @@ class FichaOficialCPT {
     const out = []; String(texto || '').replace(/(?:\/d\/|[?&]id=)([A-Za-z0-9_-]{20,})/g, (_, id) => { out.push(id); return _; }); return out;
   }
   hash(reg) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, JSON.stringify([FichaOficialCPT.versaoModelo, this.modelo(), reg]), Utilities.Charset.UTF_8).map(b => ((b + 256) % 256).toString(16).padStart(2, '0')).join(''); }
-  modelo() { return this.config().modeloFichaId || FichaOficialCPT.modeloPadrao; }
+  modelo() { return this._modelo || (this._modelo = this.config().modeloFichaId || FichaOficialCPT.modeloPadrao); }
 
   /** Gera (ou reaproveita) a ficha de um protocolo. Retorna {documento, pdf, gerada}. */
   gerar(protocolo, forcar) {
     const {r} = this.ciclo.localizar(String(protocolo || '')), reg = this.registro(r), d = CicloAtendimentoCPT.json(r[19]), hash = this.hash(reg);
     if (!reg.nome || !reg.solicitacao) throw new Error('A ficha ' + reg.protocolo + ' precisa de nome e solicitação. Use Corrigir dados da ficha.');
     if (!forcar && d.fichaHash === hash && r[14] && r[15]) return {protocolo: reg.protocolo, documento: String(r[14]), pdf: String(r[15]), gerada: false};
-    const copia = DriveApp.getFileById(this.modelo()).makeCopy(reg.protocolo + ' Ficha de Atendimento', this.pasta('Documentos'));
+    const nome = this.nome(reg.protocolo), casos = this.pasta('Casos');
+    const copia = DriveApp.getFileById(this.modelo()).makeCopy(nome + ' · Ficha de Atendimento', casos);
     const doc = DocumentApp.openById(copia.getId());
     new DocumentoFichaCPT(doc, reg, this.fuso).preencher();
     doc.saveAndClose();
-    const pdf = this.pasta('PDFs').createFile(copia.getAs(MimeType.PDF).setName(reg.protocolo + '_Ficha_Atendimento.pdf'));
+    const pdf = casos.createFile(copia.getAs(MimeType.PDF).setName(nome + ' · Ficha de Atendimento.pdf'));
     const docUrl = 'https://docs.google.com/document/d/' + copia.getId() + '/edit', pdfUrl = 'https://drive.google.com/file/d/' + pdf.getId() + '/view';
     // Grava só os links e o hash: não muda a versão do caso (ninguém perde o que está digitando).
     const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) throw new Error('A base está ocupada. A ficha foi criada e será vinculada na próxima tentativa.');
-    let anteriores = [];
+    let anteriores = [], eraNaPastaNova = false;
     try {
       const atual = this.ciclo.localizar(reg.protocolo), dd = CicloAtendimentoCPT.json(atual.r[19]);
       anteriores = [atual.r[14], atual.r[15]].map(u => (String(u).match(/\/d\/([A-Za-z0-9_-]{20,})/) || [])[1]).filter(Boolean);
-      dd.fichaHash = hash; dd.fichaGeradaEm = new Date().toISOString();
+      eraNaPastaNova = dd.fichaPasta === 'v2';
+      dd.fichaHash = hash; dd.fichaGeradaEm = new Date().toISOString(); dd.fichaPasta = 'v2';
       atual.a.getRange(atual.linha, 15, 1, 2).setValues([[docUrl, pdfUrl]]);
       atual.a.getRange(atual.linha, 20).setValue(JSON.stringify(dd).slice(0, 49000));
       this.ciclo.aba('Movimentações').appendRow(['MOV-FICHA-' + hash.slice(0, 20), reg.protocolo, new Date(), 'Ficha oficial gerada', String(atual.r[3]), this.ctx.perfil.nome + ' <' + this.ctx.email + '>',
         'Documento e PDF no modelo oficial' + (reg.fotos.length ? ' · ' + Math.min(reg.fotos.length, FichaOficialCPT.limiteFotos) + ' foto(s)' : ''), 'Aplicação CPT', '', '{}']);
     } finally { lock.releaseLock(); }
-    const versoes = this.pasta('Versões anteriores');
-    anteriores.filter(id => id !== copia.getId() && id !== pdf.getId()).forEach(id => { try { DriveApp.getFileById(id).moveTo(versoes); } catch (_) {} });
+    // Versão anterior que já estava na pasta nova vai para "Versões anteriores"; as da pasta antiga ficam onde estão
+    // (a pasta antiga pode ser apagada inteira quando tudo estiver na nova).
+    if (eraNaPastaNova) { const versoes = this.pasta('Versões anteriores'); anteriores.filter(id => id !== copia.getId() && id !== pdf.getId()).forEach(id => { try { DriveApp.getFileById(id).moveTo(versoes); } catch (_) {} }); }
     return {protocolo: reg.protocolo, documento: docUrl, pdf: pdfUrl, gerada: true};
+  }
+
+  // ---------------- 2.38: todas as fichas e o pacote do mês ----------------
+  /** Casos principais com a situação da ficha: ok · gerar (falta ou mudou) · mover (em dia, mas fora da pasta nova) · corrigir (sem nome/solicitação). */
+  carteira() {
+    const D = this.ciclo.dados, a = D.atendimentos(), linhas = D.ler(a, 20);
+    return linhas.map((r, i) => ({r, linha: i + 2})).filter(x => D.principal(x.r)).map(x => {
+      const reg = this.registro(x.r), d = CicloAtendimentoCPT.json(x.r[19]), at = D.atendimento(x.r);
+      const situacao = !reg.nome || !reg.solicitacao ? 'corrigir' : d.fichaHash !== this.hash(reg) || !x.r[14] || !x.r[15] ? 'gerar' : d.fichaPasta !== 'v2' ? 'mover' : 'ok';
+      return {protocolo: reg.protocolo, caso: at.caso, abertura: at.abertura, conclusao: at.conclusao, concluido: at.concluido, nome: at.nome, assunto: at.assunto, status: at.status, area: at.area,
+        situacao, documento: String(x.r[14] || ''), pdf: String(x.r[15] || ''), naAntiga: !!(x.r[14] || x.r[15]) && d.fichaPasta !== 'v2'};
+    });
+  }
+  static idDe(url) { return (String(url || '').match(/\/d\/([A-Za-z0-9_-]{20,})/) || [])[1] || ''; }
+  /** Ficha em dia, mas na pasta antiga: move o Docs e o PDF para Casos (com o número do caso no nome) e marca. */
+  mover(c) {
+    const casos = this.pasta('Casos'), nome = this.nome(c.protocolo);
+    [[c.documento, nome + ' · Ficha de Atendimento'], [c.pdf, nome + ' · Ficha de Atendimento.pdf']].forEach(([u, n]) => { const id = FichaOficialCPT.idDe(u); if (!id) return; const f = DriveApp.getFileById(id); f.moveTo(casos); f.setName(n); });
+    const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) throw new Error('A base está ocupada; tente de novo.');
+    try { const atual = this.ciclo.localizar(c.protocolo), dd = CicloAtendimentoCPT.json(atual.r[19]); dd.fichaPasta = 'v2'; atual.a.getRange(atual.linha, 20).setValue(JSON.stringify(dd).slice(0, 49000)); }
+    finally { lock.releaseLock(); }
+  }
+  /** Põe em dia as fichas da lista (gera as que faltam/mudaram, move as da pasta antiga) até o prazo. */
+  emDia(lista, prazo) {
+    const out = {geradas: 0, movidas: 0, erros: [], faltam: 0};
+    lista.filter(c => c.situacao === 'gerar' || c.situacao === 'mover').forEach(c => {
+      if (Date.now() > prazo) { out.faltam++; return; }
+      try { if (c.situacao === 'gerar') { c.pdf = this.gerar(c.protocolo, false).pdf; out.geradas++; } else { try { this.mover(c); out.movidas++; } catch (e) { if (/ocupada/.test(e.message)) throw e; c.pdf = this.gerar(c.protocolo, true).pdf; out.geradas++; } } c.situacao = 'ok'; c.naAntiga = false; }
+      catch (e) { out.erros.push((c.caso || c.protocolo) + ': ' + e.message); }
+    });
+    if (out.geradas) CicloAtendimentoCPT.invalidar();
+    return out;
+  }
+  static ordem(c) { return c.situacao === 'gerar' && !c.concluido ? 0 : c.situacao === 'mover' ? 1 : 2; }
+  resumo(lista) {
+    const n = s => lista.filter(c => c.situacao === s).length, c = this.config();
+    return {total: lista.length, ok: n('ok'), gerar: n('gerar'), mover: n('mover'), corrigir: lista.filter(x => x.situacao === 'corrigir').slice(0, 30).map(x => ({caso: x.caso, protocolo: x.protocolo})),
+      nCorrigir: n('corrigir'), naPastaAntiga: lista.filter(x => x.naAntiga).length, pasta: c.pastaFichasV2Id ? 'https://drive.google.com/drive/folders/' + c.pastaFichasV2Id : '', pastaAntiga: c.pastaFichasId ? 'https://drive.google.com/drive/folders/' + c.pastaFichasId : ''};
+  }
+  /** "Atualizar todas as fichas": abertos primeiro, depois as que só mudam de pasta, depois as concluídas. Continua de onde parou. */
+  atualizarTodas(segundos) {
+    return FichaOficialCPT.sozinho(segundos, () => {
+      const lista = this.carteira().sort((a, b) => FichaOficialCPT.ordem(a) - FichaOficialCPT.ordem(b)), r = this.emDia(lista, Date.now() + segundos * 1000);
+      return {...r, ...this.resumo(lista)};
+    });
+  }
+  /** Um lote de fichas por vez (tela, pacote ou rotina): dois lotes juntos gerariam a mesma ficha duas vezes. Não usa a trava da base. */
+  static sozinho(segundos, fn) {
+    const cache = CacheService.getScriptCache(), chave = 'CPT_FICHAS_LOTE', ja = cache.get(chave);
+    if (ja) throw new Error('As fichas já estão sendo atualizadas (desde ' + ja + '). Tente de novo em alguns minutos.');
+    cache.put(chave, Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'HH:mm'), Math.min(21600, segundos + 120));
+    try { return fn(); } finally { cache.remove(chave); }
+  }
+  /** Casos do pacote: abertos no mês, concluídos no mês e em andamento no fim do mês. */
+  static doPacote(c, mes) {
+    const fim = mes + '-31';
+    return !!c.abertura && c.abertura <= fim && (c.abertura.startsWith(mes) || (c.concluido && c.conclusao.startsWith(mes)) || !c.concluido || c.conclusao > fim);
+  }
+  static grupo(c, mes) { return c.abertura.startsWith(mes) ? 'Aberto no mês' : c.concluido && c.conclusao.startsWith(mes) ? 'Concluído no mês' : 'Em andamento'; }
+  /** Pacote do mês: pasta Pacotes/AAAA-MM com cópias dos PDFs (congeladas) e um índice em PDF. Refazer só troca o que mudou. */
+  pacote(mes, segundos) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes || ''))) throw new Error('Escolha um mês válido.');
+    return FichaOficialCPT.sozinho(segundos, () => this.montarPacote(mes, segundos));
+  }
+  montarPacote(mes, segundos) {
+    const prazo = Date.now() + segundos * 1000, lista = this.carteira().filter(c => FichaOficialCPT.doPacote(c, mes));
+    const conserto = this.emDia(lista, prazo - 60000);
+    const pasta = FichaOficialCPT.subpasta(this.pasta('Pacotes'), mes), existentes = {};
+    const it = pasta.getFiles(); while (it.hasNext()) { const f = it.next(); existentes[f.getName()] = f; }
+    let substituidas = null; const tirar = f => { substituidas = substituidas || FichaOficialCPT.subpasta(pasta, 'Substituídas'); f.moveTo(substituidas); };
+    let copiadas = 0, iguais = 0, semPdf = 0, faltam = 0;
+    lista.forEach(c => {
+      if (Date.now() > prazo) { faltam++; return; }
+      const id = c.situacao === 'ok' ? FichaOficialCPT.idDe(c.pdf) : '';
+      if (!id) { semPdf++; return; }
+      const nome = this.nome(c.protocolo) + '.pdf', ja = existentes[nome];
+      if (ja && ja.getDescription() === id) { iguais++; return; }
+      if (ja) tirar(ja);
+      DriveApp.getFileById(id).makeCopy(nome, pasta).setDescription(id); copiadas++;
+    });
+    const grupos = {'Aberto no mês': 0, 'Concluído no mês': 0, 'Em andamento': 0}; lista.forEach(c => grupos[FichaOficialCPT.grupo(c, mes)]++);
+    const indiceNome = '00 · Índice do pacote ' + mes + '.pdf'; if (existentes[indiceNome]) tirar(existentes[indiceNome]);
+    pasta.createFile(Utilities.newBlob(this.indiceHtml(lista, mes, grupos), 'text/html', indiceNome).getAs(MimeType.PDF).setName(indiceNome));
+    return {mes, pasta: pasta.getUrl(), casos: lista.length, grupos, copiadas, iguais, pendentes: semPdf, faltam, geradas: conserto.geradas, movidas: conserto.movidas, erros: conserto.erros,
+      completo: !semPdf && !faltam};
+  }
+  indiceHtml(lista, mes, grupos) {
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]), br = d => d ? d.split('-').reverse().join('/') : '—', n = (q, um, varios) => q + ' ' + (q === 1 ? um : varios);
+    const nomeMes = DadosDaAplicacao.mesExtenso ? DadosDaAplicacao.mesExtenso(mes) : mes;
+    const linhas = lista.slice().sort((a, b) => a.abertura.localeCompare(b.abertura) || a.protocolo.localeCompare(b.protocolo))
+      .map(c => '<tr><td>' + esc(c.caso || '') + '</td><td>' + esc(c.protocolo) + '</td><td>' + esc(c.nome) + '</td><td>' + esc(c.assunto) + '</td><td>' + br(c.abertura) + '</td><td>' + (c.concluido ? br(c.conclusao) : '—') + '</td><td>' + esc(FichaOficialCPT.grupo(c, mes)) + '</td></tr>').join('');
+    return '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:10pt;color:#111}h1{font-size:15pt;margin:0 0 4px}p{margin:2px 0 10px;color:#444}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eef3f0}</style></head><body>' +
+      '<h1>Fichas de atendimento · ' + esc(nomeMes) + '</h1><p>' + esc(FichaOficialCPT.empresa) + ' · ' + n(lista.length, 'caso', 'casos') + ': ' + n(grupos['Aberto no mês'], 'aberto', 'abertos') + ' no mês, ' + n(grupos['Concluído no mês'], 'concluído', 'concluídos') + ' no mês e ' + grupos['Em andamento'] + ' em andamento no fim do mês.</p>' +
+      '<table><thead><tr><th>Caso</th><th>Protocolo</th><th>Munícipe</th><th>Assunto</th><th>Abertura</th><th>Conclusão</th><th>Situação no mês</th></tr></thead><tbody>' + linhas + '</tbody></table></body></html>';
   }
 }
 
@@ -141,6 +250,15 @@ class DocumentoFichaCPT {
   }
 }
 
+function estadoFichasCPT() {
+  return AplicacaoCPT.executar((d, ctx) => { if (!CicloAtendimentoCPT.podeConduzir(ctx.perfil)) throw new Error('As fichas oficiais ficam com Atendimento, Comunicação, Gestão e Administrativo.'); const f = new FichaOficialCPT(ctx); return {...f.resumo(f.carteira()), rotina: RotinaCPT.ultima()}; }, 'fichas.estado');
+}
+function atualizarFichasCPT() {
+  return AplicacaoCPT.executar((d, ctx) => { if (!CicloAtendimentoCPT.podeConduzir(ctx.perfil)) throw new Error('As fichas oficiais ficam com Atendimento, Comunicação, Gestão e Administrativo.'); return new FichaOficialCPT(ctx).atualizarTodas(240); }, 'fichas.atualizarTodas');
+}
+function montarPacoteFichasCPT(p) {
+  return AplicacaoCPT.executar((d, ctx) => { if (!CicloAtendimentoCPT.podeConduzir(ctx.perfil)) throw new Error('As fichas oficiais ficam com Atendimento, Comunicação, Gestão e Administrativo.'); return new FichaOficialCPT(ctx).pacote(String(p && p.mes || ''), 270); }, 'fichas.pacote');
+}
 function gerarFichaOficialCPT(p) {
   return AplicacaoCPT.executar((d, ctx) => {
     if (!CicloAtendimentoCPT.podeConduzir(ctx.perfil)) throw new Error('Seu perfil não gera a ficha oficial.');

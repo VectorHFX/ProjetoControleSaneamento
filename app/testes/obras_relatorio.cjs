@@ -249,10 +249,11 @@ ctx.MimeType={PDF:'application/pdf'};ctx.Utilities.computeDigest=(_,v)=>[...cryp
 email='social@example.com';assert.throws(()=>run("gerarFichaOficialCPT({protocolo:'ATD20260007'})"),/não gera/);
 email='atd@example.com';r=run("gerarFichaOficialCPT({protocolo:'ATD20260007'})");assert.equal(r.gerada,true);assert.match(l7[15],/PDFNOVO/);
 assert.ok(textos.includes('Morador Corrigido')&&textos.includes('(11) 3333-3333')&&textos.includes('Equipe vistoriou o local.')&&textos.includes('Atendimento em andamento.'),'modelo preenchido com os dados atuais');
-assert.ok(textos.includes('Consórcio Performance Tamanduateí'));assert.deepEqual(movidos.sort(),['DOCANTIGO000000000000001','PDFANTIGO000000000000001'],'versão anterior vai para Versões anteriores');
+assert.ok(textos.includes('Consórcio Performance Tamanduateí'));assert.deepEqual(movidos,[],'versão da pasta antiga fica onde está (a pasta antiga é apagada inteira depois)');
 assert.ok(movs.rows.some(x=>x[3]==='Ficha oficial gerada'));
 r=run("gerarFichaOficialCPT({protocolo:'ATD20260007'})");assert.equal(r.gerada,false,'sem mudança não refaz');assert.equal(copias,1);
 assert.equal(run("abrirAtendimentoCPT('ATD20260007')").fichaAtualizada,true);
+r=run("gerarFichaOficialCPT({protocolo:'ATD20260007',forcar:true})");assert.equal(r.gerada,true);assert.deepEqual(movidos.sort(),['DOCNOVO000000000000000001','PDFNOVO000000000000000001'],'versão anterior da pasta nova vai para Versões anteriores');
 assert.equal(locked,false);
 console.log('PASS: casos migrados mostram os dados da ficha antiga; correção com histórico sem expor contato; incorporação de protocolo; filtro por responsável com dias em aberto; ficha oficial no modelo, sem refazer à toa, e pacote do mês.');
 }

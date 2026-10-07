@@ -23,6 +23,23 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.38.0 — fichas oficiais organizadas, pacote do mês e rotina das 12h e 0h (≈ 6 min)
+
+1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.38.0`, Nova versão). Arquivo novo: `RotinaCPT` (script); o atualizador cria. Nenhuma permissão nova.
+2. **Pasta nova no seu Drive: "CPT • Fichas oficiais da Sabesp".** Ela é criada na primeira vez que alguém clicar em **Atualizar todas as fichas** (ou quando a rotina rodar). Dentro dela:
+   - **Casos** — a ficha atual de cada caso (Docs + PDF), com o número no nome: "Caso 12 · ATD20260012 · Ficha de Atendimento";
+   - **Versões anteriores** — quando um caso muda, a ficha anterior vai para cá (nada é apagado);
+   - **Pacotes/AAAA-MM** — o pacote de cada mês.
+3. **Atendimentos → aba Fichas oficiais** (Atendimento, Comunicação, Gestão e Administrativo): quatro números (em dia, a gerar, a organizar, a corrigir) e o botão **Atualizar todas as fichas**. Ele gera só as que faltam ou mudaram, **move** para Casos as que já estão em dia (sem refazer) e continua sozinho até terminar, mostrando o progresso. Casos em aberto vêm primeiro.
+4. **Fichas antigas:** as fichas da pasta antiga **"CPT • Fichas oficiais"** que estão em dia são movidas para a pasta nova; as versões velhas ficam na pasta antiga. Quando a aba mostrar **"Tudo na pasta nova… pode ser apagada"**, você pode apagar a pasta antiga inteira. Enquanto aparecer "Ainda há N fichas na pasta antiga", não apague.
+5. **Pacote do mês** (mesma aba): escolha o mês (vem marcado o mês anterior) → **Montar pacote**. Entram os casos **abertos no mês**, **concluídos no mês** e os que estavam **em andamento no fim do mês**, como cópias congeladas dos PDFs, mais um **índice em PDF**. Para baixar tudo: no Drive, clique com o botão direito na pasta do mês → **Fazer download** (vem um .zip). Montar de novo só troca o que mudou (o substituído vai para "Substituídas").
+6. **Rotina das 12h e 0h (fazer uma vez):** mantém as fichas em dia sozinha, fora do expediente. Sem e-mail.
+   1. No editor do Apps Script, clique em **Acionadores** (relógio, à esquerda) → **Adicionar acionador**.
+   2. Função: **rotinaCPT** · Implantação: **Principal** · Origem do evento: **Baseado no tempo** · Tipo: **Temporizador de dia** · Horário: **12h às 13h** → **Salvar**.
+   3. Repita com Horário: **Meia-noite à 1h**.
+   4. Para testar na hora: escolha `rotinaCPT` na lista do topo → **Executar**. O resultado da última rodada aparece no pé da aba Fichas oficiais.
+   5. Nas próximas entregas (Anexos do relatório e Programa Parceiros), a mesma rotina ganha os novos passos; os acionadores não mudam.
+
 ## Atualização 2.37.0 — revisão geral e desempenho (≈ 5 min + 2 min opcionais)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.37.0`, Nova versão). Nenhuma permissão nova.

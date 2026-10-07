@@ -1454,4 +1454,12 @@ html[data-motion=reduce] .saber-troca{animation:none}@media (prefers-reduced-mot
 @media (max-width:1000px){.qualidade-grid{grid-template-columns:1fr}}
 /* 2.36: alertas da gestão — detalhe abaixo do título (painel e cartão da Visão do mês). */
 .alert-detalhe{display:block;margin-top:2px;font-size:12px;color:var(--muted);font-weight:400;line-height:1.4}.home-alertas{margin:0 0 18px}.home-alertas .alert-list{margin:0}.home-ok{margin:0 0 14px}
+/* 2.38: fichas oficiais — situação em quatro números, atualizar todas com progresso e pacote do mês. */
+.stat-tile.is-ok .stat-value{color:var(--mint)}.stat-tile.is-warn{border-color:color-mix(in srgb,#d08a2a 45%,var(--line))}.stat-tile.is-bad{border-color:color-mix(in srgb,#c2453a 45%,var(--line))}.stat-tile.is-bad .stat-value{color:#b23b31}
+html[data-theme=dark] .stat-tile.is-bad .stat-value{color:#f19a90}
+.fichas-grid{margin-top:0}.fichas-grid .panel-head{margin-bottom:14px}.fichas-grid .dialog-actions{margin:0 0 12px}#fichasProgresso:not(:empty){display:grid;gap:8px;margin:0 0 12px}.fichas-corrigir{margin:0 0 12px}
+.fichas-liberada{margin:0 0 12px}.fichas-antiga{margin:0 0 8px}
+.fichas-pacote{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;margin-bottom:12px}
+.pacote-pronto{display:grid;gap:4px;justify-items:start;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--mint);border-radius:12px;background:var(--bg);margin-bottom:12px}.pacote-pronto.is-warn{border-left-color:#d08a2a}.pacote-pronto .button{margin-top:8px}
+@media (max-width:640px){.fichas-pacote{grid-template-columns:1fr}.fichas-pacote .button{width:100%}}
 </style>

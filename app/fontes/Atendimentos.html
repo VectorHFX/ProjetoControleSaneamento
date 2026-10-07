@@ -6,12 +6,14 @@
  * 2.4: filtro "com quem está", dias em aberto, correção dos dados, incorporação de protocolo e ficha oficial em PDF.
  * 2.7: aba "Auditoria e números" (Atendimento, Administrativo e Gestão): o que precisa de cuidado na carteira,
  *      com a ficha a um clique, e os números do serviço (idade dos casos, áreas, tipos, recebidos x concluídos).
+ * 2.38: aba "Fichas oficiais" (quem gera fichas: Atendimento, Comunicação, Gestão e Administrativo): situação das fichas,
+ *      "Atualizar todas" (continua sozinho até terminar), pasta organizada e pacote do mês com os PDFs.
  * Textos digitados ficam na tela em caso de erro ou conflito.
  */
 window.CPTAtendimentos = (() => {
   'use strict';
   let ui = null, filtro = {busca: '', estado: 'abertos', com: ''}, pagina = null, casos = [], ticket = 0, debounce = null;
-  let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false}, modo = 'casos', auditoria = null;
+  let aberto = null, abrirTicket = 0, historico = {cursor: null, ocupado: false}, modo = 'casos', auditoria = null, fichas = null, fichasRodando = false, pacoteMes = '';
   const ops = new Map(); // operação idempotente por formulário enquanto o conteúdo não muda
   const $ = id => document.getElementById(id);
   const hoje = () => new Intl.DateTimeFormat('sv-SE', {timeZone: 'America/Sao_Paulo'}).format(new Date());
@@ -21,10 +23,16 @@ window.CPTAtendimentos = (() => {
 
   /** A aba de auditoria aparece para quem conduz casos, na visão de Atendimento, Administrativo ou Gestão. */
   const conduz = () => ['atendimento', 'administrativo', 'gestao'].includes(ui.visao()) && (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao', 'atendimento'].includes(p));
-  const abas = () => conduz() ? `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de atendimentos">${[['casos', 'Casos'], ['auditoria', 'Auditoria e números']].map(([k, n]) => `<button role="tab" aria-selected="${modo === k}" class="${modo === k ? 'chosen' : ''}" data-atd-modo="${k}">${n}</button>`).join('')}</div>` : '';
+  /** Fichas oficiais: quem gera as fichas (mesma regra do servidor), na visão de quem conduz casos ou da Comunicação. */
+  const geraFichas = () => ['atendimento', 'administrativo', 'gestao', 'comunicacao'].includes(ui.visao()) && (ui.state.perfil?.papeis || []).some(p => ['administrador', 'administrativo', 'gestao', 'atendimento', 'comunicacao'].includes(p));
+  const abas = () => {
+    const lista = [['casos', 'Casos']].concat(conduz() ? [['auditoria', 'Auditoria e números']] : [], geraFichas() ? [['fichas', 'Fichas oficiais']] : []);
+    return lista.length > 1 ? `<div class="segmented painel-tabs" role="tablist" aria-label="Partes de atendimentos">${lista.map(([k, n]) => `<button role="tab" aria-selected="${modo === k}" class="${modo === k ? 'chosen' : ''}" data-atd-modo="${k}">${n}</button>`).join('')}</div>` : '';
+  };
   function render() {
-    if (!conduz()) modo = 'casos';
+    if ((modo === 'auditoria' && !conduz()) || (modo === 'fichas' && !geraFichas())) modo = 'casos';
     if (modo === 'auditoria') { renderAuditoria(); return; }
+    if (modo === 'fichas') { renderFichas(); return; }
     ui.view.innerHTML = ui.intro('Atendimentos', 'Cada ficha nasce do formulário com um protocolo. Acompanhe, registre a execução e finalize por aqui.') + abas() +
       `<section class="panel filter-panel"><form id="caseFilters" class="filters cases"><label class="field">Localizar atendimento<span class="search-input">${ui.icon('search')}<input name="busca" value="${ui.esc(filtro.busca)}" placeholder="Nº do caso (ex.: 17), protocolo, pessoa, assunto ou endereço" maxlength="200"></span></label>
       <label class="field">Situação<select name="estado"><option value="" ${!filtro.estado ? 'selected' : ''}>Todos os casos</option><option value="abertos" ${filtro.estado === 'abertos' ? 'selected' : ''}>Em aberto</option><option value="concluidos" ${filtro.estado === 'concluidos' ? 'selected' : ''}>Concluídos</option></select></label>
@@ -84,6 +92,80 @@ window.CPTAtendimentos = (() => {
           <section class="panel"><div class="panel-head"><div><h2>Mais antigos em aberto</h2></div></div>${n.maisAntigos.length ? `<div class="mini-list">${n.maisAntigos.map(x => `<button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.caso ? x.caso + ' (' + x.protocolo + ')' : x.protocolo)} · ${ui.esc(x.assunto || 'Assunto não informado')}</strong><small>${ui.esc(x.detalhe)}${x.area ? ' · com ' + ui.esc(x.area) : ''}</small></button>`).join('')}</div>` : '<p class="ok-line">Nenhum caso em aberto.</p>'}</section>
         </div><p class="small muted painel-foot">Conferido em ${new Date(d.atualizadoEm).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'})}. Use Atualizar no topo para conferir de novo.</p>`;
     } catch (e) { if (mine === ticket) ui.view.innerHTML = intro + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+
+  // ---------- Fichas oficiais (2.38) ----------
+  const mesesPacote = () => { const out = [], d = new Date(hoje() + 'T12:00:00Z'); d.setUTCDate(1); for (let i = 0; i < 12; i++) { out.push(d.toISOString().slice(0, 7)); d.setUTCMonth(d.getUTCMonth() - 1); } return out; };
+  const nomeMes = m => new Date(m + '-15T12:00:00Z').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric', timeZone: 'UTC'});
+  const quando = iso => new Date(iso).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo'});
+  async function renderFichas(atualizar = false) {
+    const mine = ++ticket, intro = ui.intro('Atendimentos', 'Fichas oficiais da Sabesp: a ficha atual de cada caso no Drive e o pacote do mês para enviar.') + abas();
+    if (!fichas || atualizar) ui.view.innerHTML = intro + '<div class="loading-label"><span class="spinner"></span>Conferindo as fichas de todos os casos…</div>';
+    if (fichas && !atualizar) { desenharFichas(intro); return; }
+    try { const d = await ui.call('estadoFichasCPT'); if (mine !== ticket || ui.state.route !== 'atendimentos' || modo !== 'fichas') return; fichas = d; desenharFichas(intro); }
+    catch (e) { if (mine === ticket) ui.view.innerHTML = intro + `<div class="notice">${ui.esc(e.message)}</div>`; }
+  }
+  function desenharFichas(intro) {
+    const f = fichas, falta = f.gerar + f.mover, meses = mesesPacote(), r = f.rotina;
+    if (!pacoteMes) pacoteMes = meses[1];
+    const tile = (rotulo, n, nota, cls) => `<div class="stat-tile ${cls}"><span class="stat-label">${rotulo}</span><span class="stat-value">${ui.num(n)}</span><span class="stat-note">${nota}</span></div>`;
+    const pasta = ui.safeURL(f.pasta), antiga = ui.safeURL(f.pastaAntiga);
+    const aviso = !antiga ? '' : f.naPastaAntiga
+      ? `<p class="small muted fichas-antiga">Ainda há ${ui.num(f.naPastaAntiga)} ${f.naPastaAntiga === 1 ? 'ficha' : 'fichas'} na <a href="${ui.esc(antiga)}" target="_blank" rel="noopener">pasta antiga</a>. Não apague a pasta antiga até este número chegar a zero.</p>`
+      : `<div class="notice fichas-liberada" role="status"><strong>Tudo na pasta nova.</strong> A <a href="${ui.esc(antiga)}" target="_blank" rel="noopener">pasta antiga "CPT • Fichas oficiais"</a> pode ser apagada: nenhum caso aponta mais para ela.</div>`;
+    const rotina = r ? `Última rotina automática: ${ui.esc(quando(r.em))} · ${r.passos.map(p => ui.esc(p.nome + ': ' + p.texto)).join(' · ')}` : 'A rotina automática (12h e 0h) ainda não rodou. Os acionadores são criados uma vez no editor; veja o guia.';
+    const corrigir = f.nCorrigir ? `<details class="audit-item is-warn fichas-corrigir"><summary><span class="alert-dot" aria-hidden="true"></span><span class="audit-title">Sem nome ou solicitação: a ficha não sai até corrigir</span><span class="audit-count">${ui.num(f.nCorrigir)}</span></summary>
+        <p class="small">Abra o caso e use "Corrigir dados da ficha". Na próxima atualização a ficha é gerada.</p><ul class="audit-cases">${f.corrigir.map(x => `<li><button class="mini-row" data-case="${ui.esc(x.protocolo)}"><strong>${ui.esc(x.caso ? x.caso + ' (' + x.protocolo + ')' : x.protocolo)}</strong></button></li>`).join('')}</ul></details>` : '';
+    ui.view.innerHTML = intro + `<section class="stat-row" aria-label="Situação das fichas">
+        ${tile('Em dia', f.ok, 'Ficha atual na pasta organizada.', 'is-ok')}
+        ${tile('A gerar', f.gerar, 'Caso sem ficha ou que mudou depois dela.', f.gerar ? 'is-warn' : '')}
+        ${tile('A organizar', f.mover, 'Em dia, mas ainda na pasta antiga.', f.mover ? 'is-warn' : '')}
+        ${tile('A corrigir', f.nCorrigir, 'Faltam nome ou solicitação.', f.nCorrigir ? 'is-bad' : '')}</section>
+      <div class="painel-grid fichas-grid">
+        <section class="panel"><div class="panel-head"><div><span class="eyebrow">TODAS AS FICHAS</span><h2>${falta ? ui.num(falta) + (falta === 1 ? ' ficha para atualizar' : ' fichas para atualizar') : 'Tudo em dia'}</h2>
+            <p>Gera só as que faltam ou mudaram e organiza o resto. Casos em aberto primeiro. Nada é apagado: a versão anterior vai para "Versões anteriores".</p></div></div>
+          <div class="dialog-actions"><button class="button" data-fichas-todas ${falta && !fichasRodando ? '' : 'disabled'}>${ui.icon('refresh')}${fichasRodando ? 'Atualizando…' : 'Atualizar todas as fichas'}</button>${pasta ? `<a class="button secondary" href="${ui.esc(pasta)}" target="_blank" rel="noopener">Abrir pasta</a>` : ''}</div>
+          <div id="fichasProgresso" role="status" aria-live="polite"></div>${corrigir}${aviso}
+          <p class="small muted">${rotina}</p></section>
+        <section class="panel"><div class="panel-head"><div><span class="eyebrow">PACOTE DO MÊS</span><h2>PDFs para enviar à Sabesp</h2>
+            <p>Casos abertos no mês, concluídos no mês e os que seguem em andamento, com um índice. Cópias congeladas: não mudam depois.</p></div></div>
+          <form id="pacoteForm" class="fichas-pacote"><label class="field">Mês<select name="mes">${meses.map(m => `<option value="${m}" ${m === pacoteMes ? 'selected' : ''}>${ui.esc(nomeMes(m))}</option>`).join('')}</select></label>
+            <button class="button" type="submit">${ui.icon('file')}Montar pacote</button></form>
+          <div id="pacoteResultado" role="status" aria-live="polite"></div>
+          <p class="small muted">Para baixar: no Drive, clique com o botão direito na pasta do mês → Fazer download. Vem um .zip com todos os PDFs.</p></section>
+      </div>`;
+  }
+  async function atualizarTodasFichas() {
+    if (fichasRodando) return; fichasRodando = true; const soma = {geradas: 0, movidas: 0, erros: []};
+    const progresso = txt => { const p = $('fichasProgresso'); if (p) p.innerHTML = txt; };
+    const botao = document.querySelector('[data-fichas-todas]'); if (botao) { botao.disabled = true; botao.innerHTML = ui.icon('refresh') + 'Atualizando…'; }
+    progresso('<div class="loading-label"><span class="spinner"></span>Gerando e organizando as fichas. Pode levar alguns minutos; pode continuar usando a aplicação.</div>');
+    try {
+      for (;;) {
+        const r = await ui.call('atualizarFichasCPT'); soma.geradas += r.geradas; soma.movidas += r.movidas; soma.erros.push(...r.erros); fichas = {...fichas, ...r};
+        const feito = soma.geradas + soma.movidas, resta = r.gerar + r.mover;
+        if (!r.faltam || !(r.geradas + r.movidas)) break;
+        progresso(`<div class="loading-label"><span class="spinner"></span>${ui.num(feito)} ${feito === 1 ? 'ficha pronta' : 'fichas prontas'}; faltam ${ui.num(resta)}. Continuando…</div><div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${feito + resta}" aria-valuenow="${feito}" aria-label="Fichas atualizadas"><span style="width:${Math.round(feito / (feito + resta) * 100)}%"></span></div>`);
+      }
+      fichasRodando = false;
+      const msg = `${ui.num(soma.geradas)} ${soma.geradas === 1 ? 'ficha gerada' : 'fichas geradas'} e ${ui.num(soma.movidas)} ${soma.movidas === 1 ? 'organizada' : 'organizadas'}.`;
+      ui.toast(msg); if (ui.state.route === 'atendimentos' && modo === 'fichas') { desenharFichas(ui.intro('Atendimentos', 'Fichas oficiais da Sabesp: a ficha atual de cada caso no Drive e o pacote do mês para enviar.') + abas());
+        progresso(`<p class="ok-line">${msg}</p>` + (soma.erros.length ? `<div class="notice warning"><strong>Não saíram:</strong><ul>${soma.erros.slice(0, 10).map(x => `<li>${ui.esc(x)}</li>`).join('')}</ul></div>` : '')); }
+    } catch (e) { fichasRodando = false; progresso(`<div class="notice">${ui.esc(e.message)}</div>`); const b = document.querySelector('[data-fichas-todas]'); if (b) { b.disabled = false; b.innerHTML = ui.icon('refresh') + 'Atualizar todas as fichas'; } }
+  }
+  async function montarPacote(form) {
+    const mes = form.elements.mes.value, b = form.querySelector('[type=submit]'), box = $('pacoteResultado'), rotulo = b.innerHTML; pacoteMes = mes;
+    b.disabled = true; b.textContent = 'Montando… (até 5 minutos)'; box.innerHTML = '';
+    try {
+      const r = await ui.call('montarPacoteFichasCPT', {mes}), g = r.grupos, url = ui.safeURL(r.pasta);
+      const falta = [r.pendentes ? ui.num(r.pendentes) + (r.pendentes === 1 ? ' caso sem ficha (corrija os dados)' : ' casos sem ficha (corrija os dados)') : '', r.faltam ? ui.num(r.faltam) + ' ainda não copiados: monte de novo para terminar' : ''].filter(Boolean);
+      if ($('pacoteResultado')) $('pacoteResultado').innerHTML = `<div class="pacote-pronto ${r.completo ? 'is-ok' : 'is-warn'}"><strong>${ui.esc(nomeMes(r.mes))}: ${ui.num(r.casos)} ${r.casos === 1 ? 'caso' : 'casos'}</strong>
+        <span>${ui.num(g['Aberto no mês'])} abertos · ${ui.num(g['Concluído no mês'])} concluídos · ${ui.num(g['Em andamento'])} em andamento</span>
+        <span class="small muted">${ui.num(r.copiadas)} ${r.copiadas === 1 ? 'PDF novo' : 'PDFs novos'}, ${ui.num(r.iguais)} já estavam iguais${r.geradas ? ', ' + ui.num(r.geradas) + ' fichas geradas antes' : ''}.</span>
+        ${falta.length ? `<span class="small">${ui.esc(falta.join(' · '))}</span>` : ''}${url ? `<a class="button secondary" href="${ui.esc(url)}" target="_blank" rel="noopener">Abrir pasta do pacote</a>` : ''}</div>`;
+      ui.toast(r.completo ? 'Pacote pronto.' : 'Pacote montado com pendências.'); fichas = null;
+    } catch (e) { if ($('pacoteResultado')) $('pacoteResultado').innerHTML = `<div class="notice">${ui.esc(e.message)}</div>`; }
+    finally { if (b.isConnected) { b.disabled = false; b.innerHTML = rotulo; } }
   }
 
   // ---------- Ficha ----------
@@ -207,13 +289,15 @@ window.CPTAtendimentos = (() => {
       const f = ev.target.closest('[data-caso-form]'); if (f && aberto) { formulario(f.dataset.casoForm); return; }
       if (ev.target.closest('[data-caso-cancelar]')) { $('casoForm').innerHTML = ''; return; }
       const fo = ev.target.closest('[data-ficha-oficial]'); if (fo && aberto) { fichaOficial(fo); return; }
+      if (ev.target.closest('[data-fichas-todas]')) { atualizarTodasFichas(); return; }
       if (ev.target.closest('#historyMore')) carregarHistorico(false);
     });
     document.addEventListener('submit', ev => {
       const cf = ev.target.closest('.case-form'); if (cf) { ev.preventDefault(); enviar(cf); return; }
+      const pf = ev.target.closest('#pacoteForm'); if (pf) { ev.preventDefault(); montarPacote(pf); return; }
       const nf = ev.target.closest('#noteForm'); if (nf && aberto) { ev.preventDefault(); enviarNota(nf); }
     });
   }
-  return {init, render, abrir, atualizar: () => { if (modo === 'auditoria' && conduz()) renderAuditoria(true); else render(); }, filtrar: estado => { if (estado === 'auditoria') { modo = 'auditoria'; return; } filtro.estado = estado; modo = 'casos'; }};
+  return {init, render, abrir, atualizar: () => { if (modo === 'auditoria' && conduz()) renderAuditoria(true); else if (modo === 'fichas' && geraFichas()) renderFichas(true); else render(); }, filtrar: estado => { if (estado === 'auditoria') { modo = 'auditoria'; return; } filtro.estado = estado; modo = 'casos'; }};
 })();
 </script>
