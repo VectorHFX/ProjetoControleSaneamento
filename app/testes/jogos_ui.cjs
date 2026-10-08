@@ -13,8 +13,8 @@ const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
   assert.equal(await p.locator('.home-jogos, .home-placar').count(),0,'equipe não vê os joguinhos nem o placar nos testes');
   // Proprietário: forca liberada, quebra-cabeça travado (14 de 15 dias de checklist).
   await p.goto(url('?latencia=20'));await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=gato]').click();await p.locator('#espInicio [type=submit]').click();
-  await p.locator('[data-esp-parte=jogos]').click();/* 2.27.1: joguinhos e placar na própria aba */await p.locator('.home-jogos').waitFor();const cards=p.locator('.jogo-card');assert.equal(await cards.count(),2);
-  assert.match(await cards.nth(1).textContent(),/Libera com 15 dias de checklist[\s\S]*14 de 15/);assert.equal(await cards.nth(1).locator('[data-jogo-abrir]').count(),0);
+  await p.locator('[data-esp-parte=jogos]').click();/* 2.27.1: joguinhos e placar na própria aba */await p.locator('.home-jogos').waitFor();const cards=p.locator('.jogo-card');assert.equal(await cards.count(),3,'2.51: caminho do esgoto + forca + quebra-cabeça');
+  assert.match(await cards.nth(2).textContent(),/Libera com 15 dias de checklist[\s\S]*14 de 15/);assert.equal(await cards.nth(2).locator('[data-jogo-abrir]').count(),0);
   await p.locator('.home-jogos').scrollIntoViewIfNeeded();await foto('jogos-1-painel');
   // Placar da equipe (2.23): só totais, meta e 4 semanas.
   assert.match(await p.locator('.home-placar').textContent(),/de 400 pontos na meta da semana[\s\S]*tarefas feitas[\s\S]*acertos no quiz/);assert.doesNotMatch(await p.locator('.home-placar').textContent(),/favorit/,'2.29: sem fotos favoritadas');assert.equal(await p.locator('.placar-semana').count(),4);

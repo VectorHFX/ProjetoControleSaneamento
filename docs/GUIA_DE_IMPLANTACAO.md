@@ -23,6 +23,23 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.51.0 — joguinho "O caminho do esgoto", com o mascote (≈ 1 min)
+
+1. Atualização de sempre (Cloud Shell: `bash ~/atualizar.sh aplicar`). Nenhum arquivo novo, nenhuma permissão nova. As partidas ficam na mesma coleção "Jogos".
+2. **Onde:** Meu espaço → Joguinhos, no cartão em destaque "O caminho do esgoto · Novo · em teste". É liberado desde o começo (sem meta), com até 3 partidas por dia. A 1ª vitória do dia vale +5 pontos, como nos outros joguinhos.
+3. **Como é** (de 2 a 4 minutos), com o mascote da pessoa reagindo a cada jogada (feliz no acerto, triste no erro, comemorando no fim):
+   - **Casa:** 8 itens, um de cada vez, com 12 segundos para decidir se vai pelo ralo ou não. Depois de cada resposta vem o porquê: óleo, fio dental, cotonete, lenço umedecido, remédio, restos de comida, cabelo, bituca e água da chuva não vão.
+   - **Rua:** girar os canos para ligar a casa ao interceptor. A água avança trecho a trecho e o cano engrossa (ligação → rede coletora → coletor tronco → interceptor).
+   - **Estação:** pôr em ordem as etapas do lodo ativado (gradeamento, caixa de areia, decantador primário, tanque de aeração, decantador secundário), com a explicação de cada uma.
+   - **Rio:** estrelas por fase, os pontos e um resumo do que se aprendeu.
+4. **Os fatos** vêm do banco de conteúdo já conferido (óleo, remédio, chuva separada do esgoto, ligação obrigatória, gradeamento, lodo ativado) e da prática da equipe.
+5. **Playtest:**
+   - No fim de cada partida aparece "Ajude a melhorar o jogo": quão divertido foi (1 a 5), se aprendeu algo novo e o que mudaria (opcional). A opinião vai **sem o nome**.
+   - **Só você** vê "Resultados do teste" no cartão do jogo: partidas, quantas pessoas jogaram, diversão média, estrelas por fase, os itens que mais confundem, as trocas mais comuns na estação e os comentários, sem nomes.
+6. **O servidor confere tudo:** refaz as respostas da casa, os giros dos canos e as escolhas da estação antes de dar estrelas e pontos.
+7. **Para os colaboradores jogarem:** os joguinhos seguem a trava do período de testes. Se ainda não fez, execute `liberarParaEquipeCPT` (veja "Versão final 2.49.1").
+8. **Revisão das duas entregas** (2.50 e 2.51, como combinado): mascotes e jogo conferidos no claro, no escuro e no celular, sem erros na tela. Médias do resumo com vírgula, tempo médio em minutos:segundos e espaço entre "Jogar" e "Resultados do teste".
+
 ## Atualização 2.50.0 — mascotes mais bonitos (≈ 1 min)
 
 1. Atualização de sempre (Cloud Shell: `bash ~/atualizar.sh aplicar`). Nenhum arquivo novo, nenhuma permissão nova.

@@ -90,3 +90,31 @@ props.set('CPT_TRAVA_CONFIG','liberada');email='com@example.com';const pl2=run('
 assert.deepEqual(pl2,pl,'o placar é o mesmo para todos');
 const txt=JSON.stringify(pl);for(const e of ['victor','com@','Victor','Paula','atd@'])assert.ok(!txt.includes(e),'placar não mostra pessoas: '+e);
 console.log('PASS: placar da equipe — só o proprietário nos testes, totais da semana (tarefas, acertos e vitórias) e 4 semanas, igual para todos, sem nomes.');
+// 7. O caminho do esgoto (2.51): liberado desde o começo; o servidor refaz casa, rua e estação; opinião sem nome; resumo só do proprietário.
+email='victor@example.com';d=run('carregarMeuEspacoCPT()');assert.equal(d.jogos.caminho.liberado,true,'sem meta');assert.equal(d.jogos.caminho.teste,true,'proprietário vê o resumo');
+const dir=(a,b)=>b[0]<a[0]?0:b[1]>a[1]?1:b[0]>a[0]?2:3,lados=(t,g)=>t==='reta'?[g%4,(g+2)%4]:[g%4,(g+1)%4];
+const resolverRede=R=>{const t=[];R.trajeto.forEach((c,k)=>{const entra=k===0?3:(dir(R.trajeto[k-1],c)+2)%4,sai=k===R.trajeto.length-1?1:dir(c,R.trajeto[k+1]);let n=0;while(!(lados(R.tipos[k],(R.giros[k]+n)%4).includes(entra)&&lados(R.tipos[k],(R.giros[k]+n)%4).includes(sai)))n++;for(let x=0;x<n;x++)t.push(k);});return t;};
+const casaCerta=P=>P.itens.map(i=>i.vai),ordem=P=>P.etapas.map(e=>e.id);
+const c1=ini('caminho').partida;assert.equal(c1.itens.length,8);assert.equal(c1.itens.filter(i=>i.vai).length,3,'3 que vão e 5 que não vão');assert.ok(c1.itens.every(i=>i.nome&&i.fato));
+assert.equal(c1.rede.trajeto.length,8);assert.equal(c1.etapas.length,5);assert.notDeepEqual(c1.etapasMostrar,ordem(c1),'etapas embaralhadas');assert.ok(resolverRede(c1.rede).length>=5,'pelo menos 5 peças fora do lugar');
+assert.equal(ini('caminho').partida.id,c1.id,'abrir de novo continua a mesma partida');
+assert.throws(()=>fim(c1.id,{casa:[true],rede:[],estacao:[]}),/Jogada inválida/);assert.throws(()=>fim(c1.id,{casa:casaCerta(c1),rede:[99],estacao:[]}),/Jogada inválida/);
+assert.throws(()=>fim(c1.id,{casa:casaCerta(c1),rede:[],estacao:['lixo']}),/Jogada inválida/);
+r=fim(c1.id,{casa:casaCerta(c1),rede:[],estacao:ordem(c1)});assert.equal(r.situacao,'perdeu','rede sem ligar não chega ao rio');assert.equal(r.caminho.rede.chegou,false);assert.equal(r.pontosGanhos,0);
+const c2=ini('caminho').partida,casa2=casaCerta(c2);casa2[0]=!casa2[0];casa2[1]=null;
+r=fim(c2.id,{casa:casa2,rede:resolverRede(c2.rede),estacao:['secundario'].concat(ordem(c2)),segundos:95});assert.equal(r.situacao,'venceu');assert.equal(r.pontosGanhos,5);assert.match(r.resultado,/chegou tratado ao rio! \+5/);
+assert.equal(r.caminho.casa.acertos,6,'resposta errada e tempo esgotado contam como erro');assert.equal(r.caminho.casa.estrelas,2);assert.deepEqual(r.caminho.casa.errados,c2.itens.slice(0,2).map(i=>i.id));
+assert.equal(r.caminho.rede.toques,r.caminho.rede.minimo,'resolveu no mínimo');assert.equal(r.caminho.rede.estrelas,3);assert.equal(r.caminho.estacao.erros,1);assert.deepEqual(r.caminho.estacao.trocas,[['grade','secundario']]);assert.equal(r.caminho.segundos,95);
+// opinião: só de quem jogou, partida terminada, uma vez
+const c3=ini('caminho').partida,opina=o=>{ctx.p={operacaoId:op(),...o};return run('opinarJogoCPT(p)');};
+assert.throws(()=>opina({partida:c3.id,diversao:4,aprendeu:'sim'}),/Termine a partida/);
+assert.throws(()=>opina({partida:c2.id,diversao:0,aprendeu:'sim'}),/de 1 a 5/);assert.throws(()=>opina({partida:c2.id,diversao:4,aprendeu:'talvez'}),/opção válida/);
+assert.match(opina({partida:c2.id,diversao:4,aprendeu:'pouco',sugestao:'Mais fases na rua, por favor.'}).resultado,/sem o seu nome/);assert.throws(()=>opina({partida:c2.id,diversao:5,aprendeu:'sim'}),/já opinou/);
+props.set('CPT_TRAVA_CONFIG','liberada');email='com@example.com';assert.throws(()=>opina({partida:c2.id,diversao:5,aprendeu:'sim'}),/Partida não encontrada/);
+assert.throws(()=>run('resumoTesteJogoCPT()'),/exclusiva da administração técnica/,'resumo só do proprietário');props.delete('CPT_TRAVA_CONFIG');email='victor@example.com';
+r=fim(c3.id,{casa:casaCerta(c3),rede:resolverRede(c3.rede),estacao:ordem(c3)});assert.equal(r.pontosGanhos,0,'só a primeira vitória do dia pontua');assert.equal(r.caminho.casa.estrelas,3);assert.equal(r.caminho.estacao.estrelas,3);
+assert.throws(()=>ini('caminho'),/já jogou 3 partidas hoje/);
+const rs=run('resumoTesteJogoCPT()');assert.equal(rs.partidas,3);assert.equal(rs.pessoas,1);assert.equal(rs.completas,2);assert.equal(rs.opinioes,1);assert.equal(rs.diversao,4);assert.deepEqual(rs.aprendeu,{sim:0,pouco:1,nao:0});
+assert.equal(rs.comentarios[0].texto,'Mais fases na rua, por favor.');assert.equal(rs.trocas[0].esperada,'Gradeamento');assert.equal(rs.trocas[0].escolhida,'Decantador secundário');assert.ok(rs.confusos.length>=1);
+assert.ok(!/victor|@example/.test(JSON.stringify(rs)),'resumo sem nomes nem e-mails');assert.match(rs.tempo,/^\d+:\d{2}$/);assert.ok(rs.fases.every(f=>!/\d\.\d/.test(f.nota)),'decimais com vírgula');
+console.log('PASS: caminho do esgoto — liberado sem meta, 3 que vão e 5 que não vão, rede embaralhada (≥5 peças), servidor refaz casa/rua/estação (tempo esgotado = erro), estrelas, 1ª vitória +5, opinião só de quem jogou e uma vez, resumo do teste só do proprietário e sem nomes.');

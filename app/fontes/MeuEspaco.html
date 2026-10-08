@@ -496,7 +496,9 @@ window.CPTEspaco = (() => {
     // Quiz (Saber.html): pontos novos atualizam o selo de pontos e o humor do mascote.
     // Joguinhos (Jogos.html): mesma atualização de pontos; o quebra-cabeça sem foto usa o mascote da pessoa.
     if (window.CPTJogos) { window.CPTJogos.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.venceu && r.pontos.saldo > 0); if (r.venceu) comemorar(); });
-      window.CPTJogos.mascote(() => d && d.perfil ? window.CPTMascote.desenhar(M().especie, M().equipado, 300, M().nome, M().cor, 'feliz').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" ') : ''); }
+      window.CPTJogos.mascote(() => d && d.perfil ? window.CPTMascote.desenhar(M().especie, M().equipado, 300, M().nome, M().cor, 'feliz').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" ') : '');
+      // 2.51: o mascote da pessoa é o personagem do "Caminho do esgoto" (muda de expressão a cada jogada)
+      if (window.CPTJogos.personagem) window.CPTJogos.personagem((expr, tam) => d && d.perfil ? window.CPTMascote.desenhar(M().especie, M().equipado, tam, M().nome, M().cor, expr) : ''); }
     if (window.CPTSaber) window.CPTSaber.aoMudar(r => { if (!d) return; d.pontos = r.pontos; mostrarPontos(r.pontos.saldo, r.acertou); if (r.acertou) comemorar(); else atualizarHumor();
       setTimeout(() => { const dot = document.querySelector('#espTab-saber .tab-dot'); if (dot && document.querySelector('#quizDia .quiz-resultado')) dot.remove(); }); });
     document.addEventListener('click', async e => {

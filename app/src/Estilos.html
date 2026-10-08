@@ -1564,4 +1564,57 @@ html[data-theme=dark] .destaque.is-down strong{color:#f0b07a}
 @keyframes mOlhar{0%,38%,84%,100%{transform:translate(0,0)}44%,58%{transform:translate(2px,0)}64%,78%{transform:translate(-2px,.6px)}}
 .wardrobe .mascot-svg .m-cauda,.pet-option .mascot-svg .m-cauda,.wardrobe .mascot-svg .m-olhar,.pet-option .mascot-svg .m-olhar{animation:none}
 @media(prefers-reduced-motion:reduce){.mascot-svg .m-cauda,.mascot-svg .m-olhar{animation:none}}html[data-motion=reduce] .mascot-svg .m-cauda,html[data-motion=reduce] .mascot-svg .m-olhar{animation:none}
+/* 2.51 · O caminho do esgoto (joguinho com o mascote): casa → rua → estação → rio */
+.jogo-card.is-destaque{grid-column:1/-1;background:linear-gradient(135deg,color-mix(in srgb,#58b6e6 16%,var(--surface)),transparent 80%)}
+.jogo-novo{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;background:#1f6f9a;color:#fff;font:700 11px var(--font-ui);vertical-align:2px}
+.jogo-card .link-button{display:inline-flex;align-items:center;min-height:44px;margin:4px 0 0 12px;vertical-align:middle}
+.cam{display:flex;flex-direction:column;gap:12px}
+.cam-trilha{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cam-trilha li{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.cam-trilha li:not(:last-child)::after{content:"";position:absolute;top:17px;left:calc(50% + 22px);right:calc(-50% + 22px);height:3px;border-radius:3px;background:var(--line)}
+.cam-trilha li.is-feita:not(:last-child)::after{background:#58b6e6}
+.cam-trilha-ic{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--soft);border:2px solid var(--line)}
+.cam-trilha-ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cam-trilha li.is-feita .cam-trilha-ic{background:#d9f1fd;border-color:#58b6e6;color:#1f6f9a}.cam-trilha li.is-agora{color:var(--ink)}
+.cam-trilha li.is-agora .cam-trilha-ic{background:#1f6f9a;border-color:#1f6f9a;color:#fff}
+.cam-palco{display:flex;align-items:center;gap:12px}.cam-mascote{flex:none;width:104px}.cam-mascote .mascot-svg{width:104px;height:auto}
+.cam-fala{margin:0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line);font-weight:700;font-size:15px;line-height:1.4;color:var(--ink)}
+.cam-contador{margin:0;font-size:13px;color:var(--muted)}
+.cam-cartao{padding:14px 16px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface)}.cam-cartao p{margin:0;line-height:1.5}
+.cam-cartao.is-certo{border-color:#5aa86a;background:color-mix(in srgb,#5aa86a 12%,var(--surface))}.cam-cartao.is-errado{border-color:#d07a4a;background:color-mix(in srgb,#d07a4a 12%,var(--surface))}
+.cam-cartao-nome{font:800 24px var(--font-display);text-align:center;padding:8px 0 12px}.cam-cartao .cam-cartao-titulo{font-weight:800;margin-bottom:4px}
+.cam-tempo{display:block;height:6px;border-radius:6px;background:var(--soft);overflow:hidden}.cam-tempo span{display:block;height:100%;background:#58b6e6;transform-origin:left;animation:camTempo linear forwards}
+@keyframes camTempo{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.cam-escolhas{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cam-escolhas .button{min-height:56px;justify-content:center}
+.cam-grade{display:grid;grid-template-columns:30px repeat(5,minmax(0,1fr)) 30px;gap:3px;width:100%;max-width:420px;margin:0 auto}
+.cam-cano,.cam-chao{aspect-ratio:1;border-radius:8px;min-width:0}
+.cam-cano{display:block;padding:0;border:1.5px solid var(--line);background:color-mix(in srgb,#b8a990 22%,var(--surface));cursor:pointer}.cam-cano svg,.cam-chao svg{display:block;width:100%;height:100%}
+.cam-cano.is-agua{border-color:#58b6e6}.cam-cano:disabled{cursor:default}.cam-cano:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.cam-chao.t-0,.cam-chao.t-1{background:color-mix(in srgb,#7cc27a 30%,var(--surface))}.cam-chao.t-2,.cam-chao.t-3{background:color-mix(in srgb,#b8a990 32%,var(--surface))}
+.cam-ponta{display:grid;place-items:center}.cam-ponta svg{width:28px;height:28px}
+.cam-legenda{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}.cam-legenda li{display:flex;align-items:center;gap:6px}.cam-legenda svg{width:30px;height:10px}
+.cam-fluxo{animation:camFluxo 1s linear infinite}@keyframes camFluxo{to{stroke-dashoffset:-22}}
+.cam-etapas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cam-etapas li{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:12px;border:1.5px dashed var(--line)}
+.cam-etapas li.is-feita{border-style:solid;border-color:#58b6e6;background:color-mix(in srgb,#58b6e6 10%,var(--surface))}
+.cam-etapas small{display:block;color:var(--muted);font-size:13px;line-height:1.4;margin-top:2px}
+.cam-num{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--soft);font:800 13px var(--font-ui)}.cam-etapas li.is-feita .cam-num{background:#1f6f9a;color:#fff}
+.cam-cartas{display:flex;flex-wrap:wrap;gap:8px}
+.cam-carta{min-height:48px;padding:0 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:700 15px var(--font-ui);cursor:pointer}
+.cam-carta:hover{border-color:#58b6e6}.cam-carta:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.cam-rio{position:relative;border-radius:16px;overflow:hidden;width:100%;max-width:560px;margin:0 auto}.cam-rio-cena{display:block;width:100%;height:auto}
+.cam-rio-mascote{position:absolute;right:6px;bottom:-4px;width:96px}.cam-rio-mascote .mascot-svg{width:96px;height:auto}
+.cam-peixe{animation:camNada 4s ease-in-out infinite}.cam-peixe.is-2{animation-duration:5.5s;animation-direction:reverse}
+@keyframes camNada{0%,100%{transform:translateX(0)}50%{transform:translateX(-18px)}}
+.cam-placar{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cam-placar li{display:grid;grid-template-columns:70px auto 1fr;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;background:var(--soft)}
+.cam-placar small{color:var(--muted)}.cam-estrelas{color:#c98a06;font-size:18px;letter-spacing:2px}
+.cam-lista{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}
+.cam-opiniao{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;border:1.5px solid var(--line)}
+.cam-opiniao h3{margin:0;font:800 16px var(--font-display)}.cam-opiniao fieldset{border:0;margin:0;padding:0}.cam-opiniao legend{font-weight:700;font-size:14px;margin-bottom:6px;padding:0}
+.cam-notas{display:flex;flex-wrap:wrap;gap:6px}.cam-nota{position:relative}.cam-nota input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.cam-nota span{display:grid;place-items:center;min-width:44px;min-height:44px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line);font-weight:700;background:var(--surface)}
+.cam-nota input:checked+span{background:#1f6f9a;border-color:#1f6f9a;color:#fff}.cam-nota input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+@media(max-width:560px){.cam-escolhas{grid-template-columns:1fr}.cam-mascote,.cam-mascote .mascot-svg{width:80px}.cam-grade{grid-template-columns:22px repeat(5,minmax(0,1fr)) 22px}.cam-ponta svg{width:22px;height:22px}.jogo-card.is-destaque{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.cam-fluxo,.cam-peixe,.cam-tempo span{animation:none}}html[data-motion=reduce] .cam-fluxo,html[data-motion=reduce] .cam-peixe,html[data-motion=reduce] .cam-tempo span{animation:none}
 </style>

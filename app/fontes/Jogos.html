@@ -3,6 +3,8 @@
  * Joguinhos 2.21.0 — forca do saneamento e quebra-cabeça, no Meu espaço, desbloqueados por metas (JogosCPT).
  * Jogam na hora (sem esperar o servidor a cada letra ou troca); no fim, o servidor refaz a partida e decide os pontos.
  * Uso pelo Meu espaço: CPTJogos.painel(estado), CPTJogos.aoMudar(fn) e CPTJogos.mascote(fn) (desenho para o quebra-cabeça sem foto).
+ * 2.51: "O caminho do esgoto" com o mascote da pessoa (CPTJogos.personagem(fn(expressao, tamanho))): casa → rua → estação → rio.
+ *      Joga na tela; no fim o servidor refaz tudo, dá as estrelas e recebe a opinião (sem nome). O proprietário vê o resumo do teste.
  */
 window.CPTJogos = (() => {
   'use strict';
@@ -13,6 +15,7 @@ window.CPTJogos = (() => {
   const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
   const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const INFO = {
+    caminho: {nome: 'O caminho do esgoto', icone: ['route', '🚰'], meta: () => '', novo: true, texto: 'Da pia até o rio com o seu mascote: decida o que vai pelo ralo, ligue a rede e ponha a estação em ordem.'},
     forca: {nome: 'Forca do saneamento', icone: ['drop', '💧'], meta: n => `${n} dias de checklist pontuado`, texto: 'Adivinhe palavras do nosso trabalho. Cada erro seca uma gotinha.'},
     quebra: {nome: 'Quebra-cabeça', icone: ['puzzle', '🧩'], meta: n => `${n} dias de checklist`, texto: 'Monte a foto do seu quadro (ou o seu mascote) trocando as peças de lugar.'}};
   function cartao(jogo) {
@@ -21,15 +24,17 @@ window.CPTJogos = (() => {
       ? `<p class="small">Libera com ${i.meta(x.precisa)}.</p><span class="meter" role="meter" aria-valuemin="0" aria-valuemax="${x.precisa}" aria-valuenow="${Math.min(x.tem, x.precisa)}" aria-label="Progresso para liberar"><span style="width:${Math.min(100, x.tem / x.precisa * 100)}%"></span></span><small class="muted">${Math.min(x.tem, x.precisa)} de ${x.precisa}</small>`
       : `<p class="small">${i.texto}</p><p class="small muted">${x.aberta ? 'Você tem uma partida em andamento.' : resta > 0 ? `${resta} ${resta === 1 ? 'partida' : 'partidas'} hoje` : 'Partidas de hoje encerradas. Amanhã tem mais!'} · ${x.ganhouPontosHoje ? 'pontos de hoje já ganhos' : ic('star', '⭐') + ' +' + e.regras.pontos + ' na 1ª vitória do dia'}</p>
          <button class="button" data-jogo-abrir="${jogo}" ${!x.aberta && resta <= 0 ? 'disabled' : ''}>${x.aberta ? 'Continuar' : 'Jogar'}</button>`;
-    return `<article class="jogo-card ${x.liberado ? '' : 'is-travado'}"><span class="jogo-icone" aria-hidden="true">${x.liberado ? ic(...i.icone) : ic('lock', '🔒')}</span><div><h3>${i.nome}</h3>${corpo}</div></article>`;
+    const teste = jogo === 'caminho' && x.teste ? '<button type="button" class="link-button" data-cam-teste>Resultados do teste (só você vê)</button>' : '';
+    return `<article class="jogo-card ${x.liberado ? '' : 'is-travado'} ${i.novo ? 'is-destaque' : ''}"><span class="jogo-icone" aria-hidden="true">${x.liberado ? ic(...i.icone) : ic('lock', '🔒')}</span><div><h3>${i.nome}${i.novo ? '<span class="jogo-novo">Novo · em teste</span>' : ''}</h3>${corpo}${teste}</div></article>`;
   }
-  function painel(estado) { e = estado; if (!e) return ''; return `<section class="panel home-jogos" id="espJogos"><div class="panel-head"><div><span class="card-kicker">${ic('game', '🎮')} Joguinhos</span><h2>Uma pausa rápida</h2></div></div><div class="jogos-grade">${cartao('forca')}${cartao('quebra')}</div></section>`; }
+  function painel(estado) { e = estado; if (!e) return ''; return `<section class="panel home-jogos" id="espJogos"><div class="panel-head"><div><span class="card-kicker">${ic('game', '🎮')} Joguinhos</span><h2>Uma pausa rápida</h2></div></div><div class="jogos-grade">${e.caminho ? cartao('caminho') : ''}${cartao('forca')}${cartao('quebra')}</div></section>`; }
   function redesenhar() { const el = $('espJogos'); if (el) el.outerHTML = painel(e); }
   function janela(titulo, html) { $('detailType').textContent = 'JOGUINHOS'; $('detailTitle').textContent = titulo; $('detailContent').innerHTML = html; if (!$('detailDialog').open) $('detailDialog').showModal(); }
   async function abrir(jogo) {
     if (enviando) return; enviando = true;
     try { const r = await ui.call('iniciarJogoCPT', {jogo, operacaoId: op()}); e = r.estado; p = r.partida; redesenhar(); letras = []; trocas = []; marcada = null;
-      if (jogo === 'forca') forca(); else { ordem = p.ordem.slice(); await prepararImagem(); quebra(); } }
+      if (jogo === 'caminho') { cam = {fase: 'casa', i: 0, retorno: null, respostas: [], acertos: 0, giros: p.rede.giros.slice(), toques: [], colocadas: [], escolhas: [], errosEstacao: 0, errou: false, t0: Date.now()}; caminho(); }
+      else if (jogo === 'forca') forca(); else { ordem = p.ordem.slice(); await prepararImagem(); quebra(); } }
     catch (err) { ui.toast(err.message); } finally { enviando = false; }
   }
   // ---------- Forca ----------
@@ -71,6 +76,177 @@ window.CPTJogos = (() => {
       if (jogo === 'forca') forca(r); else quebra(r); }
     catch (err) { ui.toast(err.message); } finally { enviando = false; }
   }
+  // ---------- O caminho do esgoto (2.51): casa → rua → estação → rio, com o mascote da pessoa ----------
+  const TEMPO = 12; // segundos para decidir cada item da casa
+  let cam = null, relogio = null, personagem = () => '';
+  const CANO = {ligacao: 7, rede: 10, coletor: 13, interceptor: 17};
+  const TRECHO = {ligacao: 'Ligação do imóvel', rede: 'Rede coletora', coletor: 'Coletor tronco', interceptor: 'Interceptor'};
+  const lados = (tipo, g) => tipo === 'reta' ? [g % 4, (g + 2) % 4] : [g % 4, (g + 1) % 4];
+  /** A água entra pela esquerda da primeira peça e corre enquanto as peças se encaixam (mesma regra do servidor). */
+  function correr(R, giros) {
+    const em = new Map(R.trajeto.map((c, i) => [c.join(','), i])), D = [[-1, 0], [0, 1], [1, 0], [0, -1]], fim = R.trajeto[R.trajeto.length - 1], molhadas = new Set();
+    let cel = R.trajeto[0], entra = 3;
+    for (let k = 0; k < 40; k++) {
+      const i = em.get(cel.join(',')); if (i == null) break;
+      const l = lados(R.tipos[i], giros[i]); if (!l.includes(entra)) break;
+      molhadas.add(i); const sai = l[0] === entra ? l[1] : l[0];
+      if (cel[0] === fim[0] && cel[1] === fim[1] && sai === 1) return {molhadas, chegou: true};
+      cel = [cel[0] + D[sai][0], cel[1] + D[sai][1]]; entra = (sai + 2) % 4;
+    }
+    return {molhadas, chegou: false};
+  }
+  const TRILHA = [['casa', 'Casa', '<path d="M4 11l8-6 8 6v9H4z"/><path d="M10 20v-5h4v5"/>'], ['rua', 'Rua', '<path d="M3 8h18M3 16h18"/><path d="M7 12h3M14 12h3"/>'],
+    ['estacao', 'Estação', '<rect x="3" y="10" width="7" height="10" rx="1.5"/><rect x="14" y="6" width="7" height="14" rx="1.5"/><path d="M10 15h4"/>'], ['rio', 'Rio', '<path d="M2 9c3-2.5 5 2.5 8 0s5-2.5 8 0 3 1 4 0M2 15c3-2.5 5 2.5 8 0s5-2.5 8 0 3 1 4 0"/>']];
+  function trilha(atual) {
+    const k = TRILHA.findIndex(x => x[0] === atual);
+    return `<ol class="cam-trilha" aria-label="O caminho do esgoto">${TRILHA.map(([id, nome, d], i) => `<li class="${i < k ? 'is-feita' : i === k ? 'is-agora' : ''}"${i === k ? ' aria-current="step"' : ''}><span class="cam-trilha-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg></span><span>${nome}</span></li>`).join('')}</ol>`;
+  }
+  const palco = (expr, fala) => `<div class="cam-palco"><div class="cam-mascote" aria-hidden="true">${personagem(expr, 104) || ''}</div><p class="cam-fala" aria-live="polite">${ui.esc(fala)}</p></div>`;
+  const seguir = rotulo => `<div class="dialog-actions"><button class="button" data-cam-seguir data-cam-foco>${ui.esc(rotulo)} ${ui.icon('arrow')}</button></div>`;
+  /** Desenha a fase atual. foco: seletor que recebe o foco depois (teclado continua de onde estava). */
+  function caminho(foco) {
+    clearTimeout(relogio); if (!cam) return;
+    const f = cam.fase, corpo = f === 'casa' ? faseCasa() : f === 'rua' ? faseRua() : f === 'estacao' ? faseEstacao() : faseRio();
+    janela(INFO.caminho.nome, `<div class="cam">${trilha(f)}${corpo}</div>`);
+    const alvo = $('detailContent').querySelector(foco || '[data-cam-foco]'); if (alvo) alvo.focus({preventScroll: !foco});
+    if (f === 'casa' && !cam.retorno) relogio = setTimeout(() => responderCasa(null), TEMPO * 1000);
+  }
+  // Fase 1 · Na casa
+  function faseCasa() {
+    const it = p.itens[cam.i], r = cam.retorno, n = p.itens.length;
+    const cont = `<p class="cam-contador">${cam.i + 1} de ${n} · ${cam.acertos} ${cam.acertos === 1 ? 'acerto' : 'acertos'}</p>`;
+    if (r) return palco(r.certo ? 'feliz' : 'triste', r.certo ? 'Isso mesmo!' : r.tempo ? 'O tempo acabou…' : 'Ops! Esse não.') + cont +
+      `<div class="cam-cartao ${r.certo ? 'is-certo' : 'is-errado'}"><p class="cam-cartao-titulo">${ui.esc(it.nome)}: ${it.vai ? 'pode ir pelo ralo' : 'não vai pelo ralo'}</p><p>${ui.esc(it.fato)}</p></div>` +
+      seguir(cam.i + 1 < n ? 'Próximo' : 'Agora, a rua');
+    return palco('pensativo', 'Na casa: isso pode ir pelo ralo ou pelo vaso?') + cont +
+      `<div class="cam-cartao"><p class="cam-cartao-nome">${ui.esc(it.nome)}</p><span class="cam-tempo" aria-hidden="true"><span style="animation-duration:${TEMPO}s"></span></span></div>
+      <div class="cam-escolhas"><button class="button" data-cam-casa="1" data-cam-foco>${ui.icon('drop')} Vai pelo ralo</button><button class="button secondary" data-cam-casa="0">${ui.icon('x')} Não: lixo ou ponto de coleta</button></div>
+      <p class="small muted">${TEMPO} segundos para decidir.</p>`;
+  }
+  function responderCasa(v) {
+    if (!cam || cam.fase !== 'casa' || cam.retorno || !$('detailDialog').open) return; clearTimeout(relogio);
+    const certo = v === p.itens[cam.i].vai; cam.respostas.push(v); if (certo) cam.acertos++;
+    cam.retorno = {certo, tempo: v === null}; caminho();
+  }
+  // Fase 2 · Na rua
+  function cano(tipo, g, trecho, agua) {
+    const P = [[30, 0], [60, 30], [30, 60], [0, 30]], [a, b] = lados(tipo, g), d = tipo === 'reta' ? `M${P[a]} L${P[b]}` : `M${P[a]} Q30,30 ${P[b]}`, w = CANO[trecho];
+    return `<svg viewBox="0 0 60 60" aria-hidden="true"><path d="${d}" fill="none" stroke="${agua ? '#1f6f9a' : '#7d878c'}" stroke-width="${w + 5}"/><path d="${d}" fill="none" stroke="${agua ? '#58b6e6' : '#c3cacd'}" stroke-width="${w}"/>` +
+      (agua ? `<path class="cam-fluxo" d="${d}" fill="none" stroke="#e3f5fe" stroke-width="${Math.max(2, Math.round(w / 4))}" stroke-dasharray="4 7"/>` : '') + '</svg>';
+  }
+  const CHAO = ['', '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="25" r="14" fill="#6fb46d"/><circle cx="25" cy="21" r="5" fill="#8fcf86"/><rect x="27" y="36" width="6" height="14" rx="2" fill="#9a6b45"/></svg>', '',
+    '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="12" fill="#9aa3a8"/><circle cx="30" cy="30" r="8" fill="none" stroke="#6f787d" stroke-width="2"/><path d="M24 30h12M30 24v12" stroke="#6f787d" stroke-width="1.5"/></svg>'];
+  const PONTA = {casa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v10H3z" fill="#f4d6a8" stroke="#9a6b45" stroke-width="1.6"/><rect x="10" y="14" width="4" height="7" fill="#9a6b45"/></svg>',
+    estacao: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="9" width="9" height="12" rx="2" fill="#bfe6f8" stroke="#1f6f9a" stroke-width="1.6"/><rect x="13" y="5" width="9" height="16" rx="2" fill="#bfe6f8" stroke="#1f6f9a" stroke-width="1.6"/></svg>'};
+  function faseRua() {
+    const R = p.rede, w = correr(R, cam.giros), em = new Map(R.trajeto.map((c, i) => [c.join(','), i]));
+    let grade = '';
+    for (let r = 0; r < 4; r++) {
+      grade += `<div class="cam-ponta">${r === 0 ? PONTA.casa : ''}</div>`;
+      for (let c = 0; c < 5; c++) {
+        const i = em.get(r + ',' + c), k = (r * 5 + c * 3) % 4;
+        grade += i == null ? `<div class="cam-chao t-${k}" aria-hidden="true">${CHAO[k]}</div>`
+          : `<button type="button" class="cam-cano ${w.molhadas.has(i) ? 'is-agua' : ''}" data-cam-cano="${i}" data-cam-cel="${r},${c}" data-cam-tipo="${R.tipos[i]}" data-cam-giro="${cam.giros[i]}" ${w.chegou ? 'disabled' : ''}
+              aria-label="${ui.esc(TRECHO[R.trechos[i]])}, peça ${i + 1}${w.molhadas.has(i) ? ', com água' : ''}. Toque para girar">${cano(R.tipos[i], cam.giros[i], R.trechos[i], w.molhadas.has(i))}</button>`;
+      }
+      grade += `<div class="cam-ponta">${r === 3 ? PONTA.estacao : ''}</div>`;
+    }
+    const legenda = ['ligacao', 'rede', 'coletor', 'interceptor'].map(t => `<li><svg viewBox="0 0 40 12" aria-hidden="true"><path d="M2 6h36" stroke="#58b6e6" stroke-width="${CANO[t] / 2 + 1}"/></svg>${TRECHO[t]}</li>`).join('');
+    const t = cam.toques.length;
+    return palco(w.chegou ? 'comemorando' : 'pensativo', w.chegou ? 'A casa está ligada até o interceptor!' : 'Na rua: gire os canos para o esgoto ir da casa até a estação.') +
+      `<p class="cam-contador">${t} ${t === 1 ? 'toque' : 'toques'} · a água passa por ${w.molhadas.size} de ${R.trajeto.length} trechos</p>
+      <div class="cam-grade" role="group" aria-label="Rede de esgoto da rua">${grade}</div><ul class="cam-legenda">${legenda}</ul>
+      <p class="small muted">O cano engrossa pelo caminho: cada trecho recebe o esgoto de mais casas.</p>` +
+      (w.chegou ? `<div class="cam-cartao is-certo"><p class="cam-cartao-titulo">Coletar, afastar e tratar</p><p>Onde há rede, a ligação do imóvel é obrigatória: sem ela, o esgoto da casa continua indo para a fossa ou o córrego. E a rede pronta ainda precisa chegar até a estação.</p></div>` + seguir('Agora, a estação') : '');
+  }
+  function girar(i) {
+    if (!cam || cam.fase !== 'rua' || correr(p.rede, cam.giros).chegou) return;
+    cam.giros[i] = (cam.giros[i] + 1) % 4; cam.toques.push(i);
+    caminho(correr(p.rede, cam.giros).chegou ? null : `[data-cam-cano="${i}"]`);
+  }
+  // Fase 3 · Na estação
+  function faseEstacao() {
+    const E = p.etapas, feitas = cam.colocadas.length, pronta = feitas === E.length;
+    const slots = E.map((x, i) => i < feitas ? `<li class="is-feita"><span class="cam-num">${i + 1}</span><span><strong>${ui.esc(x.nome)}</strong>${i === feitas - 1 ? `<small>${ui.esc(x.texto)}</small>` : ''}</span></li>`
+      : `<li><span class="cam-num">${i + 1}</span><span class="muted">${i === feitas ? 'Qual vem agora?' : ''}</span></li>`).join('');
+    const resta = p.etapasMostrar.filter(id => !cam.colocadas.includes(id)).map(id => E.find(x => x.id === id));
+    const fala = pronta ? 'Esgoto tratado! Agora ele segue para o rio.' : cam.errou ? 'Ainda não… o que precisa sair primeiro?' : feitas ? 'Boa! E depois?' : 'Na estação: qual etapa vem primeiro?';
+    return palco(pronta ? 'comemorando' : cam.errou ? 'triste' : 'pensativo', fala) +
+      `<p class="small muted">Numa estação com lodo ativado, o esgoto costuma passar por estas etapas.</p><ol class="cam-etapas">${slots}</ol>` +
+      (pronta ? `<div class="cam-cartao is-certo"><p>O esgoto tratado volta para o rio muito mais limpo. Água de beber é outra história: ela sai de outra estação, a de tratamento de água.</p></div>` + seguir('Ver o rio')
+        : `<div class="cam-cartas">${resta.map((x, k) => `<button type="button" class="cam-carta" data-cam-etapa="${x.id}"${k === 0 ? ' data-cam-foco' : ''}>${ui.esc(x.nome)}</button>`).join('')}</div>
+          <p class="cam-contador">${cam.errosEstacao} ${cam.errosEstacao === 1 ? 'erro' : 'erros'}</p>`);
+  }
+  function escolherEtapa(id) {
+    if (!cam || cam.fase !== 'estacao' || cam.colocadas.length >= p.etapas.length) return;
+    cam.escolhas.push(id);
+    if (p.etapas[cam.colocadas.length].id === id) { cam.colocadas.push(id); cam.errou = false; } else { cam.errou = true; cam.errosEstacao++; }
+    caminho();
+  }
+  // Fim · No rio
+  const RIO = `<svg class="cam-rio-cena" viewBox="0 0 320 120" aria-hidden="true"><rect width="320" height="120" fill="#dff1fb"/><circle cx="262" cy="26" r="14" fill="#ffd25a"/>
+    <path d="M0 68 C40 58 80 76 120 68 S200 58 240 68 S300 76 320 68 V120 H0Z" fill="#4aa8d8"/><path d="M0 84 C40 76 80 92 120 84 S200 76 240 84 S300 92 320 84" fill="none" stroke="#bfe6f8" stroke-width="3" opacity=".8"/>
+    <g class="cam-peixe"><path d="M150 98 q12 -9 24 0 q-12 9 -24 0z" fill="#ffb347"/><path d="M174 98 l8 -6 v12z" fill="#ffb347"/><circle cx="156" cy="96.5" r="1.4" fill="#3a2a20"/></g>
+    <g class="cam-peixe is-2"><path d="M60 106 q9 -7 18 0 q-9 7 -18 0z" fill="#f2a6c0"/><path d="M78 106 l6 -5 v10z" fill="#f2a6c0"/></g>
+    <path d="M18 70 q4 -26 2 -40 M26 70 q2 -20 8 -30 M296 70 q-2 -22 -8 -34" stroke="#3f8f45" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+  async function chegarAoRio() {
+    if (enviando || !cam) return; cam.fase = 'rio'; cam.res = null; cam.erro = ''; caminho(); enviando = true;
+    try {
+      const r = await ui.call('terminarJogoCPT', {partida: p.id, casa: cam.respostas, rede: cam.toques, estacao: cam.escolhas, segundos: Math.round((Date.now() - cam.t0) / 1000), operacaoId: op()});
+      e = r.estado; redesenhar(); ui.toast(r.resultado); aoMudar({pontos: r.pontos, venceu: r.situacao === 'venceu'}); if (cam) cam.res = r;
+    } catch (err) { if (cam) cam.erro = err.message; } finally { enviando = false; }
+    if (cam && cam.fase === 'rio') caminho();
+  }
+  function faseRio() {
+    const r = cam.res;
+    if (!r) return palco('feliz', cam.erro ? 'Não deu para guardar a partida.' : 'Levando o esgoto tratado até o rio…') +
+      (cam.erro ? `<div class="notice">${ui.esc(cam.erro)}</div>` : '<div class="loading-label"><span class="spinner"></span>Conferindo a partida…</div>');
+    const c = r.caminho, est = n => `<span class="cam-estrelas" role="img" aria-label="${n} de 3 estrelas">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</span>`;
+    const linhas = [['Casa', c.casa.estrelas, c.casa.acertos + ' de ' + c.casa.total + ' certos'], ['Rua', c.rede.estrelas, c.rede.toques + ' toques (dava com ' + c.rede.minimo + ')'],
+      ['Estação', c.estacao.estrelas, c.estacao.erros ? c.estacao.erros + (c.estacao.erros === 1 ? ' erro' : ' erros') : 'sem erros']];
+    return `<div class="cam-rio">${RIO}<div class="cam-rio-mascote" aria-hidden="true">${personagem('comemorando', 96) || ''}</div></div>
+      <p class="cam-fala" aria-live="polite">${ui.esc(r.resultado)}</p>
+      <ul class="cam-placar">${linhas.map(([n, s, t]) => `<li><span>${n}</span>${est(s)}<small>${ui.esc(t)}</small></li>`).join('')}</ul>
+      <details class="mais-detalhes"><summary>O que você levou deste caminho</summary><ul class="cam-lista"><li>Óleo, fio dental, cotonete, lenço umedecido e remédio não vão pelo ralo nem pelo vaso.</li>
+        <li>Água da chuva vai para a galeria; esgoto vai para a rede. São sistemas separados.</li><li>Na estação, grades, caixa de areia, decantação e micro-organismos limpam o esgoto antes de ele voltar ao rio.</li></ul></details>
+      ${cam.opinou ? '<p class="small muted">Obrigado pela opinião!</p>' : formOpiniao()}${maisUma('caminho')}`;
+  }
+  function formOpiniao() {
+    const opc = (nome, v, t, largo) => `<label class="cam-nota${largo ? ' is-largo' : ''}"><input type="radio" name="${nome}" value="${v}" required><span>${t}</span></label>`;
+    return `<form class="cam-opiniao" id="camOpiniao"><h3>Ajude a melhorar o jogo</h3><p class="small muted">Sua opinião vai sem o seu nome.</p>
+      <fieldset><legend>Quão divertido foi? (1 = pouco, 5 = muito)</legend><div class="cam-notas">${[1, 2, 3, 4, 5].map(n => opc('diversao', n, n)).join('')}</div></fieldset>
+      <fieldset><legend>Aprendeu algo novo sobre o caminho do esgoto?</legend><div class="cam-notas">${[['sim', 'Sim'], ['pouco', 'Um pouco'], ['nao', 'Não']].map(([v, t]) => opc('aprendeu', v, t, true)).join('')}</div></fieldset>
+      <label class="field">O que você mudaria? (opcional)<textarea name="sugestao" rows="3" maxlength="500"></textarea></label>
+      <div class="dialog-actions"><button class="button" type="submit">Enviar opinião</button></div></form>`;
+  }
+  async function enviarOpiniao(f) {
+    const b = f.querySelector('[type=submit]'); b.disabled = true; cam.opOpiniao = cam.opOpiniao || op();
+    try { const r = await ui.call('opinarJogoCPT', {partida: p.id, diversao: Number(f.elements.diversao.value), aprendeu: f.elements.aprendeu.value, sugestao: f.elements.sugestao.value, operacaoId: cam.opOpiniao}); ui.toast(r.resultado); cam.opinou = true; caminho(); }
+    catch (err) { ui.toast(err.message); b.disabled = false; }
+  }
+  function avancar() {
+    if (!cam) return;
+    if (cam.fase === 'casa' && cam.retorno) { cam.retorno = null; cam.i++; if (cam.i >= p.itens.length) cam.fase = 'rua'; caminho(); }
+    else if (cam.fase === 'rua' && correr(p.rede, cam.giros).chegou) { cam.fase = 'estacao'; caminho(); }
+    else if (cam.fase === 'estacao' && cam.colocadas.length === p.etapas.length) chegarAoRio();
+  }
+  // Resumo do teste (só o proprietário): sem nomes.
+  async function resultadosTeste() {
+    janela('Resultados do teste', '<div class="loading-label"><span class="spinner"></span>Reunindo as partidas…</div>');
+    try { const r = await ui.call('resumoTesteJogoCPT'); janela('Resultados do teste', resumoTeste(r)); }
+    catch (err) { janela('Resultados do teste', `<div class="notice">${ui.esc(err.message)}</div>`); }
+  }
+  function resumoTeste(r) {
+    if (!r.partidas) return '<p class="muted">Ninguém terminou uma partida do Caminho do esgoto ainda.</p>';
+    const tile = (t, v, n) => `<div class="stat-tile"><span class="stat-label">${t}</span><span class="stat-value">${v}</span><span class="stat-note">${n}</span></div>`, dec = v => v == null ? '—' : String(v).replace('.', ',');
+    const lista = (l, vazio, f) => l.length ? `<ul class="cam-lista">${l.map(f).join('')}</ul>` : `<p class="muted">${vazio}</p>`;
+    return `<p class="small muted">Só você vê. As opiniões aparecem sem o nome de quem escreveu.</p>
+      <section class="stat-row">${tile('Partidas', ui.num(r.partidas), r.pessoas + (r.pessoas === 1 ? ' pessoa jogou' : ' pessoas jogaram'))}${tile('Diversão', dec(r.diversao) + '<small> / 5</small>', r.opinioes + (r.opinioes === 1 ? ' opinião' : ' opiniões'))}${tile('Aprenderam algo', ui.num(r.aprendeu.sim + r.aprendeu.pouco), 'sim ' + r.aprendeu.sim + ' · um pouco ' + r.aprendeu.pouco + ' · não ' + r.aprendeu.nao)}${tile('Tempo médio', ui.esc(r.tempo), 'minutos, da casa até o rio')}</section>
+      <h3 class="answers-head">Estrelas por fase (média de 3)</h3><ul class="cam-placar">${r.fases.map(x => `<li><span>${ui.esc(x.nome)}</span><strong>${dec(x.media)}</strong><small>${ui.esc(x.nota)}</small></li>`).join('')}</ul>
+      <h3 class="answers-head">O que mais confunde na casa</h3>${lista(r.confusos, 'Nada confundiu ainda.', x => `<li><strong>${ui.esc(x.nome)}</strong>: errado ${x.erros} de ${x.vezes} ${x.vezes === 1 ? 'vez' : 'vezes'}</li>`)}
+      <h3 class="answers-head">Trocas mais comuns na estação</h3>${lista(r.trocas, 'Ninguém trocou as etapas.', x => `<li>No lugar de <strong>${ui.esc(x.esperada)}</strong>, escolheram <strong>${ui.esc(x.escolhida)}</strong> (${x.vezes}×)</li>`)}
+      <h3 class="answers-head">O que mudariam</h3>${lista(r.comentarios, 'Nenhum comentário ainda.', x => `<li>${ui.esc(x.texto)} <small class="muted">· ${x.diversao}/5 · ${ui.date(x.dia)}</small></li>`)}`;
+  }
   function init(api) {
     ui = api;
     document.addEventListener('click', ev => {
@@ -81,13 +257,21 @@ window.CPTJogos = (() => {
         if (marcada === null) marcada = i; else if (marcada === i) marcada = null; else { [ordem[marcada], ordem[i]] = [ordem[i], ordem[marcada]]; trocas.push([marcada, i]); marcada = null; }
         quebra(); return; }
       if (ev.target.closest('[data-quebra-desistir]') && p) terminar({trocas});
+      const cc = ev.target.closest('[data-cam-casa]'); if (cc && cam) { responderCasa(cc.dataset.camCasa === '1'); return; }
+      if (ev.target.closest('[data-cam-seguir]') && cam) { avancar(); return; }
+      const cn = ev.target.closest('[data-cam-cano]'); if (cn && cam) { girar(Number(cn.dataset.camCano)); return; }
+      const ce = ev.target.closest('[data-cam-etapa]'); if (ce && cam) { escolherEtapa(ce.dataset.camEtapa); return; }
+      if (ev.target.closest('[data-cam-teste]')) { resultadosTeste(); return; }
     });
+    document.addEventListener('submit', ev => { if (ev.target.id === 'camOpiniao' && cam) { ev.preventDefault(); enviarOpiniao(ev.target); } });
+    // Fechou a janela: o relógio da casa para (a partida continua aberta e recomeça ao jogar de novo).
+    const dlg = $('detailDialog'); if (dlg) dlg.addEventListener('close', () => { clearTimeout(relogio); cam = null; });
     // Teclado físico na forca.
     document.addEventListener('keydown', ev => {
       if (!p || p.jogo !== 'forca' || !$('detailDialog').open || enviando || !document.querySelector('.forca-teclado')) return;
       const L = norm(ev.key); if (/^[A-Z]$/.test(L) && !letras.includes(L)) { letras.push(L); forca(); }
     });
   }
-  return {init, painel, aoMudar: fn => { aoMudar = fn; }, mascote: fn => { mascote = fn; }};
+  return {init, painel, aoMudar: fn => { aoMudar = fn; }, mascote: fn => { mascote = fn; }, personagem: fn => { personagem = fn; }};
 })();
 </script>
