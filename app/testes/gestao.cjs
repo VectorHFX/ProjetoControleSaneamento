@@ -95,7 +95,7 @@ const fa=p.frentes.find(f=>f.id==='OBR-0001'),fb=p.frentes.find(f=>f.id==='OBR-0
 assert.equal(fa.acoes,2);assert.equal(fa.diagnosticos,1);assert.equal(fa.casosAbertos,2);assert.equal(fb.acoes,0);assert.equal(fb.ultimo,'');
 assert.ok(p.alertas.some(a=>/sem registro/.test(a.texto)&&/Coletor B/.test(a.texto)),'frente parada aparece nos alertas');
 assert.ok(p.alertas.some(a=>/mais de 30 dias/.test(a.texto)));
-const rr=run("carregarRelatosResumoCPT('2026-09')");assert.equal(rr.itens.length,3);assert.match(rr.itens.find(x=>x.atividade==='Ação Social Externa').resumo,/Conversa com moradores/);assert.equal(rr.itens.find(x=>x.atividade==='Ação Social Externa').fotos,1);
+const rr=run("AplicacaoCPT.executar((d,ctx)=>new PaineisGestaoCPT(ctx).relatos('2026-09'),'painel.relatos')");assert.equal(rr.itens.length,3);assert.match(rr.itens.find(x=>x.atividade==='Ação Social Externa').resumo,/Conversa com moradores/);assert.equal(rr.itens.find(x=>x.atividade==='Ação Social Externa').fotos,1);
 console.log('PASS: painel da gestão — números do contrato iguais à regra do relatório, série de 6 meses, frentes com ações, diagnósticos e casos, alertas (frente parada, casos antigos) e relatos em resumo com trecho e fotos.');
 // 2.26: planilha de controle do contrato — lembrete mensal; a aplicação só lê os dados do arquivo no Drive e nunca abre a planilha.
 const abertas=[];const abrir0=ctx.SpreadsheetApp.openById;ctx.SpreadsheetApp.openById=id=>{abertas.push(id);return abrir0(id);};
@@ -234,15 +234,15 @@ console.log('PASS: alertas da gestão — caso aberto há mais de 30 dias, dias 
 // 2.37: índice mensal dos relatos — os detalhes (coluna 21) são lidos uma vez por registro; resultado igual à regra antiga.
 {let col21=0;const g0=registros.getRange.bind(registros);registros.getRange=(r,c,n,m)=>{if(c===21)col21+=n||1;return g0(r,c,n,m);};
  agenda.sheets=agenda.sheets.filter(s=>!s.name.startsWith('Índice dos relatos'));cacheMap.clear();email='gestao@example.com';
- const r1=run("carregarRelatosResumoCPT('2026-09')");assert.ok(col21>0,'primeira vez lê os detalhes');
+ const r1=run("AplicacaoCPT.executar((d,ctx)=>new PaineisGestaoCPT(ctx).relatos('2026-09'),'painel.relatos')");assert.ok(col21>0,'primeira vez lê os detalhes');
  const aba=agenda.getSheetByName('Índice dos relatos · 2026-09');assert.ok(aba,'índice do mês criado');assert.equal(aba.rows.length-1,r1.itens.length);
- cacheMap.clear();col21=0;const r2=run("carregarRelatosResumoCPT('2026-09')");assert.equal(col21,0,'com o índice, não lê a coluna de detalhes');assert.deepEqual(r2.itens.map(({...x})=>x),r1.itens.map(({...x})=>x),'mesmo resultado');
+ cacheMap.clear();col21=0;const r2=run("AplicacaoCPT.executar((d,ctx)=>new PaineisGestaoCPT(ctx).relatos('2026-09'),'painel.relatos')");assert.equal(col21,0,'com o índice, não lê a coluna de detalhes');assert.deepEqual(r2.itens.map(({...x})=>x),r1.itens.map(({...x})=>x),'mesmo resultado');
  // Conferência igual à regra antiga (doRegistro sobre os detalhes completos).
  r2.itens.forEach(it=>{const row=registros.rows.find(r=>r[0]===it.id);ctx.rowX=row;const q=run("(()=>{const c=DadosDaAplicacao.campos(rowX[20]);return RelatosCPT.ehRelato(rowX[1])&&c?RelatosCPT.doRegistro(rowX,c):null;})()");assert.deepEqual(it.qualidade,q,'conferência igual para '+it.id);});
  // Registro alterado (hash muda): só ele é relido.
- const alvo=registros.rows.find(r=>r[0]===r1.itens[0].id);alvo[19]='hash-novo';cacheMap.clear();col21=0;run("carregarRelatosResumoCPT('2026-09')");assert.equal(col21,1,'só o registro alterado é relido');
+ const alvo=registros.rows.find(r=>r[0]===r1.itens[0].id);alvo[19]='hash-novo';cacheMap.clear();col21=0;run("AplicacaoCPT.executar((d,ctx)=>new PaineisGestaoCPT(ctx).relatos('2026-09'),'painel.relatos')");assert.equal(col21,1,'só o registro alterado é relido');
  // Índice apagado à mão: refaz sozinho.
- agenda.sheets=agenda.sheets.filter(s=>!s.name.startsWith('Índice dos relatos'));cacheMap.clear();assert.equal(run("carregarRelatosResumoCPT('2026-09')").itens.length,r1.itens.length);
+ agenda.sheets=agenda.sheets.filter(s=>!s.name.startsWith('Índice dos relatos'));cacheMap.clear();assert.equal(run("AplicacaoCPT.executar((d,ctx)=>new PaineisGestaoCPT(ctx).relatos('2026-09'),'painel.relatos')").itens.length,r1.itens.length);
  registros.getRange=g0;}
 console.log('PASS: índice dos relatos — detalhes lidos uma vez por registro (depois, nenhuma leitura da coluna de detalhes), conferência igual à regra antiga, registro alterado relido sozinho, índice apagado refeito.');
 

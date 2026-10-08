@@ -87,8 +87,6 @@ class MateriaisCPT {
   }
 }
 
-function listarLembretesCPT() { return ColecaoCPT.executar('lembretes.listar', ctx => new LembretesCPT(ctx).listar()); }
 function salvarLembreteCPT(p) { return ColecaoCPT.executar('lembretes.salvar', ctx => new LembretesCPT(ctx).salvar(p), true); }
-function concluirLembreteCPT(p) { return ColecaoCPT.executar('lembretes.concluir', ctx => new LembretesCPT(ctx).concluir(p), true); }
 function listarMateriaisCPT(mes) { return ColecaoCPT.executar('materiais.listar', ctx => new MateriaisCPT(ctx).listar(/^\d{4}-\d{2}$/.test(String(mes)) ? String(mes) : ColecaoCPT.hoje().slice(0, 7))); }
 function salvarMaterialCPT(p) { return ColecaoCPT.executar('materiais.salvar', ctx => new MateriaisCPT(ctx).salvar(p), true); }

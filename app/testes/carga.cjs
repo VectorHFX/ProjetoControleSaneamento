@@ -60,7 +60,7 @@ const mes=hoje.slice(0,7);
 // Funções lidas pelas telas, na ordem em que a aplicação abre.
 const FUNCOES=[['carregarPerfilCPT()',null],['carregarMeuEspacoCPT({})',null],['missoesCPT()',null],['carregarInicioCPT({mes})',null],['alertasGestaoCPT()',null],['carregarCronogramaCPT({mes})',null],
   ['buscarRegistrosCPT({mes})',null],['buscarAtendimentosCPT({})',null],['carregarRelatosCPT({mes})',null],['listarRelatosRelatorioCPT({mes})',null],['listarDiagnosticosCPT()',null],
-  ['carregarPainelGestaoCPT({mes})',null],['carregarRelatosResumoCPT(mes)',null],['qualidadeRelatosCPT({mes})',null],['listarObrasCPT()',null],['listarContatosCPT()',null],['listarNotasGraficosCPT()',null],
+  ['carregarPainelGestaoCPT({mes})',null],['qualidadeRelatosCPT({mes})',null],['listarObrasCPT()',null],['listarContatosCPT()',null],['listarNotasGraficosCPT()',null],
   ['estadoFichasCPT()',null],['auditarAtendimentosCPT({mes})',null],['controleContratoCPT({mes})',null],['carregarMapaCPT({mes})',null],['listarGaleriaCPT({mes})',null],['listarRecadosCPT()',null],['contarAvisosCPT()',null],
   ['mensagemDiaCPT()',null],['listarMatrizCPT()',null],['carregarOrganogramaCPT()',null],['listarLevantamentoCPT()',null],['listarVinculosObraCPT()',null],['compararObrasDoMesCPT(mes)',null]];
 const est=c=>Math.round(c.abrir*150+(c.planilha-c.abrir)*70+c.celulas*0.004+c.drive*150+c.cache*12+c.prop*6);

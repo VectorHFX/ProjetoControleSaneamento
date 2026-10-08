@@ -227,4 +227,3 @@ class IndiceRelatosCPT {
 
 function carregarPainelGestaoCPT(p) { return AplicacaoCPT.executar((d, ctx) => new PaineisGestaoCPT(ctx).carregar(String(p && p.mes || ''), !!(p && p.atualizar)), 'painel.carregar'); }
 function qualidadeRelatosCPT(p) { return AplicacaoCPT.executar((d, ctx) => new PaineisGestaoCPT(ctx).qualidade(String(p && p.mes || '')), 'painel.qualidade'); }
-function carregarRelatosResumoCPT(mes) { return AplicacaoCPT.executar((d, ctx) => new PaineisGestaoCPT(ctx).relatos(String(mes || '')), 'painel.relatos'); }

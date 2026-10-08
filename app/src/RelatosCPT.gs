@@ -122,9 +122,3 @@ function carregarRelatosCPT(p) { return AplicacaoCPT.executar((d, ctx) => new Re
 function abrirNoRdasCPT(id) { return AplicacaoCPT.executar((d, ctx) => new RelatosCPT(ctx).rdas(d, String(id || '')), 'relatos.rdas'); }
 function devolverRelatoCPT(p) { return ColecaoCPT.executar('relatos.devolver', ctx => new RelatosCPT(ctx).devolver(p), true); }
 function responderDevolutivaCPT(p) { return ColecaoCPT.executar('relatos.responder', ctx => new RelatosCPT(ctx).responder(p), true); }
-function minhasDevolutivasCPT() {
-  return ColecaoCPT.executar('relatos.devolutivas', ctx => {
-    let pode = PerfisCPT.gerencia(ctx.perfil); try { PerfisCPT.exigirConfiguracao(ctx.perfil, ''); } catch (_) { pode = false; }
-    return {devolutivas: new RelatosCPT(ctx).visiveis(), podeDevolver: pode, criterios: RelatosCPT.criterios};
-  });
-}

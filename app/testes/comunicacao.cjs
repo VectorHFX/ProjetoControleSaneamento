@@ -63,14 +63,14 @@ assert.throws(()=>run("salvarContatoCPT({nome:'',instituicao:'',tipo:'Outro',ope
 console.log('PASS: contatos — todos cadastram, edição restrita, duplicado avisado, conflito de versão, conversas preservadas na edição.');
 
 // 3. Lembretes (2.30: tarefas "para quem", todo o time) e materiais (Comunicação); resumo do mês.
-email='atd@example.com';assert.deepEqual(run('listarLembretesCPT()').itens,[],'todo o time usa; só vê os seus');const ma=run('listarMateriaisCPT()');assert.equal(ma.podeEditar,false,'2.29: todo o time vê os materiais');assert.throws(()=>run("salvarMaterialCPT({titulo:'x',tipo:'Outro',situacao:'afazer',operacaoId:'"+op()+"'})"),/Comunicação e da Gestão/);
+email='atd@example.com';assert.deepEqual(run("ColecaoCPT.executar('lembretes.listar',ctx=>new LembretesCPT(ctx).listar())").itens,[],'todo o time usa; só vê os seus');const ma=run('listarMateriaisCPT()');assert.equal(ma.podeEditar,false,'2.29: todo o time vê os materiais');assert.throws(()=>run("salvarMaterialCPT({titulo:'x',tipo:'Outro',situacao:'afazer',operacaoId:'"+op()+"'})"),/Comunicação e da Gestão/);
 email='social@example.com';ctx.l={tipo:'material',titulo:'Levar panfletos',data:hoje,material:'200 panfletos',frentes:['comunicacao','x'],operacaoId:op(),evento:{id:'AG-1',titulo:'Ação na escola',data:mais(2)}};
 const l1=run('salvarLembreteCPT(l)').lembrete;assert.deepEqual(l1.frentes,['comunicacao']);
 run("salvarLembreteCPT({tipo:'acao',titulo:'Divulgar',data:'"+mais(-2)+"',frentes:['comunicacao'],operacaoId:'"+op()+"'})");run("salvarLembreteCPT({tipo:'acao',titulo:'Depois',data:'"+mais(20)+"',frentes:['comunicacao'],operacaoId:'"+op()+"'})");
 assert.throws(()=>run("salvarLembreteCPT({titulo:'Sem destino',data:'"+hoje+"',operacaoId:'"+op()+"'})"),/para quem é a tarefa/);
 assert.throws(()=>run("salvarLembreteCPT({tipo:'acao',titulo:'',data:'"+hoje+"',operacaoId:'"+op()+"'})"),/tarefa/);
 email='atd@example.com';assert.equal(run('contarAvisosCPT()').lembretes,0,'não é da Comunicação');email='com@example.com';assert.equal(run('contarAvisosCPT()').lembretes,2,'hoje + atrasado');
-run("concluirLembreteCPT({id:'"+l1.id+"',operacaoId:'"+op()+"'})");assert.equal(run('contarAvisosCPT()').lembretes,1);
+run("ColecaoCPT.executar('lembretes.concluir',ctx=>new LembretesCPT(ctx).concluir({id:'"+l1.id+"',operacaoId:'"+op()+"'}),true)");assert.equal(run('contarAvisosCPT()').lembretes,1);
 email='social@example.com';assert.equal(run('listarMateriaisCPT()').podeEditar,false);
 email='com@example.com';
 assert.throws(()=>run("salvarMaterialCPT({titulo:'Post',tipo:'Publicação em rede social',url:'javascript:alert(1)',operacaoId:'"+op()+"'})"),/https/);

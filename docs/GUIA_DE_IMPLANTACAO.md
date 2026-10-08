@@ -23,6 +23,29 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Versão final 2.49.1 — colocar no ar e mostrar para a equipe (≈ 10 min)
+
+Revisão das duas últimas entregas (2.48.1 e 2.49.0) feita: sem erros de lógica; textos sem "(s)"; quatro funções do servidor que nenhuma tela usava mais foram retiradas (a lista antiga de relatos da gestão, a lista de comentários e duas de lembretes; as regras continuam testadas). Nenhum arquivo novo, nenhuma permissão nova.
+
+**1. Atualizar (≈ 2 min)**
+1. Abra https://shell.cloud.google.com com a conta @veolia.com.
+2. `bash ~/atualizar.sh conferir` para ver o que muda; depois `bash ~/atualizar.sh aplicar`.
+3. Abra a aplicação (recarregue a página) e confira o selo **2.49** ao lado de CPT, no menu.
+
+**2. Antes de mostrar (≈ 5 min, só na primeira vez)**
+1. **Equipe e acessos:** cada pessoa ativa e com o papel certo (cadastros e papéis continuam só com você).
+2. **Conectores e pastas:** as pastas marcadas "Abrir e compartilhar" precisam estar compartilhadas com o domínio como **Leitor**, senão as fotos e documentos não abrem para a equipe. Esse compartilhamento é você quem faz, no Drive.
+3. **Liberar para a equipe** (se ainda não fez): no editor do Apps Script, `PerfisCPT.gs` → **`liberarParaEquipeCPT`** → Executar. Libera o visual novo, os mascotes, o quiz e as ações da gerência para Gestão e Administrativo. Para voltar: `travarConfiguracaoCPT`.
+4. Peça para todos **recarregarem a página**.
+
+**3. Roteiro sugerido para apresentar (≈ 15 min)**
+1. **Meu espaço:** o mascote, o checklist do dia com as missões automáticas, recados e lembretes.
+2. **Registrar o trabalho:** o formulário de campo e o caminho até **Relatos** (pontos para melhorar e o guia do bom relato).
+3. **Relatos → Para o relatório** e **Diagnósticos:** revisão e geração do relato ilustrado, da ficha Sabesp e da apresentação, como na Central.
+4. **Atendimentos:** a ficha completa, observações e fichas oficiais.
+5. **Visão do mês:** resumo, cronograma, contrato, frentes, qualidade dos relatos e **Entregas do mês** (planilha de controle, Anexos e Programa Parceiros).
+6. **Obras, mapa e contatos.** No fim, **Como usar** traz a rotina do mês: onde fica cada entrega.
+
 ## Atualização 2.49.0 — Visão do mês reorganizada (≈ 1 min)
 
 1. Atualização de sempre (Cloud Shell, `instalarAplicacaoCPT` → `versao: 2.49.0`, Nova versão). Nenhum arquivo novo, nenhuma permissão nova, nenhum dado muda de lugar.

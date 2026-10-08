@@ -129,10 +129,10 @@ email='social@example.com';ctx.v={registroId:RELS,comentario:'Faltou dizer o que
 email='adm@example.com';props.set('CPT_TRAVA_CONFIG','travada');assert.throws(()=>run('devolverRelatoCPT(v)'),/período de testes/);props.set('CPT_TRAVA_CONFIG','liberada');
 r=run('devolverRelatoCPT(v)');assert.match(r.resultado,/só para Social/);
 ctx.v2={registroId:registros.rows[1][0],comentario:'Ok',operacaoId:'OP-devolutiva-0002'};assert.match(run('devolverRelatoCPT(v2)').resultado,/combine pessoalmente/);
-email='atd@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.length,0,'outras pessoas não veem');
-email='social@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.length,1,'autor vê só a sua');ms=run('missoesCPT()').missoes;const dev=ms.find(m=>m.tipo==='devolutiva');assert.match(dev.devolutiva.comentario,/combinado/);
+email='atd@example.com';assert.equal(run("ColecaoCPT.executar('relatos.devolutivas',ctx=>({devolutivas:new RelatosCPT(ctx).visiveis()}))").devolutivas.length,0,'outras pessoas não veem');
+email='social@example.com';assert.equal(run("ColecaoCPT.executar('relatos.devolutivas',ctx=>({devolutivas:new RelatosCPT(ctx).visiveis()}))").devolutivas.length,1,'autor vê só a sua');ms=run('missoesCPT()').missoes;const dev=ms.find(m=>m.tipo==='devolutiva');assert.match(dev.devolutiva.comentario,/combinado/);
 ctx.v={registroId:RELS,resposta:'Vou completar no próximo.',versao:dev.devolutiva.versao,operacaoId:'OP-devolutiva-0003'};assert.match(run('responderDevolutivaCPT(v)').resultado,/visto/);
-assert(!run('missoesCPT()').missoes.some(m=>m.tipo==='devolutiva'));email='adm@example.com';assert.equal(run('minhasDevolutivasCPT()').devolutivas.find(d=>d.registroId===RELS).resposta,'Vou completar no próximo.');
+assert(!run('missoesCPT()').missoes.some(m=>m.tipo==='devolutiva'));email='adm@example.com';assert.equal(run("ColecaoCPT.executar('relatos.devolutivas',ctx=>({devolutivas:new RelatosCPT(ctx).visiveis()}))").devolutivas.find(d=>d.registroId===RELS).resposta,'Vou completar no próximo.');
 // Preparo: a 5 dias do prazo (padrão dia 5 do mês seguinte), Socioambiental recebe a missão dos relatos não preparados.
 email='social@example.com';ctx.relogio('2026-10-31T13:00:00Z');
 // Relato grande com detalhes em arquivo à parte: a conferência lê o arquivo (sem ele, acusaria falta de tudo).
