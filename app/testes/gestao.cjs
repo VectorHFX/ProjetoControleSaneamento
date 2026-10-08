@@ -144,6 +144,11 @@ console.log('PASS: auditoria — recebidos parados, acima de 30 dias, sem próxi
 email='gestao@example.com';assert.throws(()=>run('conferirConectoresCPT()'),/administração técnica/);assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'https://docs.google.com/spreadsheets/d/NOVOIDNOVOIDNOVOIDNOVOID123/edit'})"),/administração técnica/);
 email='victor@example.com';const c=run('conferirConectoresCPT()');assert.equal(c.travada,true);assert.equal(c.conectores.length,6);assert.ok(c.conectores.every(x=>x.ok));
 assert.ok(c.pastas.some(x=>x.nome==='Fotos (File responses)'&&x.equipeVe===true),'pasta das fotos encontrada pelos registros');
+// 3.0: as pastas de relatos, diagnósticos e fichas entram na lista quando já existem; só o proprietário = aviso.
+{const cfg=JSON.parse(props.get('CPT_APLICACAO_1'));Object.assign(cfg,{relatosRelatorioPastaId:'PASTA-RELATOS',diagnosticosPastaId:'PASTA-DIAG',pastaFichasV2Id:'PASTA-FICHAS'});props.set('CPT_APLICACAO_1',JSON.stringify(cfg));
+ const c3=run('conferirConectoresCPT()');assert.deepEqual(['PASTA-RELATOS','PASTA-DIAG','PASTA-FICHAS'].map(id=>{const x=c3.pastas.find(y=>y.id===id);return x&&x.equipeVe===false&&x.texto==='Só o proprietário';}),[true,true,true],'pastas novas listadas, ainda sem compartilhar');
+ ['relatosRelatorioPastaId','diagnosticosPastaId','pastaFichasV2Id'].forEach(k=>delete cfg[k]);props.set('CPT_APLICACAO_1',JSON.stringify(cfg));}
+assert.deepEqual(run("ConectoresCPT.acesso({getSharingAccess:()=>'PRIVATE',getSharingPermission:()=>'NONE',getViewers:()=>[{}],getEditors:()=>[]})"),{equipeVe:true,texto:'Compartilhada com 1 pessoa ou grupo (confira se a equipe toda está)'},'grupo da equipe vale');
 run("configurarConectorCPT({chave:'rdas',id:'https://docs.google.com/spreadsheets/d/NOVOIDNOVOIDNOVOIDNOVOID123/edit#gid=0'})");assert.equal(JSON.parse(props.get('CPT_CONECTORES')).rdas.id,'NOVOIDNOVOIDNOVOIDNOVOID123');
 assert.throws(()=>run("configurarConectorCPT({chave:'rdas',id:'sem-acesso-sem-acesso-123'})"),/não abre/);
 run('liberarConfiguracaoCPT()');email='gestao@example.com';assert.equal(run('listarObrasCPT()').gerencia,true,'liberada: gerência edita obras');run('travarConfiguracaoCPT()');assert.equal(run('listarObrasCPT()').gerencia,false,'travada: só o proprietário');

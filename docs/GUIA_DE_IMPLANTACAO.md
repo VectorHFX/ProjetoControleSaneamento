@@ -23,6 +23,32 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Versão de lançamento 3.0.0 — acabamento final, plantas, relógio do joguinho e check-up (≈ 1 min)
+
+1. Atualização de sempre (Cloud Shell: `bash ~/atualizar.sh aplicar`). Nenhum arquivo novo e nenhuma permissão nova.
+2. **Meu espaço:**
+   - O mascote fica parado na recepção (também no guarda-roupa e na escolha de mascote).
+   - As plantas da parede balançam com uma brisa mais visível (antes era menos de meio grau e quase não se via).
+   - Cada camada de folhas é um desenho próprio que a placa de vídeo move. O cenário não é redesenhado a cada quadro, o que deixa o notebook mais leve.
+3. **Joguinho "O caminho do esgoto", fase da casa:** agora há um relógio visível ao lado de cada item.
+   - Um anel com os segundos (12, 11, 10…) e uma barra que encolhe.
+   - Fica amarelo nos 5 últimos segundos e vermelho nos 3 últimos.
+   - Ao zerar, conta como "O tempo acabou" e mostra o porquê do item.
+   - O relógio é movido pelo próprio app, então aparece mesmo com as animações desligadas.
+4. **Aparição mais rápida:** a entrada das telas ficou mais curta. Os cartões chegam em cascata em cerca de 0,6 s (antes, cerca de 1,2 s).
+5. **Conectores e pastas** (Como usar → Conectores e pastas):
+   - A lista de "Pastas que a equipe precisa enxergar" passa a incluir **CPT • Relatos do relatório**, **CPT • Diagnósticos** e **CPT • Fichas oficiais da Sabesp**. Cada uma aparece depois de gerada pela primeira vez.
+   - Pasta compartilhada com o grupo da equipe ou com pessoas conta como compartilhada (bolinha verde), com o lembrete "confira se a equipe toda está".
+6. **Organograma no celular:** a lista "Pessoas no organograma" rola dentro do quadro. Antes, ela empurrava a tela para o lado.
+7. **Selo "3.0"** dourado no menu, para marcar o lançamento.
+8. **Check-up final:**
+   - Todas as telas e abas foram conferidas no claro, no escuro, no computador e no celular: sem erro, sem texto quebrado e sem rolagem lateral.
+   - Velocidade: cada tela faz uma só consulta ao servidor, e a abertura usa os números já guardados.
+   - O código vai compactado: cerca de 236 KB pela rede.
+9. **Se as plantas não se mexerem** num computador, é porque o movimento está desligado. O app respeita isso. Confira:
+   - Em Como usar, "Reduzir movimentos e animações" deve estar desmarcado.
+   - No Windows, em Configurações → Acessibilidade → Efeitos visuais, os "Efeitos de animação" devem estar ligados.
+
 ## Atualização 2.51.0 — joguinho "O caminho do esgoto", com o mascote (≈ 1 min)
 
 1. Atualização de sempre (Cloud Shell: `bash ~/atualizar.sh aplicar`). Nenhum arquivo novo, nenhuma permissão nova. As partidas ficam na mesma coleção "Jogos".

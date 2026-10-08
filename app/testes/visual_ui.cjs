@@ -32,7 +32,10 @@ const {chromium}=require('playwright'),assert=require('assert'),path=require('pa
   assert.ok(topo,'o texto do "i" fica por cima do conteúdo');await p.locator('#view .intro-info summary').click();
   // 4. Meu espaço: o mascote na recepção (parede ripada, plantas, luminárias, placa), pontos que contam e folhas comemorando.
   await p.locator('.nav-item[data-route=meuespaco]').first().click();await p.locator('.welcome-pets').waitFor();await p.locator('[data-esp-especie=urso]').click();await p.locator('#espInicio [type=submit]').click();
-  await p.locator('.space-hero.v3-cena-host .v3-cena').waitFor();assert.equal(await p.locator('.v3-cena .v3-placa').count(),0,'2.34.1: sem a plaquinha da gota no canto');assert.equal(await p.locator('.v3-cena .v3-lumi').count(),2);assert.ok(await p.locator('.v3-cena .v3-brisa path').count()>100,'parede de plantas');
+  await p.locator('.space-hero.v3-cena-host .v3-cena').waitFor();assert.equal(await p.locator('.v3-cena .v3-placa').count(),0,'2.34.1: sem a plaquinha da gota no canto');assert.equal(await p.locator('.v3-cena .v3-lumi').count(),2);assert.ok(await p.locator('.space-hero .v3-plantas .v3-brisa path').count()>100,'parede de plantas');
+  // 3.0: as plantas balançam (camadas próprias) e o mascote do Meu espaço fica parado.
+  assert.deepEqual(await p.evaluate(()=>[...document.querySelectorAll('.space-hero .v3-brisa')].map(e=>getComputedStyle(e).animationName)),['v3-brisa-fundo','v3-brisa-meio','v3-brisa-frente'],'plantas com brisa');
+  assert.equal(await p.evaluate(()=>[...document.querySelectorAll('.space-hero .hero-pet, .space-hero .hero-pet *')].flatMap(e=>e.getAnimations()).length),0,'mascote parado no Meu espaço');
   // 2.26: mascote maior em frente ao quadro da parede (paisagem sem foto no álbum) e caderno marrom que abre uma vez.
   assert.equal(await p.locator('.space-hero.com-quadro .hero-pet .pet-quadro .quadro-paisagem').count(),1,'quadro com paisagem');assert.match(await p.locator('.quadro-placa').textContent(),/Santo André/);
   assert.ok((await p.locator('.space-hero .hero-pet .mascot-svg').boundingBox()).width>=300,'mascote maior');

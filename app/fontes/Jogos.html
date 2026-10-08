@@ -105,11 +105,28 @@ window.CPTJogos = (() => {
   const seguir = rotulo => `<div class="dialog-actions"><button class="button" data-cam-seguir data-cam-foco>${ui.esc(rotulo)} ${ui.icon('arrow')}</button></div>`;
   /** Desenha a fase atual. foco: seletor que recebe o foco depois (teclado continua de onde estava). */
   function caminho(foco) {
-    clearTimeout(relogio); if (!cam) return;
+    pararRelogio(); if (!cam) return;
     const f = cam.fase, corpo = f === 'casa' ? faseCasa() : f === 'rua' ? faseRua() : f === 'estacao' ? faseEstacao() : faseRio();
     janela(INFO.caminho.nome, `<div class="cam">${trilha(f)}${corpo}</div>`);
     const alvo = $('detailContent').querySelector(foco || '[data-cam-foco]'); if (alvo) alvo.focus({preventScroll: !foco});
-    if (f === 'casa' && !cam.retorno) relogio = setTimeout(() => responderCasa(null), TEMPO * 1000);
+    if (f === 'casa' && !cam.retorno) iniciarRelogio();
+  }
+  /** 3.0: contagem visível dos segundos (anel com número e barra), atualizada pelo código: aparece mesmo com as animações
+   *  do sistema desligadas. Nos últimos segundos muda de cor. Ao zerar, conta como "o tempo acabou". */
+  function pararRelogio() { clearInterval(relogio); relogio = null; }
+  function iniciarRelogio() {
+    const box = $('detailContent'), cartao = box.querySelector('.cam-cartao'), seg = box.querySelector('[data-cam-seg]'), anel = box.querySelector('.cam-relogio-anel'), barra = box.querySelector('[data-cam-barra]');
+    if (!cartao || !seg) return;
+    const fim = Date.now() + TEMPO * 1000;
+    const passo = () => {
+      if (!cartao.isConnected) { pararRelogio(); return; }
+      const resta = Math.max(0, fim - Date.now()), fr = resta / (TEMPO * 1000), n = Math.ceil(resta / 1000);
+      if (seg.textContent !== String(n)) seg.textContent = n;
+      anel.style.strokeDashoffset = (100 * (1 - fr)).toFixed(1); barra.style.transform = `scaleX(${fr.toFixed(3)})`;
+      cartao.classList.toggle('is-pouco', n <= 5 && n > 3); cartao.classList.toggle('is-fim', n <= 3);
+      if (!resta) { pararRelogio(); responderCasa(null); }
+    };
+    passo(); relogio = setInterval(passo, 100);
   }
   // Fase 1 · Na casa
   function faseCasa() {
@@ -119,12 +136,11 @@ window.CPTJogos = (() => {
       `<div class="cam-cartao ${r.certo ? 'is-certo' : 'is-errado'}"><p class="cam-cartao-titulo">${ui.esc(it.nome)}: ${it.vai ? 'pode ir pelo ralo' : 'não vai pelo ralo'}</p><p>${ui.esc(it.fato)}</p></div>` +
       seguir(cam.i + 1 < n ? 'Próximo' : 'Agora, a rua');
     return palco('pensativo', 'Na casa: isso pode ir pelo ralo ou pelo vaso?') + cont +
-      `<div class="cam-cartao"><p class="cam-cartao-nome">${ui.esc(it.nome)}</p><span class="cam-tempo" aria-hidden="true"><span style="animation-duration:${TEMPO}s"></span></span></div>
-      <div class="cam-escolhas"><button class="button" data-cam-casa="1" data-cam-foco>${ui.icon('drop')} Vai pelo ralo</button><button class="button secondary" data-cam-casa="0">${ui.icon('x')} Não: lixo ou ponto de coleta</button></div>
-      <p class="small muted">${TEMPO} segundos para decidir.</p>`;
+      `<div class="cam-cartao cam-pergunta"><div class="cam-pergunta-linha"><span class="cam-relogio" role="timer" aria-label="Segundos para decidir"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="cam-relogio-fundo" cx="22" cy="22" r="19"/><circle class="cam-relogio-anel" cx="22" cy="22" r="19" pathLength="100" transform="rotate(-90 22 22)"/></svg><b data-cam-seg>${TEMPO}</b></span><p class="cam-cartao-nome">${ui.esc(it.nome)}</p></div><span class="cam-tempo" aria-hidden="true"><span data-cam-barra></span></span></div>
+      <div class="cam-escolhas"><button class="button" data-cam-casa="1" data-cam-foco>${ui.icon('drop')} Vai pelo ralo</button><button class="button secondary" data-cam-casa="0">${ui.icon('x')} Não: lixo ou ponto de coleta</button></div>`;
   }
   function responderCasa(v) {
-    if (!cam || cam.fase !== 'casa' || cam.retorno || !$('detailDialog').open) return; clearTimeout(relogio);
+    if (!cam || cam.fase !== 'casa' || cam.retorno || !$('detailDialog').open) return; pararRelogio();
     const certo = v === p.itens[cam.i].vai; cam.respostas.push(v); if (certo) cam.acertos++;
     cam.retorno = {certo, tempo: v === null}; caminho();
   }
@@ -265,7 +281,7 @@ window.CPTJogos = (() => {
     });
     document.addEventListener('submit', ev => { if (ev.target.id === 'camOpiniao' && cam) { ev.preventDefault(); enviarOpiniao(ev.target); } });
     // Fechou a janela: o relógio da casa para (a partida continua aberta e recomeça ao jogar de novo).
-    const dlg = $('detailDialog'); if (dlg) dlg.addEventListener('close', () => { clearTimeout(relogio); cam = null; });
+    const dlg = $('detailDialog'); if (dlg) dlg.addEventListener('close', () => { pararRelogio(); cam = null; });
     // Teclado físico na forca.
     document.addEventListener('keydown', ev => {
       if (!p || p.jogo !== 'forca' || !$('detailDialog').open || enviando || !document.querySelector('.forca-teclado')) return;

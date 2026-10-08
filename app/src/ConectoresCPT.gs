@@ -33,8 +33,9 @@ class ConectoresCPT {
       const a = String(arquivo.getSharingAccess()), p = String(arquivo.getSharingPermission());
       if (/DOMAIN/.test(a)) return {equipeVe: /VIEW|COMMENT|EDIT/.test(p), texto: 'Compartilhada com o domínio (' + (/EDIT/.test(p) ? 'edição' : 'leitura') + ')'};
       if (/ANYONE/.test(a)) return {equipeVe: true, texto: 'Aberta para quem tiver o link'};
+      // 3.0: compartilhada com pessoas ou com o grupo da equipe também vale (a conta proprietária confere quem está na lista).
       const pessoas = arquivo.getViewers().length + arquivo.getEditors().length;
-      return {equipeVe: false, texto: pessoas ? 'Restrita a ' + DadosDaAplicacao.plural(pessoas, 'pessoa', 'pessoas') : 'Só o proprietário'};
+      return pessoas ? {equipeVe: true, texto: 'Compartilhada com ' + DadosDaAplicacao.plural(pessoas, 'pessoa ou grupo', 'pessoas ou grupos') + ' (confira se a equipe toda está)'} : {equipeVe: false, texto: 'Só o proprietário'};
     } catch (_) { return {equipeVe: null, texto: 'Não foi possível ler o compartilhamento'}; }
   }
   constructor(ctx) { this.ctx = ctx; }
@@ -55,8 +56,8 @@ class ConectoresCPT {
     return {conectores, pastas: this.pastasParaCompartilhar(), travada: PerfisCPT.travada()};
   }
   /**
-   * Pastas que a equipe precisa enxergar: onde o formulário guarda as fotos (amostra dos registros recentes)
-   * e a pasta com o que a aplicação gerou até a 2.26 (relatórios, anexos e fichas).
+   * Pastas que a equipe precisa enxergar: onde o formulário guarda as fotos (amostra dos registros recentes),
+   * a pasta com o que a aplicação gerou até a 2.26 e, desde a 3.0, as pastas de relatos, diagnósticos e fichas oficiais.
    */
   pastasParaCompartilhar() {
     const out = new Map(), anotar = (pasta, motivo) => {
@@ -75,6 +76,9 @@ class ConectoresCPT {
     } catch (_) {}
     try { const c = AplicacaoCPT.config(); if (c.pastaEntregasId) anotar(DriveApp.getFolderById(c.pastaEntregasId), 'Arquivo: relatórios, anexos e fichas gerados pela aplicação até a 2.26'); } catch (_) {}
     try { const c = AplicacaoCPT.config(); if (c.pastaExtrasId) anotar(DriveApp.getFolderById(c.pastaExtrasId), 'Fotos extras enviadas pela Comunicação na galeria'); } catch (_) {}
+    // 3.0: as pastas organizadas que a aplicação cria (aparecem depois de gerar a primeira vez).
+    [['relatosRelatorioPastaId', 'Relatos ilustrados do relatório (FINAL e ORIGINAL, Docs e PDF)'], ['diagnosticosPastaId', 'Diagnósticos por obra, ficha Sabesp e apresentação'], ['pastaFichasV2Id', 'Fichas oficiais da Sabesp e pacote do mês']]
+      .forEach(([chave, motivo]) => { try { const id = AplicacaoCPT.config()[chave]; if (id) anotar(DriveApp.getFolderById(id), motivo); } catch (_) {} });
     return [...out.values()];
   }
   configurar(p) {

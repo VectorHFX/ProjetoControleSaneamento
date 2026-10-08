@@ -14,7 +14,10 @@ const dir=(a,b)=>b[0]<a[0]?0:b[1]>a[1]?1:b[0]>a[0]?2:3,lados=(t,g)=>t==='reta'?[
   // Proprietário: cartão em destaque, liberado (sem meta), com o resumo do teste.
   await espaco('?latencia=20');const card=p.locator('.jogo-card.is-destaque');assert.match(await card.textContent(),/O caminho do esgoto[\s\S]*Novo · em teste/);assert.equal(await card.locator('[data-cam-teste]').count(),1);
   // 1. Casa: um erro de propósito (explicação aparece, mascote triste), o resto certo.
-  await p.locator('[data-jogo-abrir=caminho]').click();await p.locator('.cam-trilha li.is-agora',{hasText:'Casa'}).waitFor();assert.equal(await p.locator('.cam-tempo span').count(),1,'relógio da decisão');
+  await p.locator('[data-jogo-abrir=caminho]').click();await p.locator('.cam-trilha li.is-agora',{hasText:'Casa'}).waitFor();assert.equal(await p.locator('.cam-relogio[role=timer] [data-cam-seg]').textContent(),'12','relógio começa nos 12 segundos');
+  // 3.0: os segundos correm no anel e a barra encolhe (movidos pelo código, valem mesmo com as animações desligadas).
+  await p.waitForFunction(()=>+document.querySelector('[data-cam-seg]').textContent<=10,null,{timeout:5000});
+  assert.ok(await p.evaluate(()=>{const m=getComputedStyle(document.querySelector('[data-cam-barra]')).transform;return m!=='none'&&+m.split(/[(,]/)[1]<.9;}),'a barra encolhe');
   assert.ok(await p.locator('.cam-mascote svg.chibi').count()===1,'o mascote da pessoa é o personagem');
   for(let i=0;i<8;i++){const nome=(await p.locator('.cam-cartao-nome').textContent()).trim(),vai=VAI.includes(nome),certo=i!==0;
     await p.locator(`[data-cam-casa="${(certo?vai:!vai)?1:0}"]`).click();await p.locator('[data-cam-seguir]').waitFor();
@@ -43,10 +46,14 @@ const dir=(a,b)=>b[0]<a[0]?0:b[1]>a[1]?1:b[0]>a[0]?2:3,lados=(t,g)=>t==='reta'?[
   await p.locator('#closeDialog').click();await p.locator('[data-cam-teste]').click();await p.locator('#detailContent .stat-row').waitFor();const rs=await p.locator('#detailContent').textContent();
   assert.match(rs,/Partidas[\s\S]*Diversão[\s\S]*O que mais confunde na casa[\s\S]*Trocas mais comuns na estação[\s\S]*O que mudariam/);assert.doesNotMatch(rs,/Victor|@example/);await foto('caminho-6-teste');await p.locator('#closeDialog').click();
   // 6. Fechar no meio para o relógio e recomeça a partida aberta; celular sem rolagem lateral; tema escuro.
+  // 3.0: sem resposta, o anel fica vermelho nos últimos segundos e, ao zerar, conta como "o tempo acabou" (com a explicação).
+  await p.locator('[data-jogo-abrir=caminho]').click();await p.locator('.cam-cartao-nome').waitFor();await p.locator('.cam-pergunta.is-pouco').waitFor({timeout:9000});await foto('caminho-0-relogio');
+  await p.locator('.cam-pergunta.is-fim').waitFor({timeout:4000});await p.locator('.cam-fala',{hasText:'O tempo acabou'}).waitFor({timeout:5000});assert.equal(await p.locator('.cam-cartao.is-errado').count(),1);
+  assert.equal(await p.locator('[data-cam-seg]').count(),0,'relógio some com a resposta');await p.locator('#closeDialog').click();await p.waitForTimeout(200);
   await p.locator('[data-jogo-abrir=caminho]').click();await p.locator('.cam-cartao-nome').waitFor();await p.locator('#closeDialog').click();await p.waitForTimeout(200);
   await p.setViewportSize({width:390,height:844});await p.locator('[data-jogo-abrir=caminho]').click();await p.locator('.cam-cartao-nome').waitFor();assert.match(await p.locator('.cam-contador').textContent(),/^1 de 8/,'recomeça do início');
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'sem rolagem lateral no celular');await foto('caminho-7-celular');
   await p.locator('#closeDialog').click();await p.locator('#theme').selectOption('dark');await p.locator('[data-jogo-abrir=caminho]').click();await p.locator('.cam-cartao-nome').waitFor();await foto('caminho-8-escuro');
   assert.deepEqual(errors,[]);await b.close();
-  console.log('PASS: caminho do esgoto na tela — cartão em destaque, mascote como personagem (triste no erro), casa com relógio e explicação, rua com a água avançando até travar resolvida, estação com erro e ordem certa, rio com estrelas e +5, opinião obrigatória nas notas e sem nome, resumo do teste sem nomes, recomeço ao fechar, celular e tema escuro.');
+  console.log('PASS: caminho do esgoto na tela — cartão em destaque, mascote como personagem (triste no erro), casa com relógio (segundos no anel, barra, tempo esgotado) e explicação, rua com a água avançando até travar resolvida, estação com erro e ordem certa, rio com estrelas e +5, opinião obrigatória nas notas e sem nome, resumo do teste sem nomes, recomeço ao fechar, celular e tema escuro.');
 })().catch(e=>{console.error(e);process.exit(1);});

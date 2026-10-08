@@ -978,7 +978,7 @@ html[data-visual=v3] .identity-name{color:#fffdf8}
 html[data-visual=v3] .identity>span:not(.identity-name){color:var(--parede-suave)}
 /* Gota d'água (azul, com brilho) — a vermelha parecia sangue */
 html[data-visual=v3] .brand-drop{background:radial-gradient(circle at 36% 62%,#ffffffcc 0 11%,transparent 12%),linear-gradient(165deg,#bfeaf7 0%,#5bb6dc 45%,#2a86b8 100%);box-shadow:none}
-html[data-visual=v3] .version{background:#ffffff1f;color:#f7efe0}
+html[data-visual=v3] .version{background:linear-gradient(135deg,#ffe2a3,#e9a23b);color:#3a2708;box-shadow:0 1px 0 #ffffff55 inset} /* 3.0: selo de lançamento */
 html[data-visual=v3] .nav-group-head,html[data-visual=v3] .nav-caption{color:color-mix(in srgb,var(--parede-tinta) 70%,transparent)}
 html[data-visual=v3] .nav-group-head:hover{background:#ffffff12;color:#fff}
 html[data-visual=v3] .nav-item{color:var(--parede-tinta);font-weight:600;border-radius:12px;transition:background .2s var(--ease),color .2s,transform .2s var(--ease)}
@@ -1083,8 +1083,12 @@ html[data-visual=v3] .space-hero .hero-pet .mascot-art{filter:drop-shadow(0 14px
 html[data-visual=v3] .v3-camada{transform:translate(calc(var(--px,0) * var(--k,0) * 1px),calc(var(--py,0) * var(--k,0) * .5px));transition:transform .5s var(--ease)}
 html[data-visual=v3] .v3-cena-host .hero-pet{transform:translate(calc(var(--px,0) * 10px),calc(var(--py,0) * 4px));transition:transform .5s var(--ease)}
 
-html[data-visual=v3] .v3-brisa{transform-box:fill-box;transform-origin:50% 100%}
-html[data-visual=v3] .v3-brisa-1{animation:v3-brisa-folhas 13s ease-in-out infinite}html[data-visual=v3] .v3-brisa-2{animation:v3-brisa-folhas 10s ease-in-out infinite reverse}html[data-visual=v3] .v3-brisa-3{animation:v3-brisa-frente 7.5s ease-in-out infinite}
+/* 3.0: plantas em camadas próprias (brisa na placa de vídeo, sem redesenhar o cenário) e mascote parado no Meu espaço */
+.space-hero>.v3-plantas{position:absolute;inset:0;z-index:0;pointer-events:none;transform:translate(calc(var(--px,0) * -9px),calc(var(--py,0) * -4.5px));transition:transform .5s var(--ease)}
+.v3-plantas .v3-brisa{position:absolute;inset:0;width:100%;height:100%;transform-origin:50% 100%;will-change:transform}
+html[data-visual=v3] .v3-brisa-1{animation:v3-brisa-fundo 12s ease-in-out infinite}html[data-visual=v3] .v3-brisa-2{animation:v3-brisa-meio 9s ease-in-out -3s infinite}html[data-visual=v3] .v3-brisa-3{animation:v3-brisa-frente 7s ease-in-out -1.5s infinite}
+.space-hero .hero-pet .mascot-svg,.space-hero .hero-pet .mascot-svg *,.wardrobe .mascot-svg *,.pet-option .mascot-svg *{animation:none!important}
+html[data-visual=v3] .v3-cena-host .hero-pet{transform:none}
 html[data-visual=v3] .v3-lumi{animation:v3-pendulo 7s ease-in-out infinite}html[data-visual=v3] .v3-lumi:nth-of-type(2){animation-duration:8.5s;animation-delay:-2s}
 
 /* ---------- Celular: barra de atalhos de vidro claro e gaveta verde ---------- */
@@ -1097,15 +1101,17 @@ html[data-visual=v3] .tab-item.active{color:var(--blue)}html[data-visual=v3] .ta
 @keyframes v3-balanca{0%,100%{transform:rotate(-2.6deg)}50%{transform:rotate(2.6deg)}}
 @keyframes v3-pendulo{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
 @keyframes v3-brisa{0%,100%{transform:skewX(0deg)}50%{transform:skewX(-1.6deg)}}
-@keyframes v3-brisa-folhas{0%,100%{transform:rotate(-.35deg)}50%{transform:rotate(.45deg)}}
-@keyframes v3-brisa-frente{0%,100%{transform:rotate(-.8deg) translateX(-2px)}50%{transform:rotate(.9deg) translateX(2px)}}
+@keyframes v3-brisa-fundo{0%,100%{transform:skewX(.5deg)}50%{transform:skewX(-.8deg) translateX(3px)}}
+@keyframes v3-brisa-meio{0%,100%{transform:skewX(-1deg) translateX(-2px)}50%{transform:skewX(1.1deg) translateX(3px)}}
+@keyframes v3-brisa-frente{0%,100%{transform:skewX(-1.5deg) translateX(-3px)}50%{transform:skewX(1.4deg) translateX(4px)}}
 @keyframes v3-pulso{0%{transform:scale(1)}35%{transform:scale(1.28);color:var(--accent)}100%{transform:scale(1)}}
 @keyframes v3-voa{0%{transform:translate(-50%,-50%) scale(.3) rotate(0);opacity:0}12%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 140px)) scale(1) rotate(var(--rot));opacity:0}}
 @keyframes v3-marca{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
-html[data-visual=v3] #view[data-entrando]>*{animation:v3-sobe .46s var(--ease) both}
-html[data-visual=v3] #view .v3-novo{animation:v3-sobe .42s var(--ease) both;animation-delay:calc(var(--i,0) * 40ms)}
-html[data-visual=v3] #view[data-entrando]>*:nth-child(2){animation-delay:.05s}html[data-visual=v3] #view[data-entrando]>*:nth-child(3){animation-delay:.1s}html[data-visual=v3] #view[data-entrando]>*:nth-child(n+4){animation-delay:.15s}
-html[data-visual=v3] #view[data-entrando] :is(.kpi,.stat-tile,.home-cards>.panel,.album-foto,.jogo-card,.entry-card,.list-row:not(.list-head),.entrega-card,.missao,.wardrobe-item){animation:v3-sobe .5s var(--ease) both;animation-delay:calc(var(--i,0) * 45ms + 120ms)}
+/* 3.0: entrada mais curta (o conteúdo aparece antes): cascata de 25 ms, no máximo 10 passos, ~0,6 s no total */
+html[data-visual=v3] #view[data-entrando]>*{animation:v3-sobe .36s var(--ease) both}
+html[data-visual=v3] #view .v3-novo{animation:v3-sobe .34s var(--ease) both;animation-delay:calc(var(--i,0) * 25ms)}
+html[data-visual=v3] #view[data-entrando]>*:nth-child(2){animation-delay:.03s}html[data-visual=v3] #view[data-entrando]>*:nth-child(3){animation-delay:.06s}html[data-visual=v3] #view[data-entrando]>*:nth-child(n+4){animation-delay:.09s}
+html[data-visual=v3] #view[data-entrando] :is(.kpi,.stat-tile,.home-cards>.panel,.album-foto,.jogo-card,.entry-card,.list-row:not(.list-head),.entrega-card,.missao,.wardrobe-item){animation:v3-sobe .38s var(--ease) both;animation-delay:calc(var(--i,0) * 25ms + 60ms)}
 html[data-visual=v3] .v3-pulso{display:inline-block;animation:v3-pulso .6s var(--ease)}
 html[data-visual=v3] .check-list input:checked{animation:v3-marca .32s var(--ease)}
 html[data-visual=v3] .check-list li span{transition:color .3s,opacity .3s}
@@ -1115,10 +1121,10 @@ html[data-visual=v3] .check-list li span{transition:color .3s,opacity .3s}
 html[data-visual=v3][data-motion=reduce] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-novo,.v3-pulso,dialog[open],.check-list input){animation:none!important}
 html[data-visual=v3][data-motion=reduce] .sidebar-art::before,html[data-visual=v3][data-motion=reduce] .page-intro::after{animation:none!important}
 html[data-visual=v3][data-motion=reduce] :is(.button,.stat-tile,.entry-card,.album-foto,.jogo-card,.nav-item .icon){transition:none!important;transform:none!important}
-html[data-visual=v3][data-motion=reduce] :is(.v3-camada,.hero-pet){transform:none!important}
+html[data-visual=v3][data-motion=reduce] :is(.v3-camada,.hero-pet,.v3-plantas){transform:none!important}
 @media (prefers-reduced-motion:reduce){
   html[data-visual=v3] :is(.v3-folha,.v3-brisa,.v3-lumi,#view[data-entrando] *,#view[data-entrando]>*,.v3-novo,.v3-pulso,dialog[open],.check-list input),html[data-visual=v3] .sidebar-art::before,html[data-visual=v3] .page-intro::after{animation:none!important}
-  html[data-visual=v3] :is(.v3-camada,.hero-pet){transform:none!important}
+  html[data-visual=v3] :is(.v3-camada,.hero-pet,.v3-plantas){transform:none!important}
   html[data-visual=v3] :is(.button,.stat-tile,.entry-card,.album-foto,.jogo-card,.nav-item .icon){transition:none!important;transform:none!important}}
 /* ============ 2.25 · Acabamento do visual novo: ícones de traço (no lugar dos emojis) e cores harmonizadas ============ */
 html[data-visual=v3] .ic{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.18em;stroke-width:1.9;flex:none}
@@ -1583,8 +1589,15 @@ html[data-theme=dark] .destaque.is-down strong{color:#f0b07a}
 .cam-cartao{padding:14px 16px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface)}.cam-cartao p{margin:0;line-height:1.5}
 .cam-cartao.is-certo{border-color:#5aa86a;background:color-mix(in srgb,#5aa86a 12%,var(--surface))}.cam-cartao.is-errado{border-color:#d07a4a;background:color-mix(in srgb,#d07a4a 12%,var(--surface))}
 .cam-cartao-nome{font:800 24px var(--font-display);text-align:center;padding:8px 0 12px}.cam-cartao .cam-cartao-titulo{font-weight:800;margin-bottom:4px}
-.cam-tempo{display:block;height:6px;border-radius:6px;background:var(--soft);overflow:hidden}.cam-tempo span{display:block;height:100%;background:#58b6e6;transform-origin:left;animation:camTempo linear forwards}
-@keyframes camTempo{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* 3.0: relógio da casa (anel com os segundos + barra), movido pelo código; amarelo nos 5 últimos segundos e vermelho nos 3 */
+.cam-pergunta{--cam-cor:#2b93c9}.cam-pergunta.is-pouco{--cam-cor:#d99a12}.cam-pergunta.is-fim{--cam-cor:#d4502b;border-color:color-mix(in srgb,#d4502b 45%,var(--line))}
+.cam-pergunta-linha{display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0 12px}.cam-pergunta .cam-cartao-nome{padding:0;text-align:left}
+.cam-relogio{position:relative;flex:none;display:grid;place-items:center;width:52px;height:52px}.cam-relogio svg{position:absolute;inset:0;width:100%;height:100%}
+.cam-relogio-fundo{fill:color-mix(in srgb,var(--cam-cor) 10%,var(--surface));stroke:var(--soft);stroke-width:5}
+.cam-relogio-anel{fill:none;stroke:var(--cam-cor);stroke-width:5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0;transition:stroke-dashoffset .1s linear,stroke .3s}
+.cam-relogio b{position:relative;font:800 19px/1 var(--font-display);color:var(--cam-cor);font-variant-numeric:tabular-nums}
+.cam-pergunta.is-fim .cam-relogio{animation:camPulso .5s ease-in-out infinite alternate}@keyframes camPulso{to{transform:scale(1.08)}}
+.cam-tempo{display:block;height:6px;border-radius:6px;background:var(--soft);overflow:hidden}.cam-tempo span{display:block;height:100%;background:var(--cam-cor,#58b6e6);transform-origin:left;transition:transform .1s linear,background-color .3s}
 .cam-escolhas{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cam-escolhas .button{min-height:56px;justify-content:center}
 .cam-grade{display:grid;grid-template-columns:30px repeat(5,minmax(0,1fr)) 30px;gap:3px;width:100%;max-width:420px;margin:0 auto}
 .cam-cano,.cam-chao{aspect-ratio:1;border-radius:8px;min-width:0}
@@ -1615,6 +1628,6 @@ html[data-theme=dark] .destaque.is-down strong{color:#f0b07a}
 .cam-notas{display:flex;flex-wrap:wrap;gap:6px}.cam-nota{position:relative}.cam-nota input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
 .cam-nota span{display:grid;place-items:center;min-width:44px;min-height:44px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line);font-weight:700;background:var(--surface)}
 .cam-nota input:checked+span{background:#1f6f9a;border-color:#1f6f9a;color:#fff}.cam-nota input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
-@media(max-width:560px){.cam-escolhas{grid-template-columns:1fr}.cam-mascote,.cam-mascote .mascot-svg{width:80px}.cam-grade{grid-template-columns:22px repeat(5,minmax(0,1fr)) 22px}.cam-ponta svg{width:22px;height:22px}.jogo-card.is-destaque{grid-column:auto}}
-@media(prefers-reduced-motion:reduce){.cam-fluxo,.cam-peixe,.cam-tempo span{animation:none}}html[data-motion=reduce] .cam-fluxo,html[data-motion=reduce] .cam-peixe,html[data-motion=reduce] .cam-tempo span{animation:none}
+@media(max-width:560px){.cam-pergunta .cam-cartao-nome{font-size:20px}.cam-relogio{width:46px;height:46px}.cam-escolhas{grid-template-columns:1fr}.cam-mascote,.cam-mascote .mascot-svg{width:80px}.cam-grade{grid-template-columns:22px repeat(5,minmax(0,1fr)) 22px}.cam-ponta svg{width:22px;height:22px}.jogo-card.is-destaque{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.cam-fluxo,.cam-peixe,.cam-relogio{animation:none}}html[data-motion=reduce] .cam-fluxo,html[data-motion=reduce] .cam-peixe,html[data-motion=reduce] .cam-relogio{animation:none}
 </style>

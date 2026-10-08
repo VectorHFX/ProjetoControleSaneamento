@@ -37,15 +37,15 @@ window.CPTVisual = (() => {
   function entrada() {
     if (!ativo() || calmo()) return; const v = document.getElementById('view'); if (!v) return;
     clearTimeout(entradaTimer); v.removeAttribute('data-entrando'); void v.offsetWidth;
-    v.querySelectorAll(CASCATA).forEach((el, i) => el.style.setProperty('--i', Math.min(i, 14)));
-    v.setAttribute('data-entrando', ''); entradaTimer = setTimeout(() => v.removeAttribute('data-entrando'), 1400);
+    v.querySelectorAll(CASCATA).forEach((el, i) => el.style.setProperty('--i', Math.min(i, 10)));
+    v.setAttribute('data-entrando', ''); entradaTimer = setTimeout(() => v.removeAttribute('data-entrando'), 1000);
   }
   /** Depois do esqueleto: sobe só o que acabou de entrar. */
   function entradaNovos(nos) {
     if (!ativo() || calmo() || !nos.length) return; let i = 0;
     // o título e as abas já estavam no esqueleto: não sobem de novo
-    nos.filter(n => !n.matches('.page-intro,.painel-tabs,.segmented,.loading-label')).forEach(n => { const alvos = n.matches(CASCATA) ? [n] : Array.from(n.querySelectorAll(CASCATA)); (alvos.length ? alvos : [n]).forEach(el => { el.style.setProperty('--i', Math.min(i++, 14)); el.classList.add('v3-novo'); }); });
-    clearTimeout(novosTimer); novosTimer = setTimeout(() => document.querySelectorAll('#view .v3-novo').forEach(el => el.classList.remove('v3-novo')), 1400);
+    nos.filter(n => !n.matches('.page-intro,.painel-tabs,.segmented,.loading-label')).forEach(n => { const alvos = n.matches(CASCATA) ? [n] : Array.from(n.querySelectorAll(CASCATA)); (alvos.length ? alvos : [n]).forEach(el => { el.style.setProperty('--i', Math.min(i++, 10)); el.classList.add('v3-novo'); }); });
+    clearTimeout(novosTimer); novosTimer = setTimeout(() => document.querySelectorAll('#view .v3-novo').forEach(el => el.classList.remove('v3-novo')), 1000);
   }
   function parar(v) { clearTimeout(entradaTimer); v.removeAttribute('data-entrando'); }
   function navegou() { navegouEm = Date.now(); animou = false; esperou = false; }
@@ -149,12 +149,14 @@ window.CPTVisual = (() => {
         <linearGradient id="v3Sombra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient></defs>
       <rect width="1000" height="600" class="v3-parede"/>
       <g class="v3-camada" style="--k:-5"><g class="v3-ripas">${ripas}</g></g>
-      <g class="v3-camada" style="--k:-9"><rect x="380" y="18" width="640" height="452" rx="18" class="v3-musgo"/>
-        <g transform="translate(392 10)"><g class="v3-brisa v3-brisa-1">${c1}</g><g class="v3-brisa v3-brisa-2">${c2}</g><g class="v3-brisa v3-brisa-3">${c3}</g></g></g>
-      <rect width="1000" height="600" fill="url(#v3Luz)"/>
+      <g class="v3-camada" style="--k:-9"><rect x="380" y="18" width="640" height="452" rx="18" class="v3-musgo"/></g>
       <g class="v3-camada" style="--k:-14">${lumi(170, 120)}${lumi(330, 96)}</g>
       <path d="M0 470 H1000 V600 H0Z" fill="url(#v3Piso)"/><path class="v3-espinha" d="${espinha}"/><path d="M0 470 H1000 V600 H0Z" fill="url(#v3Sombra)" opacity=".5"/>
-      <path d="M0 471 H1000" class="v3-rodape"/></svg>`;
+      <path d="M0 471 H1000" class="v3-rodape"/></svg>` +
+      // 3.0: cada camada de folhas é um desenho próprio por cima da parede, para a brisa rodar na placa de vídeo
+      // (o cenário não é redesenhado a cada quadro). Mesmo enquadramento do cenário; o corte para no rodapé.
+      `<span class="v3-plantas" aria-hidden="true">${[c1, c2, c3].map((c, i) => `<svg class="v3-brisa v3-brisa-${i + 1}" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMax slice"><defs><clipPath id="v3Corte${i + 1}"><rect x="-60" y="-60" width="1120" height="531"/></clipPath></defs><g clip-path="url(#v3Corte${i + 1})"><g transform="translate(392 10)">${c}</g></g></svg>`).join('')}</span>` +
+      '<svg class="hero-scene v3-luz" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="600" fill="url(#v3Luz)"/></svg>';
     return cenaPronta;
   }
   function init() {
