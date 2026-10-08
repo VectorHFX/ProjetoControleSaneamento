@@ -11,12 +11,13 @@ Aplicação central do time Socioambiental, Comunicação, Atendimento, Comercia
 6. [`docs/ANATOMIA_DO_RELATORIO.md`](docs/ANATOMIA_DO_RELATORIO.md): estrutura do relatório mensal elogiado (base para o gerador).
 7. [`docs/LIMPEZA_E_BACKUP.md`](docs/LIMPEZA_E_BACKUP.md): o que arquivar, o que manter e como fazer backup antes de apagar.
 8. [`docs/VISOES_POR_CARGO.md`](docs/VISOES_POR_CARGO.md): **o que cada cargo vê, a trava do período de testes e as pastas a compartilhar.**
+9. [`docs/IDEIAS_RESERVADAS.md`](docs/IDEIAS_RESERVADAS.md): ideias guardadas para depois (ex.: Território vivo, painel de gestão para os clientes) e o que falta para cada uma.
 
 ## Estrutura
 
 | Pasta | O que é | Instalar? |
 |---|---|---|
-| `app/` | **Aplicação CPT** (web app, versão 2.49.1 — versão final). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
+| `app/` | **Aplicação CPT** (web app, versão 2.50.0). `src/` é o que vai para o Apps Script. `fontes/` é o JavaScript legível, compilado para `src/` por `testes/compilar.cjs`. | Sim, no projeto "CPT — Aplicação" |
 | `campo40/` | **Procedimentos de Campo 4.0** (4.2.0): formulário → Base, abertura de casos com protocolo e ligação com o formulário de Execução da engenharia. `src/` é permanente; `migracao_executada/` já rodou e fica só para rastreio. | Sim, no projeto do Campo 4.0 |
 | `atualizador/` | **CPT • Atualizador**: projeto pequeno que traz o código do GitHub para a Aplicação e o Campo 4.0, com versão de segurança | Sim, uma vez (ver ATUALIZACAO_AUTOMATICA.md) |
 | `docs/` | Diagnóstico, plano, guia de implantação e, em `referencia/`, os requisitos originais e os modelos oficiais (Orientador, relato ilustrado, layout da ficha). | — |

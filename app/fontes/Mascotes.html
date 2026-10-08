@@ -7,6 +7,10 @@
  * Expressões: normal, feliz, surpreso, pensativo, dormindo, comemorando.
  * Período de testes: só o proprietário vê o elenco novo (window.CPT_MASCOTE_V2, definido ao carregar o perfil);
  * as demais pessoas continuam com o desenho anterior até liberarConfiguracaoCPT.
+ * 2.50: acabamento — volume com luz suave (gradiente radial), olhos com íris e dois brilhos, bochecha esfumada, sombra da cabeça
+ *      no corpo, dedinhos, detalhes de cada bicho (orelha rosada, tufos, listras, pintas, brilho no nariz e no bico), rabo que
+ *      abana e olhar que passeia (.m-cauda, .m-olhar; desligados com movimento reduzido) e a expressão "triste" (ops!).
+ *      Proporções e pontos de encaixe iguais: as peças da loja continuam no lugar.
  */
 window.CPTMascoteV2 = (() => {
   'use strict';
@@ -27,8 +31,8 @@ window.CPTMascoteV2 = (() => {
   // ---------- formas ----------
   const ell = (x, y, rx, ry) => `M${x - rx},${y} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0 Z`;
   const circ = (x, y, r) => ell(x, y, r, r);
-  /** Forma com luz em cima e sombra embaixo (o "pintado"). */
-  const f = (d, cor, liso) => `<path d="${d}" fill="${cor}"/>` + (liso ? '' : `<path d="${d}" fill="url(#${ID}g)"/>`);
+  /** Forma com luz em cima e sombra embaixo (o "pintado"). 2.50: luz radial (vem do alto, à esquerda) dá volume. */
+  const f = (d, cor, liso) => `<path d="${d}" fill="${cor}"/>` + (liso ? '' : `<path d="${d}" fill="url(#${ID}r)"/>`);
   const linha = (d, w = 2.6, cor = OLHO) => `<path d="${d}" fill="none" stroke="${cor}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
   /** Braço curvo que afina do ombro ao punho (curva de Bézier com largura variável). t1 < 1 desenha só o começo (manga). */
   function bracoCurvo(sx, sy, cx, cy, mx, my, w0, w1, t1 = 1) {
@@ -47,16 +51,23 @@ window.CPTMascoteV2 = (() => {
     if (e === 'dormindo') return linha(`M${L - 6},${cy} q6,4 12,0 M${R - 6},${cy} q6,4 12,0`);
     if (e === 'feliz') return linha(`M${L - 6},${cy + 2} q6,-8 12,0 M${R - 6},${cy + 2} q6,-8 12,0`);
     if (e === 'comemorando') return linha(`M${L - 6},${cy - 5} l10,5 l-10,5 M${R + 6},${cy - 5} l-10,5 l10,5`, 2.8);
-    if (e === 'surpreso') return [L, R].map(x => `<circle cx="${x}" cy="${cy}" r="${o.grande ? 9 : 7.5}" fill="#fff" stroke="${OLHO}" stroke-width="2.2"/><circle cx="${x}" cy="${cy}" r="${o.grande ? 4.5 : 3.6}" fill="${OLHO}"/>`).join('');
-    const dx = e === 'pensativo' ? 3 : 0, dy = e === 'pensativo' ? -3 : 0, r = o.grande ? 7 : o.olho || 6.2;
-    // olho fofo: oval grande, brilho principal em cima e um brilhinho embaixo
-    return `<g class="m-eyes">` + [L, R].map(x => (o.iris ? `<circle cx="${x + dx}" cy="${cy + dy}" r="${r + 2.6}" fill="${o.iris}"/>` : '') + `<ellipse cx="${x + dx}" cy="${cy + dy}" rx="${r * .9}" ry="${r * 1.08}" fill="${OLHO}"/><circle cx="${x + dx + r * .3}" cy="${cy + dy - r * .4}" r="${r * .34}" fill="#fff"/>` + (r > 5 ? `<circle cx="${x + dx - r * .32}" cy="${cy + dy + r * .42}" r="${r * .15}" fill="#fff" opacity=".85"/>` : '')).join('') + '</g>';
+    if (e === 'surpreso') return [L, R].map(x => `<circle cx="${x}" cy="${cy}" r="${o.grande ? 9 : 7.5}" fill="#fff" stroke="${OLHO}" stroke-width="2.2"/><circle cx="${x}" cy="${cy}" r="${o.grande ? 4.5 : 3.6}" fill="${OLHO}"/><circle cx="${x + 1.4}" cy="${cy - 1.6}" r="1.3" fill="#fff"/>`).join('');
+    const dx = e === 'pensativo' ? 3 : 0, dy = e === 'pensativo' ? -3 : e === 'triste' ? 1.5 : 0, r = o.grande ? 7.4 : o.olho || 7;
+    // olho fofo: oval escuro, íris quente embaixo (dá profundidade), brilho grande em cima e um brilhinho embaixo
+    const olho = x => { const cx = x + dx, y = cy + dy;
+      return (o.iris ? `<circle cx="${cx}" cy="${y}" r="${r + 2.6}" fill="${o.iris}"/>` : '') + `<ellipse cx="${cx}" cy="${y}" rx="${r * .92}" ry="${r * 1.1}" fill="${OLHO}"/>` +
+        `<ellipse cx="${cx}" cy="${y + r * .34}" rx="${r * .66}" ry="${r * .6}" fill="url(#${ID}i)"/><circle cx="${cx + r * .3}" cy="${y - r * .42}" r="${r * .36}" fill="#fff"/>` +
+        (r > 5 ? `<circle cx="${cx - r * .34}" cy="${y + r * .44}" r="${r * .16}" fill="#fff" opacity=".9"/>` : ''); };
+    const sobrancelhas = e === 'triste' ? linha(`M${L - 8},${cy - r - 4} L${L + 5},${cy - r - 8} M${R + 8},${cy - r - 4} L${R - 5},${cy - r - 8}`, 2.4) : '';
+    return `<g class="m-olhar"><g class="m-eyes">${olho(L)}${olho(R)}</g></g>${sobrancelhas}`;
   }
-  const bochechas = (e, cx, cy, d) => e === 'dormindo' ? '' : `<ellipse cx="${cx - d - 4}" cy="${cy + 11}" rx="7" ry="4" fill="${BOCHECHA}" opacity=".75"/><ellipse cx="${cx + d + 4}" cy="${cy + 11}" rx="7" ry="4" fill="${BOCHECHA}" opacity=".75"/>`;
+  // 2.50: bochecha esfumada (gradiente) no lugar da elipse chapada
+  const bochechas = (e, cx, cy, d) => e === 'dormindo' ? '' : `<ellipse cx="${cx - d - 4}" cy="${cy + 11}" rx="9.5" ry="5.6" fill="url(#${ID}b)"/><ellipse cx="${cx + d + 4}" cy="${cy + 11}" rx="9.5" ry="5.6" fill="url(#${ID}b)"/>`;
   function boquinha(e, cx, cy, tipo) {
     if (e === 'surpreso') return `<ellipse cx="${cx}" cy="${cy + 4}" rx="3.6" ry="4.6" fill="${OLHO}"/>`;
     if (e === 'comemorando') return `<path d="M${cx - 8},${cy} Q${cx},${cy + 13} ${cx + 8},${cy} Z" fill="${OLHO}"/><path d="M${cx - 4},${cy + 6} q4,4 8,0" fill="#ef7f86"/>`;
     if (e === 'pensativo') return linha(`M${cx - 4},${cy + 4} q4,-1 8,-3`, 2.2);
+    if (e === 'triste') return linha(`M${cx - 6},${cy + 6} q6,-6 12,0`, 2.2);
     if (e === 'dormindo') return linha(`M${cx - 3},${cy + 3} q3,2 6,0`, 2.2);
     if (tipo === 'lingua' && e === 'feliz') return linha(`M${cx - 7},${cy} q3.5,4 7,0 q3.5,4 7,0`, 2.2) + `<path d="M${cx - 3},${cy + 2} q3,9 6,0 Z" fill="#ef7f86"/>`;
     return linha(`M${cx - 6},${cy} q3,4 6,0 q3,4 6,0`, 2.2);
@@ -66,6 +77,7 @@ window.CPTMascoteV2 = (() => {
     if (e === 'surpreso') return linha(`M${cx + 58},${topo + 2} v12`, 3.4, '#e86a3a') + `<circle cx="${cx + 58}" cy="${topo + 22}" r="2" fill="#e86a3a"/>`;
     if (e === 'pensativo') return `<text x="${cx + 44}" y="${topo + 6}" font-size="20" font-weight="800" fill="${k}" opacity=".75">?</text><text x="${cx + 60}" y="${topo - 10}" font-size="13" font-weight="800" fill="${k}" opacity=".55">?</text>`;
     if (e === 'dormindo') return `<text x="${cx + 44}" y="${topo + 8}" font-size="19" font-weight="800" fill="${k}" opacity=".6">z</text><text x="${cx + 58}" y="${topo - 8}" font-size="13" font-weight="800" fill="${k}" opacity=".45">z</text>`;
+    if (e === 'triste') return `<path d="M${cx + 50},${topo + 4} c0,0 -6,8 -6,11.5 a6,6 0 0 0 12,0 c0,-3.5 -6,-11.5 -6,-11.5 Z" fill="#8fd0f2"/><path d="M${cx + 47.5},${topo + 13} q0,3 2.5,4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>`;
     if (e === 'comemorando') return linha(`M${cx - 52},${topo + 4} l-9,-7 M${cx - 42},${topo - 8} l-4,-11 M${cx + 52},${topo + 4} l9,-7 M${cx + 42},${topo - 8} l4,-11 M${cx},${topo - 14} v-10`, 2.8, '#f2b632');
     return '';
   }
@@ -77,25 +89,27 @@ window.CPTMascoteV2 = (() => {
   const ELENCO = {
     urso: {c: ['#b58256', '#efd7b4'], cab: ell(100, 86, 58, 48), rosto: {x: 100, y: 88, d: 27}, capacete: {x: 100, y: 58, r: 40}, orelhas: [58, 84, 38], pescoco: [100, 130],
       corpo: 'M66,128 C46,150 44,196 64,212 Q100,226 136,212 C156,196 154,150 134,128 Z', caixa: [48, 124, 152, 222], barriga: ell(100, 180, 30, 26), pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
-      atras: c => f(circ(56, 46, 16), c.p) + f(circ(144, 46, 16), c.p) + `<circle cx="56" cy="46" r="8" fill="${c.cl}"/><circle cx="144" cy="46" r="8" fill="${c.cl}"/>`,
-      focinho: (e, c) => f(ell(100, 104, 18, 12), c.cl, 1) + `<path d="${ell(100, 99, 6, 4)}" fill="${c.e}"/>` + boquinha(e, 100, 105)},
+      atras: c => f(circ(56, 46, 16), c.p) + f(circ(144, 46, 16), c.p) + `<circle cx="56" cy="47" r="8.5" fill="${mix(c.cl, '#f29aa0', .35)}"/><circle cx="144" cy="47" r="8.5" fill="${mix(c.cl, '#f29aa0', .35)}"/>`,
+      focinho: (e, c) => f(ell(100, 104, 18, 12), c.cl) + `<path d="${ell(100, 99, 6, 4)}" fill="${c.e}"/><ellipse cx="98" cy="97.8" rx="2.2" ry="1.2" fill="#fff" opacity=".7"/>` + boquinha(e, 100, 105)},
     aguia: {c: ['#4a403b', '#fdfbf6'], corCab: '#fdfbf6', cab: ell(100, 84, 52, 46), rosto: {x: 100, y: 84, d: 24, iris: '#f6d36a', forte: true, olho: 4.8}, capacete: {x: 100, y: 58, r: 38}, orelhas: [52, 82, 38], pescoco: [100, 128],
       corpo: 'M50,138 C48,128 152,128 150,138 C152,178 136,212 100,216 C64,212 48,178 50,138 Z', caixa: [48, 128, 152, 216], peito: 'M74,136 Q100,150 126,136 L100,178 Z', pes: [[84, 216, 12, 7, '#f4b94c'], [116, 216, 12, 7, '#f4b94c']], ombros: [[56, 146], [144, 146]], asa: 1.1, mao: 32,
       atras: () => f('M134,52 l20,-12 l-4,15 l14,2 l-16,12 Z', '#fdfbf6'),
-      focinho: e => (['surpreso', 'comemorando', 'feliz'].includes(e) ? `<path d="M93,103 Q100,${e === 'feliz' ? 111 : 116} 107,103 Z" fill="#c9852a"/>` : '') + f('M88,94 Q100,86 112,94 Q110,106 101,112 Q99,113 98,111 Q90,104 88,94 Z', '#f4b94c')},
+      focinho: e => (['surpreso', 'comemorando', 'feliz'].includes(e) ? `<path d="M93,103 Q100,${e === 'feliz' ? 111 : 116} 107,103 Z" fill="#c9852a"/>` : '') + f('M88,94 Q100,86 112,94 Q110,106 101,112 Q99,113 98,111 Q90,104 88,94 Z', '#f4b94c') + linha('M93,93 q7,-3 14,0', 2, '#ffffff70')},
     gato: {c: ['#f2a65e', '#fff2e0'], cab: ell(100, 90, 52, 44), rosto: {x: 100, y: 92, d: 24}, capacete: {x: 100, y: 64, r: 36}, orelhas: [52, 88, 44], pescoco: [100, 132],
       corpo: 'M76,128 C68,160 68,198 78,212 Q100,222 122,212 C132,198 132,160 124,128 Z', caixa: [70, 126, 130, 216], barriga: ell(100, 184, 15, 22), pes: [[88, 216, 11, 7], [112, 216, 11, 7]], ombros: [[78, 148], [122, 148]], braco: 13, mao: 30,
-      atras: c => linha('M120,204 C158,206 168,166 150,150', 11, c.p) + f('M58,72 L60,40 L86,56 Z', c.p) + f('M142,72 L140,40 L114,56 Z', c.p) + `<path d="M64,62 L65,48 L78,57 Z" fill="${c.cl}"/><path d="M136,62 L135,48 L122,57 Z" fill="${c.cl}"/>`,
-      focinho: (e, c) => linha('M92,58 l2,7 M100,56 v8 M108,58 l-2,7', 2.8, c.e) + `<path d="M97,99 h6 l-3,3.5 Z" fill="#e08a8a"/>` + boquinha(e, 100, 104) + linha('M70,100 h-12 M70,105 l-11,3 M130,100 h12 M130,105 l11,3', 1.6, '#00000033')},
+      atras: c => `<g class="m-cauda" style="transform-origin:120px 204px">${linha('M120,204 C158,206 168,166 150,150', 11, c.p)}<path d="M146.7,190.6 L152.5,196.4 M154.6,169.3 L162.6,168.9" fill="none" stroke="${mix(c.p, '#000000', .18)}" stroke-width="3" stroke-linecap="butt" opacity=".7"/></g>` +
+        f('M58,72 L60,40 L86,56 Z', c.p) + f('M142,72 L140,40 L114,56 Z', c.p) + `<path d="M64,62 L65,48 L78,57 Z" fill="${mix(c.cl, '#f29aa0', .45)}"/><path d="M136,62 L135,48 L122,57 Z" fill="${mix(c.cl, '#f29aa0', .45)}"/>`,
+      depoisCab: c => f('M54,94 L42,99 L51,103 L44,110 L56,107 Z', c.p, 1) + f('M146,94 L158,99 L149,103 L156,110 L144,107 Z', c.p, 1),
+      focinho: (e, c) => linha('M92,58 l2,7 M100,56 v8 M108,58 l-2,7', 2.8, c.e) + `<path d="M97,99 h6 l-3,3.5 Z" fill="#e08a8a"/><circle cx="99" cy="99.9" r=".9" fill="#fff" opacity=".8"/>` + boquinha(e, 100, 104) + linha('M70,100 h-12 M70,105 l-11,3 M130,100 h12 M130,105 l11,3', 1.6, '#00000033')},
     cachorro: {c: ['#dba46a', '#f8e6cb'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 60, r: 38}, orelhas: [56, 82, 42], pescoco: [100, 132],
       corpo: 'M66,130 C58,160 60,198 72,212 Q100,224 128,212 C140,198 142,160 134,130 Z', caixa: [60, 128, 140, 218], barriga: ell(100, 182, 20, 24), pes: [[84, 216, 13, 8], [116, 216, 13, 8]], ombros: [[66, 150], [134, 150]], braco: 15, mao: 31,
-      atras: c => linha('M132,196 C152,194 158,176 150,162', 10, c.p),
+      atras: c => `<g class="m-cauda" style="transform-origin:132px 196px">${linha('M132,196 C152,194 158,176 150,162', 10, c.p)}</g>`,
       depoisCab: c => f('M50,70 C38,84 40,112 54,116 C62,104 62,84 62,72 Z', c.e) + f('M150,70 C162,84 160,112 146,116 C138,104 138,84 138,72 Z', c.e),
-      focinho: (e, c) => f(ell(100, 104, 17, 12), c.cl, 1) + `<path d="${ell(100, 98, 6.5, 4.5)}" fill="#3a2a20"/>` + boquinha(e, 100, 105, 'lingua') + `<circle cx="76" cy="72" r="5" fill="${c.cl}"/>`},
+      focinho: (e, c) => f(ell(100, 104, 17, 12), c.cl) + `<path d="${ell(100, 98, 6.5, 4.5)}" fill="#3a2a20"/><ellipse cx="97.8" cy="96.6" rx="2.4" ry="1.3" fill="#fff" opacity=".6"/>` + boquinha(e, 100, 105, 'lingua') + `<circle cx="76" cy="72" r="5" fill="${c.cl}"/>`},
     pato: {c: ['#fbf6ea', '#ffffff'], cab: ell(100, 98, 46, 40), rosto: {x: 100, y: 92, d: 21}, capacete: {x: 100, y: 72, r: 33}, orelhas: [46, 96, 58], pescoco: [100, 136],
       corpo: 'M70,132 C40,170 46,212 84,218 Q100,222 116,218 C154,212 160,170 130,132 Z', caixa: [48, 132, 152, 220], pes: [[86, 220, 12, 6, '#f3a94a'], [114, 220, 12, 6, '#f3a94a']], ombros: [[70, 160], [130, 160]], asa: .7, mao: 22,
       atras: c => f('M96,62 q-3,-12 7,-14 q-5,7 1,12 Z', c.p),
-      focinho: e => (['surpreso', 'comemorando'].includes(e) ? `<path d="M86,112 Q100,124 114,112 Z" fill="#d07a2a"/>` : '') + f('M82,104 Q100,96 118,104 Q118,114 100,115 Q82,114 82,104 Z', '#f3a94a')},
+      focinho: e => (['surpreso', 'comemorando'].includes(e) ? `<path d="M86,112 Q100,124 114,112 Z" fill="#d07a2a"/>` : '') + f('M82,104 Q100,96 118,104 Q118,114 100,115 Q82,114 82,104 Z', '#f3a94a') + linha('M90,102 q10,-4 20,0', 2, '#ffffff70')},
     capivara: {c: ['#b58a63', '#8f6a4b'], cab: 'M52,76 C52,46 76,40 100,40 C124,40 148,46 148,76 L148,104 C148,126 128,132 100,132 C72,132 52,126 52,104 Z', rosto: {x: 100, y: 80, d: 26, calmo: true, olho: 5}, capacete: {x: 100, y: 52, r: 37}, orelhas: [49, 80, 40], pescoco: [100, 134],
       corpo: 'M60,130 C46,150 46,200 64,212 Q100,224 136,212 C154,200 154,150 140,130 Z', caixa: [50, 128, 150, 220], pes: [[80, 216, 15, 8], [120, 216, 15, 8]], ombros: [[60, 150], [140, 150]], braco: 17, mao: 30,
       atras: c => f(circ(66, 46, 9), c.e) + f(circ(134, 46, 9), c.e),
@@ -105,6 +119,7 @@ window.CPTMascoteV2 = (() => {
     sapo: {c: ['#93cf72', '#f4f8e6'], semCorpo: true, cab: 'M46,98 C46,70 56,56 70,56 C78,56 84,62 88,66 L112,66 C116,62 122,56 130,56 C144,56 154,70 154,98 L154,170 C154,206 136,216 100,216 C64,216 46,206 46,170 Z',
       rosto: {x: 100, y: 80, d: 30, grande: true}, capacete: {x: 100, y: 62, r: 30}, orelhas: [55, 104, 52], pescoco: [100, 132], caixa: [46, 134, 154, 214], barriga: 'M66,150 C66,132 134,132 134,150 L134,178 C134,200 66,200 66,178 Z',
       pes: [[78, 218, 16, 7], [122, 218, 16, 7]], ombros: [[56, 140], [144, 140]], braco: 15, mao: 28, boca: 112,
+      depoisCab: c => [[58, 112, 5], [143, 118, 4.2], [55, 150, 3.6], [147, 160, 4.6]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${mix(c.p, '#1f4a1a', .28)}" opacity=".55"/>`).join(''),
       olhosFundo: e => ['feliz', 'comemorando', 'dormindo'].includes(e) ? '' : `<circle cx="70" cy="80" r="11" fill="#fff"/><circle cx="130" cy="80" r="11" fill="#fff"/>`,
       focinho: e => {
         if (e === 'comemorando') return `<path d="M72,106 Q100,138 128,106 Z" fill="${OLHO}"/><path d="M86,118 q14,10 28,0" fill="#ef7f86"/>`;
@@ -119,12 +134,13 @@ window.CPTMascoteV2 = (() => {
     // Clássicos (mascotes da primeira versão), no mesmo estilo.
     dinossauro: {c: ['#86c97a', '#e6f4d2'], cab: ell(100, 88, 56, 46), rosto: {x: 100, y: 84, d: 26}, capacete: {x: 100, y: 60, r: 40}, orelhas: [56, 84, 42], pescoco: [100, 132],
       corpo: 'M64,128 C50,156 50,198 66,212 Q100,224 134,212 C150,198 150,156 136,128 Z', caixa: [52, 126, 148, 220], barriga: ell(100, 182, 24, 26), pes: [[82, 216, 15, 8], [118, 216, 15, 8]], ombros: [[62, 150], [138, 150]], braco: 15, mao: 30,
-      atras: c => f('M130,196 C162,200 174,186 176,170 C166,184 150,184 136,178 Z', c.p) + [[128, 48, 20], [146, 64, 45], [154, 86, 70], [150, 140, 80]].map(([x, y, a]) => `<g transform="rotate(${a} ${x} ${y})">${f(`M${x - 9},${y + 8} L${x},${y - 10} L${x + 9},${y + 8} Z`, mix(c.p, '#000000', .18))}</g>`).join(''),
+      atras: c => `<g class="m-cauda is-lenta" style="transform-origin:132px 190px">${f('M130,196 C162,200 174,186 176,170 C166,184 150,184 136,178 Z', c.p)}</g>` + [[128, 48, 20], [146, 64, 45], [154, 86, 70], [150, 140, 80]].map(([x, y, a]) => `<g transform="rotate(${a} ${x} ${y})">${f(`M${x - 9},${y + 8} L${x},${y - 10} L${x + 9},${y + 8} Z`, mix(c.p, '#000000', .18))}</g>`).join(''),
       focinho: (e, c) => f(ell(100, 106, 22, 13), c.cl, 1) + `<circle cx="93" cy="102" r="2" fill="${mix(c.p, '#000000', .45)}"/><circle cx="107" cy="102" r="2" fill="${mix(c.p, '#000000', .45)}"/>` + boquinha(e, 100, 110)},
     abelha: {c: ['#f7cf4a', '#fff3c4'], cab: ell(100, 88, 54, 46), rosto: {x: 100, y: 88, d: 25}, capacete: {x: 100, y: 60, r: 39}, orelhas: [54, 84, 42], pescoco: [100, 132],
       corpo: 'M66,128 C50,156 52,198 68,212 Q100,224 132,212 C148,198 150,156 134,128 Z', caixa: [54, 126, 146, 220], listras: true, pes: [[84, 216, 13, 7, '#3b302a'], [116, 216, 13, 7, '#3b302a']], ombros: [[64, 150], [136, 150]], braco: 14, mao: 30,
       atras: () => `<path d="${ell(56, 140, 22, 13)}" fill="#dff1ff" opacity=".85" transform="rotate(-25 56 140)"/><path d="${ell(144, 140, 22, 13)}" fill="#dff1ff" opacity=".85" transform="rotate(25 144 140)"/>` +
-        linha('M84,48 Q76,30 66,26 M116,48 Q124,30 134,26', 2.6, '#3b302a') + `<circle cx="66" cy="26" r="5" fill="#3b302a"/><circle cx="134" cy="26" r="5" fill="#3b302a"/>`,
+        linha('M44,138 q10,-6 22,-4 M156,138 q-10,-6 -22,-4', 1.8, '#ffffffb0') +
+        linha('M84,48 Q76,30 66,26 M116,48 Q124,30 134,26', 2.6, '#3b302a') + `<circle cx="66" cy="26" r="5" fill="#3b302a"/><circle cx="134" cy="26" r="5" fill="#3b302a"/><circle cx="64.5" cy="24.5" r="1.6" fill="#fff" opacity=".7"/><circle cx="132.5" cy="24.5" r="1.6" fill="#fff" opacity=".7"/>`,
       focinho: e => boquinha(e, 100, 104)}};
   const PADRAO = 'gato';
 
@@ -206,7 +222,7 @@ window.CPTMascoteV2 = (() => {
 
   /**
    * SVG do mascote. equipado: {slot: id}. cor: chave de CORES (vazio = cor da espécie). expressao: normal (padrão), feliz, surpreso,
-   * pensativo, dormindo, comemorando. .m-all respira e .m-eyes pisca (CSS; desligado com movimento reduzido).
+   * pensativo, dormindo, comemorando, triste (2.50). .m-all respira e .m-eyes pisca (CSS; desligado com movimento reduzido).
    */
   function desenhar(especie, equipado, tam, rotulo, cor, expressao) {
     const S = ELENCO[especie] || ELENCO[PADRAO], q = equipado || {}, e = expressao || 'normal', V1 = window.CPTMascoteV1;
@@ -217,6 +233,10 @@ window.CPTMascoteV2 = (() => {
     const queixo = q.mao ? -1 : 1;
     const S2 = {...S, corPeito: S.peito ? c.cl : c.p};
     P.push(`<defs><linearGradient id="${ID}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a2410" stop-opacity=".18"/></linearGradient>
+      <radialGradient id="${ID}r" cx=".36" cy=".26" r=".92" fx=".3" fy=".18"><stop offset="0" stop-color="#fff" stop-opacity=".36"/><stop offset=".4" stop-color="#fff" stop-opacity=".05"/><stop offset=".72" stop-color="#3a2410" stop-opacity="0"/><stop offset="1" stop-color="#3a2410" stop-opacity=".22"/></radialGradient>
+      <radialGradient id="${ID}s"><stop offset="0" stop-color="#2a1a0c" stop-opacity=".2"/><stop offset=".55" stop-color="#2a1a0c" stop-opacity=".09"/><stop offset="1" stop-color="#2a1a0c" stop-opacity="0"/></radialGradient>
+      <radialGradient id="${ID}i"><stop offset="0" stop-color="#b07a48" stop-opacity=".95"/><stop offset="1" stop-color="#b07a48" stop-opacity="0"/></radialGradient>
+      <radialGradient id="${ID}b"><stop offset="0" stop-color="${BOCHECHA}" stop-opacity=".95"/><stop offset=".6" stop-color="${BOCHECHA}" stop-opacity=".55"/><stop offset="1" stop-color="${BOCHECHA}" stop-opacity="0"/></radialGradient>
       <clipPath id="${ID}t"><path d="${S.semCorpo ? S.cab : S.corpo}"/></clipPath></defs><ellipse cx="100" cy="226" rx="${especie === 'gota' ? 40 : 52}" ry="7" fill="#3a2410" opacity=".12"/>`);
     const xp = {S, c, k: S.capacete, R, n: S.pescoco, m: null};
     // Peça nova (chibi) quando existe; senão, a antiga reposicionada.
@@ -225,13 +245,14 @@ window.CPTMascoteV2 = (() => {
     if (S.atras) P.push(S.atras(c, e));
     // pezinhos: bota preta e botina mudam a cor do pé
     const corPe = PES[q.pes] || null;
-    S.pes.forEach(([x, y, rx, ry, cp]) => P.push(f(ell(x, y, rx, ry), corPe || cp || c.p) + (corPe ? `<path d="M${x - rx + 2},${y + ry - 2} Q${x},${y + ry + 2} ${x + rx - 2},${y + ry - 2}" fill="none" stroke="#00000040" stroke-width="2.4" stroke-linecap="round"/><circle cx="${x}" cy="${y - ry * .35}" r="1.6" fill="#ffffff60"/>` : '')));
+    S.pes.forEach(([x, y, rx, ry, cp]) => P.push(f(ell(x, y, rx, ry), corPe || cp || c.p) + (corPe ? `<path d="M${x - rx + 2},${y + ry - 2} Q${x},${y + ry + 2} ${x + rx - 2},${y + ry - 2}" fill="none" stroke="#00000040" stroke-width="2.4" stroke-linecap="round"/><circle cx="${x}" cy="${y - ry * .35}" r="1.6" fill="#ffffff60"/>`
+      : especie === 'gota' ? '' : linha(`M${x - rx * .32},${y - ry * .1} v${ry * .7} M${x + rx * .32},${y - ry * .1} v${ry * .7}`, 1.5, '#00000030'))));
     // corpo, barriga, roupas
     if (!S.semCorpo) { P.push(f(S.corpo, c.p)); if (S.barriga) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`); if (S.peito) P.push(`<path d="${S.peito}" fill="${c.cl}"/>`); }
     if (S.listras) P.push(`<g clip-path="url(#${ID}t)"><rect x="30" y="160" width="140" height="11" fill="#3b302a"/><rect x="30" y="186" width="140" height="11" fill="#3b302a"/></g>`);
     const roupa = () => COLETES[q.corpo] ? colete(S2, ID, COLETES[q.corpo][0], COLETES[q.corpo][1]) : CAMISAS[q.corpo] ? camisa(q.corpo, S2, c, ID, q.broche === 'laco-do-mes') : q.corpo && V1 ? `<g clip-path="url(#${ID}t)"><g transform="${encaixe(S, 'corpo')}">${V1.camisa(q.corpo)}</g></g>` : '';
     const manga = CAMISAS[q.corpo] ? CAMISAS[q.corpo].manga : null;
-    if (!S.semCorpo) P.push(roupa());
+    if (!S.semCorpo) P.push(roupa(), `<g clip-path="url(#${ID}t)"><ellipse cx="${S.pescoco[0]}" cy="${S.pescoco[1] + 2}" rx="${((S.caixa[2] - S.caixa[0]) * .46).toFixed(1)}" ry="13" fill="url(#${ID}s)"/></g>`);
     // cabeça
     P.push(f(S.cab, S.corCab || c.p));
     if (S.barriga && S.semCorpo) P.push(`<path d="${S.barriga}" fill="${c.cl}"/>`);
@@ -251,7 +272,7 @@ window.CPTMascoteV2 = (() => {
     const cotovelo = (lado, sx, sy) => pose === 'cima' ? [sx + lado * 26, sy - S.mao * .15] : pose === 'queixo' && lado === queixo ? [sx + lado * 26, sy + 16] : [sx + lado * 15, sy + S.mao * .38];
     const luva = LUVAS[q.luvas] || '';
     const patinha = (lado, mx, my, w) => { const r = w * .66;
-      if (!luva) return f(ell(mx, my, r, r * .92), S.asa ? c.p : c.cl);
+      if (!luva) return f(ell(mx, my, r, r * .92), S.asa ? c.p : c.cl) + (S.asa ? '' : linha(`M${mx - r * .3},${my + r * .2} v${r * .5} M${mx + r * .3},${my + r * .2} v${r * .5}`, 1.3, '#00000026'));
       return f(ell(mx - lado * r * .82, my - r * .15, r * .45, r * .4), luva) + f(ell(mx, my + r * .05, r * 1.1, r), luva) + `<path d="${ell(mx + lado * r * .3, my - r * .35, r * .32, r * .2)}" fill="#fff" opacity=".35"/>`; };
     const braco = lado => { const [sx, sy] = S.ombros[lado < 0 ? 0 : 1], [mx, my] = mao(lado), [cx, cy] = cotovelo(lado, sx, sy);
       if (S.asa) { const g = S.asa, penas = [-1, 0, 1].map(k => f(ell(mx + lado * 3 + k * 4 * lado, my + 6 - Math.abs(k) * 2, 4.2, 7.5), c.p)).join('');

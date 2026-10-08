@@ -1557,4 +1557,11 @@ html[data-theme=dark] .destaque.is-down strong{color:#f0b07a}
 @media(max-width:700px){.entregas-indice{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.entrega-atalho{padding:8px 10px;justify-content:center}.entrega-atalho strong{font-size:12.5px;line-height:1.25}.entrega-atalho span{display:none}
   .controle-contrato .panel-head{flex-direction:column;align-items:stretch;gap:8px}.controle-contrato .controle-situacao{align-self:flex-start}}
 .results-head .link-button{display:inline-flex;align-items:center;gap:6px}.results-head .link-button .icon{width:15px;height:15px;flex:none}
+/* 2.50 Mascotes: o rabo abana e o olhar passeia de vez em quando (desligados no guarda-roupa, nas escolhas e com movimento reduzido) */
+.mascot-svg .m-cauda{animation:mAbana 2.6s ease-in-out infinite}.mascot-svg .m-cauda.is-lenta{animation-duration:4.4s}
+.mascot-svg .m-olhar{animation:mOlhar 9s ease-in-out infinite}
+@keyframes mAbana{0%,100%{transform:rotate(0)}50%{transform:rotate(-7deg)}}
+@keyframes mOlhar{0%,38%,84%,100%{transform:translate(0,0)}44%,58%{transform:translate(2px,0)}64%,78%{transform:translate(-2px,.6px)}}
+.wardrobe .mascot-svg .m-cauda,.pet-option .mascot-svg .m-cauda,.wardrobe .mascot-svg .m-olhar,.pet-option .mascot-svg .m-olhar{animation:none}
+@media(prefers-reduced-motion:reduce){.mascot-svg .m-cauda,.mascot-svg .m-olhar{animation:none}}html[data-motion=reduce] .mascot-svg .m-cauda,html[data-motion=reduce] .mascot-svg .m-olhar{animation:none}
 </style>

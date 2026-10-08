@@ -23,6 +23,19 @@ Ao **criar** um arquivo, digite o nome **sem** extensão. O editor acrescenta `.
 
 > **Novo:** depois de configurar o **CPT • Atualizador** ([ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md)), as tabelas "substituir/criar" abaixo são feitas por `atualizarTudoCPT`. Continue executando só as funções de cada passo.
 
+## Atualização 2.50.0 — mascotes mais bonitos (≈ 1 min)
+
+1. Atualização de sempre (Cloud Shell: `bash ~/atualizar.sh aplicar`). Nenhum arquivo novo, nenhuma permissão nova.
+2. **Mascotes com mais acabamento**, no mesmo estilo pintado e sem contorno aprovado:
+   - olhos maiores, com íris e dois brilhos;
+   - volume com luz suave e a sombra da cabeça no corpo;
+   - bochecha esfumada, orelha rosada (gato e urso), tufos no gato, pintas no sapo, brilho no nariz e no bico;
+   - dedinhos nas patas e nos pés.
+3. **Mais vida:** o rabo do gato, do cachorro e do dinossauro abana, e o olhar passeia de vez em quando. Tudo para com "Reduzir movimentos". No guarda-roupa e nas escolhas eles ficam parados.
+4. **Expressão nova "triste"** (sobrancelhas caídas e uma gotinha), usada pelo jogo do caminho do esgoto.
+5. As peças da loja continuam no mesmo lugar: proporções e pontos de encaixe não mudaram.
+6. **Ideias reservadas:** `docs/IDEIAS_RESERVADAS.md` guarda o "Território vivo" (painel de gestão para os clientes) e o que falta para ele, a começar pelos endereços completos nos registros.
+
 ## Versão final 2.49.1 — colocar no ar e mostrar para a equipe (≈ 10 min)
 
 Revisão das duas últimas entregas (2.48.1 e 2.49.0) feita: sem erros de lógica; textos sem "(s)"; quatro funções do servidor que nenhuma tela usava mais foram retiradas (a lista antiga de relatos da gestão, a lista de comentários e duas de lembretes; as regras continuam testadas). Nenhum arquivo novo, nenhuma permissão nova.
